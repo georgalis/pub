@@ -1,0 +1,127 @@
+# Unlimited use with this notice (c) George Georgalis <george@galis.org>
+
+# see man xterm for table
+#For example, the string ``33:48,37:48,45-47:48,38:48'' indicates that
+#the exclamation mark, percent sign, dash, period, slash, and ampersand
+#characters should be treated the same way as characters and numbers.
+# 35 $ 36 + 43 ? 63 ~ 126
+xterm*CharClass: 33:48,35:48,36-38:48,43-47:48,63-64:48,126:48
+
+xterm*loginShell: true
+xterm*useInsertMode: true
+xterm*cutNewline: false
+
+xterm*ColorMode: true
+xterm*boldColors: true
+xterm*reverseVideo: false
+xterm*DynamicColors: true
+xterm*VeryBoldColors: 15
+
+xterm*colorAttrMode: true
+# colorBDMode allow color bold
+xterm*colorBDMode: true
+xterm*colorBD: #f8f7f7
+# colorBLMode allow color blink
+xterm*colorBLMode: true
+# colorRVMode allow color reverse
+xterm*colorRVMode: true
+xterm*colorRV: #800088
+# colorULMode allow color underline
+xterm*colorULMode: true
+
+# color[0-7]
+# These specify the colors  for  the  ISO  6429  extension.   The
+# defaults  are,  respectively,  black,  red3,  green3,  yellow3,
+# DodgerBlue1, magenta3, cyan3, and gray90.  The  default  shades of
+# color  are  chosen  to  allow the colors 8-15 to be used as brighter
+# versions. 
+# color[8-15]
+# These specify the colors for the ISO 6429 extension if the bold
+# attribute  is  also  enabled.  The default resource values are,
+# respectively, gray30, red, green, yellow, SteelBlue1,  magenta,
+# cyan, and white.
+# color[16-255]
+# These  specify  the  colors  for  the 256-color extension.  The
+# default resource values are for colors 16 through 231 to make a
+# 6x6x6  color  cube,  and  colors  232  through  255  to  make a
+# grayscale ramp.
+#xterm*color4: #0000BB
+#xterm*color6: #00C7EB
+#xterm*color12: #0000EE
+#xterm*color14: #00D8FF
+##xterm*background: #140007
+##xterm*foreground: #c2dccd
+#xterm*highlightColor: #673c5e
+##xterm*colorBD: #f8c7fb
+#xterm*colorBL: #3399af
+#xterm*colorRV: #a55b35
+#xterm*colorUL: #1ed600
+
+! --- ~/.Xresources ------------------------------------------------------------
+! ------------------------------------------------------------------------------
+! --- generated with 4bit Terminal Color Scheme Designer -----------------------
+! ------------------------------------------------------------------------------
+! --- http://ciembor.github.com/4bit -------------------------------------------
+! ------------------------------------------------------------------------------
+
+! --- special colors ---
+
+*background: #1a0022
+*foreground: #e9f4d7
+
+! --- standard colors ---
+
+! black
+*color0: #000000
+
+! bright_black
+*color8: #3f3f3f
+
+! red
+*color1: #c32626
+
+! bright_red
+*color9: #e47474
+
+! green
+*color2: #26c326
+
+! bright_green
+*color10: #74e474
+
+! yellow
+*color3: #c3c326
+
+! bright_yellow
+*color11: #e4e474
+
+! blue
+*color4: #2626c3
+
+! bright_blue
+*color12: #7474e4
+
+! magenta
+*color5: #c326c3
+
+! bright_magenta
+*color13: #e474e4
+
+! cyan
+*color6: #26c3c3
+
+! bright_cyan
+*color14: #74e4e4
+
+! white
+*color7: #afafaf
+
+! bright_white
+*color15: #ffffff
+
+
+! ------------------------------------------------------------------------------
+! --- end of terminal colors section -------------------------------------------
+! ------------------------------------------------------------------------------
+
+

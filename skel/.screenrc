@@ -1,0 +1,10 @@
+# ~/.screenrc
+shell -$SHELL
+autodetach on
+startup_message off
+pow_detach_msg "Screen session of \$USER \$:cr:\$:nl:ended."   
+caption always "${USER}@%H: %w"
+nethack off
+defscrollback 750
+#termcapinfo  * '' 'hs:ts=\E_:fs=\E\\:ds=\E_\E\\' 
+#hardstatus alwayslastline "%2n %t%? %f%? %u%? [%h]%?"

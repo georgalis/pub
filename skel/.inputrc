@@ -1,0 +1,19 @@
+# ~/.inputrc
+
+# Unlimited use with this notice (c) George Georgalis <george@galis.org>
+
+# parameters for bash (using readline)
+set show-all-if-ambiguous on
+set visible-stats on
+#set editing-mode vi
+#set keymap vi 
+set completion-query-items 200
+
+# see 'bind' in bash(1)
+# make the home and end keys work in xterm
+"\e[H": beginning-of-line
+"\e[F": end-of-line
+# make the home and end keys work in console
+"\e[1~": beginning-of-line
+"\e[4~": end-of-line
+
