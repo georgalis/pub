@@ -100,10 +100,11 @@ esac
 [ -z "${OS#Linux}" ] && {
 	 _ntermrev='rmso' ; _ntermul='rmul'
 	 _termrev='smso' ; _termul='smul'
-	} || {
+	}
+[ -z "${OS#NetBSD}" ] && {
 	 _ntermrev='se' ; _ntermul='ue'
 	 _termrev='so' ; _termul='us'
-	} #
+	}
 [ -z "${OS#Darwin}" ] && {
 	 _ntermrev='se' ; _ntermul='ue'
 	 _termrev='so' ; _termul='us'
@@ -113,16 +114,6 @@ esac
 _ntermrev="$(tput "$_ntermrev")" ; _ntermul="$(tput "$_ntermul")"
 _termrev="$(tput "$_termrev")" ; _termul="$(tput "$_termul")"
 export _ntermrev _termrev _ntermul _termul
-
-# set ps1
-[ -z "${SHELL#*bash}" ] \
-	&& export PS1=" ${USER}@${_h%%.*}:\${PWD} " \
-	&& set -o ignoreeof # disable ctrl-d exit
-
-#[ -z "${SHELL#*zsh}" ] && export PS1=' %n@%m:%d/ '
-#		|| export PS1=" %U%n@%m:%d%u "
-#	&& { [ `id -u` = 0 ] \
-#	}
 
 # site installed applications
 [ -x "$(which par 2>/dev/null)" ] && export PARINIT="rTbgqR B=.,?_A_a Q=_s>|"
@@ -183,6 +174,10 @@ case "`uname`" in Linux) ls -Ldl --full-time "$d" ;; *) ls -LTdl "$d" \
 uptime
 
 case $SHELL in # start of per $SHELL env
+ *bash)
+	export PS1=" \u@\h:\w " \
+	&& set -o ignoreeof # disable ctrl-d exit
+ ;;
  *ksh)
   hostname="$(hostname)" export PS1=" \${USER}@\${hostname}:\${PWD} "
   set -o ignoreeof # disable ctrl-d exit
@@ -194,6 +189,10 @@ case $SHELL in # start of per $SHELL env
   VISUAL=emacs # don't export, least override EDITOR
   [ -e ~/.ksh_logout ] && trap '. ~/.ksh_logout' EXIT || true
  ;; # *ksh
+#[ -z "${SHELL#*zsh}" ] && export PS1=' %n@%m:%d/ '
+#		|| export PS1=" %U%n@%m:%d%u "
+#	&& { [ `id -u` = 0 ] \
+#	}
 esac # $SHELL
 
 [ -x "$(which vim 2>/dev/null)" -a "$EDITOR" = "vi" ] \
@@ -225,5 +224,5 @@ printf "${_ntermrev}"
 #		|| { echo $(hostname) ssh-agent already died? 2>/dev/stderr ; exit 1 ;} ;}
 
 # if exists, source .profile.local 
-[ -e '$HOME/.profile.local' ] && . "$HOME/.profile.local" || true
+[ -e "$HOME/.profile.local" ] && . "$HOME/.profile.local" || true
 
