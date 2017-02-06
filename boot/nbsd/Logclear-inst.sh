@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# ./Logclear-inst.sh
+# $Id: Logclear-inst.sh 471 2009-07-25 03:25:25Z root $
 #
 # clears errors in readproctitle
 #

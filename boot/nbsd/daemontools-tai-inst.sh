@@ -2,6 +2,9 @@
 # 
 # ./daemontools-tai-inst.sh
 #
+# LICENSE: <george@galis.org> wrote this file. As long as you retain
+# this notice, you can do anything with it -- George Georgalis
+#
 # ...only need tai64 tools
 
 # REQUIRE: 
