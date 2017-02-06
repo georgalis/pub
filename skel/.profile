@@ -203,39 +203,22 @@ esac # $SHELL
 		export EDITOR='vim'
 	}
 
-# ssh_ids="id_ecdsa id_ed25519 id_rsa"
-# # if we don't already have an agent socket (forwarded)
-# [ -z "$SSH_AUTH_SOCK" ] && { 
-# # start ssh-agent, if not available
-# [ -z "$SSH_AGENT_ENV" ] && eval $(ssh-agent)
-# { # loop on identity files
-# printf "${_termrev}${USER}@$(hostname): \n"
-# for ssh_id in $ssh_ids ; do
-#  [ -e "~/.ssh/$ssh_id" ] && ssh-add ~/.ssh/$ssh_id \
-#   && export SSH_AGENT_ENV="SSH_AGENT_PID $SSH_AGENT_PID SHELL_PID $$"
-#   #|| { kill $SSH_AGENT_PID ; unset SSH_AGENT_PID ;}
-#  done
-#  printf "${_nrevterm}"
-# } # || echo "${_termrev}$SSH_AGENT_ENV${_nrevterm}" # already running, bad pasphrase or no ~/.ssh/id_rsa
-# } || echo "${_termrev}SSH_AUTH_SOCK alreay set${_nrevterm}"
-
-# if we don't already have a forwarded agent socket
-#[ -z "$SSH_AUTH_SOCK" ] &&  { 
-ssh_ids="id_ecdsa id_ed25519 id_rsa"
-[ "$(ssh-add -l)" = "The agent has no identities." ] && {
-  [ -z "$SSH_AGENT_PID" ] && { # start ssh-agent, if not available
-    printf "${_termrev}${USER}@$(hostname): " 
+# ssh socket key and agent managent
+printf "${_termrev}"
+[ -n "$SSH_AUTH_SOCK" ] || { # already forwarded by agent
+  [ "$(ssh-add -l 2>&1)" = "Could not open a connection to your authentication agent." ] && {
+    printf "${USER}@$(hostname): " 
     eval $(ssh-agent)
-    printf "${_nrevterm}" ;} # ssh-agent
-  export SSH_AGENT_ENV="SSH_AGENT_PID $SSH_AGENT_PID SHELL_PID $$"
-  for ssh_id in ssh_ids ; do # add each identity file
-    [ -e ~/.ssh/$ssh_id ] && {
-      printf "${_termrev}"
-      ssh-add ~/.ssh/$ssh_id ;}
-  done
-} && ssh-add -l | cut -d\  -f 3-
+    export SSH_AGENT_ENV="SSH_AGENT_PID $SSH_AGENT_PID SHELL_PID $$" ;} # ssh-agent env
+  [ "$(ssh-add -l 2>&1)" = "The agent has no identities." ] && {
+    ssh_ids="id_ed25519 id_ecdsa id_rsa"
+    for ssh_id in $ssh_ids ; do # add each identity file
+      [ -e "$HOME/.ssh/$ssh_id" ] && { # try ssh-add
+        ssh-add "$HOME/.ssh/$ssh_id" ;}
+    done ;} # ssh_id
+  } && { #echo "SSH_AUTH_SOCK forwarded by agent."
+   ssh-add -l ;} # show keys in SSH_AUTH_SOCK
 printf "${_ntermrev}"
-
 ## shell logout trap, eg ~/.bash_logout ~/.ksh_logout
 #[ -n "$SSH_AGENT_ENV" ] && set $SSH_AGENT_ENV && [ "$$" = "$4" ] \
 #	&& { printf "Logout: " && kill $2 && echo $(hostname) $0 [$4] killed ssh-agent $2 \
