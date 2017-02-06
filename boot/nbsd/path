@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# REQUIRE: time
+# BEFORE: shell
+# PROVIDE: path
+# KEYWORD: nbsd
+
+set -e
+cat >>/etc/profile <<'EOF-profile'
+export PATH=/sbin:/usr/sbin:/bin:/usr/bin
+export PATH=$PATH:/usr/pkg/sbin:/usr/pkg/bin
+export PATH=$PATH:/usr/X11R7/bin
+export PATH=$PATH:/usr/local/sbin:/usr/local/bin
+export PATH=$PATH:/usr/local/sub
+EOF-profile
+
+mkdir -p /usr/local
+

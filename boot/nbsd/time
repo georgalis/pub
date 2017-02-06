@@ -1,0 +1,42 @@
+#!/bin/sh
+
+# REQUIRE:
+# BEFORE:
+# PROVIDE: time
+# KEYWORD: nbsd
+
+# set the clock and turn on ntp before touching any other file
+
+set -e
+
+/etc/rc.d/ntpd stop || true
+
+cat >>/etc/rc.conf<<EOF-rc.conf
+ntpdate=yes
+ntpdate_flags="-b"
+# cannot lookup north-america.pool.ntp.org before dnscache...
+ntpdate_hosts=north-america.pool.ntp.org
+ntpdate_hosts=152.2.21.1
+EOF-rc.conf
+/etc/rc.d/ntpdate stop || true
+/etc/rc.d/ntpdate start
+
+cat >/etc/ntp.conf<<EOF-ntp.conf
+server          north-america.pool.ntp.org
+pidfile         /var/run/ntpd.pid
+driftfile       /var/db/ntp.drift
+logconfig       -syncstatus
+EOF-ntp.conf
+
+echo "ntpd=yes" >>/etc/rc.conf
+/etc/rc.d/ntpd stop || true
+/etc/rc.d/ntpd start
+
+# benchmark the install time
+mkdir -p /var/cfmake/ \
+	&& touch /var/cfmake/nulltime \
+	&& chmod 0 /var/cfmake/nulltime
+
+	#&& touch -d "$(date -d yesterday '+%D 00:00:00')" \
+	#	/var/cfmake/nulltime \
+

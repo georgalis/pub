@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# REQUIRE: shell
+# BEFORE: pkgbin
+# PROVIDE: skel
+# KEYWORD: nbsd
+
+set -e 
+
+[ -e ../../dot-skel -a -e ../../mkinst/skel-inst.sh ] \
+	&& sh ../../mkinst/skel-inst.sh ../../dot-skel /etc/skel \
+	&& sh ../../mkinst/skel-inst.sh ../../dot-skel 
+

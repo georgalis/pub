@@ -1,0 +1,27 @@
+#!/bin/sh
+
+# REQUIRE: etc
+# BEFORE:
+# PROVIDE: cron
+# KEYWORD: nbsd
+
+#:: Add maintenance routines to root crontab.
+
+set -e
+
+cat >>/var/cron/tabs/root<<'EOF-root-cron'
+PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/pkg/sbin:/usr/pkg/bin:/usr/X11R7/bin:/usr/local/sbin:/usr/local/bin:/usr/local/sub
+00 0	* * *	crontab -l > ~/crontab-$LOGNAME-`hostname`
+#15 2	*/4 * *	for r in /usr/src /usr/pkgsrc ; do [ -d $r ] && cd $r && cvs -q upd -dP >/dev/null ; done
+#00 4	*/4 * *	pkg_chk -un | grep ' - ' | sed -e 's/^/cd \/usr\/pkgsrc\//' -e 's/ - / \&\& make clean update 		# /'
+# following item only needed on a single site host, eg local mirror
+#00 4	* * *	sed -n '1!G;h;$p' /usr/pkgsrc/doc/CHANGES-$(date +\%Y)
+# to change tag on a local checkout..
+# cd /usr/src && cvs -q upd -dP -r netbsd-4 .
+# cd /usr/pkgsrc && cvs -q upd -dP -r pkgsrc-2007Q3 .
+# cd /usr/pkgsrc/pkgtools/pkg_install && make clean && make update
+# to make a fresh checkout..
+# cd /usr && cvs -qd anoncvs@anoncvs.netbsd.org:/cvsroot co -r pkgsrc-2010Q1 -P pkgsrc
+# cd /usr && cvs -qd anoncvs@anoncvs.netbsd.org:/cvsroot co -r netbsd-5 -P src
+EOF-root-cron
+

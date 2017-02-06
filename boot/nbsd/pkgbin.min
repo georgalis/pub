@@ -1,0 +1,11 @@
+pkgtools/pkgin
+pkgtools/pkg_chk
+net/rsync
+net/fping
+net/mtr
+net/nmap
+editors/vim
+sysutils/pstree
+sysutils/file
+misc/colorls
+misc/tmux
