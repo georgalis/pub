@@ -7,9 +7,10 @@ path_append $HOME/sub
 
 export EDITOR="vi"
 
-alias gstat='git status '
-alias gadd='git add '
-alias gbranch='git branch '
+alias gstat='git status'
+alias gadd='git add'
+alias gpush='git push'
+alias gbranch='git branch'
 alias gcom='git commit'
 alias gdiff='git diff'
 alias gco='git checkout'
