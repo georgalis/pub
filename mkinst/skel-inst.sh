@@ -12,7 +12,7 @@ set -e
 chkerr () { [ -n "$*" ] && echo "ERR >>-->- $h/$(basename $0) : $* -<--<<" >&2 && exit 1 || true ;}
 main () { # enable local varables
 
-local u h b t bak
+local u h b t s d bak n tf
 u="$USER" # uid running the tests
 h="$(cd $(dirname $0) && pwd -P)" # realpath of this script
 b="$(basename $0 | sed 's/.[^.]*$//')" # this program name less (.sh) extension
@@ -33,13 +33,13 @@ mkdir $bak
 echo installing skel $s to dir $d with backup $bak
 
 find "$s" -mindepth 1 -maxdepth 1 | while read n; do
-	t=$d/$n						# target in dest
-	[ -e "$t" ] && mv $t $bak			# backup 
-	cp -pr $n $t					# install
+	tf="$d/$(basename $n)"				# target filename
+	[ -e "$tf" ] && mv "$tf" $bak			# backup
+	cp -pr $n $tf					# install
 done
 } # main
 
-main
+main $@
 exit
 
 #	[ "$n" = ".Xdefaults" ] && ln -sf "${d}/${n}" "${d}/${n}-$(hostname)"
