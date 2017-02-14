@@ -7,30 +7,32 @@
 
 set -e 
 
+chkerr () { [ -n "$*" ] && echo "ERR  >>->-- $0: $* --<-<< " >&2 && exit 1 ;}
+
 URLROOT="http://ftp.netbsd.org/pub/"
 PKG_PATH="${URLROOT}/pkgsrc/packages/NetBSD/$(uname -m)/$(uname -r|cut -f 1-2 -d .| cut -f 1 -d _)/All"
 PKG_PATH="${URLROOT}/pkgsrc/packages/NetBSD/$(uname -m)/$(uname -r|cut -f 1 -d _)/All"
 PKGIN_CONF="/usr/pkg/etc/pkgin/repositories.conf"
 
 	pkg_add ${PKG_PATH}/pkgin
-	if [ $? -ne 0 ] ; then
-		echo "pkgin setup failed"
-		exit 1
-	fi
+	[ $? -eq 0 ] || chkerr "pkgin setup failed"
 	sed -e 's/^[^#].*$/#&/' ${PKGIN_CONF} > ${PKGIN_CONF}.new
 	echo $PKG_PATH >> ${PKGIN_CONF}.new
 	mv ${PKGIN_CONF}.new ${PKGIN_CONF}
-	echo "Updating pkgin database..."
 	/usr/pkg/bin/pkgin -y update
 
-/usr/pkg/bin/pkgin -y install mozilla-rootcerts
+#pkgin -y upgrade
+#pkgin -y full-upgrade
+
+pkgin -y install mozilla-rootcerts
 touch /etc/openssl/openssl.cnf
 { set -x ; mozilla-rootcerts install 2>&1 ;} | while read l ; do printf '.' ; done 
 echo
 
 cd $(dirname $0)
 for infi in pkgin.*.lst ; do
- [ -e $infi ] && pkgin -y import $infi
+  #[ -e $infi ] && pkgin -y import $infi
+  { set -x ; pkgin -y import $infi }
 done
 
 exit 0
