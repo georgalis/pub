@@ -204,19 +204,21 @@ esac # $SHELL
 
 # ssh socket key and agent managent
 printf "${_termrev}"
-[ -n "$SSH_AUTH_SOCK" ] || { # already forwarded by agent
-  [ "$(ssh-add -l 2>&1)" = "Could not open a connection to your authentication agent." ] && {
+##[ -n "$SSH_AUTH_SOCK" ] || { # already forwarded by agent
+  [ "$(ssh-add -l 2>&1)" = "Could not open a connection to your authentication agent." ] \
+  && {
     printf "${USER}@$(hostname): " 
     eval $(ssh-agent)
-    export SSH_AGENT_ENV="SSH_AGENT_PID $SSH_AGENT_PID SHELL_PID $$" ;} # ssh-agent env
+    export SSH_AGENT_ENV="SSH_AGENT_PID $SSH_AGENT_PID SHELL_PID $$" # ssh-agent env
+    } || ssh-add -l | cut -d\  -f 3- # show keys in SSH_AUTH_SOCK
   [ "$(ssh-add -l 2>&1)" = "The agent has no identities." ] && {
     ssh_ids="id_ed25519 id_ecdsa id_rsa"
     for ssh_id in $ssh_ids ; do # add each identity file
       [ -e "$HOME/.ssh/$ssh_id" ] && { # try ssh-add
         ssh-add "$HOME/.ssh/$ssh_id" ;}
     done ;} # ssh_id
-  } && { #echo "SSH_AUTH_SOCK forwarded by agent."
-   ssh-add -l ;} # show keys in SSH_AUTH_SOCK
+##  } && { #echo "SSH_AUTH_SOCK forwarded by agent."
+##   ssh-add -l ;} # show keys in SSH_AUTH_SOCK
 printf "${_ntermrev}"
 ## shell logout trap, eg ~/.bash_logout ~/.ksh_logout
 #[ -n "$SSH_AGENT_ENV" ] && set $SSH_AGENT_ENV && [ "$$" = "$4" ] \
