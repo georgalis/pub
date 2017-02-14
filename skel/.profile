@@ -143,8 +143,8 @@ find "$d" -maxdepth 1 -mindepth 1 -print0 \
 	| awk '{sum += $1; printf "%+11sk %+10sk %s %s %s\n", sum, $1, $2, $3, $4}' ;}
 
 # idtai | id2tai64 | tai64nlocal
-idtai () { echo | tai64n | sed -e 's/^@40000000//' -e 's/.....$//' ;} # dump a local id based on tai64n
-id2tai64 () { sed -e 's/^/@40000000/' -e 's/$/0000/' ; } # convert idtai to tai64n format, sans resolution
+idtai () { echo | tai64n | sed -e 's/^@40000000//' -e 's/......$//' -e 's/^......../&./' ;} # an id based on tai64n
+id2tai64 () { sed -e 's/^/@40000000/' -e 's/$/00000/' -e 's/\.//' ; } # convert idtai to tai64n format, sans resolution
 idlocal () { id2tai64 | tai64nlocal ;} # convert idtai to local time
 
 nowid () { sh -c "{ date '+%Y%m%d_%H%M%S_' && uuidgen ;} | tr -d '\n' | sed -e s/-.*// | tr '[A-Z]' '[a-z]'" ;}
