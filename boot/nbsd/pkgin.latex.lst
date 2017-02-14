@@ -1,0 +1,14 @@
+print/tex-latex-bin
+fonts/tex-mnsymbol
+print/tex-amsmath
+print/tex-paralist
+print/tex-sectsty
+print/tex-parskip
+print/tex-graphics
+print/tex-oberdiek
+print/tex-lastpage
+print/tex-fancyhdr
+print/tex-geometry
+print/tex-hyperref
+print/tex-microtype
+print/tex-lipsum

@@ -2,7 +2,7 @@
 
 # REQUIRE: shell
 # BEFORE:
-# PROVIDE: pkgbin
+# PROVIDE: pkgin
 # KEYWORD: nbsd
 
 set -e 
@@ -29,7 +29,7 @@ touch /etc/openssl/openssl.cnf
 echo
 
 cd $(dirname $0)
-for infi in pkgbin.main pkgbin.min ; do
+for infi in pkgin.*.lst ; do
  [ -e $infi ] && pkgin -y import $infi
 done
 
