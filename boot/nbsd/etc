@@ -149,7 +149,7 @@ echo "inetd=no" >>/etc/rc.conf
 # export PATH=$PATH:/usr/local/sub
 # EOF-profile
 
-# chmod 700 /root /etc/skel
+chmod 700 /root /etc/skel
 # sh $pubd/skel/install-dot.sh /etc/skel
 # rm -rf /etc/skel/oldskel-*
 
