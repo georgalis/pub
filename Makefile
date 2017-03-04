@@ -4,13 +4,17 @@
 
 SHELL=	/bin/sh -e
 
-arch : # create basename archive
+arch : # push local commits and create archive from master
+# c	:: empty unless there are uncommited changed to previously added files
+# m	:: remote, master url
+# p	:: remote. path to pwd
+# r	:: basename of pwd, archive root
 	rm -rf tmp/$@ && mkdir -p tmp/$@
-	changes="$$(git status --short . | grep -v '^??' || true )" ; \
-	  [ -z "$${changes}" ] || { echo $${changes} ; false ;} # test local modifications
+	c="$$(git status --short . | grep -v '^??' || true )" ; \
+	  [ -z "$$c" ] || { echo $$c ; false ;} # test local modifications
+	git push # include local commits
 	m=$$(git remote -v show | grep fetch | awk '{print $$2}') ; \
-	  r=$$(basename $$m) ; \
-	  git push ; \
-	  git archive --remote=$$m --prefix="./$$r/" master . | gzip >./tmp/$@/$$r.tgz ; \
+	  p=$$(git rev-parse --show-prefix) ; r=$$(basename $$p) ; \
+	  git archive --remote=$$m --prefix="./$$r/" master:$$p | gzip >./tmp/$@/$$r.tgz ; \
 	  echo ./tmp/$@/$$r.tgz
 
