@@ -14,8 +14,7 @@ arch : # push local commits and create archive from master
 	  [ -z "$$c" ] || { echo $$c ; false ;} # test local modifications
 	git push # include local commits
 	m=$$(git remote -v show | grep fetch | awk '{print $$2}') ; \
-	  #p=$$(git rev-parse --show-prefix) ; r=$$(basename $$p) 
-	  p=$$(git rev-parse --show-prefix) ; r=$$(basename $$(dirname ${PWD})) ; \
+	  p=$$(git rev-parse --show-prefix) ; r=$$(basename $$p) ; \
 	  git archive --remote=$$m --prefix="./$$r/" master:$$p | gzip >./tmp/$@/$$r.tgz ; \
 	  echo ./tmp/$@/$$r.tgz
 
