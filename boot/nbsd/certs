@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# REQUIRE: pkgin
+# BEFORE:
+# PROVIDE: certs
+# KEYWORD: nbsd
+
+set -e 
+
+chkerr () { [ -n "$*" ] && echo "ERR  >>->-- $0: $* --<-<< " >&2 && exit 1 ;}
+
+pkgin -y install mozilla-rootcerts
+touch /etc/openssl/openssl.cnf
+{ set -x ; mozilla-rootcerts install 2>&1 ;} | while read l ; do printf '.' ; done 
+echo
+
+exit 0
+
