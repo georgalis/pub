@@ -13,7 +13,6 @@ echo "$d" >>/var/log/$keyword
 		|| { echo "sh ./$part ##############################################################"
 			sh ./$part \
 			&& echo "$(date) ${part} success" >>/var/log/$keyword \
-			|| echo "$(date) ${part} fail" >>/var/log/$keyword
-		} # no prior success
+			|| echo "$(date) ${part} fail" >>/var/log/$keyword ;} # no prior success
 done # part
 exit 0

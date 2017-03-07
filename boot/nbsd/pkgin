@@ -12,6 +12,8 @@ chkerr () { [ -n "$*" ] && echo "ERR  >>->-- $0: $* --<-<< " >&2 && exit 1 ;}
 URLROOT="http://ftp.netbsd.org/pub/"
 PKG_PATH="${URLROOT}/pkgsrc/packages/NetBSD/$(uname -m)/$(uname -r|cut -f 1-2 -d .| cut -f 1 -d _)/All"
 PKG_PATH="${URLROOT}/pkgsrc/packages/NetBSD/$(uname -m)/$(uname -r|cut -f 1 -d _)/All"
+PKG_PATH="${URLROOT}/pkgsrc/packages/NetBSD/7.0.2/All"
+PKG_PATH="http://ftp.netbsd.org/pub//pkgsrc/packages/NetBSD/amd64/7.0.2/All"
 PKGIN_CONF="/usr/pkg/etc/pkgin/repositories.conf"
 
 	pkg_add ${PKG_PATH}/pkgin
@@ -24,66 +26,18 @@ PKGIN_CONF="/usr/pkg/etc/pkgin/repositories.conf"
 #pkgin -y upgrade
 #pkgin -y full-upgrade
 
-pkgin -y install mozilla-rootcerts
-touch /etc/openssl/openssl.cnf
-{ set -x ; mozilla-rootcerts install 2>&1 ;} | while read l ; do printf '.' ; done 
-echo
-
 cd $(dirname $0)
-for infi in pkgin.*.lst ; do
-  #[ -e $infi ] && pkgin -y import $infi
-  { set -x ; pkgin -y import $infi }
-done
+t="$(mktemp /tmp/pkgin.XXXX)"
+#find ./pkgin.d -type f -exec cat \{\} >>$t \;
+cat ./pkgin.d/pkgin.main.lst ./pkgin.d/pkgin.min.lst >>$t
+pkgin -y import $t
+rm $t
+
+#for infi in $(find ./pkgin.d -type f) ; do
+#  #[ -e $infi ] && pkgin -y import $infi
+#  { set -x ; pkgin -y import $infi ;}
+#done
+
 
 exit 0
 
-Setting up for binary packages with pkgin...
-===========================================================================
-$NetBSD: MESSAGE,v 1.6 2014/12/05 14:31:07 schmonz Exp $
-
-You may wish to have the vulnerabilities file downloaded daily so that
-it remains current.  This may be done by adding an appropriate entry
-to a user's crontab(5) entry.  For example the entry
-
-# download vulnerabilities file
-0 3 * * * /usr/pkg/sbin/pkg_admin fetch-pkg-vulnerabilities >/dev/null 2>&1
-
-will update the vulnerability list every day at 3AM. You may wish to do
-this more often than once a day.
-
-In addition, you may wish to run the package audit from the daily
-security script.  This may be accomplished by adding the following
-lines to /etc/security.local
-
-if [ -x /usr/pkg/sbin/pkg_admin ]; then
-        /usr/pkg/sbin/pkg_admin audit
-fi
-
-Alternatively this can also be acomplished by adding an entry to a user's
-crontab(5) file. e.g.:
-
-# run audit-packages
-0 3 * * * /usr/pkg/sbin/pkg_admin audit
-
-Both pkg_admin subcommands can be run as as an unprivileged user,
-as long as the user chosen has permission to read the pkgdb and to write
-the pkg-vulnerabilities to /var/db/pkg.
-
-The behavior of pkg_admin and pkg_add can be customised with
-pkg_install.conf.  Please see pkg_install.conf(5) for details.
-
-If you want to use GPG signature verification you will need to install
-GnuPG and set the path for GPG appropriately in your pkg_install.conf.
-===========================================================================
-pkgin-0.9.4nb3: copying /usr/pkg/share/examples/pkgin/repositories.conf.example to /usr/pkg/etc/pkgin/repositories.conf
-===========================================================================
-$NetBSD: MESSAGE,v 1.3 2010/06/10 08:05:00 is Exp $
-
-First steps before using pkgin.
-
-. Modify /usr/pkg/etc/pkgin/repositories.conf to suit your platform
-. Initialize the database :
-
-        # pkgin update
-
-===========================================================================
