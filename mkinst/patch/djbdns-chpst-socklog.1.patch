@@ -1,0 +1,54 @@
+# Unlimited use with this notice (c) 2017 George Georgalis <george@galis.org>
+# GeorgalisG: mkinst/patch/djbdns-chpst-socklog.1.patch,v 1.3 2006/02/13 03:48:50 geo Exp 
+
+Patch djbdns-1.05 to use
+ chpst of http://smarden.org/runit/
+and
+ svlogd of http://smarden.org/socklog/
+
+--- djbdns-1.05/generic-conf.c.orig	2001-02-11 16:11:45.000000000 -0500
++++ djbdns-1.05/generic-conf.c	2006-02-12 21:27:12.000000000 -0500
+@@ -92,8 +92,8 @@
+ 
+   start("log/run");
+   outs("#!/bin/sh\nexec");
+-  outs(" setuidgid "); outs(user);
+-  outs(" multilog t ./main\n");
++  outs(" chpst -u "); outs(user);
++  outs(" svlogd -tt ./main\n");
+   finish();
+   perm(0755);
+ }
+--- djbdns-1.05/tinydns-conf.c.orig	2001-02-11 16:11:45.000000000 -0500
++++ djbdns-1.05/tinydns-conf.c	2006-02-12 21:23:54.000000000 -0500
+@@ -45,8 +45,8 @@
+   perm(0644);
+ 
+   start("run");
+-  outs("#!/bin/sh\nexec 2>&1\nexec envuidgid "); outs(user);
+-  outs(" envdir ./env softlimit -d300000 ");
++  outs("#!/bin/sh\nexec 2>&1\nexec chpst -U "); outs(user);
++  outs(" -e ./env -m 300000 ");
+   outs(auto_home); outs("/bin/tinydns\n");
+   finish();
+   perm(0755);
+--- djbdns-1.05/dnscache-conf.c.orig	2001-02-11 16:11:45.000000000 -0500
++++ djbdns-1.05/dnscache-conf.c	2006-02-12 21:45:05.000000000 -0500
+@@ -121,13 +121,13 @@
+   seed_addtime(); start("env/DATALIMIT"); outs("3000000\n"); finish();
+   seed_addtime(); perm(0644);
+   seed_addtime(); start("run");
+-  outs("#!/bin/sh\nexec 2>&1\nexec <seed\nexec envdir ./env sh -c '\n  exec envuidgid "); outs(user);
+-  outs(" softlimit -o250 -d \"$DATALIMIT\" ");
++  outs("#!/bin/sh\nexec 2>&1\nexec <seed\nexec chpst -e ./env sh -c '\n  exec chpst -U "); outs(user);
++  outs(" -o250 -m \"$DATALIMIT\" ");
+   outs(auto_home); outs("/bin/dnscache\n'\n"); finish();
+   seed_addtime(); perm(0755);
+   seed_addtime(); start("log/run");
+-  outs("#!/bin/sh\nexec setuidgid "); outs(loguser);
+-  outs(" multilog t ./main\n"); finish();
++  outs("#!/bin/sh\nexec chpst -u "); outs(loguser);
++  outs(" svlogd -tt ./main\n"); finish();
+   seed_addtime(); perm(0755);
+   seed_addtime(); makedir("root");
+   seed_addtime(); perm(02755);

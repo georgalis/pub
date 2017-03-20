@@ -1,0 +1,610 @@
+This is djbdns-1.05.isp-2010042001.patch.
+
+djbdns-1.05.errno.patch
+dnsroots.global.patch
+dns_transmit-pos.patch 
+ (http://alkemio.org/dns_transmit-bug.html)
+djbdns-1.05-ignoreip2.patch
+djbdns-1.05.round-robin.patch
+srv-patch
+one-second.patch
+ (http://tinydns.org/one-second.patch)
+allow cache size up to 4GB
+ (http://archives.devshed.com/forums/networking-100/dnscache-1gbt-270484.html)
+ignore SIGPIPE patch 
+ (http://marc.info/?l=djbdns&m=104804013229536&w=2)
+dempsky-response_len.patch
+ (http://marc.info/?l=djbdns&m=123613000920446&w=2)
+lametoy.patch
+ ( cleaned version of http://marc.info/?l=djbdns&m=127113010816128&w=2
+   tinydns normally doesnt respond at all when asked a question for a domain
+   that's not in it's data.cdb.  this patch lets you give answers for
+   those domains.  set /etc/tinydns/env/LAME_A LAME_TXT LAME_MX to the
+   responses you want to give on these domains.  tinydns will log answers
+   from this mechanism with a "B" (for bogus).
+ )
+
+to install:
+
+tar -zxvf djbdns-1.05.tar.gz
+patch -d djbdns-1.05 < djbdns-1.05.isp.patch
+
+follow the rest of djb's instructions
+
+CHANGES:
+* 20100420:  - added lametoy patch
+* 20100412:  - added one-second cdb patch
+* 20090303:  - added Matthew Dempsky's response_len patch
+* 20080108:  - added dns_transmit-pos.patch
+* 20080102:  - fixed entire patch from being broken
+* 20071105:  - updated dnsroots.global
+
+######################################################################
+diff -ruBN djbdns-1.05.orig//Makefile djbdns-1.05//Makefile
+--- djbdns-1.05.orig//Makefile	2001-02-11 16:11:45.000000000 -0500
++++ djbdns-1.05//Makefile	2010-04-19 01:38:53.714467209 -0400
+@@ -155,7 +155,7 @@
+ cachetest: \
+ load cachetest.o cache.o libtai.a buffer.a alloc.a unix.a byte.a
+ 	./load cachetest cache.o libtai.a buffer.a alloc.a unix.a \
+-	byte.a 
++	byte.a dns.a
+ 
+ cachetest.o: \
+ compile cachetest.c buffer.h exit.h cache.h uint32.h uint64.h str.h
+@@ -228,11 +228,11 @@
+ dns.a: \
+ makelib dns_dfd.o dns_domain.o dns_dtda.o dns_ip.o dns_ipq.o dns_mx.o \
+ dns_name.o dns_nd.o dns_packet.o dns_random.o dns_rcip.o dns_rcrw.o \
+-dns_resolve.o dns_sortip.o dns_transmit.o dns_txt.o
++dns_resolve.o dns_rotateip.o dns_sortip.o dns_transmit.o dns_txt.o
+ 	./makelib dns.a dns_dfd.o dns_domain.o dns_dtda.o dns_ip.o \
+ 	dns_ipq.o dns_mx.o dns_name.o dns_nd.o dns_packet.o \
+ 	dns_random.o dns_rcip.o dns_rcrw.o dns_resolve.o \
+-	dns_sortip.o dns_transmit.o dns_txt.o
++	dns_rotateip.o dns_sortip.o dns_transmit.o dns_txt.o
+ 
+ dns_dfd.o: \
+ compile dns_dfd.c error.h alloc.h byte.h dns.h stralloc.h gen_alloc.h \
+@@ -301,6 +301,10 @@
+ dns.h stralloc.h gen_alloc.h iopause.h taia.h
+ 	./compile dns_resolve.c
+ 
++dns_rotateip.o: \
++compile dns_rotateip.c byte.h dns.h stralloc.h gen_alloc.h
++	./compile dns_rotateip.c
++
+ dns_sortip.o: \
+ compile dns_sortip.c byte.h dns.h stralloc.h gen_alloc.h iopause.h \
+ taia.h tai.h uint64.h taia.h
+@@ -1020,9 +1024,9 @@
+ 
+ tinydns-get: \
+ load tinydns-get.o tdlookup.o response.o printpacket.o printrecord.o \
+-parsetype.o dns.a libtai.a cdb.a buffer.a alloc.a unix.a byte.a
++parsetype.o dns.a env.a libtai.a cdb.a buffer.a alloc.a unix.a byte.a
+ 	./load tinydns-get tdlookup.o response.o printpacket.o \
+-	printrecord.o parsetype.o dns.a libtai.a cdb.a buffer.a \
++	printrecord.o parsetype.o dns.a env.a libtai.a cdb.a buffer.a \
+ 	alloc.a unix.a byte.a 
+ 
+ tinydns-get.o: \
+diff -ruBN djbdns-1.05.orig//axfr-get.c djbdns-1.05//axfr-get.c
+--- djbdns-1.05.orig//axfr-get.c	2001-02-11 16:11:45.000000000 -0500
++++ djbdns-1.05//axfr-get.c	2010-04-19 01:38:48.028706355 -0400
+@@ -209,6 +209,26 @@
+     if (!stralloc_cats(&line,".:")) return 0;
+     if (!stralloc_catulong0(&line,dist,0)) return 0;
+   }
++  else if (byte_equal(data,2,DNS_T_SRV)) {
++    uint16 dist, weight, port;
++    if (!stralloc_copys(&line,"S")) return 0;
++    if (!dns_domain_todot_cat(&line,d1)) return 0;
++    if (!stralloc_cats(&line,"::")) return 0;
++    pos = x_copy(buf,len,pos,data,2);
++    uint16_unpack_big(data,&dist);
++    pos = x_copy(buf,len,pos,data,2);
++    uint16_unpack_big(data,&weight);
++    pos = x_copy(buf,len,pos,data,2);
++    uint16_unpack_big(data,&port);
++    x_getname(buf,len,pos,&d1);
++    if (!dns_domain_todot_cat(&line,d1)) return 0;
++    if (!stralloc_cats(&line,".:")) return 0;
++    if (!stralloc_catulong0(&line,dist,0)) return 0;
++    if (!stralloc_cats(&line,":")) return 0;
++    if (!stralloc_catulong0(&line,weight,0)) return 0;
++    if (!stralloc_cats(&line,":")) return 0;
++    if (!stralloc_catulong0(&line,port,0)) return 0;
++  }
+   else if (byte_equal(data,2,DNS_T_A) && (dlen == 4)) {
+     char ipstr[IP4_FMT];
+     if (!stralloc_copys(&line,"+")) return 0;
+@@ -217,6 +237,14 @@
+     x_copy(buf,len,pos,data,4);
+     if (!stralloc_catb(&line,ipstr,ip4_fmt(ipstr,data))) return 0;
+   }
++  else if (byte_equal(data,2,DNS_T_PTR)) {
++    if (!stralloc_copys(&line,"^")) return 0;
++    if (!dns_domain_todot_cat(&line,d1)) return 0;
++    if (!stralloc_cats(&line,":")) return 0;
++    x_getname(buf,len,pos,&d1);
++    if (!dns_domain_todot_cat(&line,d1)) return 0;
++    if (!stralloc_cats(&line,".")) return 0;
++  }
+   else {
+     unsigned char ch;
+     unsigned char ch2;
+diff -ruBN djbdns-1.05.orig//axfrdns.c djbdns-1.05//axfrdns.c
+--- djbdns-1.05.orig//axfrdns.c	2001-02-11 16:11:45.000000000 -0500
++++ djbdns-1.05//axfrdns.c	2010-04-19 01:38:53.719581884 -0400
+@@ -324,6 +324,7 @@
+ 
+   droproot(FATAL);
+   dns_random_init(seed);
++  if (!tdlookup_init()) strerr_die2sys(111,FATAL,"tdlookup_init failed");
+ 
+   axfr = env_get("AXFR");
+   
+diff -ruBN djbdns-1.05.orig//cache.c djbdns-1.05//cache.c
+--- djbdns-1.05.orig//cache.c	2001-02-11 16:11:45.000000000 -0500
++++ djbdns-1.05//cache.c	2010-04-19 01:38:48.032501610 -0400
+@@ -4,7 +4,7 @@
+ #include "exit.h"
+ #include "tai.h"
+ #include "cache.h"
+-
++#include "dns.h"
+ uint64 cache_motion = 0;
+ 
+ static char *x = 0;
+@@ -111,7 +111,7 @@
+         u = get4(pos + 8);
+         if (u > size - pos - 20 - keylen) cache_impossible();
+         *datalen = u;
+-
++	if byte_equal(key,2,DNS_T_A)   dns_rotateip(x + pos + 20 + keylen,u);
+         return x + pos + 20 + keylen;
+       }
+     }
+@@ -188,7 +188,7 @@
+     x = 0;
+   }
+ 
+-  if (cachesize > 1000000000) cachesize = 1000000000;
++  if (cachesize > 4000000000) cachesize = 4000000000;
+   if (cachesize < 100) cachesize = 100;
+   size = cachesize;
+ 
+diff -ruBN djbdns-1.05.orig//dns.h djbdns-1.05//dns.h
+--- djbdns-1.05.orig//dns.h	2001-02-11 16:11:45.000000000 -0500
++++ djbdns-1.05//dns.h	2010-04-19 01:38:48.035826399 -0400
+@@ -20,6 +20,7 @@
+ #define DNS_T_SIG "\0\30"
+ #define DNS_T_KEY "\0\31"
+ #define DNS_T_AAAA "\0\34"
++#define DNS_T_SRV "\0\41"
+ #define DNS_T_AXFR "\0\374"
+ #define DNS_T_ANY "\0\377"
+ 
+@@ -43,6 +44,7 @@
+ extern unsigned int dns_random(unsigned int);
+ 
+ extern void dns_sortip(char *,unsigned int);
++extern void dns_rotateip(char *,unsigned int);
+ 
+ extern void dns_domain_free(char **);
+ extern int dns_domain_copy(char **,const char *);
+diff -ruBN djbdns-1.05.orig//dns_rotateip.c djbdns-1.05//dns_rotateip.c
+--- djbdns-1.05.orig//dns_rotateip.c	1969-12-31 19:00:00.000000000 -0500
++++ djbdns-1.05//dns_rotateip.c	2010-04-19 01:38:48.038905594 -0400
+@@ -0,0 +1,12 @@
++#include "byte.h"
++
++void dns_rotateip(char *s, unsigned int n)
++{
++  char tmp[4];
++
++  if (n > 4) { 
++    byte_copy(tmp,4,s);
++    byte_copy(s,n-4,s+4);
++    byte_copy(s+n-4,4,tmp);
++  }
++}
+diff -ruBN djbdns-1.05.orig//dns_transmit.c djbdns-1.05//dns_transmit.c
+--- djbdns-1.05.orig//dns_transmit.c	2001-02-11 16:11:45.000000000 -0500
++++ djbdns-1.05//dns_transmit.c	2010-04-19 01:38:48.042655983 -0400
+@@ -166,6 +166,7 @@
+       taia_uint(&d->deadline,10);
+       taia_add(&d->deadline,&d->deadline,&now);
+       if (socket_connect4(d->s1 - 1,ip,53) == 0) {
++        d->pos = 0;
+         d->tcpstate = 2;
+         return 0;
+       }
+diff -ruBN djbdns-1.05.orig//dnscache.c djbdns-1.05//dnscache.c
+--- djbdns-1.05.orig//dnscache.c	2001-02-11 16:11:45.000000000 -0500
++++ djbdns-1.05//dnscache.c	2010-04-19 01:38:48.047357032 -0400
+@@ -1,4 +1,5 @@
+ #include <unistd.h>
++#include <signal.h>
+ #include "env.h"
+ #include "exit.h"
+ #include "scan.h"
+@@ -23,6 +24,8 @@
+ #include "okclient.h"
+ #include "droproot.h"
+ 
++stralloc ignoreip = {0};
++
+ static int packetquery(char *buf,unsigned int len,char **q,char qtype[2],char qclass[2],char id[2])
+ {
+   unsigned int pos;
+@@ -389,8 +392,10 @@
+ int main()
+ {
+   char *x;
++  unsigned int i, j, k;
+   unsigned long cachesize;
+ 
++  signal(SIGPIPE, SIG_IGN);
+   x = env_get("IP");
+   if (!x)
+     strerr_die2x(111,FATAL,"$IP not set");
+@@ -431,6 +436,20 @@
+   if (!cache_init(cachesize))
+     strerr_die3x(111,FATAL,"not enough memory for cache of size ",x);
+ 
++  if (openreadclose("ignoreip",&ignoreip,64) < 0) 
++    strerr_die2x(111,FATAL,"trouble reading ignoreip");
++  for(j = k = i = 0; i < ignoreip.len; i++)
++    if (ignoreip.s[i] == '\n')  {
++      ignoreip.s[i] = '\0';
++      if (j + 4 > i)
++        strerr_die3x(111,FATAL,"badly malformed ip4 address ",ignoreip.s+k);
++      if (!ip4_scan(ignoreip.s+k,ignoreip.s+j))
++        strerr_die3x(111,FATAL,"unable to parse address in ignoreip ",ignoreip.s+k);
++      j += 4;
++      k = i + 1;
++    }
++  ignoreip.len = j;
++
+   if (env_get("HIDETTL"))
+     response_hidettl();
+   if (env_get("FORWARDONLY"))
+diff -ruBN djbdns-1.05.orig//dnsroots.global djbdns-1.05//dnsroots.global
+--- djbdns-1.05.orig//dnsroots.global	2001-02-11 16:11:45.000000000 -0500
++++ djbdns-1.05//dnsroots.global	2010-04-19 01:38:48.050524700 -0400
+@@ -1,13 +1,13 @@
+-198.41.0.4
+-128.9.0.107
+-192.33.4.12
+-128.8.10.90
+-192.203.230.10
+-192.5.5.241
+-192.112.36.4
+-128.63.2.53
+-192.36.148.17
+-198.41.0.10
+-193.0.14.129
+-198.32.64.12
+-202.12.27.33
++198.41.0.4 
++192.228.79.201 
++192.33.4.12 
++128.8.10.90 
++192.203.230.10 
++192.5.5.241 
++192.112.36.4 
++128.63.2.53 
++192.36.148.17 
++192.58.128.30 
++193.0.14.129 
++199.7.83.42 
++202.12.27.33 
+diff -ruBN djbdns-1.05.orig//error.h djbdns-1.05//error.h
+--- djbdns-1.05.orig//error.h	2001-02-11 16:11:45.000000000 -0500
++++ djbdns-1.05//error.h	2010-04-19 01:38:48.053253074 -0400
+@@ -1,7 +1,7 @@
+ #ifndef ERROR_H
+ #define ERROR_H
+ 
+-extern int errno;
++#include <errno.h>
+ 
+ extern int error_intr;
+ extern int error_nomem;
+diff -ruBN djbdns-1.05.orig//query.c djbdns-1.05//query.c
+--- djbdns-1.05.orig//query.c	2001-02-11 16:11:45.000000000 -0500
++++ djbdns-1.05//query.c	2010-04-19 01:38:48.058213411 -0400
+@@ -13,6 +13,8 @@
+ #include "response.h"
+ #include "query.h"
+ 
++extern stralloc ignoreip;
++
+ static int flagforwardonly = 0;
+ 
+ void query_forwardonly(void)
+@@ -193,6 +195,7 @@
+   int k;
+   int p;
+   int q;
++  unsigned int ii;
+ 
+   errno = error_io;
+   if (state == 1) goto HAVEPACKET;
+@@ -643,6 +646,9 @@
+         pos = dns_packet_copy(buf,len,pos,header,10); if (!pos) goto DIE;
+         if (byte_equal(header + 8,2,"\0\4")) {
+           pos = dns_packet_copy(buf,len,pos,header,4); if (!pos) goto DIE;
++          if (ignoreip.len)
++	    for(ii = 0; ii < ignoreip.len; ii+= 4)
++	      if (byte_equal(header,4,ignoreip.s+ii)) goto NXDOMAIN;
+           save_data(header,4);
+           log_rr(whichserver,t1,DNS_T_A,header,4,ttl);
+         }
+diff -ruBN djbdns-1.05.orig//response.c djbdns-1.05//response.c
+--- djbdns-1.05.orig//response.c	2001-02-11 16:11:45.000000000 -0500
++++ djbdns-1.05//response.c	2010-04-19 01:38:48.061373069 -0400
+@@ -34,7 +34,7 @@
+         uint16_pack_big(buf,49152 + name_ptr[i]);
+         return response_addbytes(buf,2);
+       }
+-    if (dlen <= 128)
++    if ((dlen <= 128) && (response_len < 16384))
+       if (name_num < NAMES) {
+ 	byte_copy(name[name_num],dlen,d);
+ 	name_ptr[name_num] = response_len;
+diff -ruBN djbdns-1.05.orig//server.c djbdns-1.05//server.c
+--- djbdns-1.05.orig//server.c	2001-02-11 16:11:45.000000000 -0500
++++ djbdns-1.05//server.c	2010-04-19 01:38:53.723786702 -0400
+@@ -55,12 +55,11 @@
+   if (byte_equal(qtype,2,DNS_T_AXFR)) goto NOTIMP;
+ 
+   case_lowerb(q,dns_domain_length(q));
+-  if (!respond(q,qtype,ip)) {
+-    qlog(ip,port,header,q,qtype," - ");
+-    return 0;
++  switch(respond(q,qtype,ip)) {
++    case 0: qlog(ip,port,header,q,qtype," - "); return 0;
++    case 2: qlog(ip,port,header,q,qtype," B "); return 1;
++    default: qlog(ip,port,header,q,qtype," + "); return 1;
+   }
+-  qlog(ip,port,header,q,qtype," + ");
+-  return 1;
+ 
+   NOTIMP:
+   response[3] &= ~15;
+diff -ruBN djbdns-1.05.orig//tdlookup.c djbdns-1.05//tdlookup.c
+--- djbdns-1.05.orig//tdlookup.c	2001-02-11 16:11:45.000000000 -0500
++++ djbdns-1.05//tdlookup.c	2010-04-19 01:38:53.728135487 -0400
+@@ -4,11 +4,54 @@
+ #include "tai.h"
+ #include "cdb.h"
+ #include "byte.h"
++#include "env.h"
++#include "ip4.h"
++#include "str.h"
++#include "stralloc.h"
+ #include "case.h"
+ #include "dns.h"
+ #include "seek.h"
+ #include "response.h"
+ 
++static char lameip[4];
++static char *lamemx;
++static stralloc lametxt;
++
++int tdlookup_init(void)
++{
++  char *x;
++  char ch;
++  int i;
++  int j;
++  int k;
++
++  x = env_get("LAME_A");
++  if (x)
++    if (!ip4_scan(x,lameip))
++      byte_zero(lameip,4);
++
++  x = env_get("LAME_MX");
++  if (x)
++    if (!dns_domain_fromdot(&lamemx,x,str_len(x)))
++      return 0;
++
++  x = env_get("LAME_TXT");
++  if (x) {
++    i = 0;
++    j = str_len(x);
++    while (i < j) {
++      k = j - i;
++      if (k > 255) k = 255;
++      ch = k;
++      if (!stralloc_append(&lametxt,&ch)) return 0;
++      if (!stralloc_catb(&lametxt,x + i,k)) return 0;
++      i += k;
++    }
++  }
++
++  return 1;
++}
++
+ static int want(const char *owner,const char type[2])
+ {
+   unsigned int pos;
+@@ -136,7 +179,34 @@
+       if (byte_equal(type,2,DNS_T_NS)) flagns = 1;
+     }
+     if (flagns) break;
+-    if (!*control) return 0; /* q is not within our bailiwick */
++    if (!*control) {
++      /* q is not within our bailiwick */
++      flagfound = 0;
++      if (byte_diff(lameip,4,"\0\0\0\0"))
++	if (byte_equal(qtype,2,DNS_T_A) || byte_equal(qtype,2,DNS_T_ANY)) {
++	  if (!response_rstart(q,DNS_T_A,3600)) return 0;
++	  if (!response_addbytes(lameip,4)) return 0;
++	  response_rfinish(RESPONSE_ANSWER);
++	  flagfound = 1;
++	}
++      if (lamemx)
++	if (byte_equal(qtype,2,DNS_T_MX) || byte_equal(qtype,2,DNS_T_ANY)) {
++	  if (!response_rstart(q,DNS_T_MX,3600)) return 0;
++	  if (!response_addbytes("\0\0",2)) return 0;
++	  if (!response_addname(lamemx)) return 0;
++	  response_rfinish(RESPONSE_ANSWER);
++	  flagfound = 1;
++	}
++      if (lametxt.len)
++	if (byte_equal(qtype,2,DNS_T_TXT) || byte_equal(qtype,2,DNS_T_ANY)) {
++	  if (!response_rstart(q,DNS_T_TXT,3600)) return 0;
++	  if (!response_addbytes(lametxt.s,lametxt.len)) return 0;
++	  response_rfinish(RESPONSE_ANSWER);
++	  flagfound = 1;
++	}
++      if (flagfound) return 2;
++      return 0;
++    }
+     control += *control;
+     control += 1;
+   }
+@@ -280,15 +350,24 @@
+ 
+ int respond(char *q,char qtype[2],char ip[4])
+ {
+-  int fd;
++  static struct tai cdb_valid = { 0 };
++  static int fd = -1;
++  struct tai one_second;
+   int r;
+   char key[6];
+ 
+   tai_now(&now);
+-  fd = open_read("data.cdb");
+-  if (fd == -1) return 0;
+-  cdb_init(&c,fd);
+-
++  if (tai_less(&cdb_valid, &now)) {
++    if (fd != -1) {
++      cdb_free(&c);
++      close(fd);
++    }
++    fd = open_read("data.cdb");
++    if (fd == -1) return 0;
++    cdb_init(&c,fd);
++    tai_uint(&one_second, 1);
++    tai_add(&cdb_valid, &now, &one_second);
++  }
+   byte_zero(clientloc,2);
+   key[0] = 0;
+   key[1] = '%';
+@@ -304,7 +383,5 @@
+ 
+   r = doit(q,qtype);
+ 
+-  cdb_free(&c);
+-  close(fd);
+   return r;
+ }
+diff -ruBN djbdns-1.05.orig//tdlookup.h djbdns-1.05//tdlookup.h
+--- djbdns-1.05.orig//tdlookup.h	1969-12-31 19:00:00.000000000 -0500
++++ djbdns-1.05//tdlookup.h	2010-04-19 01:38:53.731036119 -0400
+@@ -0,0 +1,6 @@
++#ifndef TDLOOKUP_H
++#define TDLOOKUP_H
++
++extern int tdlookup_init(void);
++
++#endif
+diff -ruBN djbdns-1.05.orig//tinydns-data.c djbdns-1.05//tinydns-data.c
+--- djbdns-1.05.orig//tinydns-data.c	2001-02-11 16:11:45.000000000 -0500
++++ djbdns-1.05//tinydns-data.c	2010-04-19 01:38:48.068918893 -0400
+@@ -196,6 +196,7 @@
+   char type[2];
+   char soa[20];
+   char buf[4];
++  char srv[6];
+ 
+   umask(022);
+ 
+@@ -363,6 +364,43 @@
+ 	rr_addname(d2);
+ 	rr_finish(d1);
+ 
++	if (ip4_scan(f[1].s,ip)) {
++	  rr_start(DNS_T_A,ttl,ttd,loc);
++	  rr_add(ip,4);
++	  rr_finish(d2);
++	}
++	break;
++	
++      case 'S':
++	if (!dns_domain_fromdot(&d1,f[0].s,f[0].len)) nomem();
++	if (!stralloc_0(&f[6])) nomem();
++	if (!scan_ulong(f[6].s,&ttl)) ttl = TTL_POSITIVE;
++	ttdparse(&f[7],ttd);
++	locparse(&f[8],loc);
++
++	if (!stralloc_0(&f[1])) nomem();
++
++	if (byte_chr(f[2].s,f[2].len,'.') >= f[2].len) {
++	  if (!stralloc_cats(&f[2],".srv.")) nomem();
++	  if (!stralloc_catb(&f[2],f[0].s,f[0].len)) nomem();
++	}
++	if (!dns_domain_fromdot(&d2,f[2].s,f[2].len)) nomem();
++
++	if (!stralloc_0(&f[4])) nomem();
++	if (!scan_ulong(f[4].s,&u)) u = 0;
++	uint16_pack_big(srv,u);
++	if (!stralloc_0(&f[5])) nomem();
++	if (!scan_ulong(f[5].s,&u)) u = 0;
++	uint16_pack_big(srv + 2,u);
++	if (!stralloc_0(&f[3])) nomem();
++	if (!scan_ulong(f[3].s,&u)) nomem();
++	uint16_pack_big(srv + 4,u);
++
++	rr_start(DNS_T_SRV,ttl,ttd,loc);
++	rr_add(srv,6);
++	rr_addname(d2);
++	rr_finish(d1);
++
+ 	if (ip4_scan(f[1].s,ip)) {
+ 	  rr_start(DNS_T_A,ttl,ttd,loc);
+ 	  rr_add(ip,4);
+diff -ruBN djbdns-1.05.orig//tinydns-get.c djbdns-1.05//tinydns-get.c
+--- djbdns-1.05.orig//tinydns-get.c	2001-02-11 16:11:45.000000000 -0500
++++ djbdns-1.05//tinydns-get.c	2010-04-19 01:38:53.733911525 -0400
+@@ -12,6 +12,7 @@
+ #include "parsetype.h"
+ #include "ip4.h"
+ #include "dns.h"
++#include "tdlookup.h"
+ 
+ extern int respond(char *,char *,char *);
+ 
+@@ -36,6 +37,8 @@
+ {
+   uint16 u16;
+ 
++  if (!tdlookup_init()) strerr_die2sys(111,FATAL,"tdlookup_init failed");
++
+   if (!*argv) usage();
+ 
+   if (!*++argv) usage();
+diff -ruBN djbdns-1.05.orig//tinydns.c djbdns-1.05//tinydns.c
+--- djbdns-1.05.orig//tinydns.c	2001-02-11 16:11:45.000000000 -0500
++++ djbdns-1.05//tinydns.c	2010-04-19 01:38:53.736972883 -0400
+@@ -1,4 +1,6 @@
+ #include "dns.h"
++#include "tdlookup.h"
++#include "strerr.h"
+ 
+ const char *fatal = "tinydns: fatal: ";
+ const char *starting = "starting tinydns\n";
+@@ -8,4 +10,5 @@
+ void initialize(void)
+ {
+   dns_random_init(seed);
++  if (!tdlookup_init()) strerr_die2sys(111,fatal,"tdlookup_init failed");
+ }
