@@ -1,0 +1,25 @@
+http://www.multicians.org/thvv/tvvtools.html#gpw
+
+gpw: Password Generator
+
+This package generates pronounceable passwords. It uses the statistics of three-letter combinations (trigraphs) taken from whatever dictionaries you feed it. Thus pronouceability may differ from language to language. It is based on the ideas in Morrie Gasser's password generator for  Multics, and Dan Edwards's generator for CTSS.  FIPS Standard 181 describes a similar digraph-based generator, derived from Gasser's. (My programs are in C++ but are trivially convertible to C, just remove the word const.)
+
+05/29/02: Minor changes to gpw.Makefile to compile under FreeBSD and Panther with gcc 3.3.
+01/07/06: Made minor changes to gpw.C and loadtris.C to compile under with gcc 4.0. updated
+
+gpw.C
+    Generate passwords. Execute
+
+        gpw [npasswords] [passwordlenth]
+
+    To generate pronounceable passwords. Default is 10 passwords of length 8.
+
+    gpw.C #includes a big table of constants from trigram.h giving frequencies.
+loadtris.C
+    Generates trigram.h from your dictionaries.
+gpw.Makefile
+    Compiles gpw for your system.
+
+The same password generator in Java is available online.
+http://www.multicians.org/thvv/gpw.html
+01/08/06
