@@ -5,12 +5,6 @@
 SHELL=	/bin/sh -e
 noerr?=	echo "<<< $@ >>>"
 
-quick_arch :
-	rm -rf tmp/arch && mkdir -p tmp/arch
-	cp ~/.ssh/id_ed25519.pub tmp/arch/root.pub
-	for x in tmp .git ; do echo "$$x" >>./tmp/arch/exclude ; done
-	tar -C .. -czf ../pub/tmp/arch/pub.tgz -X ./tmp/arch/exclude ./pub
-	@echo ./tmp/arch/pub.tgz tmp/arch/root.pub
 arch : # push local commits and create archive from master
 # c	:: empty unless there are uncommited changed to previously added files
 # m	:: remote, master url
@@ -27,3 +21,11 @@ arch : # push local commits and create archive from master
 	  git archive --prefix="./$$r/" master:$$p | gzip >./tmp/$@/$$r.tgz
 	@$(noerr)
 	@ls -d ./tmp/$@/*
+
+quick_arch :
+	rm -rf tmp/arch && mkdir -p tmp/arch
+	cp ~/.ssh/id_ed25519.pub tmp/arch/root.pub
+	for x in tmp .git ; do echo "$$x" >>./tmp/arch/exclude ; done
+	tar -C .. -czf ../pub/tmp/arch/pub.tgz -X ./tmp/arch/exclude ./pub
+	@echo ./tmp/arch/pub.tgz tmp/arch/root.pub
+
