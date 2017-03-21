@@ -1,8 +1,9 @@
-# Unlimited use with this notice (c) George Georgalis <george@galis.org>
-
 # ./Makefile
 
+# Unlimited use with this notice (c) 2017 George Georgalis <george@galis.org>
+
 SHELL=	/bin/sh -e
+noerr?=	echo "<<< $@ >>>"
 
 quick_arch :
 	rm -rf tmp/arch && mkdir -p tmp/arch
@@ -15,13 +16,14 @@ arch : # push local commits and create archive from master
 # m	:: remote, master url
 # p	:: remote. path to pwd
 # r	:: basename of pwd, archive root
-#r=	"$$(basename $$(pwd -P))"
 	rm -rf tmp/$@ && mkdir -p tmp/$@
-#	c="$$(git status --short . | grep -v '^??' || true )" ; \
+	cp ~/.ssh/id_ed25519.pub tmp/$@/root.pub
+	c="$$(git status --short . | grep -v '^??' || true )" ; \
 	  [ -z "$$c" ] || { echo $$c ; false ;} # test local modifications
 	git push # include local commits
 	m=$$(git remote -v show | grep fetch | awk '{print $$2}') ; \
-	  p=./$$(git rev-parse --show-prefix) ; [ -z "$$p" ] && p="./" ; r="$$m" ; \
-	  echo git archive --remote=$$m --prefix="./$$r/" master:$$p #| gzip >./tmp/$@/$$r.tgz ; 
-	  echo ./tmp/$@/$$r.tgz
-
+	  r="$$(basename "$$m")" ; p=$$(git rev-parse --show-prefix) ; \
+	  [ -n "$$p" ] || p="./" ; \
+	  git archive --prefix="./$$r/" master:$$p | gzip >./tmp/$@/$$r.tgz
+	@$(noerr)
+	@ls -d ./tmp/$@/*
