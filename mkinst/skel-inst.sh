@@ -1,12 +1,12 @@
 #!/bin/sh
 #
-# Unlimited use with this notice (c) George Georgalis <george@galis.org>
+# ./pub/mkinst/skel-inst.sh
 #
-# ./mkinst/skel-inst.sh
-
 # install skel files in prefix or $HOME
 #
-# sh $0 /usr/local/pub/skel /etc/skel#
+# Usage: sh $0 /usr/local/pub/skel /etc/skel
+#
+# Unlimited use with this notice (c) 2017 George Georgalis <george@galis.org>
 
 set -e
 chkerr () { [ -n "$*" ] && echo "ERR >>-->- $h/$(basename $0) : $* -<--<<" >&2 && exit 1 || true ;}
