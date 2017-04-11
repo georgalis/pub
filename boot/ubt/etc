@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# REQUIRE:
+# BEFORE:
+# PROVIDE: etc
+# KEYWORD: ubt
+
+set -e
+
+apt-get -y install gcc
+

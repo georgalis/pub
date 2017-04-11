@@ -1,0 +1,21 @@
+#!/bin/sh
+
+# REQUIRE: time
+# BEFORE:
+# PROVIDE: shell
+# KEYWORD: cos7-boot
+
+# leave default... XXX
+exit 0
+
+#:: Set ksh as the default shell.
+
+set -e
+/usr/sbin/useradd -D >/dev/null
+# this file created by useradd
+sed -e '/^group/s/users/=uid/' -e '/^shell/s/\/bin.*/\/bin\/ksh/' \
+	/etc/usermgmt.conf >/etc/usermgmt.conf-tmp \
+	&& mv /etc/usermgmt.conf-tmp /etc/usermgmt.conf
+# change it for the root account too
+chsh -s /bin/ksh
+

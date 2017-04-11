@@ -1,0 +1,15 @@
+
+#!/bin/sh
+
+# REQUIRE: 
+# BEFORE: 
+# PROVIDE: apt-main
+# KEYWORD: ubt
+
+set -e
+
+apt-get -y install vim tmux rsync fping mtr-tiny nmap file git htop openssh-server ethtool \
+ && apt-get -y install git gnupg2 lsof aspell gcc \
+ && apt-get update && apt-get -y upgrade && apt-get -y full-upgrade \
+ && apt-get -y autoremove && apt-get -y clean
+

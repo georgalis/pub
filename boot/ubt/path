@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# REQUIRE: time
+# BEFORE: shell
+# PROVIDE: path
+# KEYWORD: ubt
+
+set -e
+cat >>/etc/profile <<'EOF-profile'
+export PATH=/usr/local/sbin:/usr/local/bin
+export PATH=$PATH:/sbin:/bin
+export PATH=$PATH:/usr/sbin:/usr/bin
+export PATH=$PATH:/root/bin
+EOF-profile
+
+mkdir -p /usr/local
+

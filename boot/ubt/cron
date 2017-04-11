@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# REQUIRE: etc
+# BEFORE:
+# PROVIDE: cron
+# KEYWORD: ubt
+
+#:: Add maintenance routines to root crontab.
+
+set -e
+
+cat >>/var/spool/cron/crontabs/root<<'EOF-root-cron'
+PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/local/sub
+00 0	* * *	crontab -l > ~/crontab-$LOGNAME-`hostname`
+
+EOF-root-cron
+

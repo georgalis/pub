@@ -1,0 +1,31 @@
+#!/bin/sh
+
+# REQUIRE: time
+# BEFORE: etc
+# PROVIDE: hostroot
+# KEYWORD: cos7-boot
+
+set -e
+
+chkerr () { [ -n "$*" ] && echo "ERR  > > > $0: $* < < < " >&2 && exit 1 ;}
+
+[ -e /root/root.pub ] || chkerr "It only makes sense to run this if we have a root pub key ready..."
+
+install -m 755 -o root -g wheel -d /etc/ssh/auth
+install -m 644 -o root -g wheel /root/root.pub /etc/ssh/auth/
+mv /root/root.pub /root/root.pub~
+
+##:: Reconfigure sshd to allow root login and disallow password authentication. 
+[ -e /etc/ssh/sshd_config-orig ] || cp -p /etc/ssh/sshd_config /etc/ssh/sshd_config-orig
+sed '
+	s/.*PermitRootLogin.*/PermitRootLogin yes/
+	s/.*PasswordAuthentication.*/PasswordAuthentication no/
+	s/.*UsePam.*/UsePam no/
+	s=.*AuthorizedKeysFile.*=AuthorizedKeysFile      /etc/ssh/auth/%u.pub=
+    ' /etc/ssh/sshd_config >/etc/ssh/sshd_config-tmp \
+	&& mv /etc/ssh/sshd_config-tmp /etc/ssh/sshd_config
+
+systemctl stop sshd || true
+systemctl start sshd 
+systemctl enable sshd
+# systemctl status sshd
