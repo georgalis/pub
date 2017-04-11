@@ -7,5 +7,5 @@
 
 set -e
 
-apt-get -y install gcc
+apt-get -y install gcc make
 
