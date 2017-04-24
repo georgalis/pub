@@ -14,6 +14,7 @@ alias gbranch='git branch'
 alias gcom='git commit'
 alias gdiff='git diff'
 alias gco='git checkout'
+alias grst='git reset HEAD'
 
 #export MAILUSER="$(userinfo $USER | sed -ne '/login/s/login[^[:alnum:]]//p')"
 #export MAILNAME="$(userinfo $USER | sed -ne '/gecos/s/gecos[^[:alnum:]]//p')"
