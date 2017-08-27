@@ -143,11 +143,11 @@ find "$d" -maxdepth 1 -mindepth 1 -print0 \
 	| awk '{sum += $1; printf "%+11sk %+10sk %s %s %s\n", sum, $1, $2, $3, $4}' ;}
 
 # idtai | id2tai64 | tai64nlocal
-idtai () { echo | tai64n | sed -e 's/^@40000000//' -e 's/......$//' -e 's/^......../&./' ;} # an id based on tai64n
-id2tai64 () { sed -e 's/^/@40000000/' -e 's/$/00000/' -e 's/\.//' ; } # convert idtai to tai64n format, sans resolution
-idlocal () { id2tai64 | tai64nlocal ;} # convert idtai to local time
-
-nowid () { sh -c "{ date '+%Y%m%d_%H%M%S_' && uuidgen ;} | tr -d '\n' | sed -e s/-.*// | tr '[A-Z]' '[a-z]'" ;}
+idtai () { echo | tai64n | sed -e 's/^@4[0]*//' -e 's/......$//' -e 's/^......../&./' ;} # dump an id based on tai64n
+id2tai64 () { sed -e 's/^/@40000000/' -e 's/$/00000/' -e 's/\.//g' ;} # convert idtai to tai64n
+# idtai | idlocal
+idlocal () { id2tai64 | tai64nlocal | sed 's/ /_/' ;} # convert idtai to local time
+idnow () { sh -c "{ date '+%Y%m%d_%H%M%S_' && uuidgen ;} | tr -d '\n' | sed -e s/-.*// | tr '[A-Z]' '[a-z]'" ;} # dump local id
 
 import_pubkey () { # take an exported ssh key and make an authorized_keys2 line
 export key_in=`mktemp /tmp/pubkey-XXXXXX`
