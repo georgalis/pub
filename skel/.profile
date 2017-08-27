@@ -1,6 +1,6 @@
 # ~/.profile
 
-# Unlimited use with this notice (c) George Georgalis <george@galis.org>
+# Unlimited use with this notice (c) 2017 George Georgalis
 
 # sourced by Bourne-compatible shells
 
@@ -70,7 +70,7 @@ Linux)
  alias lS="ls --color=auto -AFlrS --full-time --time-style=+%Y%m%d_%H%M%S"
  alias t='tail --follow=name'
  alias p='ps -e f -o pid,user,cmd --sort=user'
- export PAGER='less -G --jump-target=2'
+ #export PAGER='less -G --jump-target=2' 
  #less -j does not take negative number any more Debian Bug report logs - #498746 http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=498746
 ;; # Linux
 OpenBSD)
