@@ -12,7 +12,7 @@ set showmatch		" Show matching brackets.
 set ignorecase		" Do case insensitive matching
 set smartcase		" Only ignorecase when no caps in search
 set incsearch		" Incremental search
-"set ttyfast
+set ttyfast
 set hlsearch
 set sidescroll=20
 set scrolloff=48	
@@ -20,23 +20,16 @@ set nowrap	" better for coding....
 "set lbr	" wrap on word, for text
 "set tabstop=4 " 4 characters sometimes better than 8
 "set shiftwidth=4
-"set expandtab
+set expandtab
 "set backspace=2
 set backspace=indent,eol,start
 set nobackup " Preserves multi links cf 'vip' 'vim in place'
 "set backupcopy=yes 
 "set backupskip=/tmp/crontab*
 set ruler		" show the cursor position all the time
-"set laststatus=2
-"set statusline=%<%f%h%m%r%=%{strftime(\"%l:%M:%S\ \%p,\ %a\ %b\ %d,\ %Y\")}\ %{&ff}\ %l,%c%V\ %P
-set autowrite	"Write the contents of the file, if it has been modified, on each :next, :rewind, :last, :first, :previous, :stop, :suspend, :tag, :!, :make, CTRL-] and CTRL-^ command; and when a :buffer, CTRL-O, CTRL-I, '{A-Z0-9}, or `{A-Z0-9} command takes one to another file.
-
-" execute pathogen#infect()
-
-"if has("autocmd")
-"	" When editing a file, always jump to the last cursor position
-"	autocmd BufReadPost * if line("'\"") | exe "normal `\"" | endif
-"endif
+set laststatus=2
+set statusline=%<%f%h%m%r%=%{strftime(\"%l:%M:%S\ \%p,\ %a\ %b\ %d,\ %Y\")}\ %{&ff}\ %l,%c%V\ %P
+"set autowrite	"Write the contents of the file, if it has been modified, on each :next, :rewind, :last, :first, :previous, :stop, :suspend, :tag, :!, :make, CTRL-] and CTRL-^ command; and when a :buffer, CTRL-O, CTRL-I, '{A-Z0-9}, or `{A-Z0-9} command takes one to another file.
 
 if has("autocmd")
   " When editing a file, always jump to the last known cursor position.
@@ -50,13 +43,13 @@ endif " has("autocmd")
 
 "noremap <F8> :so `vimspell %`<CR>:!vimspell % -r<CR><CR>
 map <f2> {!}par 1600<CR>
-map <F3> {!}par 52<CR>
-map <F4> {!}par 66<CR>
-map <F5> :.!par 66<CR>
-map <F6> :.!par 52<CR>
+map <F3> {!}par 66<CR>
+map <F4> {!}par 52<CR>
+map <F5> :.!par 52<CR>
+map <F6> :.!par 66<CR>
 map <F8> :r !date "+\%D \%r"<cr>$a 
-map <F9> :r !echo \| tai64n \| sed -e 's/^@40000000//' -e 's/....$/ /'<cr>$
-"map <F9> :r!echo $(date '+\%Y\%m\%d_\%H\%M\%Sx' && uuidgen ) \| tr -d \n \| sed -e s/x../_/ -e s/-.*//<cr>0
+map <F9> :r! { date +\%Y\%m\%d_\%H\%M\%S_ && uuidgen ;} \| tr -d '\n' \| sed -e s/-.*// \| tr [A-Z] [a-z]	<CR>
+map <F10> :r! echo \| tai64n \| sed -e 's/^@4[0]*//' -e 's/......$//' -e 's/^......../&./'	<CR>0
 
 if &t_Co > 1
    syntax enable
@@ -64,6 +57,8 @@ endif
 " use POSIX for shell highlighting
 let g:is_posix= 1
 set background=dark
+
+" See ~/.Xdefaults
 
 hi Comment	cterm=none	ctermfg=DarkCyan
 hi Constant	cterm=underline	ctermfg=15
@@ -81,13 +76,13 @@ hi makeIdent	cterm=none	ctermfg=5
 hi makeTarget	cterm=bold	ctermfg=3
 
 "1 red
-" 2 green
-" 3 yellow
+"2 green
+"3 yellow
 "4 blue
-" 5 megenta
-" 6 cyan
-" 7 8 9 10 11 12 13 white
-" bold 10 11 12 13 white
+"5 megenta
+"6 cyan
+"7 8 9 10 11 12 13 white
+"bold 10 11 12 13 white
 
 " Highlight
 "
@@ -102,6 +97,7 @@ hi makeTarget	cterm=bold	ctermfg=3
 "		cterm=none		ctermbg=	ctermfg=	gui=		guifg=		guibg=
 "		bold,underline
 "		reverse
+"
 "  0 Black	1 DarkBlue	2 DarkGreen	3 DarkCyan	4 DarkRed	5 DarkMagenta	6 Brown		7 Grey
 "  8 DarkGrey	9 Blue		10 Green	11 Cyan		12 Red		13 LightMagenta	14 Yellow	15 White
 
