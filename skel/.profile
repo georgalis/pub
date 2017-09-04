@@ -1,11 +1,15 @@
 # ~/.profile
 
-# Unlimited use with this notice (c) 2017 George Georgalis
+# Unlimited use with this notice. (C) 2017 George Georgalis
 
-# sourced by Bourne-compatible shells
+# For Bourne-compatible shells.
+
+/usr/bin/tty -s || return # the following for interactive sessions only
 
 export EDITOR="vi"
-export PAGER='less -G --jump-target=-1'
+export PAGER='less --jump-target=-1'
+export GPG_TTY=$(tty)
+export OS=$(uname)
 
 umask 022
 ulimit -c 1 # Just want to know if/when core files are generated.
@@ -16,11 +20,6 @@ path_append () { # append $1 if not already in path
 path_prepend () { # prepend $1 if not already in path
  echo $PATH | grep -E "^$1:|^$1$" 2>&1 >/dev/null \
   || export PATH="${1}:${PATH}" ;}
-
-/usr/bin/tty -s || return # the following lines for interactive sessions only
-export GPG_TTY=$(tty)
-
-OS=$(uname)
 
 # setup ls aliases
 [ -x "$(which colorls 2>/dev/null)" ] && { # setup colorls
@@ -49,7 +48,6 @@ case $OS in
 Darwin)
  [ "$TERM" = "xterm" ] && export TERM='xterm-color'
  export LSCOLORS='xefxcxdxbxegedabagacad' # invert directory color
- export PAGER='less -G --jump-target=99'
  alias  l="ls -GF"
  alias lA="ls -AFG"
  alias la="ls -AFGTl"
@@ -61,7 +59,7 @@ Darwin)
  alias p='ps -ax -o uid,pid,command -ww'
 ;; # Darwin
 Linux)
- eval `dircolors | sed 's/di=01;34/di=00;44/'`
+ eval $(dircolors | sed 's/di=01;34/di=00;44/')
  alias  l="ls --color=auto"
  alias lA="ls --color=auto -AF"
  alias la="ls --color=auto -AFl --full-time --time-style=+%Y%m%d_%H%M%S"
@@ -149,15 +147,15 @@ id2tai64 () { sed -e 's/^/@40000000/' -e 's/$/00000/' -e 's/\.//g' ;} # convert 
 idlocal () { id2tai64 | tai64nlocal | sed 's/ /_/' ;} # convert idtai to local time
 idnow () { sh -c "{ date '+%Y%m%d_%H%M%S_' && uuidgen ;} | tr -d '\n' | sed -e s/-.*// | tr '[A-Z]' '[a-z]'" ;} # dump local id
 
-import_pubkey () { # take an exported ssh key and make an authorized_keys2 line
-export key_in=`mktemp /tmp/pubkey-XXXXXX`
+import_pubkey () { # take a putty exported ssh key and make an authorized_keys line
+export key_in=$(mktemp /tmp/pubkey-XXXXXX)
 [ -n "$1" ] && cat "$1" >|$key_in || cat /dev/stdin >|$key_in
-printf "`ssh-keygen -if $key_in` " \
+printf "$(ssh-keygen -if $key_in) " \
  && grep Comment $key_in | sed -e 's/^Comment: "//' -e 's/"$//'
 rm $key_in ;}
 
 ptr () { # reverse a dotted quad or subnet
-rev="`echo "$1" | cut -d\. -f1`.$2" ; ip="`echo "$1" | cut -d\. -f2-`"
+rev="$(echo "$1" | cut -d\. -f1).$2" ; ip="$(echo "$1" | cut -d\. -f2-)"
 [ "$ip" = "$1" ] && echo "${rev}" || ptr $ip $rev ;}
 arpa () { # use ptr to reverse a network, and add in-addr.arpa
 [ -z "$1" ] && echo -n "An ip address on the command line returns its "
@@ -165,11 +163,11 @@ echo "$(ptr "$1")in-addr.arpa" ;}
 
 dirper () { # reveal dir permissions of "$*" or "$PWD"
 d="$*";d="${d#./}";[ -z "$d" -o "$d" = "." -o "$d" = "./" ] && d="$PWD"
-[ "`dirname "$d"`" = '.' ] && d="$PWD/$d";
-case "`uname`" in Linux) ls -Ldl --full-time "$d" ;; *) ls -LTdl "$d" \
+[ "$(dirname "$d")" = '.' ] && d="$PWD/$d";
+case "$(uname)" in Linux) ls -Ldl --full-time "$d" ;; *) ls -LTdl "$d" \
 | awk '{printf "%-10s %+8s:%-8s %+8s %8s %2s %3s %s ", \
 	$1, $3, $4, $5, $8, $7, $6, $9}' ; ls -Ld "${d}"
-;; esac ; [ "$d" = "/" ] && return || dirper `dirname "$d"`;}
+;; esac ; [ "$d" = "/" ] && return || dirper $(dirname "$d");}
 
 uptime
 
