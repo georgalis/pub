@@ -7,37 +7,37 @@
 
 set -e 
 
-chkerr () { [ -n "$*" ] && echo "ERR  >>->-- $0: $* --<-<< " >&2 && exit 1 ;}
+PKG_PATH="${URL_ROOT}/pkgsrc/packages/NetBSD/$(uname -m)/$(uname -r|cut -f 1-2 -d .| cut -f 1 -d _)/All"
+PKG_PATH="${URL_ROOT}/pkgsrc/packages/NetBSD/$(uname -m)/$(uname -r|cut -f 1 -d _)/All"
 
-URLROOT="http://ftp.netbsd.org/pub/"
-PKG_PATH="${URLROOT}/pkgsrc/packages/NetBSD/$(uname -m)/$(uname -r|cut -f 1-2 -d .| cut -f 1 -d _)/All"
-PKG_PATH="${URLROOT}/pkgsrc/packages/NetBSD/$(uname -m)/$(uname -r|cut -f 1 -d _)/All"
-PKG_PATH="${URLROOT}/pkgsrc/packages/NetBSD/7.0.2/All"
-PKG_PATH="http://ftp.netbsd.org/pub//pkgsrc/packages/NetBSD/amd64/7.0.2/All"
 PKGIN_CONF="/usr/pkg/etc/pkgin/repositories.conf"
+PKG_EX="/usr/pkg/share/examples/pkgin/repositories.conf.example"
+URL_ROOT="http://ftp.netbsd.org/pub/"
+URL_BASE="${URL_ROOT}pkgsrc/packages/$(uname -s)/$(uname -m)/"
+PKG_PATH="${URL_ROOT}pkgsrc/packages/NetBSD/\$arch/\$osrelease/All"
+#PKG_REL="$(ftp -o - ${URL_BASE} \
+#        | grep href | grep $(uname -r|cut -f 1 -d_) | grep -v _current \
+#        | sed -e 's/.*href="//' -e 's/".*//' -e "s=^=# ${URL_BASE}=" \
+#        -e "s/$/All/" )"
+mkdir -p /usr/pkg/etc/pkgin
+#[ -e "$PKGIN_CONF" ] || printf "# ${PKG_EX}\n${PKG_REL}\n${PKG_PATH}\n" >${PKGIN_CONF}
 
-	pkg_add ${PKG_PATH}/pkgin
-	[ $? -eq 0 ] || chkerr "pkgin setup failed"
-	sed -e 's/^[^#].*$/#&/' ${PKGIN_CONF} > ${PKGIN_CONF}.new
-	echo $PKG_PATH >> ${PKGIN_CONF}.new
-	mv ${PKGIN_CONF}.new ${PKGIN_CONF}
-	/usr/pkg/bin/pkgin -y update
+# http is intermitent today, ftp has been reliable....
+URL_ROOT="ftp://ftp.netbsd.org/pub/"
+PKG_PATH="${URL_ROOT}pkgsrc/packages/NetBSD/\$arch/\$osrelease/All"
+printf "# ${PKG_EX}\n${PKG_REL}\n${PKG_PATH}\n" >${PKGIN_CONF}
+
+PKG_PATH="ftp://ftp.netbsd.org/pub//pkgsrc/packages/NetBSD/amd64/8.0_2017Q2/All"
+echo $PKG_PATH >$PKGIN_CONF
+pkg_add $PKG_PATH/pkgin-0.9.4nb6.tgz
+/usr/pkg/bin/pkgin -y update
 
 #pkgin -y upgrade
 #pkgin -y full-upgrade
 
 cd $(dirname $0)
-t="$(mktemp /tmp/pkgin.XXXX)"
-#find ./pkgin.d -type f -exec cat \{\} >>$t \;
-cat ./pkgin.d/pkgin.main.lst ./pkgin.d/pkgin.min.lst >>$t
-pkgin -y import $t
-rm $t
-
-#for infi in $(find ./pkgin.d -type f) ; do
-#  #[ -e $infi ] && pkgin -y import $infi
-#  { set -x ; pkgin -y import $infi ;}
-#done
-
+for e in ./pkgin.d/pkgin.main.lst ./pkgin.d/pkgin.min.lst ; do
+        pkgin -y import $e
+done
 
 exit 0
-
