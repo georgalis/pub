@@ -1,6 +1,6 @@
 # ~/.profile
 
-# Unlimited use with this notice. (C) 2017 George Georgalis
+# Unlimited use with this notice. (C) 2017-2018 George Georgalis <george@galis.org>
 
 # For Bourne-compatible shells.
 
@@ -12,7 +12,7 @@ export GPG_TTY=$(tty)
 export OS=$(uname)
 
 umask 022
-ulimit -c 1 # Just want to know if/when core files are generated.
+ulimit -c 1 # for now, one byte core files memorialize their creation
 
 path_append () { # append $1 if not already in path
  echo $PATH | grep -E ":$1$|^$1$|^$1:|:$1:" 2>&1 >/dev/null \
@@ -126,27 +126,35 @@ alias rm='rm -i'
 alias d='diff'
 alias cal='cal -h'
 
-# find . \( -path ./skel -o -path ./mkinst \) \! -prune -o -type f
-
-
 dusum () { # sort $1 (defaults to $PWD) according to disk use, also show cumulative sum.
 [ -z "$1" ] && d="./" || d="$1"
 find "$d" -maxdepth 1 -mindepth 1 -print0 \
 	| xargs -0 du -sk | sort -n \
 	| awk '{sum += $1; printf "%+11sk %+10sk %s %s %s\n", sum, $1, $2, $3, $4}' ;}
 
+dirper () { # reveal dir permissions of "$*" or "$PWD"
+d="$*";d="${d#./}";[ -z "$d" -o "$d" = "." -o "$d" = "./" ] && d="$PWD"
+[ "$(dirname "$d")" = '.' ] && d="$PWD/$d";
+case "$(uname)" in Linux) ls -Ldl --full-time "$d" ;; *) ls -LTdl "$d" \
+| awk '{printf "%-10s %+8s:%-8s %+8s %8s %2s %3s %s ", \
+	$1, $3, $4, $5, $8, $7, $6, $9}' ; ls -Ld "${d}"
+;; esac ; [ "$d" = "/" ] && return || dirper $(dirname "$d");}
 
-# chkerr () { [ -n "$*" ] && echo "ERR >>> $0 : $* <<<" >&2 && exit 1 || true ;}
-# main () { # enable local varables
-#local u h b t s d bak n
+## shell script fragments
+# find . \( -path ./skel -o -path ./mkinst \) \! -prune -o -type f
+#chkerr () { [ -n "$*" ] && echo "ERR >>> $0 : $* <<<" >&2 && exit 1 || true ;}
+#main () { # enable local varables
+#local u h b t s d bak
 #u="$USER" # uid running the tests
 #h="$(cd $(dirname $0) && pwd -P)" # realpath of this script
 #b="$(basename $0 | sed 's/.[^.]*$//')" # this program name less (.sh) extension
-#t=tmp
-#s=$(printf '%x' $(date '+%s'))
-#d="$(cd $(dirname $0) ; pwd -P)"
-#bak=bak
-#n=0
+#t="$( { date '+%Y%m%d_%H%M%S_' && uuidgen ;} | sed -e 's/-.*//' | tr -d ' \n' )" # time based uniq id
+#[ -n "$1" ] && { cd "$1" && s="$PWD" ;} || chkerr "Expecting skel dir as arg1" # set src dir
+#[ -d "$s" ] || chkerr "$s (arg1) is not a directory"
+#[ -n "$2" ] && cd "$2" && d="$(pwd -P)" || d="$HOME" # set dest dir
+#[ -d "$d" ] || chkerr "$d target (arg2) is not a directory"
+# bak="${d}/${b}-${t}" # backup dir
+#mkdir $bak
 #}
 
 import_pubkey () { # take a putty exported ssh key and make an authorized_keys line
@@ -160,8 +168,10 @@ uptime
 
 case $SHELL in # start of per $SHELL env
  *bash)
-	export PS1=" \u@\h:\w " \
-	&& set -o ignoreeof # disable ctrl-d exit
+	export PS1=" \u@\h:\w "
+    export PS1="^\$(echo "\$k" | sed -e "s=\$k4h==" -e s=/==g -e 's=[[:xdigit:]]\{8\}$==') \w "
+	export PS1=" \u@\h:\w "
+	set -o ignoreeof # disable ctrl-d exit
  ;;
  *ksh)
   hostname="$(hostname)" export PS1=" \${USER}@\${hostname}:\${PWD} "
@@ -181,7 +191,7 @@ case $SHELL in # start of per $SHELL env
 esac # $SHELL
 
 [ -x "$(which vim 2>/dev/null)" -a "$EDITOR" = "vi" ] \
-	&& {
+	&& { # crazy sequence to get around potential backup/inode link errors...
 		alias crontab="env EDITOR=$(which $EDITOR) crontab"
 		alias vi='vim'
 		export EDITOR='vim'
@@ -189,7 +199,6 @@ esac # $SHELL
 
 # ssh socket key and agent managent
 printf "${_termrev}"
-##[ -n "$SSH_AUTH_SOCK" ] || { # already forwarded by agent
   [ "$(ssh-add -l 2>&1)" = "Could not open a connection to your authentication agent." ] \
   && {
     printf "${USER}@$(hostname): " 
@@ -202,8 +211,6 @@ printf "${_termrev}"
       [ -e "$HOME/.ssh/$ssh_id" ] && { # try ssh-add
         ssh-add "$HOME/.ssh/$ssh_id" ;}
     done ;} # ssh_id
-##  } && { #echo "SSH_AUTH_SOCK forwarded by agent."
-##   ssh-add -l ;} # show keys in SSH_AUTH_SOCK
 printf "${_ntermrev}"
 ## shell logout trap, eg ~/.bash_logout ~/.ksh_logout
 #[ -n "$SSH_AGENT_ENV" ] && set $SSH_AGENT_ENV && [ "$$" = "$4" ] \
@@ -211,5 +218,7 @@ printf "${_ntermrev}"
 #		|| { echo $(hostname) ssh-agent already died? 2>/dev/stderr ; exit 1 ;} ;}
 
 # if exists, source .profile.local 
-[ -e "$HOME/.profile.local" ] && . "$HOME/.profile.local" || true
+[ -e "$HOME/.profile.local" ] && . "$HOME/.profile.local" && echo "$HOME/.profile.local" || true
+# report end of file
+echo "$HOME/.profile"
 
