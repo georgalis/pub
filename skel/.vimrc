@@ -1,5 +1,7 @@
 " .vimrc
 
+" Unlimited use with this notice. (C) 2017-2018 George Georgalis <george@galis.org>
+
 set nocompatible
 set modelines=0 " prior to 6.3.83, modelines could could execute arbitrary commands
 set noautoindent
@@ -16,11 +18,13 @@ set ttyfast
 set hlsearch
 set sidescroll=20
 set scrolloff=48	
-set nowrap	" better for coding....
+set wrap	" so longlines are visible
+"set nowrap	" can be better
+set nolbr   " better for copying
 "set lbr	" wrap on word, for text
-"set tabstop=4 " 4 characters sometimes better than 8
-"set shiftwidth=4
 set expandtab
+set tabstop=4 " 4 characters sometimes better than 8
+"set shiftwidth=4
 "set backspace=2
 set backspace=indent,eol,start
 set nobackup " Preserves multi links cf 'vip' 'vim in place'
@@ -28,8 +32,10 @@ set nobackup " Preserves multi links cf 'vip' 'vim in place'
 "set backupskip=/tmp/crontab*
 set ruler		" show the cursor position all the time
 set laststatus=2
-set statusline=%<%f%h%m%r%=%{strftime(\"%l:%M:%S\ \%p,\ %a\ %b\ %d,\ %Y\")}\ %{&ff}\ %l,%c%V\ %P
-"set autowrite	"Write the contents of the file, if it has been modified, on each :next, :rewind, :last, :first, :previous, :stop, :suspend, :tag, :!, :make, CTRL-] and CTRL-^ command; and when a :buffer, CTRL-O, CTRL-I, '{A-Z0-9}, or `{A-Z0-9} command takes one to another file.
+" printf '%x' $(date '+%s')
+set statusline=%<%f%h%m%r%=%{strftime(\"%D\ %l:%M:%S\ \%p,\ %a\ %b\ %d,\ %Y\")}\ %{&ff}\ %l,%c%V\ %P
+set statusline=%<%f%h%m%r%=%{strftime(\"%a\ %D\ %l:%M\ \%p,\")}\ %{&ff}\ %l,%c\ %P
+"set autowrite 		"Write the contents of the file, if it has been modified, on each :next, :rewind, :last, :first, :previous, :stop, :suspend, :tag, :!, :make, CTRL-] and CTRL-^ command; and when a :buffer, CTRL-O, CTRL-I, '{A-Z0-9}, or `{A-Z0-9} command takes one to another file.
 
 if has("autocmd")
   " When editing a file, always jump to the last known cursor position.
@@ -46,10 +52,10 @@ map <f2> {!}par 1600<CR>
 map <F3> {!}par 66<CR>
 map <F4> {!}par 52<CR>
 map <F5> :.!par 52<CR>
-map <F6> :.!par 66<CR>
 map <F8> :r !date "+\%D \%r"<cr>$a 
 map <F9> :r! { date +\%Y\%m\%d_\%H\%M\%S_ && uuidgen ;} \| tr -d '\n' \| sed -e s/-.*// \| tr [A-Z] [a-z]	<CR>
-map <F10> :r! echo \| tai64n \| sed -e 's/^@4[0]*//' -e 's/......$//' -e 's/^......../&./'	<CR>0
+"idnow () { sh -c "{ date '+%Y%m%d_%H%M%S_' && uuidgen ;} | tr -d '\n' | sed -e s/-.*// | tr '[A-Z]' '[a-z]'" ;} # dump local id
+map <F10> :r! echo \| tai64n \| sed -e 's/^@[[:xdigit:]]\{8\}//' -e 's/[[:xdigit:]]\{8\} $//' <CR>
 
 if &t_Co > 1
    syntax enable
@@ -178,9 +184,6 @@ hi makeTarget	cterm=bold	ctermfg=3
 ""hi htmlItalic               gui=ITALIC
 ""hi htmlUnderline            gui=UNDERLINE
 ""hi htmlUnderlineItalic      gui=UNDERLINE,ITALIC
-"
-"
-"
 "
 ""               *cterm-colors*
 "0Black
