@@ -29,7 +29,7 @@ printf "# ${PKG_EX}\n${PKG_REL}\n${PKG_PATH}\n" >${PKGIN_CONF}
 
 PKG_PATH="ftp://ftp.netbsd.org/pub//pkgsrc/packages/NetBSD/amd64/8.0_2017Q2/All"
 echo $PKG_PATH >$PKGIN_CONF
-pkg_add $PKG_PATH/pkgin-0.9.4nb6.tgz
+pkg_add $PKG_PATH/pkgin-0.9.4nb6.tgz # XXX
 /usr/pkg/bin/pkgin -y update
 
 #pkgin -y upgrade

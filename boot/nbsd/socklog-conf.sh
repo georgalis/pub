@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# Unlimited use with this notice. (C) George Georgalis <george@galis.org>
+
 # http://smarden.org/socklog/configuration.html
 
 # REQUIRE: socklog-inst
@@ -32,8 +34,14 @@ cat >/etc/sv/socklog-unix/run<<'EOF'
 #!/bin/sh
 # $Id: socklog-conf.sh 465 2009-07-25 03:03:03Z root $
 exec 2>&1
+ln -shf /dev/log /var/run/log
 exec chpst -Unobody socklog unix /var/run/log
 EOF
 
 chmod 755 /etc/sv/socklog-unix/run
 chmod 755 /etc/sv/socklog-unix/log/run
+
+cd /var/log
+mkdir old
+mv maillog* authlog* cron* messages xferlog old/
+

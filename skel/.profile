@@ -1,6 +1,6 @@
 # ~/.profile
 
-# Unlimited use with this notice. (C) 2017-2018 George Georgalis <george@galis.org>
+# Unlimited use with this notice. (C) 2004-2018 George Georgalis
 
 # For Bourne-compatible shells.
 
@@ -12,7 +12,7 @@ export GPG_TTY=$(tty)
 export OS=$(uname)
 
 umask 022
-ulimit -c 1 # for now, one byte core files memorialize their creation
+ulimit -c 1 # one byte core files memorialize their creation
 
 path_append () { # append $1 if not already in path
  echo $PATH | grep -E ":$1$|^$1$|^$1:|:$1:" 2>&1 >/dev/null \
@@ -34,7 +34,7 @@ path_prepend () { # prepend $1 if not already in path
   alias lt="colorls -AFGTlrt"
  alias ltd="colorls -AFGTlrtd"
   alias lS="colorls -AFGTlrS"
- }
+ } || true # echo "no colorls"
 
 case $OS in
 Darwin)
@@ -73,6 +73,8 @@ NetBSD|FreeBSD|Dragonfly)
  [ "$TERM" = "vt220" ] && export TERM=xterm # adds color to some apps in console
  # fix colors in screen on amd64 XXX workaround
  #[ "$(uname -m)" = "amd64" -a "$TERM" = "xterm-color" ] && export TERM="xterm"
+;; # NetBSD|FreeBSD|Dragonfly
+Darwin|NetBSD)
  kwds () { # convert stdin to unique words sorted on legnth then alpha to stdout, linux untested
   tr -c '[:alpha:]' ' ' \
   | tr '\ ' '\n' \
@@ -83,8 +85,7 @@ NetBSD|FreeBSD|Dragonfly)
   | awk '{print $2}' \
   | tr '\n' '\ '
   echo
- } # kywds
-;; # NetBSD|FreeBSD|Dragonfly
+ } # kwds
 esac
 
 # determine correct termcap codes per OS, for underline and stand-out
@@ -140,23 +141,6 @@ case "$(uname)" in Linux) ls -Ldl --full-time "$d" ;; *) ls -LTdl "$d" \
 	$1, $3, $4, $5, $8, $7, $6, $9}' ; ls -Ld "${d}"
 ;; esac ; [ "$d" = "/" ] && return || dirper $(dirname "$d");}
 
-## shell script fragments
-# find . \( -path ./skel -o -path ./mkinst \) \! -prune -o -type f
-#chkerr () { [ -n "$*" ] && echo "ERR >>> $0 : $* <<<" >&2 && exit 1 || true ;}
-#main () { # enable local varables
-#local u h b t s d bak
-#u="$USER" # uid running the tests
-#h="$(cd $(dirname $0) && pwd -P)" # realpath of this script
-#b="$(basename $0 | sed 's/.[^.]*$//')" # this program name less (.sh) extension
-#t="$( { date '+%Y%m%d_%H%M%S_' && uuidgen ;} | sed -e 's/-.*//' | tr -d ' \n' )" # time based uniq id
-#[ -n "$1" ] && { cd "$1" && s="$PWD" ;} || chkerr "Expecting skel dir as arg1" # set src dir
-#[ -d "$s" ] || chkerr "$s (arg1) is not a directory"
-#[ -n "$2" ] && cd "$2" && d="$(pwd -P)" || d="$HOME" # set dest dir
-#[ -d "$d" ] || chkerr "$d target (arg2) is not a directory"
-# bak="${d}/${b}-${t}" # backup dir
-#mkdir $bak
-#}
-
 import_pubkey () { # take a putty exported ssh key and make an authorized_keys line
 export key_in=$(mktemp /tmp/pubkey-XXXXXX)
 [ -n "$1" ] && cat "$1" >|$key_in || cat /dev/stdin >|$key_in
@@ -169,8 +153,11 @@ uptime
 case $SHELL in # start of per $SHELL env
  *bash)
 	export PS1=" \u@\h:\w "
-    export PS1="^\$(echo "\$k" | sed -e "s=\$k4h==" -e s=/==g -e 's=[[:xdigit:]]\{8\}$==') \w "
-	export PS1=" \u@\h:\w "
+    #PROMPT_COMMAND
+    export HISTCONTROL=erasedups
+    export HISTFILE=~/.bash_history
+    export HISTFILESIZE=9600
+    export HISTSIZE=2600
 	set -o ignoreeof # disable ctrl-d exit
  ;;
  *ksh)
@@ -191,7 +178,7 @@ case $SHELL in # start of per $SHELL env
 esac # $SHELL
 
 [ -x "$(which vim 2>/dev/null)" -a "$EDITOR" = "vi" ] \
-	&& { # crazy sequence to get around potential backup/inode link errors...
+	&& {
 		alias crontab="env EDITOR=$(which $EDITOR) crontab"
 		alias vi='vim'
 		export EDITOR='vim'
@@ -199,6 +186,8 @@ esac # $SHELL
 
 # ssh socket key and agent managent
 printf "${_termrev}"
+printf "User $USER "
+##[ -n "$SSH_AUTH_SOCK" ] || { # already forwarded by agent
   [ "$(ssh-add -l 2>&1)" = "Could not open a connection to your authentication agent." ] \
   && {
     printf "${USER}@$(hostname): " 
@@ -206,11 +195,13 @@ printf "${_termrev}"
     export SSH_AGENT_ENV="SSH_AGENT_PID $SSH_AGENT_PID SHELL_PID $$" # ssh-agent env
     } || ssh-add -l | cut -d\  -f 3- # show keys in SSH_AUTH_SOCK
   [ "$(ssh-add -l 2>&1)" = "The agent has no identities." ] && {
-    ssh_ids="id_ed25519 id_ecdsa id_rsa"
+    ssh_ids="id_ed25519 id_rsa"
     for ssh_id in $ssh_ids ; do # add each identity file
       [ -e "$HOME/.ssh/$ssh_id" ] && { # try ssh-add
         ssh-add "$HOME/.ssh/$ssh_id" ;}
     done ;} # ssh_id
+##  } && { #echo "SSH_AUTH_SOCK forwarded by agent."
+##   ssh-add -l ;} # show keys in SSH_AUTH_SOCK
 printf "${_ntermrev}"
 ## shell logout trap, eg ~/.bash_logout ~/.ksh_logout
 #[ -n "$SSH_AGENT_ENV" ] && set $SSH_AGENT_ENV && [ "$$" = "$4" ] \
@@ -219,6 +210,5 @@ printf "${_ntermrev}"
 
 # if exists, source .profile.local 
 [ -e "$HOME/.profile.local" ] && . "$HOME/.profile.local" && echo "$HOME/.profile.local" || true
-# report end of file
 echo "$HOME/.profile"
 
