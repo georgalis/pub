@@ -1,12 +1,15 @@
 #!/bin/bash
 
-# kdb mvp 5beb60d0 stylepro
+# kdb MVP 5c1b36
 
 # Copyright (C) 2015-2018 George Georgalis <george@galis.org>
 # All rights reserved. No use or redistribution allowed.
 #
 # Including but not limited to algorithms, format and procedures.
 # Managed data remains under respective copyright of the owners.
+#
+# Licensing: https://ko-fi.com/dot4space
+# Questions: George Georgalis <george@galis.org>
 
 #ks knowledge motive curation query cache pointer db
 #kr 59dab11b sub kdb idk tools
@@ -17,7 +20,7 @@
 # k {nx|xs|xss}   edit k4 (default 0)
 # ka {nx|xs|xss}  aspell (default 0)
 # kj regex        k4db regex to ^pool
-#,kjt tag         k4db tag to ^pool
+# kjt tag         k4db tag to ^pool
 # kl              list pool by acquisition
 # klr             list pool by reverse acquisition
 # kt              list pool by modification
@@ -41,11 +44,12 @@
 
 # @@ ## ### ##### ######## Extract #####
 # kxl       {nx|xs|xss}    extract k4 link(s) default ^pool
-#,khist     {number}    number lines of command history
+#,khist     {number}       show (number) lines of command history
 # kh        {nx|xs|xss}    k4 head (default 0)
 #,khx regex {nx|xs|xss}    k4 headx (default k4_view)
 # kc        {nx|xs|xss}    k4 cat (default 0)
 #,kcs       {nx|xs|xss}    k4 less (default 0)
+#,kd        {nx|xs|xss}    k4 display (default 0) linked, super and related content (default 0)
 #,km        {nx|xs|xss}    k4 markdown (default 0)
 # kjq regex             quiet beckground k4db regex to ^pool
 #,kjtq regex            quiet background tags regex to ^pool
@@ -75,20 +79,26 @@
 #,regex1:K z
 #,:K p regex
 
-# port to lua
-[ "$0" = "-bash" ] || { echo "Bash only..." >&2  ; return 1 ; exit 1 ;}
+# future feature
+# present catagorial tags, per selection, present sub catagorial tags
+# optionally present existing catagorial tag tree
+# kdb in half-octal
 
-# Translations
-k%s%j%t%l%p%r () { echo "khx '^%k(s|j|t|p|r|l|)\ ' $@" ;}
+# port to lua
+[ "$0" = "-bash" -o "$0" = "/bin/bash" -o "bash" ] || { echo "Bash only..." >&2  ; return 1 ; exit 1 ;}
 
 k4db_fk4 () { #:- find kdb files from k4db
         # future standard will be .*/[:alnum:]*_/_[:alnum:].kdb
         #                         .*/{offset}_/_{epoch}.kdb
     $k4db_logstd "find ${k4db} ${since} -regex '.*_/.*' -prune -type f -name '*.kdb'"
-            find ${k4db} ${since} -regex '.*_/.*' -prune -type f -name '*.kdb'
+                  find ${k4db} ${since} -regex '.*_/.*' -prune -type f -name '*.kdb'
+    $k4db_logstd "find ${k4db} ${since} -regex '.*^/.*' -prune -type f -name '*.kdb'"
+                  find ${k4db} ${since} -regex '.*^/.*' -prune -type f -name '*.kdb'
+#find . -name \*kdb -atime +1
+#find . -name 40\* -atime +1 -regex '.*/[[:xdigit:]]\{8\}'
     } # k4db_fk4
 
-kfp () { # find pool
+k4p () { #:> show pool(s)
     find $k4db/$k4_pool -name =\* | sed 's/.*0//' | sort -d | column
     echo $k4_pool | sed 's/.*0/0/'
     } # kfp
@@ -134,7 +144,7 @@ EOF
 cat >/dev/null <<'EOF'
 # support multiple db, pub, pvt,
 # kz move directory to alternate
-# every kdb file should have a valid %kp , or identified as orphan
+# every kdb file should have a valid %kp , or index as orphan
 
  # pub.dot4.space
  # pvt.dot4.space/id
@@ -203,6 +213,17 @@ cat <<EOF
 
  \$k4db/3/c/0/ptrid/\$uid
 	= FILEPATHs
+
+   local k4d_pool="$k4_pool/$(k4epoch)"
+   # mkdir -p pool query directory
+    # qury 0
+    # root  dot4
+    # pool  ${root}/3/c/0/...
+    # qury  ${root}/0/xsss^/ ${epoch}${span}^
+    # ddir  ${root}/${epoch}${span}^
+    # k4    ${root}/${epoch}${span}^/_${epoch}.kdb
+    # link  ${root}/${epoch}${span}^/^/_${epoch}${span}.kdb
+ \$k4db/0/5/c11d 5 5c11d ropr c11d # k4epoch | k4d dot4/0
  \$k4db/3/c/: misc tmp files
 X\$k4db/3/c/0/{ep}/0.log: primary search log
 X\$k4db/3/c/0/{ep}/1.cmd: invocation command
@@ -231,7 +252,6 @@ X\$k4db/3/c/1/{kx}/{xss}: secondary search, xss links to 3/c/0/*/xss/[[:xdigit:]
 X\$k4db/4/{epoch}/kx/{kx}: layer {epoch} search files, cumulative log, from 3/c/1/* on epoch reset
  \$k4db/4/{epoch}/0.log: cumulative log, from 3/c/1/secondary.log on epoch reset
  \$k4db/5/: kdb master (best available)
- \$k4db/5/{k4db_np}/40000000.kdb (k4 files)
  \$k4db/6
  \$k4db/tag.tbl
  \$k4db/include-bash
@@ -361,83 +381,126 @@ kwds () { #:> translate stdin into unique keywords stdout
 #   | aspell -l en munch-list keep multi \
 #| tee "$k4db/f/pipeline1" \
 
+k4d () { #ks Return novel dirpath epoch kl gpw interval localtime day and unix seconds
+    # arg1 : prefix
+    # arg2 : passthrough
+    # stdin: xss seed (tai second-second)
+    local prefix="$1";
+    [ -d "$prefix" -a -w "$prefix" ] || {
+        chkerr "prefix=$prefix not a writeable directory.";
+        return 1
+    };
+  shift
+  local pass="$*"
+  local orig="$(tr '\n' ' ' | k4db_clean_name )"
+  local seed="/$orig"
+  while [ -d "$(dirname "$prefix$seed")" ] ; do
+    seed="$(echo "$seed" | sed -e 's:.*/.:&/:' -e 's://$:/0:' )"
+    done
+  local k4d="${prefix}${seed}" # new dir # /Users/geo/dot4/0/5/c/1/1/e/d/3c37ba74e4
+  local k4e="$(echo $seed | sed -e 's;/[^/]*$;;' -e 's;/;;g')" # epoch 5c09
+  local k4l="$(echo $orig | sed -e 's/[[:xdigit:]]\{8\}/& /' )" # link 5c099b40 2a40ac5c
+  local k4i="$(echo $seed | sed -e 's;.*/;;' -e 's/[[:xdigit:]]\{8\}$/_&/' )" # interval 9b40 2a40ac5c
+  local gpw="$( gpw 1 $(( ${#k4e} * ${#k4e} / 18 + 4 )) | awk '{printf "%8s",$1}' | sed 's/ /V/g' )"
+  echo $k4d $gpw $k4l $k4e $k4i $pass
+    #xss | k4d ~/dot4/0 $(date "+%Y%m%dT%H%M%S%z %a %s")
+    #/Users/geo/dot4/0/5/c/1/1/e/d/3c37ba74e4 5c11ed3c 37ba74e4 kanams 5c11ed 3c_37ba74e4 20181212T212506-0800 Wed 1544678706
+}
 
-k4db_np () { #:: read seed on stdin, determine first empty directory path of [arg1]/{seed}
-#. include-bash && xssdaysec | k4db_np f 1/6 3/7 2/18
-#f/5/b/9/b/d07b308d15b4 5b9b 5b9bd07b 308d15b4 ptio 20180914 08:14:57:1536938097 1/6 3/7 2/18
-    local new pass line="$(head -n1)" prefix="$1"
-    [ -d "$prefix" -a -w "$prefix" ] || { chkerr "prefix=$prefix not a writeable directory." ; return 1 ;}
-    shift
-    pass="$*"
-    set $line
-    seed=$1
-    new="/$1"
-    shift
-    while [ -d "$(dirname "$prefix/$new")" ] ; do
-        new="$(echo "$new" | sed -e 's:.*/.:&/:' -e 's://$:/+:' )"
-        done
-    span="${new##*/}"
-    epoch="$( echo ${new%/*} | sed -e 's:/::g')"
-    gpw="$( gpw 1 $(( ${#epoch} * ${#epoch} / 18 + 4 )) )"
-    epoch="$( printf '%s' "$( echo ${new%/*} | sed 's:/::g')")"
-    k4id="${epoch} $(echo ${seed} | sed -e 's/[[:xdigit:]]\{8\}/& /')"
-    echo ${prefix}${new} $k4id $gpw $* $pass
-    } # k3db_np
+# Struct
+# k4db      dot4
+# k4db/pool dot4/0
+# k4db/query dot4/f
+# k4db/exec   dot4/c
+
+#  5c11fada3368c24c^/_5c11f.kdb
+#  5c11fada3368c24c^/^/
+#  5c11fada3368c24c^/t/{tag} hard links
+    
+    # xss | k4d $k4db/0 $(date "+%Y%m%dT%H%M%S%z %a %s") | awk '{printf " qv=%sv\n gpw=%s\n xs=%s\n ss=%s\n ep=%s\n sp=%s\n isod=%s\n day=%s\n unix=%s\n",$1,$2,$3,$4,$5,$6,$7,$8,$9}' | sed 's/^/local/'
+    # local qv=/Users/geo/dot4/0/5/c/1/1/f/ada3368c24cv
+    # local xs=5c11fada
+    # local ss=3368c24c
+    # local gpw=soldn
+    # local ep=5c11f
+    # local sp=ada_3368c24c
+    # local isod=20181212T222312-0800
+    # local day=Wed
+    # local unix=1544682192
+
+# xss | k4d $k4db/0 | awk '{printf " qv=%sv\n xs=%s\n ss=%s\n gpw=%s\n ep=%s\n sp=%s\n",$1,$2,$3,$4,$5,$6}' | sed 's/^/local/'
+# local qv=/Users/geo/dot4/0/5/c/1/1/f/2c91d43c0acv
+# local xs=5c11f2c9
+# local ss=1d43c0ac
+# local gpw=ingsi
+# local ep=5c11f
+# local sp=2c9_1d43c0ac
 
 k4db_gk () { #:> generate a k4db file, return: directory file metadata
-    local ks="$*"
-    set $(xssdaysec | k4db_np "$k4db" ) #... creates nothing
-    #/Users/geo/dot4/5/b/a/1/3/0a2_241f46bc 5ba13 5ba130a2 _241f46bc grifi 20180918 10:06:32:1537290392 xyz
-    local d="$1"_ # novel path
-    local epoch="$2"
-    local k4="_${epoch}.kdb"
-    local sp="$(basename $1)" # span
-    local xs="$3"
-    local ss="$4" # second xs (60ths in 0x)
-    local v="$(dc -e "$(xs|xs2s) 2 /   $(xs|xs2s) v  + p" \
-        | awk '{printf "%08x\n",$1}')" # default k4 value
-    local i="$(printf '%x' "$(( $(date '+%s') + 86400 * 57 ))" )" # default review, 57 days from now
-    local il="$(echo "$i" | xs2tai | tai64nlocal | sed 's/[.|][0]*$//')" # review as natural date
-    local e="$(printf '%x' "$(( $(date '+%s') - 86400 * 18 ))" )" # default event begin, 18 days prior from now
-    local z="$(xs)" # default event end, now
-    local knd=$(nevernowd)
-    local knx=$(nevernowx)
-    local kno=$(nevernowo)
-    shift
-    local km="$*"
-    mkdir -p "$d/$epoch"
-    touch "$d/$epoch/index.md"
-    cat >>$d/${k4}<<EOF
+    local ks="$*";
+    set $(xss | k4d "$k4db" $(date "+%Y%m%dT%H%M%S%z %a %s"));
+# xss | k4d "$k4db" $(date "+%Y%m%dT%H%M%S%z %a %s")
+# /Users/geo/dot4/5/c/1/9/b/d/cc1cf3b864   uluers 5c19bdcc 1cf3b864 5c19bd cc_1cf3b864 20181218T194050-0800 Tue 1545190850
+    local d="$1"^; # novel path
+    local epoch="$5";
+    mkdir -p "$d/$epoch" "$d/^";
+    local k4="_${epoch}.kdb";
+    local sp="$6"; # span, interval
+    local xs="$3";
+    local ss="$4"; # second second (60ths in 0x)
+    local ds="$(printf "%d" "0x$xs")"; # decimal xs
+    local v="$(dc -e "$ds 2 / $ds v + p" | awk '{printf "%08x",$1}')"; # time based default value
+    local e="$(printf '%x' "$(( $(date '+%s') - 86400 * 18 ))" )"; # default event begin, 18 days prior from now
+    local z="$xs"; # default event end, now
+    local knd=$(nevernowd);
+    local knx=$(nevernowx);
+    local kno=$(nevernowo);
+    local ptr=$d/$k4
+    shift;
+    cat >> $d/${k4}  <<EOF
 %ks $ks
 %kj motive
-%kt 
-%kl_$xs $ss self # linked thread (named)
-%kr_$xs $ss self # related named (progen)
-%kp_$xs $ss self # super named (orphan)
+%kt
+%kp_$xs $ss self # super (hier)
+%kr_$xs $ss self # relate (matrix)
+%kl_$xs $ss self # link (serial)
 %knd $knd
 %knx $knx
 %kno $kno
-%km $km
+%km $@
 %kd_$epoch/index.md
 %kv $v # value
-%ki $i # review $il
+$(k4ki 57)
 %ke $e # event begin
 %kz $z # event end
 EOF
-    printf "\n\n" >>$d/${k4}
-    touch -t "$(date -r 0x"$v" +%Y%m%d%H%M.%S)" $d/${k4},kv
+
+    printf "\n\n" >> $d/${k4};
+    touch -t "$(date -r 0x"$v" +%Y%m%d%H%M.%S)" $d/^/kv;
+    touch "$d/$epoch/index.md";
+    echo "$d/$k4" >$d/^/ptr
+    echo "$xs$ss" >>$d/^/ptr
     echo "$d $k4 $km"
 	#%ku http://domain.tld/ related url  # related named url
 	#%ko george@galis.org # owner
-	#%kv 40000000 # value [:xdigit:]{8}
 	#%ka 00000000 # access (0x count)
     } # k4db_gk
 
-kll () { kl "$k4_topic" $@ ;} #:: show results sorted by creation time (long, $k4_topic)
+k4ki () { #:> generate ki (review) line, based on arg1 (decimal days) from now
+    local days="$1"
+    [ "$days" ] || days=57 # default to 57 days from now
+    [[ $days =~ ^-?[0-9]+$ ]] || chkerr "$FUNCNAME : arg1 interger expected days='$days' (af7e0)"
+    local i="$(printf '%x' "$(( $(date '+%s') + 86400 * $days ))" )"
+    local il="$(echo "$i" | xs2tai | tai64nlocal | sed 's/[.|][0]*$//')" # as natural date, XXX with tai64-utc offset
+    echo "%ki $i # review $il"
+    }
+
+kll () { kl "^%k(t|j) " ;} #:: show results sorted by creation time (long, $k4_topic)
 kl () { #:: show results sorted by creation time
     local ex="$1" # additional optional k4 regex to display
     local uidlnd="$k4db/$k4_pool/uidln" ptrnxd="$k4db/$k4_pool/ptrnx"
     local xs nxp uidln ptrid
+    k4db_linkcount ": $FUNCNAME $@ {sort mod} : " ; echo knx
     k4db_hl '\'
     xssdaysec >$k4db/$k4_pool/tx.${FUNCNAME}.0
     knx # adds a second with pool of 200...
@@ -446,7 +509,7 @@ kl () { #:: show results sorted by creation time
          printf '%- 3s ' "${nxp##*/}"
          xs="${uidln::8}"
          echo -n "$xs "
-         k4db_headx '^%ks ' "$uidlnd/$uidln" | head -n1
+         k4db_headx '^%ks ' "$uidlnd/$uidln"
          [ "$ex" ] && k4db_headx "$ex" "$uidlnd/$uidln" \
             | k4db_headx_filter \
             | awk -v xs="$xs" '{printf "%12s %s\n","",$0}'
@@ -458,11 +521,12 @@ kl () { #:: show results sorted by creation time
       k4db_xss_ddiff $k4db/$k4_pool/tx.${FUNCNAME} seconds ;} | $k4_unlong
     } # kl
 
-klrl () { klr "^%k(m|t|j) " ;} #:: show results sorted by reverse creation time (long, ks kt kj km)
+klrl () { klr "^%k(t|j) " ;} #:: show results sorted by reverse creation time (long, ks kt kj km)
 klr () { #:: show results sorted by reverse creation time
     local ex="$1" # additional optional k4 regex to display
     local uidlnd="$k4db/$k4_pool/uidln" ptrnxd="$k4db/$k4_pool/ptrnx"
     local xs nxp uidln ptrid
+    k4db_linkcount ": $FUNCNAME $@ {sort mod} : " ; echo knx
     k4db_hl '\'
     xssdaysec >$k4db/$k4_pool/tx.${FUNCNAME}.0
     # user may have invalidated the pool by deleting the directory
@@ -472,7 +536,7 @@ klr () { #:: show results sorted by reverse creation time
          printf '%- 3s ' "${nxp##*/}"
          xs="${uidln::8}"
          echo -n "$xs "
-         k4db_headx '^%ks ' "$uidlnd/$uidln" | head -n1
+         k4db_headx '^%ks ' "$uidlnd/$uidln"
          [ "$ex" ] && k4db_headx "$ex" "$uidlnd/$uidln" \
             | k4db_headx_filter \
             | awk -v xs="$xs" '{printf "%12s %s\n","",$0}'
@@ -484,10 +548,11 @@ klr () { #:: show results sorted by reverse creation time
       k4db_xss_ddiff $k4db/$k4_pool/tx.${FUNCNAME} seconds ;} | $k4_unlong
     } # krl
 
-ktl () { kt "^%k(m|t|j) " ;} #:: show results sorted by modification time (long, ks kt kj km)
+ktl () { kt "^%k(t|j) " ;} #:: show results sorted by modification time (long, ks kt kj km)
 kt () { #:: show results sorted by modification time
     local ex="$1" # additional optional k4 regex to display
     local xs nxp uidln uidlnd="$k4db/$k4_pool/uidln" ptrnxd="$k4db/$k4_pool/ptrnx"
+    k4db_linkcount ": $FUNCNAME $@ {sort mod} : " ; echo knx
     k4db_hl '\'
     xssdaysec >$k4db/$k4_pool/tx.${FUNCNAME}.0
     # user may have invalidated the pool by deleting the directory
@@ -497,7 +562,7 @@ kt () { #:: show results sorted by modification time
         nxp=$(grep --files-with-matches "$uidln" "$ptrnxd"/* | head -n1 )
         xs="${uidln::8}"
         printf '%- 3s %s ' "${nxp##*/}" "$xs"
-        k4db_headx '^%ks ' "$uidlnd/$uidln" | head -n1
+        k4db_headx '^%ks ' "$uidlnd/$uidln"
          [ "$ex" ] && k4db_headx "$ex" "$uidlnd/$uidln" \
             | k4db_headx_filter \
             | awk -v xs="$xs" '{printf "%12s %s\n","",$0}'
@@ -509,10 +574,11 @@ kt () { #:: show results sorted by modification time
       k4db_xss_ddiff $k4db/$k4_pool/tx.${FUNCNAME} seconds ;} | $k4_unlong
     } # kt
 
-ktrl () { ktr "^%k(m|t|j) " ;} #:: show results sorted by reverse modification time (long, ks kt kj km)
+ktrl () { ktr "^%k(t|j) " ;} #:: show results sorted by reverse modification time (long, ks kt kj km)
 ktr () { #:: show results sorted by reverse modification time
     local ex="$1" # additional optional k4 regex to display
     local xs nxp uidln uidlnd="$k4db/3/c/0/uidln" ptrnxd="$k4db/3/c/0/ptrnx"
+    k4db_linkcount ": $FUNCNAME $@ {sort mod} : " ; echo knx
     k4db_hl '\'
     xssdaysec >$k4db/$k4_pool/tx.${FUNCNAME}.0
     # user may have invalidated the pool by deleting the directory
@@ -522,7 +588,7 @@ ktr () { #:: show results sorted by reverse modification time
          printf '%- 3s ' "${nxp##*/}"
          xs="${uidln::8}"
          echo -n "$xs "
-         k4db_headx '^%ks ' "$uidlnd/$uidln" | head -n1
+         k4db_headx '^%ks ' "$uidlnd/$uidln"
          [ "$ex" ] && k4db_headx "$ex" "$uidlnd/$uidln" \
             | k4db_headx_filter \
             | awk -v xs="$xs" '{printf "%12s %s\n","",$0}'
@@ -534,73 +600,98 @@ ktr () { #:: show results sorted by reverse modification time
       k4db_xss_ddiff $k4db/$k4_pool/tx.${FUNCNAME} seconds ;} | $k4_unlong
     } # ktr
 
-kvl () { #:o remove from ^pool no ^%k(s|m|t|j) grep -E args
+
+livepool () { #:o Return most recent k4_pool available
+    find $k4db -type d -regex "$k4db/0/.*v$" -name \*v
+    echo '16'
+    find $k4db -type d -regex "$k4db/0/.*v$" -name \*v -regex '$k4db/0/.*/[[:xdigit:]]\{16\}v$'
+    echo '*'
+    find $k4db -type d -regex "$k4db/0/.*v$" -name \*v -regex '$k4db/0/.*/[[:xdigit:]]*v$'
+    echo '-E *'
+    find -E $k4db -type d -regex "$k4db/0/.*v$" -name \*v -regex '$k4db/0/.*/[[:xdigit:]]*v$'
+    echo '-E *'
+    find -E $k4db -type d -regex "$k4db/0/.*v$" -name \*v -regex '$k4db/0/.*/[[:xdigit:]]+v$'
+    xss | k4d $k4db/0 | awk '{printf "%s %s\n",$1,$0 }'
+    } # livepool
+
+kn () { #:o find results modified newer than arg1 (xs)
+   local xs="$1" k4db="$k4db/$k4_pool/$(k4epoch)"
+   echo "$k4_pool/$(k4epoch)"
+    # generate 
+   # find in p 
+    } # kn
+
+kvl () { #:o remove from ^pool ^%k(s|m|t|j) grep -E args
     k4_search='^%k(s|m|t|j) ' kv $@
     } # kvl
-kvm () { #:o remove from ^pool no ^%km grep -E args
+kvm () { #:o remove from ^pool ^%km grep -E args
     k4_search='^%km ' kv $@
     } # kvm
-kvs () { #:o remove from ^pool no ^%ks grep -E args
+kvs () { #:o remove from ^pool ^%ks grep -E args
     k4_search='^%ks ' kv $@
     } # kvs
-kvt () { #:o remove from ^pool no ^%kt grep -E args
+kvt () { #:o remove from ^pool ^%kt grep -E args
     k4_search='^%kt ' kv $@
     } # kvt
-kv () { #:o remove from ^pool no k4_search grep -E args
+kv () { #:o remove from ^pool k4_search grep -E args
     k4db_valid_cmd || chkerr "$FUNCNAME : fail k4db_valid_cmd bc73b10 " || return 1
     local uidln uid
     local filter="$(k4_wrapregex $@)"
+    k4db_hl '\'
     xssdaysec >$k4db/$k4_pool/tx.${FUNCNAME}.0
     find $k4db/$k4_pool/uidln -type f \
         | while read uidln ; do
             awk 'NR==1,/^%kz/' "$uidln" \
                 | grep -E "${k4_search}" \
-                | grep $case -qE "$filter" \
+               | grep $case -qE "$filter" \
                 && {
                     uid="${uidln##*/}"
-                    find "$k4db/$k4_pool/ptrnx" -type f -exec grep -q "$uid" \{\} \; -delete
                     rm -f "$uidln" "$k4db/$k4_pool/ptrid/$uid"
-                    }
+                    } \
+                || { k4kl "$uidln" ; echo ;}
         done
+    k4db_hl '/'
     knx
     xssdaysec >$k4db/$k4_pool/tx.${FUNCNAME}.1
     {
-    k4db_linkcount ": $FUNCNAME ${case} ${filter} : "
+    k4db_linkcount ": $FUNCNAME ${case} '${filter}' : "
     k4db_xss_ddiff $k4db/$k4_pool/tx.${FUNCNAME} seconds ;} | $k4_unlong
     } # kg
 
-kgl () { #:o remove from ^pool no ^%k(s|m|t|j) grep -E args
+kgl () { #:o from ^pool keep only ^%k(s|m|t|j) grep -E args
     k4_search='^%k(s|m|t|j) ' kg $@
     } # kgl
-kgm () { #:o remove from ^pool no ^%km grep -E args
+kgm () { #:o from ^pool keep only ^%km grep -E args
     k4_search='^%km ' kg $@
     } # kgm
-kgs () { #:o remove from ^pool no ^%ks grep -E args
+kgs () { #:o from ^pool keep only ^%ks grep -E args
     k4_search='^%ks ' kg $@
     } # kgs
-kgt () { #:o remove from ^pool no ^%kt grep -E args
+kgt () { #:o from ^pool keep only ^%kt grep -E args
     k4_search='^%kt ' kg $@
     } # kgt
-kg () { #:o remove from ^pool no k4_search grep arg1
+kg () { #:o from ^pool keep only k4_search grep arg1
     k4db_valid_cmd || chkerr "$FUNCNAME : fail k4db_valid_cmd bc73b10 " || return 1
     local uidln uid
     local filter="$(k4_wrapregex $@)"
+    k4db_hl '\'
     xssdaysec >$k4db/$k4_pool/tx.${FUNCNAME}.0
     find $k4db/$k4_pool/uidln -type f \
         | while read uidln ; do
             awk 'NR==1,/^%kz/' "$uidln" \
                 | grep -E "${k4_search}" \
                 | grep $case -qE "$filter" \
+                && { k4kl "$uidln" ; echo ;} \
                 || {
                     uid="${uidln##*/}"
-                    find "$k4db/$k4_pool/ptrnx" -type f -exec grep -q "$uid" \{\} \; -delete
                     rm -f "$uidln" "$k4db/$k4_pool/ptrid/$uid"
                     }
         done
+    k4db_hl '/'
     knx
     xssdaysec >$k4db/$k4_pool/tx.${FUNCNAME}.1
     {
-    k4db_linkcount ": $FUNCNAME ${case} ${filter} : "
+    k4db_linkcount ": $FUNCNAME ${case} '${filter}' : "
     k4db_xss_ddiff $k4db/$k4_pool/tx.${FUNCNAME} seconds ;} | $k4_unlong
     } # kg
 
@@ -615,43 +706,57 @@ kjq () { #:o background quiet search
     kj $@ >/dev/null & }
 kj () { #:o pool k4 $since k4db $k4_search regex (arg1), frame display nx xs ks
     [ "$*" ] || { k4_help ; return 1 ;}
-    $k4db_logstd "begin : since='$since' $FUNCNAME '$*'"
-    local k4 n nx k4_more_match_cap arg="$*"
+    local k4 n nx k4_more_match_cap k4_match_cap="$k4_match_cap" arg="$*"
+    $k4db_logstd "begin $$ : since='$since' $FUNCNAME $arg"
     k4db_valid_cmd || return 1
     n="$(knx_count d)"
+    [ "$k4_match_cap" ] || k4_match_cap="$(tput li)"
     k4_new_match_cap=$(( n + k4_match_cap))
-    [ "$n" ] || n=0
+    k4db_linkcount ": since='$since' $FUNCNAME $@ : " ; echo
+    xss | k4d ~/dot4/0 $(date "+%Y%m%dT%H%M%S%z %a %s") | cut -d \  -f3-
     xssdaysec | tee $k4db/$k4_pool/tx.${FUNCNAME}.0
     k4db_hl '\'
     k4db_fk4 | while read k4 ; do # @@ maybe opportunity for better performance...
         awk 'NR==1,/^%kz/' "$k4" \
             | grep -E "${k4_search}" \
             | grep "$case" -qE "$arg" && { set $(k4kl "$k4")
-                n=$(( n + 1 ))
+                n=$(( n + 1 )) #@@@@
                 nx=$(printf "%o" "$n")
-                k4db_mknxln "$nx" "$k4"
+                # k4db_mkuidln "$k4" incomplete pool generation
+                k4db_mknxk4 "$nx" "$k4" # @@@ potential duplicates in pool
                 k4db_headx '^%ks ' "$k4" \
-                  | awk -v nx=$nx -v xs=$2 'NR==1 {printf "%3s %s %s\n",nx,xs,$0}'
-            [ $n -lt $k4_new_match_cap ] || return 0 ;}
+                  | awk -v nx=$nx -v xs="$2" 'NR==1 {printf "%4s %8s %s\n",nx,xs,$0}'  ;}
+            [ $n -lt $k4_new_match_cap ] || return 0 
         done | $k4_unlong # k4
     k4db_hl '/'
     xssdaysec >$k4db/$k4_pool/tx.${FUNCNAME}.1
     {
       k4db_linkcount ": since='${since}' $FUNCNAME $arg : "
-      k4db_xss_ddiff "$k4db/$k4_pool/tx.${FUNCNAME}" seconds ;} | $k4_unlong
-    $k4db_logstd "end : since='$since' $FUNCNAME $arg"
+      k4db_xss_ddiff "$k4db/$k4_pool/tx.${FUNCNAME}" seconds
+      } | $k4_unlong
+    $k4db_logstd "end $$ : since='$since' $FUNCNAME $arg"
     } # kj
 
+kjt () { #:o query kdb tags for regex (arg1)
+    k4_search="^%kt " kj $@
+    } # kjt
 
 k_ ()  { #: Match k4 modify since arg1 days (default 3)
-    local day="$1" since
+    local day="$1"
+    $k4db_logstd "begin $$ : since='$since' $FUNCNAME $day"
     [ "$day" ] || day=3
+    local since
     since="-mtime -${day}" kj .
+    stdwrn "$FUNCNAME $day"
+    $k4db_logstd "end $$ : since='$since' $FUNCNAME $day"
     }
 k__ ()  { #: Match k4 modify since arg1 minutes (default 90)
-    local min="$1" since
+    local min="$1"
+    $k4db_logstd "begin $$ : since='$since' $FUNCNAME $min"
     [ "$min" ] || min=90
+    local since
     since="-mmin -${min}" kj .
+    $k4db_logstd "end $$ : since='$since' $FUNCNAME $arg"
     }
 
 # one day = 1440 min or 86400 seconds
@@ -661,6 +766,7 @@ krst () { #:o reset uidln ptrid ptrnx in $k4db/$k4_pool
     find "$k4db/$k4_pool/ptrnx" -regex '.*/ptrnx/[[:xdigit:]]*$'      -delete
     find "$k4db/$k4_pool/ptrid" -regex '.*/ptrid/[[:xdigit:]]\{16\}$' -delete
     find "$k4db/$k4_pool/uidln" -regex '.*/uidln/[[:xdigit:]]\{16\}$' -delete
+    tput clear
     [ "$@" ] && kj $@
     } # krst
 
@@ -681,16 +787,25 @@ knx () { #:> make ptrnx/ and uidln/ from ptrid/
             done
     } # knx
 
-k4db_mknxln () { #:> update uidln/ ptrnx/ and ptrid/ given nx and k4 (arg1 arg2)
+k4db_mkuidln () { #:> update uidln/ and ptrid/ given nx and k4 (arg1 arg2)
+    local k4="$1"
+    [ -f "$k4" ] || { chkerr "$FUNCNAME \$k4 is not a regular file {5bacnoun}" ; return 1 ;}
+    set $(k4db_headx '^%km ' "$k4" | head -n1 | sed 's/_/ /g')
+    # %km 5bbeec 5bbeec8a  33f7df04 idoent 20181010 23:24:00:Wed:1539239040
+    ln -f "$k4" "$k4db/$k4_pool/uidln/$3$4"
+    } # k4db_mkuidln
+
+k4db_mknxk4 () { #:> update uidln/ ptrnx/ and ptrid/ given nx and k4 (arg1 arg2)
     local nx="$1" k4="$2"
     [ "$nx" ] || { chkerr "$FUNCNAME \$nx is null {5bachual} " ; return 1 ;}
     [ -f "$k4" ] || { chkerr "$FUNCNAME \$k4 is not a regular file {5bacnoun}" ; return 1 ;}
     set $(k4db_headx '^%km ' "$k4" | head -n1 | sed 's/_/ /g')
     # %km 5bbeec 5bbeec8a  33f7df04 idoent 20181010 23:24:00:Wed:1539239040
     ln -f "$k4" "$k4db/$k4_pool/uidln/$3$4"
-    { echo "$k4" ; echo "$3$4" ;} >"$k4db/$k4_pool/ptrnx/$nx"
+    { echo "$k4" ; echo "$3$4" ;} \
+         >"$k4db/$k4_pool/ptrnx/$nx"
     ln -f "$k4db/$k4_pool/ptrnx/$nx" "$k4db/$k4_pool/ptrid/$3$4"
-    } # k4db_mknxln
+    } # k4db_mknxk4
 
 knx_count () { # count ptrnx (base arg1 [o|d|x], default x)
     k4db_valid_cmd || return 1
@@ -699,15 +814,17 @@ knx_count () { # count ptrnx (base arg1 [o|d|x], default x)
     [ "$base" = "o" -o "$base" = "d" -o "$base" = "x" ] \
         || chkerr "$FUNCNAME : invalid base arg1=(|o|d|x): $base : bc1098ca" || return 1
     find "$k4db/$k4_pool/ptrnx" -not -name 0 -regex '.*/ptrnx/[[:xdigit:]]*$' \
-        | awk 'END{printf "%'$base'\n",NR}' 
+        | awk 'END{printf "%'$base'\n",NR}'
     } # knx_count @@
 
 k4db_linkcount () { #:> report epic, ptrnx count, (current) k4_match_cap, and uidln count
     local ptrnxc="$(find "$k4db/$k4_pool/ptrnx" -type f | awk 'END{printf NR}' )"
     local uidlnc="$(find "$k4db/$k4_pool/uidln" -type f | awk 'END{printf NR}' )"
-    printf "% 3s/%s/%s %s" "$ptrnxc" "$k4_match_cap" "$uidlnc" "$*"
+    local k4_match_cap="$k4_match_cap"
+    [ "$k4_match_cap" ] || k4_match_cap="$(tput li)"
+    printf "% 3s/%s/%s %s" "$ptrnxc" "$uidlnc" "$k4_match_cap" "$*"
+    [ $ptrnxc -ge $k4_match_cap ] && chkwrn "k4_match_cap=$k4_match_cap overflow" && echo
     [ $ptrnxc -eq 0 ] && chkwrn "null match"
-    [ $ptrnxc -ge $k4_match_cap ] && chkwrn "k4_match_cap overflow"
     } # k4db_linkcount @@
 
 k4db_xss_ddiff () { #:> subtract {arg1}.1 from {arg1}.0 (per "xssdaysec >{arg1}.0"), output decimal diff, pass remaining args
@@ -730,37 +847,63 @@ ks () { #:o create a new k4 with subject {args} and edit
     set $(k4db_gk "$ks")
     # /.../dot4/5/b/d/1/27bb_23f085fc_ _5bd1.kdb 5bd1 5bd127bb _23f085fc pole 20181024 19:17:21:Wed:1540433841
     export k4="$1/$2"
-    $EDITOR "$k4"
-    k4db_mknxln "0" "$k4"
-    k4db_mknxln "$(echo $(( $(knx_count d) +1 )) | awk '{printf "%o\n",$1}')" "$k4" # emulate kj, create new search result in pool
     ci -m"(by $FUNCNAME)" -l -t-kdb -q "$k4" # init RCS
-    kwds <"$k4" >"${k4}.kwd" & # background create kwd file
-    k4_post "$k4"
+    k4db_mknxk4 "0" "$k4"
+    k 0
     $k4db_logstd "end $$ : $invoke"
     } # ks
 
-kcs () { #:o less (xss|xs|nx) default 0, with filter
+kcs () { #:o less arg1 (xss|xs|nx) default 0, with k4db_headx_filter
     kc $@ | less ;}
-kc () { #:o cat (xss|xs|nx) default 0, with filter
+kc () { #:o cat arg1 (xss|xs|nx) default 0, with k4db_headx_filter
     $k4db_logstd "start $$ : $FUNCNAME $@"
-    local k4
     set $(k4_inptr "$1")
-    k4="$1"
-    [ -e "$k4" ] || chkerr "$FUNCNAME no k4 $k4 (bc785a2)" || return 1
-    cat "$k4" | k4db_headx_filter
-    k4db_mknxln "0" "$k4"
+    export k4="$1"
+    [ -e "$k4" ] || chkerr "$FUNCNAME no k4='$k4' (bc785a2)" || return 1
+    k4db_hl '\'
+    cat "$k4" 
+    k4db_hl '|'
+    k4_post "$k4"
+    k4db_hl '/'
+    k4db_mknxk4 "0" "$k4"
     $k4db_logstd "end $$ : $FUNCNAME $@"
     } # kc
 
-kxl () { #:: show results as extracted links
+k4ks () { #:> Extract ks from arg1 (k4)
+    local k4="$1"
+    [ -e "$k4" ] || { chkerr "$FUNCNAME k4 '$k4' does not exist (bda4be0)" ; return 1 ;}
+    awk 'NR==1,/^%kz/' <"$k4" | sed  -e '/^%ks\ /!d' | tr '\n' ' '
+    #awk 'NR==1,/^%kz/' <"$k4" | sed  -e '/^%ks\ /!d' -e 's/^%ks\ //' | tr '\n' ' ' \
+    # | awk '{print "%ks ",$0}' # @@ | squeeze wht space
+    }
+k4kl () { #:> Extract links from arg1 (k4)
+    local k4="$1"
+    [ -f "$k4" ] || chkerr "$FUNCNAME : not a regular file k4='$k4' (bda5b1e)" || return 1
+    awk 'NR==1,/^%kz/' <"$k4" | sed  -e '/^%km\ /!d' -e 's/^%km\ //' -e 's/_/ /g' \
+      | awk '{printf "%s %8s %8s ","%kl",$2,$3}'
+    k4ks "$k4"  || chkerr "$FUNCNAME bad k4 '$k1' (bda5f82)" || return 1
+        # -e 's/ 40000000//' \
+    # @@ | squeeze wht space
+    } # k4kl
+kxks () { #:> Extract ks from arg1 (knx)
+    set $(k4_inptr "$1")
+    k4ks "$1" || chkerr "$FUNCNAME bad k4 '$k1' (bda5ee6)" || return 1
+    }
+
+knkl () { #:> Extract links from arg1 (knx)
+    chkerr "deprecated $FUNCNAME" || return 1
+    set $(k4_inptr "$1")
+    k4kl "$1" || chkerr "$FUNCNAME bad k4 '$k1' (bda5f18)" || return 1
+    }
+
+kxl () { #:: show pool results as extracted links
     local uidln="$1" uidlnd="$k4db/3/c/0/uidln"
     [ "$uidln" ] && knxl "$uidln" || {
     ls "$uidlnd" | while read uidln ; do
         k4kl "${uidlnd}/${uidln}" ; echo
     done ;}
     } # kxl
-
-knxl () { #:> use arg1; return extracted linking data
+knxl () { #:> extract linking data from arg1 (xss|xs|nx), default 0
     # set %km and output "%kl $2 $3 %ks $0"
     set $(k4_inptr "$1")
     local k4="$1"
@@ -771,66 +914,50 @@ knxl () { #:> use arg1; return extracted linking data
         sed  -e '/^%ks\ /!d' <"$k4" ;}
     } # kxl
 
-k4_kl () { #> extract %kl from k4 (arg1)
+K4l () {
     local k4="$1"
-    awk 'NR==1,/^%kz/' "$k4" \
-            | sed -e '/^%k(m|s) /!d' -e 's/%k//g' \
-        awk 'NR==1,/^%kz/' "$k4" | sed -e '/^%km /!d' -e 's/_/ /g' \
-        
-    }
-knks () { #:> Extract ks from arg1 (knx)
-    set $(k4_inptr "$1")
-    k4ks "$1" || chkerr "$FUNCNAME bad k4 '$k1' (bda5ee6)" || return 1
-    }
-k4ks () { #:> Extract ks from arg1 (k4)
-    local k4="$1"
-    [ -e "$k4" ] || { chkerr "$FUNCNAME k4 '$k4' does not exist (bda4be0)" ; return 1 ;}
-    awk 'NR==1,/^%kz/' <"$k4" | sed  -e '/^%ks\ /!d' | tr '\n' ' '
-    #awk 'NR==1,/^%kz/' <"$k4" | sed  -e '/^%ks\ /!d' -e 's/^%ks\ //' | tr '\n' ' ' \
-    # | awk '{print "%ks ",$0}' # @@ | squeeze wht space
-    }
+    [ -e "$k4" ] || { chkerr "$FUNCNAME k4='$k4' does not exist (bfbe4dd)" ; return 1 ;}
+    awk 'NR==1,/^%kz/' <"$k4" \
+        | sed  -e '/^%km\ /!d' -e 's/^%km\ //' -e 's/_/ /g' \
+        | awk '{print "%kl",$2,$3}' | tr '\n' ' '
+    sed  -e '/^%ks\ /!d' <"$k4" ;}
 
-knkl () { #:> Extract links from arg1 (knx)
-    chkerr "deprecated $FUNCNAME" || return 1
-    set $(k4_inptr "$1")
-    k4kl "$1" || chkerr "$FUNCNAME bad k4 '$k1' (bda5f18)" || return 1
-    }
-k4kl () { #:> Extract links from arg1 (k4)
-    local k4="$1"
-    [ -e "$k4" ] || chkerr "$FUNCNAME k4 '$k4' does not exist (bda5b1e)" || return 1
-    awk 'NR==1,/^%kz/' <"$k4" | sed  -e '/^%km\ /!d' -e 's/^%km\ //' -e 's/_/ /g' \
-      | awk '{printf "%s %s %s ","%kl",$2,$3}'
-    k4ks "$k4"  || chkerr "$FUNCNAME bad k4 '$k1' (bda5f82)" || return 1
-    # @@ | squeeze wht space
-    } # k4kl
-
-k4pool_xlinks () { #:> generate kl for every nx
-    chkerr "deprecated $FUNCNAME" || return 1
-    local k4 ptrnx="$k4db/$k4_pool/ptrnx"
-    find "$ptrnx" -type f \! -name 0 -exec awk 'NR==1 {print $1}' \{\} \; \
-        | while read k4; do
-            k4kl "$k4"
-            done
-    } # k4db_xlinks
+Kxl () { #:> extract linking data from arg1 (xss|xs|nx), default pool
+    local arg1="$1" k4
+    [ "$arg1" ] && { set $(k4_inptr "$arg1") && K4l "$1" || chkerr "$FUNCNAME invalid something arg1='$arg1' k4='$1' (bfbe236)" || return 1 ;}
+    [ "$arg1" ] || find "$k4db/$k4_pool/uidln" -regex '.*/uidln/[[:xdigit:]]\{16\}$' \
+        | while read k4 ; do K4l "$k4" ; done
+    } # Kxl
 
 k4_post () { #:: display metadata and file listing of k4 {arg1}
     $k4db_logstd "start $$ : $FUNCNAME $*"
     local p="$(dirname "$1")" k4="$(basename "$1")"
-    ( cd "$p"
-         k4db_headx '^%km ' "$p/$k4" | sed 's/_/ /g' | awk '{print $3" "}' | tr -d '\n'
-         k4db_headx '^%ks ' "$p/$k4" | sed 's/^%k//'
+    (
+        cd "$p"
+        k4kl "$k4" ; echo
          k4db_headx "${k4_view}" "$p/$k4" | sed -e '/^%ks /d' -e 's=^%k=         ='
          find "${PWD}" -type f      -name "$k4" \
             -exec printf "       KDB " \; -print
          find "${PWD}" -type d -mindepth 1 -maxdepth 1 \
             -exec printf "       DIR " \; -print | sort -d
- 	     find "${PWD}" -type f -not -name "$k4" -not -name "x${k4},v" -maxdepth 1 \
-            -exec printf "      FILE " \; -print | sort -d
+ 	     find "${PWD}" -type f -not -name "$k4" -not -name "${k4},v" -maxdepth 1 \
+            -exec printf "      FILE " \; -print | head  | sort -d
          echo "      PATH $(pwd -P)/"
-         k4kl "$k4" ; echo
-    )
+        )
     $k4db_logstd "end $$ : $FUNCNAME $*"
     } # k4_post
+k4_head_disp () { #:: k4 header and directory summary @@@ k4_post rewrite in progress
+    $k4db_logstd "start $$ : $FUNCNAME $*"
+    set $(k4_inptr "$1")
+    [ -e "$1" ] || chkerr "$FUNCNAME : invalid ptr k4='$1' (c0c42d73)" || return 1
+    awk 'NR==1,/^%kz/' "$1"
+    $k4db_logstd "end $$ : $FUNCNAME $*"
+    }
+
+# file://./TheYodaofSiliconValley.html
+# /Users/geo/dot4/5/c/1/a/b/04908040274^/5c1ab/TheYodaofSiliconValley.html
+# /Users/geo/dot4/5/c/1/a/b/04908040274^/./5c1ab/TheYodaofSiliconValley.html
+# /Users/geo/dot4/5/c/1/a/b/04908040274^/./kv
 
 # midpoint two times
 # echo 0x5bbd113d 0x5bbd18aa | awk '{printf "%d %d + 2 / p\n",$1,$2}' | dc
@@ -840,23 +967,22 @@ k4_post () { #:: display metadata and file listing of k4 {arg1}
 # 5bbd14f3
 # find /Users/geo/dot4/3/c/ -regex '.*/[[:xdigit:]]\{16\}$' | sed -e 's:.*/::' -e 's/.\{8\}$//' -e 's/^/0x/' | sort -u | awk '{printf "%s %d\n",$1,$1}' | while read s ; do set $s ; echo -n "$1 " ; date -j -r $2 ; done
 
-k4_inptr () { #:: Return k4, xss and nx, if single match, from arg1 (xss|xs|nx), default 0
+k4_inptr () { #:: Return k4, xss and nx, if single match, from arg1 check (nx|xs|xss), default last (epoch too heavy w/o idx)
     $k4db_logstd "start $$ : $FUNCNAME $*"
-    local ptr="$1" nx ptrf
+    local ptr="$1" ptrf k4 id nx
     local ptrid="$k4db/$k4_pool/ptrid"
     local ptrnx="$k4db/$k4_pool/ptrnx"
     [ "$ptr" ] || ptr=0
-                   ptrf="$( find "$ptrid" -name "${ptr}"  -regex ".*/ptrid/[[:xdigit:]]\{16\}$" )"      # check ptrid xss
-    [ "$ptrf" ] || ptrf="$( find "$ptrid" -name "${ptr}*" -regex ".*/ptrid/${ptr}[[:xdigit:]]\{8\}$" )" # check ptrid xs
     [ "$ptrf" ] || ptrf="$( find "$ptrnx" -name "${ptr}"  -regex ".*/ptrnx/[[:xdigit:]]*$" )"           # check ptrnx nx
-    [ "$ptrf" ] || chkerr "No match for ${ptr} (bcfce6d)" || return 1 
-    [ "$(echo "$ptrf" | awk 'END{print NR}')" = 1 ] || { chkerr "Multi match for ptr ${ptr} $FUNCNAME bug (bcf6458)" ; return 1 ;}
-    nx="$(find "$ptrnx" -type f -not -name 0 -exec grep --files-with-matches "$( awk 'NR==1' "$ptrf" )" \{\} \; )"
-    [ "$nx" ] || chkwrn "No nx from $ptrf (bd12e1a)" 
-    [ "$(echo "$nx" | awk 'END{print NR}')" = 1 ] || { chkerr "Multi match for nx $nx $FUNCNAME bug (bd09fa5)" ; return 1 ;}
-    nx="${nx##*/}"
-    cat $ptrf | tr '\n' ' '
-    echo $nx
+    [ "$ptrf" ] || ptrf="$( find "$ptrid" -name "${ptr}"  -regex ".*/ptrid/[[:xdigit:]]\{16\}$" )"      # check ptrid xss
+    [ "$ptrf" ] || ptrf="$( find "$ptrid" -name "${ptr}*" -regex ".*/ptrid/${ptr}[[:xdigit:]]\{8\}$" )" # check ptrid xs
+    [ "$ptrf" ] || ptrf="$(ls -r "$ptrnx"/* | head -n1)" # if there is no 0 use the highest nx
+    [ "$ptrf" ] || chkerr "$FUNCNAME : no match for ${ptr} : $ptrid $ptrnx : (bcfce6d)" || return 1
+    [ "$(echo "$ptrf" | awk 'END{print NR}')" = 1 ] || chkwrn "$FUNCNAME : multi match for ptr='${ptr}' $FUNCNAME bug (bcf6458)"
+    [ "$ptrf" ] && k4="$(head -n1 "$ptrf")"
+    [ "$ptrf" ] && id="$(tail -n1 "$ptrf")"
+    [ "$ptrf" ] && nxp="$(find "$ptrnx" -type f -exec grep --files-with-matches "$id" \{\} \; | awk 'NR==1' )"
+    echo $k4 $id ${nxp##*/}
     $k4db_logstd "end $$ : $FUNCNAME $*"
     } # k4_inptr
 
@@ -865,14 +991,11 @@ ka () { #:o aspell arg1
     local k4
     set $(k4_inptr "$1")
     k4="$1"
-    nx="$3"
     [ -e "$k4" ] || chkerr "invalid ptr (no $k4)" || return 1
     aspell -c "$k4"
-    k4db_mknxln "0" "$k4"
-    k4db_mknxln "$nx" "$k4"
+    k4db_mknxk4 "0" "$k4"
     [ -e "${k4},v" ] || ci -m"(by $FUNCNAME)" -l -t-kdb -m'aspell' -q "$k4" # increment RCS, if comma-v doesn't exist
     [ "${k4}" -nt "${k4},v" ] && ci -m"(by $FUNCNAME)" -l -q "$k4" # increment RCS, if k4 revised
-    [ "${k4}" -nt "${k4}.kwd" ] && kwds <"$k4" >"${k4}.kwd" & # background increment kwd if k4 revised
     k4_post "$k4"
     $k4db_logstd "end $$ : $FUNCNAME $*"
     } # ka
@@ -890,7 +1013,9 @@ k4db_showpool () { #:- show all files in k4db/k4_pool
 k4db_hl () { #:> Draw a horz line width of terminal, with arg1, default "-"
     local char="$1" cols=$(tput cols)
     [ "$char" ] || char="-"
+    tput md
     printf "%*s" $cols '' | tr ' ' "$char"
+    tput me
     } # k4db_hl
 k4db_fold () { #:> on terminal output, fold long lines on words
     local cols="$(tput cols)"
@@ -900,36 +1025,46 @@ k4db_trunc () { #:> on terminal output, truncate lines to width
     local cols="$(tput cols)"
     [ -t 1 ] && awk -v cols=$((cols-1)) 'length > cols{$0=substr($0,0,cols)"_"}1' || cat
     } # k4db_trunc
-    
+
 k4db_center_pad () { #:- Center pad stdin w/arg1 (default ^)
     local char="$1" cols=$(tput cols)
     [ "$char" ] || char="-"
-    sed "s/^[ ]/$char/g" 
+    sed "s/^[ ]/$char/g"
     } #@@@
-k4db_center () { #:- Center arg1 
+k4db_center () { #:- Center arg1
     local cols=$(tput cols)
     [ -t 1 ] && { fmt -w "$cols" -c | sed 's/[ ]*$//' | k4db_trunc ;} || cat
     }
 
 k () { #:o edit k4 of nx {arg1}
-    $k4db_logstd "start: < since='$since' $FUNCNAME $* >"
+    $k4db_logstd "start $$ : since='$since' $FUNCNAME $*"
     local ptrnxd="$k4db/$k4_pool/ptrnx"
-    set $(k4_inptr "$1")
+    set $(k4_inptr "$1") || chkerr "$FUNCNAME : error k4_inptr arg1='$1' (bfd7c86)" || return 1
     k4="$1"
-    nx="$3"
-    [ -e "$k4" ] || chkerr "invalid k4 $k4 (bcf678a)" || return 1
+    nx="$2"
+    [ -e "$k4" ] || chkerr "$FUNCNAME : invalid k4='$k4' (bcf678a)" || return 1
     $EDITOR "$k4"
-    k4db_mknxln "0" "$k4"
-    k4db_mknxln "$nx" "$k4" # editor may write a new inode
+    k4db_mknxk4 "0" "$k4"
+    k4db_mknxk4 "$nx" "$k4" # editor may write a new inode
     [ -e "${k4},v" ] || ci -m"(by $FUNCNAME)" -l -t-kdb -q "$k4" # increment RCS, if comma-v doesn't exist
     [ "${k4}" -nt "${k4},v" ] && ci  -m"(by $FUNCNAME)" -l -q "$k4" # increment RCS, if k4 revised
-    [ "${k4}" -nt "${k4}.kwd" ] && kwds <"$k4" >"${k4}.kwd" & # background increment kwd if k4 revised
     k4_post "$k4"
-    $k4db_logstd "end $$ : $FUNCNAME $*"
+    $k4db_logstd "end $$ : since='$since' $FUNCNAME $*"
     } # k
 
-kh () { #:: read arg1 or stdin k4 files, return knowledge list (meta data)
+kh () { #:: arg1 (k4 ptr), return knowledge header 
+    xss | k4d ~/dot4/0 $(date "+%Y%m%dT%H%M%S%z %a %s") | cut -d \  -f3-
+    xssdaysec | tee $k4db/$k4_pool/tx.${FUNCNAME}.0
+    local k4ptr="$1"
+    [ "$k4ptr" ] || k4ptr=0
+    k4db_hl '\'
     set $(k4_inptr "$1") && k4_post "$1"
+    k4db_hl '/'
+    xssdaysec >$k4db/$k4_pool/tx.${FUNCNAME}.1
+    { k4db_linkcount ": since='${since}' $FUNCNAME $arg : "
+      k4db_xss_ddiff "$k4db/$k4_pool/tx.${FUNCNAME}" seconds
+      } | $k4_unlong
+    $k4db_logstd "end $$ : since='$since' $FUNCNAME $arg"
     } # kl
 
 k4db_clean () { #> Clean $k4db (remove all empty directores)
@@ -946,7 +1081,6 @@ k4db_headx_filter () { #:> Filter out default values from k4
         /^%k(l|r|p)_(%kl )5.* self [ ]*# (super|related)/d
         /^%k(l|r|p)_5.* self [ ]*# (super|related|linked)/d
         /^%kd_.*index.md$/d
-        /^%kn/d
         ' ;} # k4db_headx_filter
 
 # @@ break out into four functions two iterate stdin to these two with arg1, optimize arg1 performance
@@ -1154,24 +1288,18 @@ arpa () { #:> use ptr to reverse a network, and add in-addr.arpa
 echo "$(ptr "$1")in-addr.arpa" ;}
 
 xs () { #:: tai64n seconds
-    xssdaysec | k4db_np "$k4db" xyz | awk '{print $3}' ;}
-    # current unix time in 0x
-    # printf '%x' $(date '+%s') ;}
-    # echo | tai64n | sed -e 's/^@4[0]*//' -e 's/.\{8\} $//' ;}
-    # /Users/geo/dot4/5/b/a/1/3/0a2_241f46bc 5ba13 5ba130a2 _241f46bc grifi 20180918 10:06:32:1537290392 xyz
+  xss | sed -e 's/.\{9\}$//'
+    # 5c0f21e1
+  }
 
-xss () { #:: tai64n seconds long
-    xssdaysec | k4db_np "$k4db" xyz | awk '{print $3$4}' | sed 's/_//' ;}
+xss () { #:: tai64n second seconds
+  echo | tai64n | sed -e 's/^@4[0]*//'
     # 5bda677e28c8931c
+  }
 
-eid () { #:> epoch identification { 5bd-ucti }
-    # ...creates nothing, passes args
-    xssdaysec | k4db_np $k4db | awk '{print $2"-"$5}' $* ;}
-
-k4_epoch () { #:> return epoch according to arg1 significant digits (default 4)
-    local xss="$(xss)" n="$1"
-    [ "$n" ] || n=4
-    echo ${xss::$n} ;} # k4_epoch
+k4eid () { #:> epoch identification { 5c0c3 ualer }
+    xss | k4d "$k4db" | awk '{print $5,$4}'
+    }
 
 xssdaysec () { #:: no input, tai64n seconds.60s and std
     date "+%Y%m%d %H:%M:%S:%a:%s" | tai64n | sed -e "s/^@4[0]*//" -e 's/^[[:xdigit:]]\{8\}/&_/';}
@@ -1233,16 +1361,17 @@ k4db_init () { #:> Environment setup
     export LC_ALL="C"
     export k4_pool="3/c/0"
     export k4_hist="3/c/2"
-    
+
     export k4db_tags="$k4db/c/etc/tags.tbl"
     export k4db_ntag="$k4db/c/etc/ntag.tbl"
-    export k4db_logstd="k4db_logstd"
-    
+    export k4db_logstd="true #"         # better performance
+    export k4db_logstd="k4db_logstd"    # debug logging
+
     export k4_unlong='k4db_fold'
     export k4_unlong='k4db_trunc'
     export case='-i'
-    export k4_match_cap=192
-    export k4_search='^%k(s|j|t|d|l|r|p|n|m)'
+    # export k4_match_cap=192
+    export k4_search='^%k(s|j|t|d|l|r|p|n|m)\ '
     export     k4_view='^%k(j|t|d|l|r|p|m)'
     export     k4_topic='^%k(s|t|j|l|r|p)'
 
@@ -1264,5 +1393,5 @@ k4db_init () { #:> Environment setup
     } # k4db_init
 
 
-k4db_init && chkwrn "k4db_init : success!" || chkerr "k4db_init : fail"
+k4db_init # && chkwrn "k4db_init : success!" || chkerr "k4db_init : fail"
 
