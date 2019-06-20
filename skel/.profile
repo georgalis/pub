@@ -1,6 +1,6 @@
 # ~/.profile
 
-# Unlimited use with this notice. (C) 2004-2018 George Georgalis
+# Unlimited use with this notice. (C) 2004-2019 George Georgalis
 
 # For Bourne-compatible shells.
 
@@ -15,10 +15,10 @@ umask 022
 ulimit -c 1 # one byte core files memorialize their creation
 
 path_append () { # append $1 if not already in path
- echo $PATH | grep -E ":$1$|^$1$|^$1:|:$1:" 2>&1 >/dev/null \
+ echo $PATH | grep -E "(:$1$|^$1$|^$1:|:$1:)" 2>&1 >/dev/null \
   || export PATH="${PATH}:${1}" ;}
 path_prepend () { # prepend $1 if not already in path
- echo $PATH | grep -E "^$1:|^$1$" 2>&1 >/dev/null \
+ echo $PATH | grep -E "(^$1:|^$1$)" 2>&1 >/dev/null \
   || export PATH="${1}:${PATH}" ;}
 
 # setup ls aliases
@@ -28,7 +28,6 @@ path_prepend () { # prepend $1 if not already in path
  # define reverse for directory color
  export LSCOLORS='x45x2x3x1x464301060203' # invert directory color
   alias  l="colorls -FG"
-  alias lA="colorls -AFG"
   alias la="colorls -AFGTl"
   alias ll="colorls -FGTl"
   alias lt="colorls -AFGTlrt"
@@ -36,12 +35,12 @@ path_prepend () { # prepend $1 if not already in path
   alias lS="colorls -AFGTlrS"
  } || true # echo "no colorls"
 
-case $OS in
+case "$OS" in
 Darwin)
  [ "$TERM" = "xterm" ] && export TERM='xterm-color'
  export LSCOLORS='xefxcxdxbxegedabagacad' # invert directory color
-  alias  l="ls -GF"
-  alias lA="ls -AFG"
+  alias  l="ls -GFr"
+  alias lr="ls -GF"
   alias la="ls -AFGTl"
   alias ll="ls -FTGl"
   alias lt="ls -AFGTlrt"
@@ -54,7 +53,6 @@ Darwin)
 Linux)
  eval $(dircolors | sed 's/di=01;34/di=00;44/')
   alias  l="ls --color=auto"
-  alias lA="ls --color=auto -AF"
   alias la="ls --color=auto -AFl --full-time --time-style=+%Y%m%d_%H%M%S"
   alias ll="ls --color=auto -Fl --full-time --time-style=+%Y%m%d_%H%M%S"
  alias ltd="ls --color=auto -AFlrtd --full-time --time-style=+%Y%m%d_%H%M%S"
@@ -74,6 +72,9 @@ NetBSD|FreeBSD|Dragonfly)
  # fix colors in screen on amd64 XXX workaround
  #[ "$(uname -m)" = "amd64" -a "$TERM" = "xterm-color" ] && export TERM="xterm"
 ;; # NetBSD|FreeBSD|Dragonfly
+esac
+
+case "$OS" in
 Darwin|NetBSD)
  kwds () { # convert stdin to unique words sorted on legnth then alpha to stdout, linux untested
   tr -c '[:alpha:]' ' ' \
@@ -101,7 +102,6 @@ esac
 	 _ntermrev='se' ; _ntermul='ue'
 	 _termrev='so' ; _termul='us'
 }
-
 # create ESC strings to turn on/off underline and stand-out
 _ntermrev="$(tput "$_ntermrev")" ; _ntermul="$(tput "$_ntermul")"
 _termrev="$(tput "$_termrev")" ; _termul="$(tput "$_termul")"
@@ -150,7 +150,7 @@ rm $key_in ;}
 
 uptime
 
-case $SHELL in # start of per $SHELL env
+case "$SHELL" in # start of per $SHELL env
  *bash)
 	export PS1=" \u@\h:\w "
     #PROMPT_COMMAND
@@ -167,7 +167,7 @@ case $SHELL in # start of per $SHELL env
   bind '^XH'=beginning-of-line
   bind '^XF'=end-of-line
   export HISTFILE=$HOME/.ksh_hist
-  export HISTSIZE=6400
+  export HISTSIZE=2600
   VISUAL=emacs # don't export, least override EDITOR
   [ -e ~/.ksh_logout ] && trap '. ~/.ksh_logout' EXIT || true
  ;; # *ksh
