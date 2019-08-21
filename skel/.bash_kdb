@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# kdb mvp 5d5c disto 
+# kdb mvp 5d5ce rogis 
 #
 # Copyright (C) 2015-2019 George Georgalis <george@galis.org>
 # All rights reserved. No use or redistribution allowed.
@@ -151,7 +151,7 @@ k4_d2o ()
         n="$1";
         shift;
         {
-            /usr/local//Cellar/python/3.7.4/Frameworks/Python.framework/Versions/3.7/bin/python3.7 "$k4dbsub/base.py" "$n" 4;
+            python "$k4dbsub/base.py" "$n" 4;
             echo $@
         } | k4_squeeze;
     done
@@ -1229,9 +1229,10 @@ kcs ()
 kg ()
 {
     k4db_valid_cmd || chkerr "$FUNCNAME : fail k4db_valid_cmd bc73b10 " || return 1;
-    local uidhln="$k4db/$k4_pool/uidhln";
     local idxptr="$k4db/$k4_pool/idxptr";
-    local uid ptr;
+    local uidptr="$k4db/$k4_pool/uidptr";
+    local uidhln="$k4db/$k4_pool/uidhln";
+    local uid ptr uidhlnf;
     local xs data="$1" k4ex="$2";
     local k4_topic k4_search="$k4_search";
     [ "$k4ex" ] && {
@@ -1239,14 +1240,12 @@ kg ()
     } || k4_topic="^%ks ";
     k4db_hl '~';
     xssdaysec > $k4db/$k4_pool/tx.${FUNCNAME}.0;
-    find "$uidhln" -type f | while read uid; do
-        awk 'NR==1,/^$/' "$uid" | grep -E "$k4_search" | grep $k4case -qE "$data" && {
-            ptr=$(grep --files-with-matches "${uidln##*/}" "$k4db/$k4_pool/ptrnx/"* | head -n1 );
-            nxp="${nxp##*/}";
-            nxp="$(printf "%-3s" "$nxp")";
-            xs="${uidln##*/}";
-            xs="${xs::8}";
-            k4_headg "$k4_topic" "$uidln" | awk -v nxp="$nxp" -v xs="$xs" 'NR==1{sub(/^/," "nxp" "xs" ")}1' | sed -e "s/^%/             %/" | $k4_unlong
+    find "$uidhln" -type f | while read uidhlnf; do
+        uid="${uidhlnf##/*}";
+        awk 'NR==1,/^$/' "$uidhlnf" | grep -E "$k4_search" | grep $k4case -qE "$data" && {
+            idxptrf=$(grep --files-with-matches "$uid" "$idxptr/"* | awk 'NR==1 {print}' );
+            id="${idxptrf##*/}";
+            k4_headg "$k4_topic" "$uidhln/$uid" | awk -v nxp="$nxp" -v xs="$xs" 'NR==1{sub(/^/," "nxp" "xs" ")}1' | sed -e "s/^%/             %/" | $k4_unlong
         } || {
             uid="${uidln##*/}";
             rm -i -f "$k4db/$k4_pool/ptrid/$uid";
@@ -1737,9 +1736,9 @@ nevernowf ()
     for i in $is;
     do
         {
-            /usr/local//Cellar/python/3.7.4/Frameworks/Python.framework/Versions/3.7/bin/python3.7 $k4db/sub/base.py "$(( ( ($dxs - $ke ) % ( $i * $day ) ) / $day + 1  ))" 4 | awk '{printf "%02s",$1}';
+            python $k4db/sub/base.py "$(( ( ($dxs - $ke ) % ( $i * $day ) ) / $day + 1  ))" 4 | awk '{printf "%02s",$1}';
             echo "f";
-            /usr/local//Cellar/python/3.7.4/Frameworks/Python.framework/Versions/3.7/bin/python3.7 $k4db/sub/base.py "$i" 4 | awk '{printf "%02s",$1}'
+            python $k4db/sub/base.py "$i" 4 | awk '{printf "%02s",$1}'
         } | tr -d '\n';
         echo -n ' ';
     done;
@@ -1747,9 +1746,9 @@ nevernowf ()
     for i in $is;
     do
         {
-            /usr/local//Cellar/python/3.7.4/Frameworks/Python.framework/Versions/3.7/bin/python3.7 $k4db/sub/base18.py "$(( ( ($dxs - $ke ) % ( $i * $day ) ) / $day + 1  ))" 4 | awk '{printf "%02s",$1}';
+            python $k4db/sub/base18.py "$(( ( ($dxs - $ke ) % ( $i * $day ) ) / $day + 1  ))" 4 | awk '{printf "%02s",$1}';
             echo h;
-            /usr/local//Cellar/python/3.7.4/Frameworks/Python.framework/Versions/3.7/bin/python3.7 $k4db/sub/base18.py "$i" 4 | awk '{printf "%02s",$1}'
+            python $k4db/sub/base18.py "$i" 4 | awk '{printf "%02s",$1}'
         } | tr -d '\n';
         echo -n ' ';
     done
@@ -1762,9 +1761,9 @@ nevernowh ()
     for i in $is;
     do
         {
-            /usr/local//Cellar/python/3.7.4/Frameworks/Python.framework/Versions/3.7/bin/python3.7 $k4db/sub/base.py "$(( ( ($dxs - $ke ) % ( $i * $day ) ) / $day + 1  ))" 18 | awk '{printf "%02s",$1}';
+            python $k4db/sub/base.py "$(( ( ($dxs - $ke ) % ( $i * $day ) ) / $day + 1  ))" 18 | awk '{printf "%02s",$1}';
             echo h;
-            /usr/local//Cellar/python/3.7.4/Frameworks/Python.framework/Versions/3.7/bin/python3.7 $k4db/sub/base.py "$i" 18 | awk '{printf "%02s",$1}'
+            python $k4db/sub/base.py "$i" 18 | awk '{printf "%02s",$1}'
         } | tr -d '\n';
         echo -n ' ';
     done
