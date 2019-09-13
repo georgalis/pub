@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# kdb mvp 5d6b3d nanou 
+# kdb mvp 5d7b reciv 
 #
 # Copyright (C) 2015-2019 George Georgalis <george@galis.org>
 # All rights reserved. No use or redistribution allowed.
@@ -77,7 +77,7 @@ k ()
     $k4db_logstd "start $$ : k4since='$k4since' $FUNCNAME $*";
     local idxptr="$k4db/$k4_pool/idxptr";
     local ptrnxd="$k4db/$k4_pool/ptrnx";
-    set $(k4db_in_id "$1") || {
+    set $(k4db_in "$1") || {
         chkerr "$FUNCNAME : error k4_inptr arg1='$1' (bfd7c86)";
         return 1
     };
@@ -163,7 +163,7 @@ k4_env_wlink ()
     k4db_validate_k4 "$k4" || return 1;
     local env="$k4db/$k4_pool/$k4_env";
     [ -s "$env/kc" ] && mv -i -f "$env/kc" "$env/kc~";
-    k4_headg '^%kc\ ' "$k4" > "$env/kc";
+    k4_headg '^%kc ' "$k4" > "$env/kc";
     [ -s "$env/kl" ] && mv -i -f "$env/kl" "$env/kl~";
     kl="$(k4_headg '^%kk\ ' "$k4" | k4db_squash_defaults | k4_squeeze )";
     [ "$kl" ] || kl="$(
@@ -347,7 +347,8 @@ k4_help_9 ()
 k4_inventory ()
 {
     $k4db_logstd "start $$ : $FUNCNAME $*";
-    local k4="$1" p="${1%/*}" k="${1##*/}";
+    export k4="$1";
+    local p="${1%/*}" k="${1##*/}";
     local not_find="-not ( -name *,v -o -name $k -o -name ^ )";
     find "$p" -mindepth 1 -prune -type f -name "$k" -exec printf "        K4 %s \n" \{\} \;;
     find "$p" -mindepth 1 -prune -type d $not_find -exec printf "       DIR %s/\n" \{\} \; | sort -d;
@@ -377,6 +378,65 @@ k4_list_tags ()
 k4_raw ()
 {
     sed -e 's/^%[^ ]* //' -e 's/#.*//' -e 's/ $//'
+}
+k4_rewrite_km ()
+{
+    [ "$1" ] || {
+        chkwrn "$FUNCNAME error : null arg1";
+        return 1
+    };
+    local type alpha xs ss k4 arg1=$1 a;
+    k4db_fk4 "$k4db" | while read k4; do
+        k4_headg '^%km ' "$k4" | grep "$k4case" -qE "$arg1" && {
+            set $(k4_headg ^%km\  "$k4" | sed -e 's/_/ /g' );
+            local type=$1 alpha=$2 xs=$3 ss=$4;
+            set $(k4dir_epoch_span "$k4db" "$xs$ss");
+            local kd="${k4%/*}" epoch="$2" span="$3";
+            local pw="$( gpw 1 $(( ${#epoch} * ${#epoch} / 18 + 4 )) | awk '{printf "%s",$1}' )";
+            local k4x="$(mktemp ${kd}/__XXXX)";
+            local k4hash="$(base 32 $(( 0x$xs + 0x$ss )) )";
+            k4_headg '^%(ks|kt|kk|kc|kp|kj|kr|kl)\ ' "$k4" | grep -v "^%km\ " >> "$k4x";
+            grep -q ^%kt\  "$k4" || echo "%kt $k4hash tagkey" >> "$k4x";
+            grep -q ^%kk\  "$k4" || echo "%kk $k4hash keyord %n 0000 %d 0001 %e $epoch" >> "$k4x";
+            grep -q ^%kp\  "$k4" || echo "%kp $epoch $pw # hier superord" >> "$k4x";
+            grep -q ^%kj\  "$k4" || echo "%kj $epoch $pw # motive subord" >> "$k4x";
+            grep -q ^%kr\  "$k4" || echo "%kr $epoch $pw # matrix reason" >> "$k4x";
+            grep -q ^%kl\  "$k4" || echo "%kl $epoch $pw # matrix like" >> "$k4x";
+            local xa="$(base 16 $(( 0x${xs} + 0x${epoch} + ${#epoch} )) | k4_squeeze)";
+            local k4span32="$(base 32 $((0x$span)) )";
+            local hdate="$(date -j -r "$((0x$xs))" "$k4_ht_strftime")";
+            echo -n "%km $xa $xs $ss $epoch $k4hash $k4span32 $hdate " >> "$k4x";
+            grep ^%km\  "$k4" >> "$k4x";
+            k4_headv '^%(ks|kt|kk|kc|kp|kj|kr|kl|km)\ ' "$k4" | grep -v "^%km\ " >> "$k4x";
+            grep -q ^%kn\  "$k4" || {
+                local kn=$(nevernowf $xs);
+                local knfd=$(nevernowd $xs);
+                local knfx=$(nevernowx $xs);
+                echo "%kn $kn %d $knfd %x $knfx" >> "$k4x"
+            };
+            grep -q ^%kv\  "$k4" || {
+                local vc='0.0001';
+                local v="$(dc -e "$((0x$xs)) 2 / $((0x$xs)) v v + $vc * p" | awk '{printf "%08x",$1}')";
+                echo "%kv $v %c $vc # value key" >> "$k4x"
+            };
+            grep -q ^%ki\  "$k4" || {
+                local ki="$(k4db_addxd $xs $((86400 * 57)) )";
+                local kiht="$(date -j -r 0x$ki "$k4_ht_strftime")";
+                echo "%ki $ki $kiht # review interval" >> "$k4x"
+            };
+            grep -q ^%ke\  "$k4" || {
+                local e="$(printf '%x' "$(( $((0x$xs)) - 86400 * 18 ))" )";
+                echo "%ke $e # event begin" >> "$k4x"
+            };
+            grep -q ^%kz\  "$k4" || {
+                echo "%kz $xs # event end" >> "$k4x"
+            };
+            [ -e "$k4" ] && k4_body "$k4" >> "$k4x";
+            diff "$k4" "$k4x";
+            echo "cat '$k4x' >'$k4' \\";
+            echo " && rm '$k4x'"
+        };
+    done
 }
 k4_squeeze ()
 {
@@ -456,9 +516,9 @@ k4db_dir_km ()
         return 1
     };
     local kd="$1" epoch="$2" span="$3";
-    local k4hash="$(python $k4db/sub/base.py $(( 0x$xs + 0x$ss )) 32 )";
-    local xa="$(python $k4db/sub/base.py $(( 0x${xs} + 0x${epoch} + ${#epoch} )) 16 )";
-    local k4span32="$(python $k4db/sub/base.py $((0x$span)) 32 )";
+    local k4hash="$(base 32 $(( 0x$xs + 0x$ss )) )";
+    local xa="$(base 16 $(( 0x${xs} + 0x${epoch} + ${#epoch} )) )";
+    local k4span32="$(base 32 $((0x$span)) )";
     local hdate="$(date -j -r "$((0x$xs))" "$k4_ht_strftime")";
     local pw="$( gpw 1 $(( ${#epoch} * ${#epoch} / 18 + 4 )) | awk '{printf "%s",$1}' )";
     echo "$kd $xa $xs $ss $epoch $pw $k4hash $k4span32 $hdate"
@@ -484,7 +544,7 @@ k4db_hl ()
     [ -t 1 ] && {
         local cols=$(tput cols);
         tput md;
-        printf "%*s" $cols '' | tr ' ' "$char";
+        printf "%*s\n" $cols '' | tr ' ' "$char";
         tput me
     } || true
 }
@@ -549,21 +609,21 @@ k4db_idxptr_ks ()
     local xs="${uid::8}";
     k4_headg '^%ks ' "$k4" | awk -v n="$idx" -v xs="$xs" 'NR==1 {printf "%4s %8s %s\n",n,xs,$0}' | $k4_unlong
 }
-k4db_in_id ()
+k4db_in ()
 {
     $k4db_logstd "start $$ : $FUNCNAME $*";
     local idxptr="$k4db/$k4_pool/idxptr";
-    local uidhln="$k4db/$k4_pool/uidhln";
     local uidptr="$k4db/$k4_pool/uidptr";
-    local in_id="$1";
-    local hln uid ptrf uid k4f;
-    local ptr ptrf k4f idx idxf;
-    [ "$in_id" ] || in_id=0;
-    [ "$ptrf" ] || ptrf="$(find "$idxptr" -name "${in_id}"  -regex ".*/idxptr/[[:xdigit:]]*$" )";
-    [ "$ptrf" ] || ptrf="$(find "$uidptr" -name "${in_id}"  -regex ".*/uidptr/[[:xdigit:]]\{16\}$" )";
-    [ "$ptrf" ] || ptrf="$(find "$uidptr" -name "${in_id}*" -regex ".*/uidptr/${in_id}[[:xdigit:]]\{8\}$" )";
+    local uidhln="$k4db/$k4_pool/uidhln";
+    local in="$1";
+    local hln uid ptrf uid;
+    local ptr ptrf idx idxf;
+    [ "$in" ] || in=0;
+    [ "$ptrf" ] || ptrf="$(find "$idxptr" -name "${in}"  -regex ".*/idxptr/[[:xdigit:]]*$" )";
+    [ "$ptrf" ] || ptrf="$(find "$uidptr" -name "${in}"  -regex ".*/uidptr/[[:xdigit:]]\{16\}$" )";
+    [ "$ptrf" ] || ptrf="$(find "$uidptr" -name "${in}*" -regex ".*/uidptr/${in}[[:xdigit:]]\{8\}$" )";
     [ "$ptrf" ] || {
-        hln="$(find "$uidhln" -samefile "$in_id" 2>/dev/null | awk 'NR==1 {print}')";
+        hln="$(find "$uidhln" -samefile "$in" 2>/dev/null | awk 'NR==1 {print}')";
         [ "$hln" ] && uid="${hln##*/}";
         [ -e "$uidptr/$uid" ] && ptrf="$uidptr/$uid"
     };
@@ -571,11 +631,11 @@ k4db_in_id ()
         chkerr "$FUNCNAME : no match for ${ptr} : $uidptr $idxptr : (bcfce6d)";
         return 1
     };
-    [ "$ptrf" ] && k4f="$(awk 'NR==1 {print}' "$ptrf")";
+    [ "$ptrf" ] && k4="$(awk 'NR==1 {print}' "$ptrf")";
     [ "$ptrf" ] && uid="$(awk 'END   {print}' "$ptrf")";
     [ "$ptrf" ] && idxf="$(find "$idxptr" -type f -exec grep --files-with-matches "$uid" \{\} \;                 | awk 'NR==1' | sed 's=.*/==g' )";
     [ "$idxf" ] && idx=${idxf##*/};
-    echo "$k4f" "$uid" "$idx";
+    echo "$k4" "$uid" "$idx";
     $k4db_logstd "end $$ : $FUNCNAME $*"
 }
 k4db_init ()
@@ -637,14 +697,13 @@ k4db_k4_head_seq ()
 # %kr # matrix reason
 # %kp # hier superord
 # %kj # motive subord
-# %kl # hist link
+# %kl # like link
 # %kn # interval align
 # %ko # origin owner
 # %km # meta hash
 # %kc # entry class
-# %kpi # pi value
-# %kd # markdown index
-# %kv # value key
+# %kd # file data
+# %kv # value keys
 # %ki # review interval
 # %ke # event begin
 # %kz # event end
@@ -752,7 +811,7 @@ k4db_valid_cmd ()
         chkerr "$FUNCNAME : invalid k4_hst : $k4_hst : bc029a0";
         fail="${fail} bc029a0"
     };
-    [ -d "${k4_hst}" ] || {
+    [ -d "$k4db/$k4_hst" ] || {
         chkerr "$FUNCNAME : invalid k4_hst : $k4_hst (d4a0f42)";
         fail="${fail} d4a0f42"
     };
@@ -852,13 +911,18 @@ k4epoch ()
         echo $@
     } | k4_squeeze
 }
+k4epochlist ()
+{
+    local _epoch_;
+    k4db_fk4 | sed -e "s,$k4db/,," -e "s,[^/]*/[^/]*$,,g" | tr -d '/' | sort -u
+}
 k4epochs ()
 {
     local _epoch_ _epoch_4_ _epoch_32_;
     k4db_fk4 | sed -e "s,$k4db/,," -e "s,[^/]*/[^/]*$,,g" | tr -d '/' | sort -u | while read _epoch_; do
         [[ "$_epoch_" =~ ^[[:xdigit:]]+$ ]] && {
-            _epoch_4_="$(python "$k4dbsub/base.py" "$((0x$_epoch_))" 4)";
-            _epoch_32_="$(python "$k4dbsub/base.py" "$((0x$_epoch_))" 32)"
+            _epoch_4_="$( base  4 "$((0x$_epoch_))")";
+            _epoch_32_="$(base 32 "$((0x$_epoch_))")"
         } || {
             _epoch_4_='0';
             _epoch_32_='0'
@@ -945,8 +1009,8 @@ k4km ()
         echo $xs $ss;
         echo $epoch;
         echo "$( gpw 1 $(( ${#epoch} * ${#epoch} / 18 + 4 )) | awk '{printf "%8s",$1}' )";
-        echo "$(python $k4db/sub/base.py $(( 0x$xs + 0x$ss + 0x$epoch )) 32)";
-        echo "$(python $k4db/sub/base.py $(( 0x$(echo $seed | sed -e 's;.*/;;') )) 32)";
+        echo "$(base 32 $(( 0x$xs + 0x$ss + 0x$epoch )) )";
+        echo "$(base 32 $(( 0x$(echo $seed | sed -e 's;.*/;;') )) )";
         date -j -r "$((0x$xs))" "$k4_ht_strftime"
     } | k4_squeeze;
     echo
@@ -954,8 +1018,9 @@ k4km ()
 k4kr ()
 {
     local kl k4="$1";
+    [ "$k4" ] || k4="$k4";
     k4db_validate_k4 "$k4" || return 1;
-    kl="$( { k4_headg '^%kk ' "$k4" | k4db_squash_defaults | sed 's/^%kk /%kr /'
+    kl="$( { k4_headg '^%kk\ ' "$k4" | k4db_squash_defaults | sed 's/^%kk /%kr /'
           k4_headg '^%ks ' "$k4" | sed 's/^%ks /%s /' ;} | k4_squeeze )";
     [ "$kl" ] || kl="$( k4_headg '^%km\ ' "$k4" | sed -e 's/_/ /g'               | awk '{printf "%s %s %s ","\%kr",$5,$6}'
             k4_headg '^%ks\ ' "$k4" | sed -e 's/^%ks /%s /' )";
@@ -975,6 +1040,11 @@ k4krm ()
     touch "$k4";
     [ "${k4}" -nt "${k4},v" ] && ci -m"(by $FUNCNAME)" -l -q "$k4";
     rm -i -f "$k4x"
+}
+k4link ()
+{
+    k4_env_wlink $@;
+    k4_env_r_kl
 }
 k4new ()
 {
@@ -1023,7 +1093,7 @@ k4poolindex ()
         ptrf=$2;
         k4f="$(awk 'NR==1 {print}' "$ptrf")";
         uid="$(awk 'END   {print}' "$ptrf")";
-        idx="$(python "$k4dbsub/base.py" "$1" 4 )";
+        idx="$(base 4 "$1")";
         val=$(k4_headg '^%kv ' "$k4f" | k4_arg 2);
         expr "$val" : '^[[:xdigit:]]\{8\}$' > /dev/null || val="55c305f0";
         ln "$k4f" "$uidhln/$uid";
@@ -1095,7 +1165,7 @@ ka ()
 {
     $k4db_logstd "start $$ : $FUNCNAME $*";
     local k4;
-    set $(k4db_in_id "$1");
+    set $(k4db_in "$1");
     k4="$1";
     [ -e "$k4" ] || chkerr "invalid ptr (no $k4)" || return 1;
     aspell -c "$k4";
@@ -1109,7 +1179,7 @@ ka ()
 kc ()
 {
     $k4db_logstd "start $$ : $FUNCNAME $@";
-    set $(k4db_in_id "$1");
+    set $(k4db_in "$1");
     export k4="$1";
     k4db_validate_k4 "$k4" || return 1;
     [ -t 1 ] && {
@@ -1137,7 +1207,7 @@ kdel ()
     local idxptr="$k4db/$k4_pool/idxptr";
     local uidptr="$k4db/$k4_pool/uidptr";
     local uidhln="$k4db/$k4_pool/uidhln";
-    [ "$1" ] && set $(k4db_in_id "$1") || set $(k4db_in_id "0");
+    [ "$1" ] && set $(k4db_in "$1") || set $(k4db_in "0");
     local k4=$1 uid=$2;
     local k4d="${k4%/*}";
     k4db_validate_k4 "$k4" || return 1;
@@ -1216,7 +1286,7 @@ kgt ()
 kh ()
 {
     $k4db_logstd "start $$ : $FUNCNAME $@";
-    set $(k4db_in_id "$1");
+    set $(k4db_in "$1");
     export k4="$1";
     k4db_validate_k4 "$k4" || return 1;
     [ -e "$k4" ] || chkerr "$FUNCNAME no k4='$k4' (bc785a2)" || return 1;
@@ -1231,7 +1301,7 @@ kh ()
 }
 kinv ()
 {
-    k4_inventory "$(k4db_in_id "$1" | awk '{print $1}' )"
+    k4_inventory "$(k4db_in "$1" | awk '{print $1}' )"
 }
 kj ()
 {
@@ -1255,7 +1325,7 @@ kj ()
     k4db_fk4 | while read k4; do
         k4_headg "$k4_search" "$k4" | grep "$k4case" -qE "$filter" && {
             _nd_="$(( _nd_ + 1 ))";
-            _n4_="$(python $k4dbsub/base.py "$_nd_" 4)";
+            _n4_="$(base 4 "$_nd_")";
             k4db_mk_idxptr "$_n4_" "$k4";
             k4db_idxptr_ks "$_n4_"
         };
@@ -1280,7 +1350,7 @@ kk4 ()
     [ "$inid" ] || inid=$1;
     [ "$inid" ] || inid=0;
     [ "$filter" ] || filter='(^%ks|^%kt|^%kk|^%kj|^%kp)';
-    set $(k4db_in_id "$inid") || return 1;
+    set $(k4db_in "$inid") || return 1;
     local k4="$1";
     k4db_validate_k4 "$k4" || return 1;
     k4_headg '^%ks\ ' "$k4";
@@ -1292,7 +1362,8 @@ kk4 ()
 kkrrr_kv ()
 {
     cat  <<eof
-    read %kv v c
+ultimate numerator xor (per common era, 1970, kdb epoch, entry epoch)
+    read %kv v ....
     recalculate %kv v c
     replace %kv v c
 eof
@@ -1377,38 +1448,6 @@ klrl ()
 klrll ()
 {
     klr "$k4_search"
-}
-klv ()
-{
-    local ex="$1";
-    local idxptr="$k4db/$k4_pool/idxptr";
-    local uidptr="$k4db/$k4_pool/uidptr";
-    local uidhln="$k4db/$k4_pool/uidhln";
-    local xx;
-    k4db_hl '\';
-    xssdaysec > $k4db/$k4_pool/tx.${FUNCNAME}.0;
-    k4poolindex;
-    ls -tr "$uidptr" | while read uid; do
-        id=$(grep --files-with-matches "$uid" "$idxptr"/* | awk 'NR==1 {print}' );
-        id="${id##*/}";
-        xx="$(k4_headg "^%kv " "$uidhln/$uid" | awk 'NR==1 {print}' | k4_arg 2 )";
-        [ "$xx" ] || xx='........';
-        [ "$ex" ] && {
-            printf '%-4s %s ' "$id" "$xx";
-            printf '%s\r' "${xx}";
-            k4_headg "$ex" "$uidhln/$uid" | awk 'NR==1 {print}' | k4db_squash_defaults | awk '{printf "\033[12C%s %s\n","",$0}'
-        } || {
-            printf '%4s %s ' "$id" "$xx";
-            k4_headg '^%ks ' "$uidhln/$uid" | awk 'NR==1 {print}'
-        } | $k4_unlong;
-    done;
-    k4db_hl '/';
-    xssdaysec > $k4db/$k4_pool/tx.${FUNCNAME}.1;
-    [ -t 1 ] && {
-        k4epoch ":";
-        k4db_linkcount ": $FUNCNAME $@ {sort acquisi} : ";
-        k4db_xss_ddiff "$k4db/$k4_pool/tx.${FUNCNAME}" seconds
-    } | k4_squeeze | tee -a "$k4db/$k4_hst/${FUNCNAME}.log" | $k4_unlong
 }
 klvl ()
 {
@@ -1502,19 +1541,19 @@ ks ()
     k4_env_r_kc >> "$k4x";
     export k4="$kd/_${k4hash}.kdb";
     echo "%kk $epoch $pw $k4hash # class define #" >> "$k4x";
+    echo "%kr $epoch $pw $k4hash # matrix root #" >> "$k4x";
     echo "%kp $epoch $pw $k4hash # hier superord #" >> "$k4x";
     echo "%kj $epoch $pw $k4hash # motive subord #" >> "$k4x";
-    echo "%kr $epoch $pw $k4hash # matrix root #" >> "$k4x";
+    echo "%kl $epoch $pw $k4hash # like link #" >> "$k4x";
     k4_env_r_kl >> "$k4x";
     echo "%km $km" >> "$k4x";
     local kn=$(nevernowf $xs);
     local knfd=$(nevernowd $xs);
     local knfx=$(nevernowx $xs);
     echo "%kn $kn %d $knfd %x $knfx" >> "$k4x";
-    local vc='0.0029';
-    local v="$(dc -e "$((0x$xs)) 2 / $((0x$xs)) v v + $vc * p" | awk '{printf "%08x",$1}')";
-    local vv="$(dc -e "$((0x$xs$ss)) v 2 / p" | awk '{printf "%x\n",0x$1}')";
-    echo "%kv $v %c $vc # value key #" >> "$k4x";
+    local vc='00be';
+    local v="$(dc -e "$((0x$xs)) 2 / $((0x$xs)) v v + $(xn2float "$vc") * p" | awk '{printf "%08x",$1}')";
+    printf "%%kv %8s %s %08x # value key #\n" "$v" "$vc" "0" >> "$k4x";
     local ki="$(k4db_addxd $xs $((86400 * 57)) )";
     local kiht="$(date -j -r 0x$ki "$k4_ht_strftime")";
     echo "%ki $ki $kiht # review interval" >> "$k4x";
@@ -1537,7 +1576,7 @@ ks ()
 }
 ksynopsys ()
 {
-    local k4="$(k4db_in_id "$1" | awk '{print $1}' )";
+    local k4="$(k4db_in "$1" | k4_arg 1 )";
     k4_headg "$k4_topic" "$k4";
     k4_inventory "$k4"
 }
@@ -1714,9 +1753,9 @@ nevernowf ()
     for i in $is;
     do
         {
-            python $k4db/sub/base.py "$(( ( ($dxs - $ke ) % ( $i * $day ) ) / $day + 1  ))" 4 | awk '{printf "%02s",$1}';
+            base 4 "$(( ( ($dxs - $ke ) % ( $i * $day ) ) / $day + 1  ))" | awk '{printf "%02s",$1}';
             echo "f";
-            python $k4db/sub/base.py "$i" 4 | awk '{printf "%02s",$1}'
+            base 4 "$i" | awk '{printf "%02s",$1}'
         } | tr -d '\n';
         echo -n ' ';
     done;
@@ -1724,9 +1763,9 @@ nevernowf ()
     for i in $is;
     do
         {
-            python $k4db/sub/base18.py "$(( ( ($dxs - $ke ) % ( $i * $day ) ) / $day + 1  ))" 4 | awk '{printf "%02s",$1}';
+            base 18 "$(( ( ($dxs - $ke ) % ( $i * $day ) ) / $day + 1  ))" | awk '{printf "%02s",$1}';
             echo h;
-            python $k4db/sub/base18.py "$i" 4 | awk '{printf "%02s",$1}'
+            base 18 "$i" 4 | awk '{printf "%02s",$1}'
         } | tr -d '\n';
         echo -n ' ';
     done
@@ -1739,9 +1778,9 @@ nevernowh ()
     for i in $is;
     do
         {
-            python $k4db/sub/base.py "$(( ( ($dxs - $ke ) % ( $i * $day ) ) / $day + 1  ))" 18 | awk '{printf "%02s",$1}';
+            base 18 "$(( ( ($dxs - $ke ) % ( $i * $day ) ) / $day + 1  ))" | awk '{printf "%02s",$1}';
             echo h;
-            python $k4db/sub/base.py "$i" 18 | awk '{printf "%02s",$1}'
+            base 18 "$i" | awk '{printf "%02s",$1}'
         } | tr -d '\n';
         echo -n ' ';
     done
@@ -1839,6 +1878,18 @@ vk4db_headx ()
 vk4db_km ()
 {
     return 1
+}
+xn2float ()
+{
+    local xn=$1;
+    expr "$xn" : '^[[:xdigit:]]*$' > /dev/null || {
+        echo 1;
+        return 1
+    };
+    k="${#xn}";
+    xd="$(printf "%*s" $k '' | tr ' ' "f")";
+    k=$(( ( 16 * k ) / 10 ));
+    dc -e "$k k $((0x$xn)) $((0x$xd)) / p"
 }
 xs ()
 {
