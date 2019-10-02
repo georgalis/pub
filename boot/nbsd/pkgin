@@ -7,36 +7,47 @@
 
 set -e 
 
-PKG_PATH="${URL_ROOT}/pkgsrc/packages/NetBSD/$(uname -m)/$(uname -r|cut -f 1-2 -d .| cut -f 1 -d _)/All"
-PKG_PATH="${URL_ROOT}/pkgsrc/packages/NetBSD/$(uname -m)/$(uname -r|cut -f 1 -d _)/All"
 
 PKGIN_CONF="/usr/pkg/etc/pkgin/repositories.conf"
 PKG_EX="/usr/pkg/share/examples/pkgin/repositories.conf.example"
-URL_ROOT="http://ftp.netbsd.org/pub/"
-URL_BASE="${URL_ROOT}pkgsrc/packages/$(uname -s)/$(uname -m)/"
-PKG_PATH="${URL_ROOT}pkgsrc/packages/NetBSD/\$arch/\$osrelease/All"
+
+# http://ftp.netbsd.org/pub/pkgsrc/packages/NetBSD/amd64/README
+# ftp also works
+URL_ROOT="http://ftp.netbsd.org/pub"
+URL_ROOT="http://nyftp.netbsd.org/pub"
+URL_BASE="pkgsrc/packages/$(uname -s)/$(uname -m)"
+# rc     "${URL_ROOT}/pkgsrc/packages/NetBSD/$(uname -m)/$(uname -r|cut -f 1 -d _)/All"
+PKG_LIST="${URL_ROOT}/${URL_BASE}/$(uname -r|cut -f 1 -d _)/SHA512.bz2"
+PKG_PATH="${URL_ROOT}/${URL_BASE}/$(uname -r|cut -f 1 -d _)/All"
+PKGIN="$(ftp -Vo - "$PKG_LIST" | bzip2 -d | sed -e '/All\/pkgin-/!d' -e 's/All\/pkgin/pkgin/' \
+    -e 's/.*(//' -e 's/).*//')"
+
+
+# PKG_PATH=http://nyftp.netbsd.org/pub/pkgsrc/packages/NetBSD/amd64/8.1/All
+# PKG_LIST=http://nyftp.netbsd.org/pub/pkgsrc/packages/NetBSD/amd64/8.1/SHA512.bz2
+# PKGIN=pkgin-0.12.0.tgz
+
+
 #PKG_REL="$(ftp -o - ${URL_BASE} \
 #        | grep href | grep $(uname -r|cut -f 1 -d_) | grep -v _current \
 #        | sed -e 's/.*href="//' -e 's/".*//' -e "s=^=# ${URL_BASE}=" \
 #        -e "s/$/All/" )"
-mkdir -p /usr/pkg/etc/pkgin
+#mkdir -p /usr/pkg/etc/pkgin
 #[ -e "$PKGIN_CONF" ] || printf "# ${PKG_EX}\n${PKG_REL}\n${PKG_PATH}\n" >${PKGIN_CONF}
 
-# http is intermitent today, ftp has been reliable....
-URL_ROOT="ftp://ftp.netbsd.org/pub/"
-PKG_PATH="${URL_ROOT}pkgsrc/packages/NetBSD/\$arch/\$osrelease/All"
-printf "# ${PKG_EX}\n${PKG_REL}\n${PKG_PATH}\n" >${PKGIN_CONF}
+#printf "# ${PKG_EX}\n${PKG_REL}\n${PKG_PATH}\n" >${PKGIN_CONF}
 
-PKG_PATH="ftp://ftp.netbsd.org/pub//pkgsrc/packages/NetBSD/amd64/8.0_2017Q2/All"
-echo $PKG_PATH >$PKGIN_CONF
-pkg_add $PKG_PATH/pkgin-0.9.4nb6.tgz # XXX
+#PKG_PATH="ftp://ftp.netbsd.org/pub//pkgsrc/packages/NetBSD/amd64/8.1/All"
+#echo $PKG_PATH >$PKGIN_CONF
+echo    "$PKG_PATH/$PKGIN"
+pkg_add "$PKG_PATH/$PKGIN"
 /usr/pkg/bin/pkgin -y update
 
 #pkgin -y upgrade
 #pkgin -y full-upgrade
 
 cd $(dirname $0)
-for e in ./pkgin.d/pkgin.main.lst ./pkgin.d/pkgin.min.lst ; do
+for e in ./pkgin.d/*.list ./pkgin.d/min.list ; do
         pkgin -y import $e
 done
 

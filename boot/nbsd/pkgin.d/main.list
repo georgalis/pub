@@ -12,7 +12,7 @@ misc/tmux
 devel/git-base
 devel/git-docs
 net/netcat
-security/gnupg21
+security/gnupg2
 sysutils/htop
 sysutils/lsof
 sysutils/pftop

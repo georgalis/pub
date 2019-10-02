@@ -3,7 +3,7 @@
 # REQUIRE:
 # BEFORE:
 # PROVIDE: time
-# KEYWORD: nbsd
+# KEYWORD: opt-nbsd
 
 # set the clock and turn on ntp before touching any other file
 
@@ -16,7 +16,7 @@ ntpdate=yes
 ntpdate_flags="-b"
 # cannot lookup north-america.pool.ntp.org before dnscache...
 ntpdate_hosts=north-america.pool.ntp.org
-ntpdate_hosts=152.2.21.1
+ntpdate_hosts=45.79.36.123
 EOF-rc.conf
 /etc/rc.d/ntpdate stop || true
 /etc/rc.d/ntpdate start
@@ -28,7 +28,7 @@ driftfile       /var/db/ntp.drift
 logconfig       -syncstatus
 EOF-ntp.conf
 
-echo "ntpd=yes" >>/etc/rc.conf
+echo "#ntpd=yes" >>/etc/rc.conf
 /etc/rc.d/ntpd stop || true
 /etc/rc.d/ntpd start
 
