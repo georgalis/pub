@@ -1,4 +1,4 @@
-#!/bin/bash
+#!${exec} bash
 
 # kdb mvp 5d9b7 mossm 
 #
