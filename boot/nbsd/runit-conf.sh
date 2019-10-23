@@ -23,7 +23,6 @@ EOF
 mkdir -p /etc/sv
 chmod 755 /sbin/runsvdir-start
 
-echo ''
 cat >/etc/rc.d/runsvdir <<'EOF'
 #!/bin/sh
 
@@ -36,7 +35,6 @@ exec /bin/csh -cf "/sbin/runsvdir-start &"
 EOF
 
 chmod 755 /etc/rc.d/runsvdir
-ln -s etc/sv /service
 
 /etc/rc.d/runsvdir
 

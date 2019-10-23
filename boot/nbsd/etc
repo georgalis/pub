@@ -11,23 +11,10 @@ set -e
 #:: Symlink /home to /usr/home, if necessary.
 #[ ! -e /home ] && mkdir /usr/home && ln -s usr/home /home || true
 
-#hostname ${HOSTNAME}
+# hostname per dhcp
 HOSTNAME=$(hostname)
-
 echo "hostname=$HOSTNAME" >>/etc/rc.conf
 sed "/localhost/s/$/ $HOSTNAME/" /etc/hosts >/etc/hosts~ && mv /etc/hosts~ /etc/hosts
-
-# now part of ./vcs/DevOps/impl/meta/ssh/root/hostroot.sh
-# ##:: Reconfigure sshd to allow root login and disallow password authentication. 
-# sed '
-# 	s/.*PermitRootLogin.*/PermitRootLogin yes/
-# 	s/.*PasswordAuthentication.*/PasswordAuthentication no/
-# 	s/.*UsePam.*/UsePam no/
-#     ' /etc/ssh/sshd_config >/etc/ssh/sshd_config-tmp \
-# 	&& mv /etc/ssh/sshd_config-tmp /etc/ssh/sshd_config
-# echo "sshd=yes" >>/etc/rc.conf
-# /etc/rc.d/sshd stop || true
-# /etc/rc.d/sshd start
 
 #:: Stop inetd, permanently.
 #/etc/rc.d/inetd stop || true
@@ -52,129 +39,7 @@ echo "inetd=no" >>/etc/rc.conf
 # /etc/rc.d/network stop
 # /etc/rc.d/network start
 
-# Need a test, sleep, etc. _sometimes_ networking is
-# not ready immedately after above, though configured
-# properly.
-
-#:: Set an IP to use for time standard and enable ntpdate at boot-up.
-# stratum 2 time servers that don't request dns access,
-# since the resolver may not be up when ntpdate runs
-#
-# Hostname: 	 ntp-4.vt.edu
-# IP Address: 	198.82.1.204
-# UseDNS: 	No
-# ServerLocation: Virginia Tech, Blacksburg, Virginia, USA
-#
-# Hostname: 	 ntp1.kansas.net
-# IP Address: 	199.240.130.1
-# UseDNS: 	No
-# ServerLocation: KansasNet OnLine Services, Manhattan, KS
-#
-# Hostname: 	 ntp.ucsd.edu
-# IP Address: 	132.239.254.49
-# UseDNS: 	No
-# ServerLocation: UCSD Academic Computing Services/Network Operations, San Diego, CA
-#
-# Hostname: 	 ntp.drydog.com
-# IP Address: 	207.211.160.111
-# UseDNS: 	No
-# ServerLocation: Tempe, AZ
-#
-# Hostname: 	 clock1.unc.edu
-# IP Address: 	 152.2.21.1
-# UseDNS: 	No
-# ServerLocation: University of North Carolina-Chapel Hill, Chapel Hill, NC
-#
-# Hostname: 	 hydrogen.cert.ucr.edu
-# IP Address: 	138.23.180.126
-# UseDNS: 	No
-# ServerLocation: CE-CERT, Riverside, CA
-#
-# Hostname: 	 louie.udel.edu
-# IP Address: 	128.4.40.12
-# UseDNS: 	No
-# ServerLocation: University of Delaware, Newark, DE
-#
-# Hostname: 	 ns.nts.umn.edu
-# IP Address: 	128.101.101.101
-# UseDNS: 	No
-# ServerLocation: Minneapolis, MN
-#
-# Hostname: 	 ntp.ourconcord.net
-# IP Address: 	216.204.156.2
-# UseDNS: 	No
-# ServerLocation: Concord, MA
-#
-# Hostname: 	 tock.cs.unlv.edu
-# IP Address: 	131.216.22.17
-# UseDNS: 	No
-# ServerLocation: UNLV College of Engineering, Las Vegas, NV
-
-# Hostname 	louie.udel.edu
-# IP Address 	128.4.40.12
-# UseDNS 	No
-# ServerLocation 	University of Delaware, Newark, DE 
-# 
-# Hostname 	dewey.lib.ci.phoenix.az.us
-# IP Address 	148.167.132.200
-# UseDNS 	No
-# ServerLocation 	Phoenix, AZ 
-
-
-## if we are doing dnscache we cannot lookup north-america.pool.ntp.org first...
-#echo "ntpdate=yes" >>/etc/rc.conf
-#echo 'ntpdate_flags="-b"' >>/etc/rc.conf
-#echo "ntpdate_hosts=152.2.21.1" >>/etc/rc.conf
-#/etc/rc.d/ntpd stop || true
-#/etc/rc.d/ntpdate start
-#
-##:: Configure ntpd for normal runtime use.
-#cat >/etc/ntp.conf<<EOF-ntp.conf
-#server		north-america.pool.ntp.org
-#pidfile		/var/run/ntpd.pid
-#driftfile	/var/db/ntp.drift
-#logconfig	-syncstatus
-#EOF-ntp.conf
-
-#echo "ntpd=yes" >>/etc/rc.conf
-#/etc/rc.d/ntpd start || /etc/rc.d/ntpd restart
-#
-# #:: Update PATH in /etc/profile to include local directories.
-# # some of these (after games) will be removed when their addition is automated
-# cat >>/etc/profile <<'EOF-profile'
-# export PATH=/sbin:/usr/sbin:/bin:/usr/bin
-# export PATH=$PATH:/usr/pkg/sbin:/usr/pkg/bin
-# export PATH=$PATH:/usr/X11R7/bin
-# export PATH=$PATH:/usr/local/sbin:/usr/local/bin
-# export PATH=$PATH:/usr/local/sub
-# EOF-profile
 
 chmod 700 /root /etc/skel
-# sh $pubd/skel/install-dot.sh /etc/skel
-# rm -rf /etc/skel/oldskel-*
-
-
-##PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/pkg/sbin:/usr/pkg/bin:/usr/local/sbin:/usr/local/bin:/usr/X11/bin:/usr/X11R6/bin:/usr/games:/var/qmail/bin:/usr/local/bin/ezmlm:/usr/local/script/contrib:/usr/local/script
-##:: Add maintenance routines to root crontab.
-#cat >>/var/cron/tabs/root<<'EOF-root-cron'
-#PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/pkg/sbin:/usr/pkg/bin:/usr/X11R7/bin:/usr/local/sbin:/usr/local/bin:/usr/local/sub
-#00 0	* * *	crontab -l > ~/crontab-$LOGNAME-`hostname`
-##15 2	*/4 * *	for r in /usr/src /usr/pkgsrc ; do [ -d $r ] && cd $r && cvs -q upd -dP >/dev/null ; done
-##00 4	*/4 * *	pkg_chk -un | grep ' - ' | sed -e 's/^/cd \/usr\/pkgsrc\//' -e 's/ - / \&\& make clean update 		# /'
-## following item only needed on a single site host, eg local mirror
-##00 4	* * *	sed -n '1!G;h;$p' /usr/pkgsrc/doc/CHANGES-$(date +\%Y)
-## to change tag on a local checkout..
-## cd /usr/src && cvs -q upd -dP -r netbsd-4 .
-## cd /usr/pkgsrc && cvs -q upd -dP -r pkgsrc-2007Q3 .
-## cd /usr/pkgsrc/pkgtools/pkg_install && make clean && make update
-## to make a fresh checkout..
-## cd /usr && cvs -qd anoncvs@anoncvs.netbsd.org:/cvsroot co -r pkgsrc-2010Q1 -P pkgsrc
-## cd /usr && cvs -qd anoncvs@anoncvs.netbsd.org:/cvsroot co -r netbsd-5 -P src
-#EOF-root-cron
-#
-# echo "$(basename $0)='done $(date)'" >>/usr/local/etc/mkinst.conf
-# echo "<<< $0 OKAY from ${PWD} >>>"
-# exit
-
 
 exit 0

@@ -15,8 +15,8 @@ cat >>/etc/rc.conf<<EOF-rc.conf
 ntpdate=yes
 ntpdate_flags="-b"
 # cannot lookup north-america.pool.ntp.org before dnscache...
+# ntpdate_hosts=45.79.36.123
 ntpdate_hosts=north-america.pool.ntp.org
-ntpdate_hosts=45.79.36.123
 EOF-rc.conf
 /etc/rc.d/ntpdate stop || true
 /etc/rc.d/ntpdate start
@@ -26,17 +26,132 @@ server          north-america.pool.ntp.org
 pidfile         /var/run/ntpd.pid
 driftfile       /var/db/ntp.drift
 logconfig       -syncstatus
+
+# # For more information about this file, see the man pages
+# # ntp.conf(5), ntp_acc(5), ntp_auth(5), ntp_clock(5), ntp_misc(5), ntp_mon(5).
+# 
+# # ntpq -pd    # process stats with debug
+# # ntpstat     # sync status
+# # ntpd -gdq   # for any offset, set time per conf, debug and quit
+# # ntpdate -qd 10.10.10.10 # set time with debug from
+# 
+# # /etc/init.d/ntpd stop
+# # /etc/init.d/ntpdate start
+# # /etc/init.d/ntpd start
+# # /etc/init.d/ntpd restart
+# 
+# restrict default kod nomodify notrap nopeer noquery
+# restrict -6 default kod nomodify notrap nopeer noquery
+# restrict -6 ::1
+# restrict 127.0.0.0   mask 255.0.0.0
+# restrict 10.10.10.0  mask 255.255.255.0
+# restrict 172.16.39.0 mask 255.255.255.0
+# 
+# logfile /var/log/ntp.log
+# driftfile /var/lib/ntp/drift
+# 
+# includefile /etc/ntp/crypto/pw
+# keys /etc/ntp/keys
+# 
+# server 172.16.39.253
+# server 10.10.10.1
+# server 10.10.10.2
+# server 10.10.10.3
+# server 10.10.10.10
+# server 127.127.1.0
+# fudge 127.127.1.0 stratum 8
 EOF-ntp.conf
 
-echo "#ntpd=yes" >>/etc/rc.conf
+echo "ntpd=yes" >>/etc/rc.conf
 /etc/rc.d/ntpd stop || true
 /etc/rc.d/ntpd start
 
 # benchmark the install time
-mkdir -p /var/cfmake/ \
-	&& touch /var/cfmake/nulltime \
-	&& chmod 0 /var/cfmake/nulltime
+mkdir -p /var/cf/ \
+	&& touch /var/cf/nulltime \
+	&& chmod 0 /var/cf/nulltime
 
 	#&& touch -d "$(date -d yesterday '+%D 00:00:00')" \
 	#	/var/cfmake/nulltime \
+
+
+#:: Set an IP to use for time standard and enable ntpdate at boot-up.
+# stratum 2 time servers that don't request dns access,
+# since the resolver may not be up when ntpdate runs
+#
+# Hostname: 	 ntp-4.vt.edu
+# IP Address: 	198.82.1.204
+# UseDNS: 	No
+# ServerLocation: Virginia Tech, Blacksburg, Virginia, USA
+#
+# Hostname: 	 ntp1.kansas.net
+# IP Address: 	199.240.130.1
+# UseDNS: 	No
+# ServerLocation: KansasNet OnLine Services, Manhattan, KS
+#
+# Hostname: 	 ntp.ucsd.edu
+# IP Address: 	132.239.254.49
+# UseDNS: 	No
+# ServerLocation: UCSD Academic Computing Services/Network Operations, San Diego, CA
+#
+# Hostname: 	 ntp.drydog.com
+# IP Address: 	207.211.160.111
+# UseDNS: 	No
+# ServerLocation: Tempe, AZ
+#
+# Hostname: 	 clock1.unc.edu
+# IP Address: 	 152.2.21.1
+# UseDNS: 	No
+# ServerLocation: University of North Carolina-Chapel Hill, Chapel Hill, NC
+#
+# Hostname: 	 hydrogen.cert.ucr.edu
+# IP Address: 	138.23.180.126
+# UseDNS: 	No
+# ServerLocation: CE-CERT, Riverside, CA
+#
+# Hostname: 	 louie.udel.edu
+# IP Address: 	128.4.40.12
+# UseDNS: 	No
+# ServerLocation: University of Delaware, Newark, DE
+#
+# Hostname: 	 ns.nts.umn.edu
+# IP Address: 	128.101.101.101
+# UseDNS: 	No
+# ServerLocation: Minneapolis, MN
+#
+# Hostname: 	 ntp.ourconcord.net
+# IP Address: 	216.204.156.2
+# UseDNS: 	No
+# ServerLocation: Concord, MA
+#
+# Hostname: 	 tock.cs.unlv.edu
+# IP Address: 	131.216.22.17
+# UseDNS: 	No
+# ServerLocation: UNLV College of Engineering, Las Vegas, NV
+
+# Hostname 	louie.udel.edu
+# IP Address 	128.4.40.12
+# UseDNS 	No
+# ServerLocation 	University of Delaware, Newark, DE 
+# 
+# Hostname 	dewey.lib.ci.phoenix.az.us
+# IP Address 	148.167.132.200
+# UseDNS 	No
+# ServerLocation 	Phoenix, AZ 
+
+
+## if we are doing dnscache we cannot lookup north-america.pool.ntp.org first...
+#echo "ntpdate=yes" >>/etc/rc.conf
+#echo 'ntpdate_flags="-b"' >>/etc/rc.conf
+#echo "ntpdate_hosts=152.2.21.1" >>/etc/rc.conf
+#/etc/rc.d/ntpd stop || true
+#/etc/rc.d/ntpdate start
+#
+##:: Configure ntpd for normal runtime use.
+#cat >/etc/ntp.conf<<EOF-ntp.conf
+#server		north-america.pool.ntp.org
+#pidfile		/var/run/ntpd.pid
+#driftfile	/var/db/ntp.drift
+#logconfig	-syncstatus
+#EOF-ntp.conf
 

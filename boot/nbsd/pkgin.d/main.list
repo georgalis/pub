@@ -1,35 +1,31 @@
-pkgtools/pkgin
-pkgtools/pkg_chk
-net/rsync
-net/fping
-net/mtr
-net/nmap
-editors/vim
-sysutils/pstree
-sysutils/file
-misc/colorls
-misc/tmux
+
+# devel/jenkins
+# devel/jq
+# security/mozilla-rootcerts
+# security/openssl
+# textproc/py-yaml
+# time/remind
+# www/apache-tomcat8
 devel/git-base
 devel/git-docs
+editors/vim
+mail/safecat
+misc/colorls
+misc/tmux
+net/djbdns
+net/fping
+net/mtr
 net/netcat
+net/nmap
+net/rsync
+pkgtools/pkg_chk
+pkgtools/pkg_rolling-replace
+pkgtools/pkgin
 security/gnupg2
+sysutils/file
 sysutils/htop
 sysutils/lsof
 sysutils/pftop
-textproc/par
+sysutils/pstree
 textproc/aspell-en
-
-# mail/safecat
-# pkgtools/pkg_rolling-replace
-# devel/subversion-base
-# textproc/py-yaml
-# time/remind
-# security/mozilla-rootcerts
-# security/openssl
-
-# net/djbdns
-# devel/jq
-
-# devel/jenkins
-# www/apache-tomcat8
-
+textproc/par
