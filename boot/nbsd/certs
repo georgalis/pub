@@ -7,7 +7,8 @@
 
 set -e 
 
-chkerr () { [ -n "$*" ] && echo "ERR  >>->-- $0: $* --<-<< " >&2 && exit 1 ;}
+stderr () { echo ">>> $* <<<" 1>&2 ;} #:> return args to stderr
+chkerr () { [ "$*" ] && { stderr "$*" ; return 1 ;} || true ;}
 
 pkgin -y install mozilla-rootcerts
 touch /etc/openssl/openssl.cnf

@@ -7,7 +7,6 @@
 
 set -e 
 
-
 PKGIN_CONF="/usr/pkg/etc/pkgin/repositories.conf"
 PKG_EX="/usr/pkg/share/examples/pkgin/repositories.conf.example"
 
@@ -22,29 +21,34 @@ PKG_PATH="${URL_ROOT}/${URL_BASE}/$(uname -r|cut -f 1 -d _)/All"
 PKGIN="$(ftp -Vo - "$PKG_LIST" | bzip2 -d | sed -e '/All\/pkgin-/!d' -e 's/All\/pkgin/pkgin/' \
     -e 's/.*(//' -e 's/).*//')"
 
-
 # PKG_PATH=http://nyftp.netbsd.org/pub/pkgsrc/packages/NetBSD/amd64/8.1/All
 # PKG_LIST=http://nyftp.netbsd.org/pub/pkgsrc/packages/NetBSD/amd64/8.1/SHA512.bz2
 # PKGIN=pkgin-0.12.0.tgz
-
 
 #PKG_REL="$(ftp -o - ${URL_BASE} \
 #        | grep href | grep $(uname -r|cut -f 1 -d_) | grep -v _current \
 #        | sed -e 's/.*href="//' -e 's/".*//' -e "s=^=# ${URL_BASE}=" \
 #        -e "s/$/All/" )"
+
 #mkdir -p /usr/pkg/etc/pkgin
 #[ -e "$PKGIN_CONF" ] || printf "# ${PKG_EX}\n${PKG_REL}\n${PKG_PATH}\n" >${PKGIN_CONF}
 
 #printf "# ${PKG_EX}\n${PKG_REL}\n${PKG_PATH}\n" >${PKGIN_CONF}
 
 #PKG_PATH="ftp://ftp.netbsd.org/pub//pkgsrc/packages/NetBSD/amd64/8.1/All"
-#echo $PKG_PATH >$PKGIN_CONF
+#pkg_add http://ftp.netbsd.org/pub/pkgsrc/packages/NetBSD/amd64/8.1/All/pkgin-0.12.0.tgz
+
 echo    "$PKG_PATH/$PKGIN"
 pkg_add "$PKG_PATH/$PKGIN"
-/usr/pkg/bin/pkgin -y update
 
-#pkgin -y upgrade
-#pkgin -y full-upgrade
+
+sed 's/^[^#]/# &/' $PKGIN_CONF >${PKGIN_CONF}~
+echo "$PKG_PATH" >>${PKGIN_CONF}~ \
+    && mv ${PKGIN_CONF}~ ${PKGIN_CONF}
+
+/usr/pkg/bin/pkgin -y update
+/usr/pkg/bin/pkgin -y upgrade
+/usr/pkg/bin/pkgin -y full-upgrade
 
 cd $(dirname $0)
 for e in ./pkgin.d/*.list ./pkgin.d/min.list ; do
@@ -52,3 +56,4 @@ for e in ./pkgin.d/*.list ./pkgin.d/min.list ; do
 done
 
 exit 0
+
