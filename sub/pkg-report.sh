@@ -1,5 +1,12 @@
 #!/bin/sh
 
+###### NetBSD tool to develop the pkg_admin audit security report
+
+# invoke pkg-report.sh from root cron
+# 20 1    * * *   [ -x /root/bin/pkg-report.sh ] && /root/bin/pkg-report.sh
+# optionally disable regular audit
+# echo 'fetch_pkg_vulnerabilities="NO" # invoked in root cron' >>/etc/daily.conf
+
 set -e 
 
 devnul () { true ;} # non-verbose scheme
@@ -12,21 +19,24 @@ env_qual () { # runtime qualification
     } # env_qual
 env_qual
 
-
-#find /var/db/pkg.audit -mtime +1 -exec mv \{\} /var/db/pkg.audit.old \; || true
-
 pkg_admin audit -e >/var/db/pkg.audit || true
 
 printf '\n%s\n\n' "%%%% diff since review"
+
+# inevitably you will decide to ignore vulnerabilities
+# use /var/db/pkg.audit.old to record ignores and
+# new vulnerabilities will be highlighted in the report
 
 [ -e /var/db/pkg.audit.old ] \
   && diff /var/db/pkg.audit.old /var/db/pkg.audit \
   || true
 
-#printf '\n%s\n\n' "%%%% newest"
-#tail -n1 /var/db/pkg.audit
+printf '\n\n%s\n\n' "%%%% available updates... 'pkgin -n fug'"
 
-printf '\n%s\n\n' "%%%% package vulnerability count"
+pkgin -n fug
+
+
+printf '\n\n%s\n\n' "%%%% package vulnerability count"
 
 sed -e "
     s/^Package //
@@ -34,7 +44,7 @@ sed -e "
     s/ vulnerability, see http.*//
     " /var/db/pkg.audit | sort | uniq -c | awk '{print $2,$1,$3}'| column -t 
 
-printf '\n%s\n\n' "%%%% package CVE(s)"
+printf '\n\n%s\n\n' "%%%% package CVE(s)"
 
 sed -e 's/^Package //' -e 's/ .*//' /var/db/pkg.audit \
     | sort -u | while read a ; do 
@@ -54,7 +64,7 @@ sed -e 's/^Package //' -e 's/ .*//' /var/db/pkg.audit \
     
     sed -e 's/^Package //' -e 's/ .*//' /var/db/pkg.audit \
         | sort -u | while read a ; do 
-            printf "%s\n" "$a"
+            printf "%s\n\n" "%%%%%% $a "
             /usr/local/sub/cve-tool.sh $( 
               sed -e "/$a/!d" -e 's=.*nvd.nist.gov/vuln/detail/==' \
                               -e 's,.*web.nvd.nist.gov/view/vuln/detail?vulnId=,,' \
