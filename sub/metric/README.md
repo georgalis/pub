@@ -4,7 +4,7 @@
 
 * Auto probe disk partitions, setup tables, create disk/cpu graphics
 
-[screenshot](5dcad60b-ScreenShot-20191112_075459.png)
+![screenshot](5dcad60b-ScreenShot-20191112_075459.png)
 
 Discover partitions and generate cpu / disk utilization graphics.
 Notable, the cpu idle % graph is aligned with a 1/5/15 minute
