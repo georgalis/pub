@@ -16,8 +16,8 @@
 # LICENSE: <george@galis.org> wrote this file. As long as you retain
 # this notice, you can do anything with it -- George Georgalis
 
-
 set -e
+
 b="$(basename $0 | sed 's/.[^.]*$//')" # this program name less (.sh) extension
 alpha="$b-$(hostname)"
 
@@ -94,6 +94,7 @@ echo "<table border=0><tr><td align=center valign=middle>CPU %<br>Utilization</t
    for n in $rri_graph ; do
     rrdtool graph ${htrr}/${alpha}/cpu-${n}.png \
  	--slope-mode \
+	--color "BACK#ffffff55" \
  	--vertical-label "Sigma CPU %" \
  	--title "$(hostname) $(uptime)" \
 	--watermark "seconds=$n hours=$(($n / 3600 )) days=$(($n / 86400)) weeks=$(($n / 604800)) months=$(($n / 2592000))" \
@@ -119,6 +120,7 @@ echo "<table border=0><tr><td align=center valign=middle>CPU %<br>Utilization</t
    for n in $rri_graph ; do
     rrdtool graph ${htrr}/${alpha}/idle-${n}.png \
  	--slope-mode \
+	--color "BACK#ffffff55" \
  	--vertical-label "Sigma CPU %" \
  	--title "$(hostname) $(uptime)" \
 	--watermark "seconds=$n hours=$(($n / 3600 )) days=$(($n / 86400)) weeks=$(($n / 604800)) months=$(($n / 2592000))" \
@@ -137,6 +139,7 @@ echo "<table border=0><tr><td align=center valign=middle>CPU %<br>Utilization</t
    for n in $rri_graph ; do
     rrdtool graph ${htrr}/${alpha}/loadave-${n}.png \
  	--slope-mode \
+	--color "BACK#ffffff55" \
  	--vertical-label "CPU Queue" \
  	--title "$(hostname) $(uptime)" \
 	--watermark "seconds=$n hours=$(($n / 3600 )) days=$(($n / 86400)) weeks=$(($n / 604800)) months=$(($n / 2592000))" \
@@ -148,9 +151,9 @@ echo "<table border=0><tr><td align=center valign=middle>CPU %<br>Utilization</t
 	DEF:load5=${rr}/load5.rrd:load5:LAST \
 	DEF:load15=${rr}/load15.rrd:load15:LAST \
 	\
-	AREA:load15\#cccc99:"Load15" \
-	AREA:load5\#eeee88:"Load5" \
 	AREA:load1\#dddd1d:"Load1" \
+	AREA:load5\#eeee88:"Load5" \
+	AREA:load15\#cccc99:"Load15" \
 	\
 	HRULE:1#9999bb \
 	# LINE:load\#54007c:"load" \
@@ -182,7 +185,7 @@ EOF-body
  ;;
 
  gen)
-  heartbeat=333	# constant (unknown), updates before unknown min and max
+  heartbeat=400	# constant, "missing updates" before min and max values are reset
   echo rr=${rr}
   echo mkdir -p \${rr}
   echo
@@ -190,8 +193,8 @@ EOF-body
   echo gauge=load1
   echo rrdtool create \${rr}/\${gauge}.rrd --step $step DS:\${gauge}:GAUGE:$heartbeat:0:U \\
    for RRA_sec in $rri; do
-    rows=$(( $width / 3 ))
-    steps=$(( ( $RRA_sec / $step ) / $rows ))
+    rows=$(( $width / 2 ))
+    steps=$(( ( $RRA_sec / $step ) / $rows + 1 ))
     echo RRA:LAST:0.5:$steps:$rows \\
    done # RRA_sec
    echo
@@ -199,8 +202,8 @@ EOF-body
   echo gauge=load5
   echo rrdtool create \${rr}/\${gauge}.rrd --step $step DS:\${gauge}:GAUGE:$heartbeat:0:U \\
    for RRA_sec in $rri; do
-    rows=$(( $width / 3 ))
-    steps=$(( ( $RRA_sec / $step ) / $rows ))
+    rows=$(( $width / 2 ))
+    steps=$(( ( $RRA_sec / $step ) / $rows + 1 ))
     echo RRA:LAST:0.5:$steps:$rows \\
    done # RRA_sec
    echo
@@ -208,8 +211,8 @@ EOF-body
   echo gauge=load15
   echo rrdtool create \${rr}/\${gauge}.rrd --step $step DS:\${gauge}:GAUGE:$heartbeat:0:U \\
    for RRA_sec in $rri; do
-    rows=$(( $width / 3 ))
-    steps=$(( ( $RRA_sec / $step ) / $rows ))
+    rows=$(( $width / 2 ))
+    steps=$(( ( $RRA_sec / $step ) / $rows + 1 ))
     echo RRA:LAST:0.5:$steps:$rows \\
    done # RRA_sec
    echo
@@ -217,8 +220,8 @@ EOF-body
   echo clock=user
   echo rrdtool create \${rr}/\${clock}.rrd --step $step DS:\${clock}:DERIVE:$heartbeat:0:U \\
    for RRA_sec in $rri; do
-    rows=$(( $width / 3 ))
-    steps=$(( ( $RRA_sec / $step ) / $rows ))
+    rows=$(( $width / 2 ))
+    steps=$(( ( $RRA_sec / $step ) / $rows + 1 ))
     echo RRA:LAST:0.5:$steps:$rows \\
    done # RRA_sec
    echo
@@ -226,8 +229,8 @@ EOF-body
   echo clock=nice
   echo rrdtool create \${rr}/\${clock}.rrd --step $step DS:\${clock}:DERIVE:$heartbeat:0:U \\
    for RRA_sec in $rri; do
-    rows=$(( $width / 3 ))
-    steps=$(( ( $RRA_sec / $step ) / $rows ))
+    rows=$(( $width / 2 ))
+    steps=$(( ( $RRA_sec / $step ) / $rows + 1 ))
     echo RRA:LAST:0.5:$steps:$rows \\
    done # RRA_sec
    echo
@@ -235,8 +238,8 @@ EOF-body
   echo clock=sys
   echo rrdtool create \${rr}/\${clock}.rrd --step $step DS:\${clock}:DERIVE:$heartbeat:0:U \\
    for RRA_sec in $rri; do
-    rows=$(( $width / 3 ))
-    steps=$(( ( $RRA_sec / $step ) / $rows ))
+    rows=$(( $width / 2 ))
+    steps=$(( ( $RRA_sec / $step ) / $rows + 1 ))
     echo RRA:LAST:0.5:$steps:$rows \\
    done # RRA_sec
    echo
@@ -244,8 +247,8 @@ EOF-body
   echo clock=intr
   echo rrdtool create \${rr}/\${clock}.rrd --step $step DS:\${clock}:DERIVE:$heartbeat:0:U \\
    for RRA_sec in $rri; do
-    rows=$(( $width / 3 ))
-    steps=$(( ( $RRA_sec / $step ) / $rows ))
+    rows=$(( $width / 2 ))
+    steps=$(( ( $RRA_sec / $step ) / $rows + 1 ))
     echo RRA:LAST:0.5:$steps:$rows \\
    done # RRA_sec
    echo
@@ -253,14 +256,14 @@ EOF-body
   echo clock=idle
   echo rrdtool create \${rr}/\${clock}.rrd --step $step DS:\${clock}:DERIVE:$heartbeat:0:U \\
    for RRA_sec in $rri; do
-    rows=$(( $width / 3 ))
-    steps=$(( ( $RRA_sec / $step ) / $rows ))
+    rows=$(( $width / 2 ))
+    steps=$(( ( $RRA_sec / $step ) / $rows + 1 ))
     echo RRA:LAST:0.5:$steps:$rows \\
    done # RRA_sec
   #
   echo
-  echo "#*/5 *  * * *   sleep 35 ; nice -n 19 rrd-disk.sh graph ; nice -n 19 ${alpha}.sh graph"
-  echo "#* *    * * *   sleep 15 ; nice -n 19 rrd-disk.sh db    ; nice -n 19 ${alpha}.sh db"
+  echo "#*/5 *  * * *   sleep 35 ; nice -n 19 rrd-cpu.sh graph"
+  echo "#* *    * * *   sleep 15 ; nice -n 19 rrd-cpu.sh db"
  ;;
 
 esac # $1
