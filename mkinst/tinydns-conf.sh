@@ -85,8 +85,12 @@ data=/usr/local/etc/tinydns/root/data
 +*.local.org:192.168.0.2
 +*.main.org:216.215.214.213
 
-Ssiem.services.main.org:12.34.56.78:siem.services.main.org:514:::::
-=siem.services.main.org:12.34.56.78:
+# for srv records, see
+# https://anders.com/projects/sysadmin/djbdnsRecordBuilder/
+# https://anders.com/cms/37/djbdns/tinydns/SRV/NAPTR/record.builder
+# not using djbdns-1.05-srvnaptr.diff
+# Ssiem.services.main.org:12.34.56.78:siem.services.main.org:514:::::
+# =siem.services.main.org:12.34.56.78:
 
 ###
 
