@@ -3,9 +3,9 @@
 # Proceeding Operations and Change Control Framework
 
 The [components overview](README.md#Components)
-is the entry point for documentation, confifuration, source code and change control.
+is the entry point for documentation, configuration, source code and change control.
 The framework is a lean integration of quality system controls
-from multiple industries (GAMP-5, OODA Loop, Agile DevOps, CI/CD, FIPS/RMF, Swiss Cheese
+from multiple industries (GAMP-5, OODA Loop, DevOps/Agility, CI/CD, FIPS/RMF, Swiss Cheese
 safety model, Multi/Dual-Vee, 5S, Iceburg and Spiral), to maintain efficient, ongoing
 development.
 

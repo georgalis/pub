@@ -81,7 +81,7 @@ A [Resource](resource.md) document contains a [glossary](resource.md#Glossary), 
   * Improve - optimization, upgrades, new tools (finer enhancements)
 * [Exec](exec.md) - instantiation of the implementation (platform, code, config)
   * Administration - accounting and management of the data, platform and interfaces (broader tasks)
-  * Registration - design alignment with specific resources (orginization, middle scope)
+  * Registration - design alignment with specific resources (organization, middle scope)
   * [exec](./exec) Integration data, scripts and config for setup and operation of components (finer details)
 * [Design](design.md) - the plan, prototype model, twin representation of the implementation
   * Requirement - expectations for acceptance (broader details)
