@@ -72,7 +72,7 @@ The following is a more detailed view, of the handoff cycle.
 ![Framework Phase Loop](framework.png)
 
 Initially, there may be no handoffs or documentation at all.  If there is no development in
-the other phases, consider execution interaction with the other phases as a pass-through loop, to prepare for future
+the other phases, consider interaction with the other phases as a pass-through loop, to prepare for future
 phase handoffs and orient the efforts.
 
 Handoff classification, as broader, middle or finer detail, facilitates integration with
