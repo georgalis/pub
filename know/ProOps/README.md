@@ -51,7 +51,7 @@ Typical platform development discovery
 ## Proceeding Operations Framework Documentation and Change Control
 
 The components section below is the entry point for operational documentation and change control.
-The [framework](framework/framework.md) is a four phase model, with each phase divided into three scopes for broader,
+The [framework](framework.md) is a four phase model, with each phase divided into three scopes for broader,
 middle and finer details. Each phase orients the next with inputs.  Direction is taken from
 the prior phase and calibration is from the phase two steps away.  The development process
 is a continuous four step loop, from phase to phase. 
@@ -72,7 +72,7 @@ A [Resource](resource.md) document contains a glossary, acronyms and reference b
 
 ## Components
 * [README](README.md) - ProOps Framework overview 
-  * [./framework/](./framework/) ProOps Framework overview data
+  * [Framework](./framework/framework.md) ProOps Framework
 * [Risk](risk.md) - threshold and barriers impeding goals
   * Viability - effort value, opportunity window, competition, and nefarious analysis (broader barriers)
   * Compliance - complexity, cognition, competence, capability (middle challenges)

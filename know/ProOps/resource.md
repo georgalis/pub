@@ -88,7 +88,7 @@ Electronic search capability is expected, similar terms are grouped together for
     https://nvlpubs.nist.gov/nistpubs/ir/2013/NIST.IR.7298r2.pdf
 
 * ##### GAMP 5 Guide: Compliant GxP Computerized Systems
-  * GAMP(R) 5 provides pragmatic and practical industry guidance to achieve compliant computerized systems fit for intended use in an efficient and effective manner.  
+  * GAMP 5 provides pragmatic and practical industry guidance to achieve compliant computerized systems fit for intended use in an efficient and effective manner.  
     https://ispe.org/publications/guidance-documents/gamp-5
   * GAMP 5: Ten Years On  
     https://ispe.org/pharmaceutical-engineering/may-june-2018/gamp-5-ten-years

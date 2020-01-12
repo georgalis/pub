@@ -16,9 +16,9 @@ acceptance. The phase two steps away, calibrates the efforts of the active phase
 The phases are [Risk Analysis](risk.md), [Design Plan](design.md), [Implementation
 Execution](exec.md) and [Quality Checks](check.md). From any starting point, they loop in
 that order.  Components are represented in each phase according to the development within
-that phase, an [Index](README-index.md) locates component documents within each phase
-and a [Resource](README-resource.md) document contains a site [Glossary](#Glossary),
-[Acronym](#Acronym) table and bibliographic [Reference](#Reference) sections.
+that phase, an [Index](index.md) locates component documents within each phase
+and a [Resource](resource.md) document contains a site [Glossary](resource.md#Glossary),
+[Acronym](resource.md#Acronym) table and bibliographic [Reference](resource.md#Reference) sections.
 
 Typically, project source code will iterate development and live in a version control
 repository.  Eventually, project complexity or collaboration needs, will create risk factors
@@ -64,7 +64,7 @@ efforts. The following is a more detailed view of the handoffs cycle.
 * Executions     are evaluated by quality checks which indicate if the design plan    addresses the risks analysis.
 * ...and so fourth
 
-![Framework Phase Loop](README-framework.png)
+![Framework Phase Loop](framework.png)
 
 Initially, there may be no handoffs or documentation at all.  If there is no development in
 the other phases, consider their interaction as a loop pass-through, to prepare for future
