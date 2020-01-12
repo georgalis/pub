@@ -1,0 +1,3 @@
+
+default :
+	@echo example target
