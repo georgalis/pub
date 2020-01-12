@@ -72,7 +72,9 @@ A [Resource](resource.md) document contains a glossary, acronyms and reference b
 
 ## Components
 * [README](README.md) - ProOps Framework overview 
-  * [Framework](./framework/framework.md) ProOps Framework
+  * [Framework](./framework.md)
+  * [Resource](resource.md)
+  * [Index](index.md)
 * [Risk](risk.md) - threshold and barriers impeding goals
   * Viability - effort value, opportunity window, competition, and nefarious analysis (broader barriers)
   * Compliance - complexity, cognition, competence, capability (middle challenges)
