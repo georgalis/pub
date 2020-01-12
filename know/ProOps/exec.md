@@ -10,9 +10,18 @@ Instantiation of the implementation (documentaton, platform, automation, code, c
 
 Project accounting and management, platform, tasks and interfaces (broader scope).
 
+* rack, stack, cable and boot
+* config and setup
+* upgrade and update
+
 ## Registration
 
 Design data organization and alignment with specific resources (middle scope).
+
+* BOM and SBOM
+* DNS 
+* cabling, termination and labeling
+
 
 ## Integration
 
@@ -21,8 +30,10 @@ Component coordination and operation (finer details).
 * Root [./makefile](makefile), master deployment, build and install targets for all components.
   * Component [execution](./exec) digital data, build, config, integration and scripts for setup and operation.
   * [./sub/build.bash](./sub/build.bash) example deployment script.
-  * [Example](./exec/component.md) component execution documentation.
-  * [Monitor](./exec/monitor.md) another component documentation example.
+* [Component](./exec/component.md) component execution documentation.
+* [Monitor](./exec/monitor.md) another component documentation example.
+* interactive settings
+* deployment journal
 
 ### Undefined
 

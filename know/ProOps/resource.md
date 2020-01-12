@@ -87,7 +87,8 @@ Electronic search capability is expected, similar terms are grouped together for
     https://csrc.nist.gov/publications/detail/nistir/7298/rev-2/archive/2013-06-05  
     https://nvlpubs.nist.gov/nistpubs/ir/2013/NIST.IR.7298r2.pdf
 
-* ##### GAMP 5 Guide: Compliant GxP Computerized Systems
+* ##### GAMP 5 Guide
+Compliant GxP Computerized Systems
   * GAMP 5 provides pragmatic and practical industry guidance to achieve compliant computerized systems fit for intended use in an efficient and effective manner.  
     https://ispe.org/publications/guidance-documents/gamp-5
   * GAMP 5: Ten Years On  

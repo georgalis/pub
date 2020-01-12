@@ -3,28 +3,13 @@
 ---
 # Component
 
-An example component.
+An example component Run-book.
 
-## Administration
-
-* rack, stack, cable and boot
-* config and setup
-* upgrade and update
-
-## Registration
-
-* BOM and SBOM
-* DNS 
-* cabling, termination and labeling
-
-## Integration
-* Run-books, setup, digital [data](./exec/component/)
+* Digital setup [data](./exec/component/)
   * [config](./exec/component/example.conf)
   * [functions](./exec/component/example.func.bash)
   * [makefile](./exec/component/makefile)
   * [scripts](./exec/component/sub)
-* interactive settings
-* deployment journal
 
 ---
 Unlimited use with this notice (c) 2017-2020 George Georgalis
