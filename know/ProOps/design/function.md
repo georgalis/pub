@@ -1,5 +1,5 @@
-* [README](README.md) - overview build-infrastructure
-* [Design](design.md) - plan, prototype model and implementation twin representation
+* [README](../README.md) - overview build-infrastructure
+* [Design](../design.md) - plan, prototype model and implementation twin representation
 ---
 # Function
 
