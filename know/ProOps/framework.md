@@ -57,8 +57,8 @@ The above handoff table represents the four phase development loop, which can st
 state.  From day-one to day-1000, the disposition of each phase (specific input directing the
 designated handoff), never changes.  Consideration of the phase handoffs facilitates loop
 initialization and phase integration.  A simple way to view the relationships is
-_execution_considers_risk_ factors,
-while _check_considers_the_design_ plan,
+_execution considers risk_ factors,
+while _check considers the design_ plan,
 in their respective efforts.
 The following is a more detailed view, of the handoff cycle.
 
