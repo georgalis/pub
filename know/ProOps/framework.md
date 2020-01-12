@@ -2,7 +2,7 @@
 ---
 # Proceeding Operations and Change Control Framework
 
-The [components overview](README.md#Components)
+The [Components](README.md#Components) overview
 is the entry point for documentation, configuration, source code and change control.
 The framework is a lean integration of quality system controls
 from multiple industries (GAMP-5, OODA Loop, DevOps/Agility, CI/CD, FIPS/RMF, Swiss Cheese
@@ -18,7 +18,7 @@ The handoff recipient provides respective acceptance.
 The phases are [Risk](risk.md) analysis, [Design](design.md) plan, [Execution](exec.md) implementation
 and [Check](check.md) quality. From any starting point, they loop in
 that order.  Components are represented in each phase according to the development within
-that phase, an [Index](index.md) locates component documents within each phase
+that phase, an [Index](index.md) locates component representations within each phase
 and a [Resource](resource.md) document contains a site [Glossary](resource.md#Glossary),
 [Acronym](resource.md#Acronym) table and bibliographic [Reference](resource.md#Reference) sections.
 
@@ -28,9 +28,10 @@ that are addressed by creation of design documents and quality checks. A well de
 project will document the risk factors, in addition to the design and check phases.
 
 Generally, individuals will have more expertise in one phase, and less in the other three.
-Understanding a Handy's scope and relative level of development is the first step
-toward interpretation. The
-scope classification aligns development across phase handoffs.  Just as a document's scope
+Understanding the scope and development level are the first steps
+in document interpretation. The
+scope classification prepares the handoff recipient and aligns development, across phases.
+Just as a document's scope
 and relevance are the first technical assertions made, so should they be identified for
 interpretation across areas of expertise, in phase handoffs.
 
@@ -38,7 +39,7 @@ The coordination between risk and execution; as well as the design and check rel
 calibration and a key elucidation of the framework. In complex projects, this relationship
 contributes to a smooth, focused migration from development to production operations.
 Proceeding development with the framework pattern as a target, sets the stage for coherent
-operations.  While, ad hoke execution development can progress with assumptions of
+operations.  While, ad hoc execution development can progress with assumptions of
 _undocumented_ design, non-existent quality checks, and no risk analysis; a disposition of
 phase loop interaction is prerequisite to actually achieving development agility.
 
@@ -54,10 +55,12 @@ phase loop interaction is prerequisite to actually achieving development agility
 
 The above handoff table represents the four phase development loop, which can start from any
 state.  From day-one to day-1000, the disposition of each phase (specific input directing the
-designated handoff), never changes.  Consideration of the phase handoffs, facilitates loop
-initialization and phase integration.  A simple way to view the relationships is the execution
-considers risks factors, while the check phase considers the design plans, in their respective
-efforts. The following is a more detailed view of the handoffs cycle.
+designated handoff), never changes.  Consideration of the phase handoffs facilitates loop
+initialization and phase integration.  A simple way to view the relationships is
+_execution_considers_risk_ factors,
+while _check_considers_the_design_ plan,
+in their respective efforts.
+The following is a more detailed view, of the handoff cycle.
 
 * Executions     are evaluated by quality checks which indicate if the design plan    addresses the risks analysis.
 * Quality checks are evaluated by risk analysis  which indicate if the executions     addresses the design plan.

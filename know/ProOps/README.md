@@ -24,8 +24,8 @@ Typical software development objectives
   * eliminate uncontrolled services
 * change control
   * efficient improvement, corrective and preventive actions
-  * specification details through automation
-  * documentation integrated with code
+  * specification details through automation versioning
+  * documentation integrated with code, elucidated flow dependencies
 * eliminate dependence on unwritten information (tribal knowledge)
 * data definitions and management (privacy, retention, expiration)
 * hygienic systems and environment
@@ -57,7 +57,7 @@ Each phase is divided into three scopes, for broader, middle and finer details.
 Each phase orients the next with inputs.  Direction is taken from
 the prior phase and calibration is from the phase two steps away.
 The phases are Risk analysis, Design plan, Execution implementation and Check quality.
-The following handoffs characterize the feed forward loop cycle.
+The following handoffs characterize the loop cycle.
 
 * Executions     are evaluated by quality checks which indicate if the design plan    addresses the risks analysis.
 * Quality checks are evaluated by risk analysis  which indicate if the executions     addresses the design plan.
@@ -66,7 +66,7 @@ The following handoffs characterize the feed forward loop cycle.
 * Executions     are evaluated by quality checks which indicate if the design plan    addresses the risks analysis.
 * ...and so fourth
 
-A [Resource](resource.md) document contains a [glossary](resource.md#Glossary), [acronyms](resource.md#Acronym) and [reference](resource.md#Reference) bibliography.
+A [resource](resource.md) document contains a [glossary](resource.md#Glossary), [acronyms](resource.md#Acronym) and [reference](resource.md#Reference) bibliography.
 
 ---
 
