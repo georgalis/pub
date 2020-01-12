@@ -2,19 +2,21 @@
 ---
 # Proceeding Operations and Change Control Framework
 
-The [components overview](README.md#Components) is the entry point for documentation and
-source code change control.  The framework is a lean integration of quality system controls
+The [components overview](README.md#Components)
+is the entry point for documentation, confifuration, source code and change control.
+The framework is a lean integration of quality system controls
 from multiple industries (GAMP-5, OODA Loop, Agile DevOps, CI/CD, FIPS/RMF, Swiss Cheese
 safety model, Multi/Dual-Vee, 5S, Iceburg and Spiral), to maintain efficient, ongoing
 development.
 
-The framework is a four phase model, with each phase divided into three scopes, for broader,
-middle and finer details. Each phase orients the next with inputs, in a continuous loop.
-The prior, input phase provides direction, while the recipient, handoff phase clarifies
-acceptance. The phase two steps away, calibrates the efforts of the active phase.
+The framework is a four phase, continuous feed forward, development model.
+Each phase is divided into three scopes, for broader, middle and finer details.
+Each phase orients the next with inputs.  Direction is taken from
+the prior phase and calibration is from the phase two steps away.
+The handoff recipient provides respective acceptance.
 
-The phases are [Risk Analysis](risk.md), [Design Plan](design.md), [Implementation
-Execution](exec.md) and [Quality Checks](check.md). From any starting point, they loop in
+The phases are [Risk](risk.md) analysis, [Design](design.md) plan, [Execution](exec.md) implementation
+and [Check](check.md) quality. From any starting point, they loop in
 that order.  Components are represented in each phase according to the development within
 that phase, an [Index](index.md) locates component documents within each phase
 and a [Resource](resource.md) document contains a site [Glossary](resource.md#Glossary),

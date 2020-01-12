@@ -50,14 +50,14 @@ Typical platform development discovery
 
 ## Proceeding Operations Framework Documentation and Change Control
 
-The components section below is the entry point for operational documentation and change control.
-The [framework](framework.md) is a four phase model, with each phase divided into three scopes for broader,
-middle and finer details. Each phase orients the next with inputs.  Direction is taken from
-the prior phase and calibration is from the phase two steps away.  The development process
-is a continuous four step loop, from phase to phase. 
-The phases are Risk Analysis, Design Plan, Implementation Execution and Quality Check.
-They loop in that order, from any starting point. 
-The following handoffs make the cycle.
+The components section below
+is the entry point for operational documentation, code and change control.
+The [framework](framework.md) is a four phase, continuous feed forward, development model.
+Each phase is divided into three scopes, for broader, middle and finer details.
+Each phase orients the next with inputs.  Direction is taken from
+the prior phase and calibration is from the phase two steps away.
+The phases are Risk analysis, Design plan, Execution implementation and Check quality.
+The following handoffs characterize the feed forward loop cycle.
 
 * Executions     are evaluated by quality checks which indicate if the design plan    addresses the risks analysis.
 * Quality checks are evaluated by risk analysis  which indicate if the executions     addresses the design plan.
@@ -66,7 +66,7 @@ The following handoffs make the cycle.
 * Executions     are evaluated by quality checks which indicate if the design plan    addresses the risks analysis.
 * ...and so fourth
 
-A [Resource](resource.md) document contains a glossary, acronyms and reference bibliography.
+A [Resource](resource.md) document contains a [glossary](resource.md#Glossary), [acronyms](resource.md#Acronym) and [reference](resource.md#Reference) bibliography.
 
 ---
 
