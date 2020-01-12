@@ -1,5 +1,5 @@
-* [README](README.md) - ProOps Framework overview 
-* [Risk](risk.md) - threshold and barriers impeding goals
+* [README](../README.md) - ProOps Framework overview 
+* [Risk](../risk.md) - threshold and barriers impeding goals
 ---
 
 # Component

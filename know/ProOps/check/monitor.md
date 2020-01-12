@@ -1,4 +1,4 @@
-* [README](README.md) - overview build-infrastructure
+* [README](../README.md) - overview ProOps Framework
 * [Check](../check.md) - monitoring and representational twin alignment
 ---
 # Check Monitor Example

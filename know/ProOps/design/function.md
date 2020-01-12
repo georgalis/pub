@@ -1,7 +1,7 @@
-* [README](../README.md) - overview build-infrastructure
+* [README](../README.md) - overview ProOps Framework
 * [Design](../design.md) - plan, prototype model and implementation twin representation
 ---
-# Function
+# Design / Function
 
 Primitive components, their interconnects and protocols.
 
