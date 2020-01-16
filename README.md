@@ -1,7 +1,7 @@
 # georgalis @ Github 
 
 ###### Major ./pub components
-[pub](https://github.com/georgalis/pub/) root
+[root](https://github.com/georgalis/pub/)
 * [./archive](./archive) Historical public revisions
 * [./boot](./boot) Bootstrap scripts for various OS
 * [./boot/nbsd/pkgin.d](./boot/nbsd/pkgin.d) Schema for including pkgsrc lists
@@ -9,7 +9,6 @@
 
 ###### Other repositories
 * [../felidae](https://github.com/georgalis/felidae) Felidae AI/ML image classifier
-* [../felidae/plan](https://github.com/georgalis/felidae/plan) Classifier Strategy
 
 ## Public comments
 
