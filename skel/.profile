@@ -7,7 +7,7 @@
 /usr/bin/tty -s || return # the following for interactive sessions only
 
 export EDITOR="vi"
-export PAGER='less --jump-target=-1'
+export PAGER='less --jump-target=3'
 export GPG_TTY=$(tty)
 export OS=$(uname)
 
@@ -55,6 +55,7 @@ Linux)
   alias  l="ls --color=auto"
   alias la="ls --color=auto -AFl --full-time --time-style=+%Y%m%d_%H%M%S"
   alias ll="ls --color=auto -Fl --full-time --time-style=+%Y%m%d_%H%M%S"
+  alias lt="ls --color=auto -AFlrt --full-time --time-style=+%Y%m%d_%H%M%S"
  alias ltd="ls --color=auto -AFlrtd --full-time --time-style=+%Y%m%d_%H%M%S"
   alias lS="ls --color=auto -AFlrS --full-time --time-style=+%Y%m%d_%H%M%S"
   alias t='tail --follow=name'
@@ -74,22 +75,9 @@ NetBSD|FreeBSD|Dragonfly)
 ;; # NetBSD|FreeBSD|Dragonfly
 esac
 
-case "$OS" in
-Darwin|NetBSD)
- kwds () { # convert stdin to unique words sorted on legnth then alpha to stdout, linux untested
-  tr -c '[:alpha:]' ' ' \
-  | tr '\ ' '\n' \
-  | tr '[:upper:]' '[:lower:]' \
-  | sort -ru \
-  | while read w; do echo "${#w}\t${w}" ; done \
-  | sort -rn \
-  | awk '{print $2}' \
-  | tr '\n' '\ '
-  echo
- } # kwds
-esac
 
-# determine correct termcap codes per OS, for underline and stand-out
+
+# terminfo
 [ -z "${OS#Linux}" ] && {
 	 _ntermrev='rmso' ; _ntermul='rmul'
 	 _termrev='smso' ; _termul='smul'
@@ -112,6 +100,7 @@ export _ntermrev _termrev _ntermul _termul
 [ -x "$(which proctree 2>/dev/null)" ] && alias p='proctree -w'
 [ -x "$(which pstree 2>/dev/null)" ] && alias p='pstree -w'
 [ -x "$(which colordiff 2>/dev/null)" ] && alias diff='colordiff'
+#[ -x "$(which tmux 2>/dev/null)" ] && alias tmux='tmux new -A -s main'
 
 alias back='cd "$OLDPWD"'	# previous directory
 alias g='grep -E'		# grep for the extended regex
@@ -147,6 +136,69 @@ export key_in=$(mktemp /tmp/pubkey-XXXXXX)
 printf "$(ssh-keygen -if $key_in) " \
  && grep Comment $key_in | sed -e 's/^Comment: "//' -e 's/"$//'
 rm $key_in ;}
+
+ckstat () # Unlimited use with this notice (c) 2017-2019 George Georgalis <george@galis.org>
+{ # 2156ca36 .     6147 5e1f9fbb .profile.local
+  # links_inode . 0x_size 0x_date filename of arg1 or stdin filelist
+  local f fs;
+  [ "$1" ] && fs="$1" || fs="$(cat)";
+  shift;
+  [ "$1" ] && $FUNCNAME $@;
+  [ "$fs" = "-h" -o "$fs" = "--help" ] && {
+    chkwrn "Usage, for arg1 (or per line stdin)";
+    chkwrn "return: n-inode chksum size mdate filename"
+  } || { OS="$(uname)"
+    [ "$OS" = "Linux" ] && _stat ()
+    { stat -c %h\ %i\ %s\ %Y "$1" ;} || true
+    [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat ()
+    { stat -f %l\ %i\ %z\ %m "$1" ;} || true
+    echo "$fs" | while IFS= read f; do
+      [ -f "$f" ] && {
+        { _stat "$f"; echo "$f"
+        } | tr '\n' ' ' | awk '{printf "%x%07x . % 8x %08x %s\n",$1,$2,$3,$4,$5}'
+      } || chkerr "$FUNCNAME : not a regular file : $f";
+    done
+  }
+}
+
+ckstatsum () # Unlimited use with this notice (c) 2017-2019 George Georgalis <george@galis.org>
+{ # 2156ca36 b198a943     6147 5e1f9fbb .profile.local
+  # links_inode 0x_cksum 0x_size 0x_date filename of arg1 or stdin filelist
+  local f fs;
+  [ "$1" ] && fs="$1" || fs="$(cat)";
+  shift;
+  [ "$1" ] && $FUNCNAME $@;
+  [ "$fs" = "-h" -o "$fs" = "--help" ] && {
+    chkwrn "Usage, for arg1 (or per line stdin)";
+    chkwrn "return: n-inode chksum size mdate filename"
+  } || { OS="$(uname)"
+    [ "$OS" = "Linux" ] && _stat ()
+    { stat -c %h\ %i\ %s\ %Y "$1" ;} || true
+    [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat ()
+    { stat -f %l\ %i\ %z\ %m "$1" ;} || true
+    echo "$fs" | while IFS= read f; do
+      [ -f "$f" ] && {
+        { _stat "$f"; cksum "$f"
+        } | tr '\n' ' ' | awk '{printf "%x%07x %8x % 8x %08x %s\n",$1,$2,$5,$3,$4,$7}'
+      } || chkerr "$FUNCNAME : not a regular file : $f";
+    done
+  }
+}
+
+case "$OS" in
+Darwin|NetBSD)
+ kwds () { # convert stdin to unique words sorted on legnth then alpha to stdout, linux untested
+  tr -c '[:alpha:]' ' ' \
+  | tr '\ ' '\n' \
+  | tr '[:upper:]' '[:lower:]' \
+  | sort -ru \
+  | while read w; do echo "${#w}\t${w}" ; done \
+  | sort -rn \
+  | awk '{print $2}' \
+  | tr '\n' '\ '
+  echo
+ } # kwds
+esac
 
 uptime
 
