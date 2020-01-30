@@ -89,9 +89,33 @@ addusers () { # minimal etc and home manulipation for ssh shell acounts
           DIR="${DIR##*:}"  # just the last field
         # create user home if needed
         [ -d "$DIR" ] || install -d -m 700 -o "$LOGIN" -g "$LOGIN" /etc/skel "$DIR" || { chkerr "$FUNCNAME : cannot create $DIR" ; clean_addusers ; return 1 ;}
+        # append .forward with GECOS <email@domain> if needed, XXX not working
+        #e=$(echo "$LINE" | cut -d: -f5 | sed -e 's/.*<//' -e 's/>.*//')
+        #expr "$e" : '^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$' >/dev/null && echo y || echo n
+        #grep -q "^${e}$" $DIR/.forward || echo "$e" >>$DIR/.forward
+        #chown $LOGIN:$LOGIN $DIR/.forward
         # install ssh pub keys
         [ -e "$prefix/ssh/auth/${LOGIN}.pub" ] && cp "$prefix/ssh/auth/${LOGIN}.pub" "$out/ssh/auth" \
             || { rm -f "$out/ssh/auth/${LOGIN}.pub" ; chkwrn "No pub key for ${LOGIN}.pub" ;}
         done
     } # addusers
+
+
+arg1 () { # return the first field of file arg1, sans comments and blanks
+    local f="$1"
+    [ -f "$f" ] || { chkerr "arg1 is not a file" ; return 1 ;}
+    sed -e '/^#/d' -e 's/#.*//' -e 's/[ ]*$$//' "$f" | awk '{print $1}' | tr '\n' ' ' ; echo
+    } # arg1
+
+arg2 () { # return the second field of file arg1, sans comments and blanks
+    local f="$1"
+    [ -f "$f" ] || { chkerr "arg1 is not a file" ; return 1 ;}
+    sed -e '/^#/d' -e 's/#.*//' -e 's/[ ]*$$//' "$f" | awk '{print $2}' | tr '\n' ' ' ; echo
+    } # arg2
+
+arg3 () { # return the third field of file arg1, sans comments and blanks
+    local f="$1"
+    [ -f "$f" ] || { chkerr "arg1 is not a file" ; return 1 ;}
+    sed -e '/^#/d' -e 's/#.*//' -e 's/[ ]*$$//' "$f" | awk '{print $3}' | tr '\n' ' ' ; echo
+    } # arg3
 
