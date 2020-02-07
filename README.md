@@ -1,10 +1,14 @@
 # georgalis @ Github 
 
+_The way I roll..._
+```
+git archive --prefix ./pub/ master | gzip -c | ssh remote "cd vcs && tar xzf -"
+```
+
 ###### Major ./pub components
 [root](https://github.com/georgalis/pub/)
-* [./archive](./archive) Historical public revisions
+* [./ProOps](./know/ProOps/README.md) Proceeding Operations Framework
 * [./boot](./boot) Bootstrap scripts for various OS
-* [./boot/nbsd/pkgin.d](./boot/nbsd/pkgin.d) Schema for including pkgsrc lists
 * [./mkinst/tensorflow](./mkinst/tensorflow) TensorFlow bootstrap methods
 
 ###### Other repositories
