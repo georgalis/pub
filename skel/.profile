@@ -75,8 +75,6 @@ NetBSD|FreeBSD|Dragonfly)
 ;; # NetBSD|FreeBSD|Dragonfly
 esac
 
-
-
 # terminfo
 [ -z "${OS#Linux}" ] && {
 	 _ntermrev='rmso' ; _ntermul='rmul'
@@ -130,12 +128,26 @@ case "$(uname)" in Linux) ls -Ldl --full-time "$d" ;; *) ls -LTdl "$d" \
 	$1, $3, $4, $5, $8, $7, $6, $9}' ; ls -Ld "${d}"
 ;; esac ; [ "$d" = "/" ] && return || dirper $(dirname "$d");}
 
-import_pubkey () { # take a putty exported ssh key and make an authorized_keys line
-export key_in=$(mktemp /tmp/pubkey-XXXXXX)
-[ -n "$1" ] && cat "$1" >|$key_in || cat /dev/stdin >|$key_in
-printf "$(ssh-keygen -if $key_in) " \
- && grep Comment $key_in | sed -e 's/^Comment: "//' -e 's/"$//'
-rm $key_in ;}
+symview () { # report directories and symlinks below args or stdin if $# is 0
+    # for consistancy, please start relitative symlinks with a dot,
+    # like this: ln -s ./tmp sym
+    #  NOT this: ln -s tmp sym
+    #
+    # typical invocation:
+    #   viewsym sym
+    # or
+    #   find . -maxdepth 1 -mindepth 1 | grep -v .git | viewsym | sort | awk '{printf "%- 40s %s\n",$1,$2}'
+    # or
+    #   viewsym . | sort | awk '{print $2,$1}'
+    #
+    local f fs;
+    [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1" )" ; shift ; done
+    [ "$fs" ] || fs="$(cat)"
+    #fs="$(echo "$fs" | sed 's/\.\///' | while IFS= read f ; do [ -f "${f%%/*}" ] && echo "${f%%/*}" ; done)"
+    echo "$fs" | sed -e 's/\.\///' -e '/^$/d' | sort -u | while IFS= read i ; do
+        find "$i" -exec stat -f "%N %Y" \{\} \; 2>/dev/null | sort -u | awk '{printf "%s\t%s\n", $2, $1}'
+        done
+    } # symview
 
 ckstat () # Unlimited use with this notice (c) 2017-2019 George Georgalis <george@galis.org>
 { # 2156ca36 .     6147 5e1f9fbb .profile.local
@@ -236,6 +248,13 @@ esac # $SHELL
 		export EDITOR='vim'
 	}
 
+import_pubkey () { # take a putty exported ssh key and make an authorized_keys line
+export key_in=$(mktemp /tmp/pubkey-XXXXXX)
+[ -n "$1" ] && cat "$1" >$key_in || cat /dev/stdin >$key_in
+printf "$(ssh-keygen -if $key_in) " \
+ && grep Comment $key_in | sed -e 's/^Comment: "//' -e 's/"$//'
+rm $key_in ;}
+
 # ssh socket key and agent managent
 printf "${_termrev}"
 printf "User $USER "
@@ -260,7 +279,8 @@ printf "${_ntermrev}"
 #	&& { printf "Logout: " && kill $2 && echo $(hostname) $0 [$4] killed ssh-agent $2 \
 #		|| { echo $(hostname) ssh-agent already died? 2>/dev/stderr ; exit 1 ;} ;}
 
-# if exists, source .profile.local 
+# if exists, source...
 [ -e "$HOME/.profile.local" ] && . "$HOME/.profile.local" && echo "$HOME/.profile.local" || true
+[ -e "$HOME/sub/func.bash" ] && . "$HOME/sub/func.bash" && echo "$HOME/sub/func.bash" || true
 echo "$HOME/.profile"
 

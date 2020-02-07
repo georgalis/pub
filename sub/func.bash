@@ -86,8 +86,8 @@ f2rb2mp3 () { #set -x
     }
   [ "$1" ] || { f2rb2mp3 help ; return 1 ;}
     verb="chkwrn"
-    verb2="chkwrn"
-    verb3="chkwrn"
+    verb2="devnul"
+    verb3="devnul"
     local q='' vn='' vc=''
     local ssec='' tsec=''
     local tc='' tn=''
@@ -275,7 +275,6 @@ lacktone () { # monitor lacktone logfile
       done
   }
 
-
 lack1tone () {
     [ "$1" ] && g="$1" || g="-50"
     lacktone1a $g & lacktone1b $g &
@@ -345,4 +344,15 @@ lack1255tones () {
   # # the PID of the most recently started background process.
   # wait $!
 
+
+norename () {
+    local f fs;
+    [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "${fs}" "$1" )" ; shift ; done
+    [ "$fs" ] || fs="$(cat)"
+    fs="$(echo "$fs" | sed 's/\.\///' | while IFS= read f ; do [ -f "${f%%/*}" ] && echo "${f%%/*}" ; done)"
+    { seq 1 192 ; echo "$fs" ;} \
+        | awk 'NR>192 {printf "%s %o4- %s\n",$0,NR,$0}' \
+        | sed 's/^[[:xdigit:]]*-//' \
+        | awk -v i="$norename" '{printf "mv %s %s%s%s\n",$3,i,$2,$1}'
+    }
 
