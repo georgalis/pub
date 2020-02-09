@@ -107,13 +107,15 @@ alias rm='rm -i'
 alias d='diff'
 alias cal='cal -h'
 
-chkerr () { [ "$*" ] && { stderr ">>> $* <<<" ; return 1 ;} || true ;} #:> if args not null, err stderr args return 1
-chkwrn () { [ "$*" ] && { stderr "^^ $* ^^" ; return 0 ;} || true ;} #:> if args not null, wrn stderr args return 0
-stderr () { echo "$*" 1>&2 ;} #:> return args to stderr
-devnul () { return $? ;} #:> expect nothing in return
 
+devnul () { return $? ;} #:> expect nothing in return
+stderr () { echo "$*" 1>&2 ;} #:> return args to stderr
 chkecho () { [ "$*" ] && echo "$*" || true ;} #:> echo args or no operation if none
-source_if () { [ -e "$1" ] && { . "$1" && chkecho "$1" || chkerr "$1" ;} ;} #:> source arg1 if exists
+logwrn () { [ "$*" ] && { logger -s "^^ $* ^^"   ; return $? ;} || true ;}
+logerr () { [ "$*" ] && { logger -s ">>> $* <<<" ; return 1  ;} || true ;}
+chkwrn () { [ "$*" ] && { stderr    "^^ $* ^^"   ; return 0 ;} || true ;} #:> if args not null, wrn stderr args return 0
+chkerr () { [ "$*" ] && { stderr    ">>> $* <<<" ; return 1 ;} || true ;} #:> if args not null, err stderr args return 1
+source_iff () { [ -e "$1" ] && { . "$1" && chkecho "$1" || chkerr "error: $1" ;} ;} #:> source arg1 if exists
 
 dufiles () { #:> report the number of files along with total disk use
     [ "$1" ] || set .
@@ -296,7 +298,7 @@ path_prepend () { # prepend $1 if not already in path
 # if exists, source...
 #[ -e "$HOME/.profile.local" ] && . "$HOME/.profile.local" && echo "$HOME/.profile.local" || true
 #[ -e "$HOME/sub/func.bash" ] && . "$HOME/sub/func.bash" && echo "$HOME/sub/func.bash" || true
-source_if $HOME/.profile.local
-source_if $HOME/sub/func.bash
+source_iff $HOME/sub/func.bash
+source_iff $HOME/.profile.local
 echo "$HOME/.profile"
 

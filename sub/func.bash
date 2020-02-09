@@ -16,6 +16,7 @@ validfn () { #:> hash comparison to validate shell functions
 #:: env cksum= to set the cksum program
 EOF
     return 1 ;}
+    [ "$1" = '#' ] && return 0 || true # comment
     [ "${SHELL##*/}" = "bash" ] || { echo "Not bash" >&2 ; return 1 ;}
     [ "$cksum" ] || local cksum=cksum
     [ -x "$(which $cksum)" ] || { echo "No cksum : $cksum" >&2 ; return 1 ;}
@@ -31,20 +32,21 @@ local='$v'
    in='$f $s'
 <<<---" 1>&1 ; return 1 ;}
     } # validfn
-
-verb=chkecho
-verb=devnul
+[ "$verb" ] || verb=devnul
+# for a in chkerr chkwrn stderr devnul chkecho source_iff ; do validfn $a ; done
 while IFS= read fndata ; do
 validfn $fndata || { echo "validfn error : $fndata" 1>&2 ; return 1 ;}
 $verb "valid : $fndata"
 done <<EOF
+# pub/skel/.profile 20200208
 chkerr 1473511298 95
 chkwrn 2268919251 93
 stderr 3041441698 35
 devnul 2725980892 30
 chkecho 3391569120 51
-source_if 2666886493 100
+source_iff 2032202597 101
 EOF
+# validfn run
 
 alias   gst='git status --short'
 alias   gls='git ls-files'
@@ -168,6 +170,7 @@ f2rb2mp3 () { # file to rubberband to mp3, tuning function
         validfn $fndata || { echo "validfn error : $fndata" 1>&2 ; return 1 ;}
         $verb "valid : $fndata"
     done <<EOF
+# pub/skel/.profile sub/func.bash 20200208
 chkerr 1473511298 95
 chkwrn 2268919251 93
 stderr 3041441698 35
