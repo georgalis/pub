@@ -14,13 +14,6 @@ export OS=$(uname)
 umask 022
 ulimit -c 1 # one byte core files memorialize their creation
 
-path_append () { # append $1 if not already in path
- echo $PATH | grep -E "(:$1$|^$1$|^$1:|:$1:)" 2>&1 >/dev/null \
-  || export PATH="${PATH}:${1}" ;}
-path_prepend () { # prepend $1 if not already in path
- echo $PATH | grep -E "(^$1:|^$1$)" 2>&1 >/dev/null \
-  || export PATH="${1}:${PATH}" ;}
-
 # setup ls aliases
 [ -x "$(which colorls 2>/dev/null)" ] && { # setup colorls
  #export LSCOLORS='xefxcxdxbxegedabagacad'
@@ -113,6 +106,19 @@ alias mv='mv -i'
 alias rm='rm -i'
 alias d='diff'
 alias cal='cal -h'
+
+chkerr () { [ "$*" ] && { stderr ">>> $* <<<" ; return 1 ;} || true ;} #:> if args not null, err stderr args return 1
+chkwrn () { [ "$*" ] && { stderr "^^ $* ^^" ; return 0 ;} || true ;} #:> if args not null, wrn stderr args return 0
+stderr () { echo "$*" 1>&2 ;} #:> return args to stderr
+devnul () { return $? ;} #:> expect nothing in return
+
+chkecho () { [ "$*" ] && echo "$*" || true ;} #:> echo args or no operation if none
+source_if () { [ -e "$1" ] && { . "$1" && chkecho "$1" || chkerr "$1" ;} ;} #:> source arg1 if exists
+
+dufiles () { #:> report the number of files along with total disk use
+    [ "$1" ] || set .
+    { du -sh "$1" ; echo "#" ; find "$1" -type f | wc -l ; echo files ;} \
+       | tr '\n' ' ' ; echo ;}
 
 dusum () { # sort $1 (defaults to $PWD) according to disk use, also show cumulative sum.
 [ -z "$1" ] && d="./" || d="$1"
@@ -279,8 +285,18 @@ printf "${_ntermrev}"
 #	&& { printf "Logout: " && kill $2 && echo $(hostname) $0 [$4] killed ssh-agent $2 \
 #		|| { echo $(hostname) ssh-agent already died? 2>/dev/stderr ; exit 1 ;} ;}
 
+
+path_append () { # append $1 if not already in path
+ echo $PATH | grep -E "(:$1$|^$1$|^$1:|:$1:)" 2>&1 >/dev/null \
+  || export PATH="${PATH}:${1}" ;}
+path_prepend () { # prepend $1 if not already in path
+ echo $PATH | grep -E "(^$1:|^$1$)" 2>&1 >/dev/null \
+  || export PATH="${1}:${PATH}" ;}
+
 # if exists, source...
-[ -e "$HOME/.profile.local" ] && . "$HOME/.profile.local" && echo "$HOME/.profile.local" || true
-[ -e "$HOME/sub/func.bash" ] && . "$HOME/sub/func.bash" && echo "$HOME/sub/func.bash" || true
+#[ -e "$HOME/.profile.local" ] && . "$HOME/.profile.local" && echo "$HOME/.profile.local" || true
+#[ -e "$HOME/sub/func.bash" ] && . "$HOME/sub/func.bash" && echo "$HOME/sub/func.bash" || true
+source_if $HOME/.profile.local
+source_if $HOME/sub/func.bash
 echo "$HOME/.profile"
 

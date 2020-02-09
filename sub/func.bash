@@ -5,7 +5,97 @@
 # more test
 # echo "$SHELL"
 # echo "$BASH_VERSINFO"      "${BASH_VERSINFO[0]}" "${BASH_VERSINFO[1]}" "${BASH_VERSINFO[2]}"
-# echo "${BASH_VERSINFO[3]}" "${BASH_VERSINFO[4]}" "${BASH_VERSINFO[5]}" x "${BASH_VERSINFO[6]}"
+# echo "${BASH_VERSINFO[3]}" "${BASH_VERSINFO[4]}" "${BASH_VERSINFO[5]}"
+
+validfn () { #:> hash comparison to validate shell functions
+    [ "$1" ] || {
+      cat <<-EOF
+#:: $FUNCNAME {function} ; returns {function} {hash}
+#:: $FUNCNAME {function} {hash} ; return no error, if match
+#:: the former is intended to provide data for the latter
+#:: env cksum= to set the cksum program
+EOF
+    return 1 ;}
+    [ "${SHELL##*/}" = "bash" ] || { echo "Not bash" >&2 ; return 1 ;}
+    [ "$cksum" ] || local cksum=cksum
+    [ -x "$(which $cksum)" ] || { echo "No cksum : $cksum" >&2 ; return 1 ;}
+    local f="$1"
+    shift
+    local s="$*"
+    local v="$( { echo "$f" ; declare -f "$f" | "$cksum" ;} | tr -s '\n' ' ' | sed 's/ $//' )"
+    [ "$s" ] || { echo $v ; return 0 ;}
+    [ "$f $s" = "$v" ] || {
+echo ">>>---
+$FUNCNAME error :
+local='$v'
+   in='$f $s'
+<<<---" 1>&1 ; return 1 ;}
+    } # validfn
+
+verb=chkecho
+verb=devnul
+while IFS= read fndata ; do
+validfn $fndata || { echo "validfn error : $fndata" 1>&2 ; return 1 ;}
+$verb "valid : $fndata"
+done <<EOF
+chkerr 1473511298 95
+chkwrn 2268919251 93
+stderr 3041441698 35
+devnul 2725980892 30
+chkecho 3391569120 51
+source_if 2666886493 100
+EOF
+
+alias   gst='git status --short'
+alias   gls='git ls-files'
+alias   gdf='git diff --name-only'
+alias gdiff='git diff'
+alias  gadd='git add'
+alias  gcom='git commit'
+alias gpush='git push'
+alias gpull='git pull'
+alias   gbr='git branch'
+alias   gco='git checkout'
+#alias  gmv='git mv'
+alias  glog='git log'
+alias  gref='git reflog'
+alias  grst='git reset HEAD'
+#=======================================================
+# https://git-scm.com/book/en/v2/Git-Tools-Reset-Demystified
+# The Three Trees
+#  HEAD    : Last commit snapshot, next parent
+#  Index   : Proposed next commit snapshot
+#  Working : Sandbox
+#                           HEAD Index  Workdir   Safe?
+# Commit Level =========================================
+#  reset --soft [commit]     REF    -      -      YES
+#  reset        [commit]     REF   YES     -      YES
+#  reset --hard [commit]     REF   YES    YES      -
+#  checkout     <commit>     HEAD  YES    YES     YES
+# File Level ===========================================
+#  reset    [commit] <paths>  -    YES     -      YES
+#  checkout [commit] <paths>  -    YES    YES      -
+#=======================================================
+# https://git-scm.com/docs/git-reset#_discussion
+# https://git-scm.com/docs/giteveryday
+# https://git-scm.com/book/en/v2/Git-Basics-Undoing-Things
+
+
+## shell script fragments
+# chkerr () { [ -n "$*" ] && echo "ERR >>> $0 : $* <<<" >&2 && exit 1 || true ;}
+# main () { # enable local varables
+#
+#local u h b t s d bak n tf
+#u="$USER" # uid running the tests
+#h="$(cd $(dirname $0) && pwd -P)" # realpath of this script
+#b="$(basename $0 | sed 's/.[^.]*$//')" # this program name less (.sh) extension
+#t="$( { date '+%Y%m%d_%H%M%S_' && uuidgen ;} | sed -e 's/-.*//' | tr -d ' \n' )" # time based uniq id
+# find . \( -path ./skel -o -path ./mkinst \) \! -prune -o -type f
+#[ -n "$1" ] && { cd "$1" && s="$PWD" ;} || chkerr "Expecting skel dir as arg1" # set src dir
+#[ -d "$s" ] || chkerr "$s (arg1) is not a directory"
+#[ -n "$2" ] && cd "$2" && d="$(pwd -P)" || d="$HOME" # set dest dir
+#[ -d "$d" ] || chkerr "$d target (arg2) is not a directory"
+# bak="${d}/${b}-${t}" # backup dir
 
 
 _youtube_video_playlist () {
@@ -59,12 +149,6 @@ youtube-dl --write-info-json --restrict-filenames --abort-on-error \
 #        --yes-playlist # Download the playlist, if ambigious
 
 
-
-chkerr () { [ "$*" ] && { stderr ">>> $* <<<" ; return 1 ;} || true ;} #:> if args not null, err stderr args return 1
-chkwrn () { [ "$*" ] && { stderr "^^ $* ^^" ; return 0 ;} || true ;} #:> if args not null, wrn stderr args return 0
-stderr () { echo "$*" 1>&2 ;} # return args to stderr
-devnul () { return $? ;} # expect nothing in return
-
 hms2sec () { # passthrough seconds or convert hh:mm:ss to seconds
     # must provide ss which may be ss.nn, hh: and hh:mm: are optional
     # a number must proceed every colin
@@ -75,8 +159,27 @@ hms2sec () { # passthrough seconds or convert hh:mm:ss to seconds
         | awk '{print "3 k "$1" 60 * "$2" + p"}' | dc
   [[ $1 == *:* ]] || echo $1
   } # hms2sec
-f2rb2mp3 () { #set -x
-  [ "$1" = "help" ] && { # a function to adjust audio file tempo and pitch independantly
+f2rb2mp3 () { # file to rubberband to mp3, tuning function
+    # validate env per
+    # https://github.com/georgalis/pub/blob/master/skel/.profile
+    # https://github.com/georgalis/pub/blob/master/sub/func.bash
+    verb=devnul
+    while IFS= read fndata ; do
+        validfn $fndata || { echo "validfn error : $fndata" 1>&2 ; return 1 ;}
+        $verb "valid : $fndata"
+    done <<EOF
+chkerr 1473511298 95
+chkwrn 2268919251 93
+stderr 3041441698 35
+devnul 2725980892 30
+chkecho 3391569120 51
+hms2sec 3998860271 383
+EOF
+    [ -x "$(which "$rb")"  ] || { chkerr "$FUNCNAME : env rb not set to rubberband executable" ; return 1 ;}
+    [ -x "$(which ffmpeg)" ] || { chkerr "$FUNCNAME : ffmpeg not in path" ; return 1 ;}
+    [ -x "$(which sox)"    ] || { chkerr "$FUNCNAME : sox not in path" ; return 1 ;}
+    # success valid env
+    [ "$1" = "help" ] && { # a function to adjust audio file tempo and pitch independantly
     # a work in progress, depends on hms2sec, ffmpeg and rubberband
     # https://hg.sr.ht/~breakfastquay/rubberband
     # https://breakfastquay.com/rubberband/
@@ -161,9 +264,6 @@ f2rb2mp3 () { #set -x
     } # f2rb2mp3
 
 
-
-
-
 lacktone () { # monitor lacktone logfile
    local tail tmp
    [ -d $HOME/Downloads ] && tmp="$HOME/Downloads/tmp" || tmp="$HOME/tmp"
@@ -175,7 +275,6 @@ lacktone () { # monitor lacktone logfile
    touch "$tmp/lacktone"
    $tail "$tmp/lacktone"
  }
-
  lacktone1a () { # play background tone, optioal gain (arg1) default -50
    local g tmp
    [ -d $HOME/Downloads ] && tmp="$HOME/Downloads/tmp" || tmp="$HOME/tmp"
@@ -189,7 +288,6 @@ lacktone () { # monitor lacktone logfile
       printf "%s" "1a" >>"$tmp/lacktone" &
       done
  }
-
  lacktone1b () { # play background tone, optioal gain (arg1) default -50
    local g tmp
    [ -d $HOME/Downloads ] && tmp="$HOME/Downloads/tmp" || tmp="$HOME/tmp"
@@ -203,7 +301,6 @@ lacktone () { # monitor lacktone logfile
       printf "%s" "1b " >>"$tmp/lacktone" &
       done
   }
-
  lacktone2a () { # play background tone, optioal gain (arg1) default -50
    local g tmp
    [ -d $HOME/Downloads ] && tmp="$HOME/Downloads/tmp" || tmp="$HOME/tmp"
@@ -220,7 +317,6 @@ lacktone () { # monitor lacktone logfile
       printf "%s" "2a" >>"$tmp/lacktone" &
       done
  }
-
  lacktone2b () { # play background tone, optioal gain (arg1) default -50
    local g tmp
    [ -d $HOME/Downloads ] && tmp="$HOME/Downloads/tmp" || tmp="$HOME/tmp"
@@ -238,8 +334,6 @@ lacktone () { # monitor lacktone logfile
       printf "%s" "2b " >>"$tmp/lacktone" &
       done
   }
-
-
  lacktone5a () { # play background tone, optioal gain (arg1) default -50
    local g tmp
    [ -d $HOME/Downloads ] && tmp="$HOME/Downloads/tmp" || tmp="$HOME/tmp"
@@ -256,7 +350,6 @@ lacktone () { # monitor lacktone logfile
       printf "%s" "5a" >>"$tmp/lacktone" &
       done
  }
-
  lacktone5b () { # play background tone, optioal gain (arg1) default -50
    local g tmp
    [ -d $HOME/Downloads ] && tmp="$HOME/Downloads/tmp" || tmp="$HOME/tmp"
@@ -344,10 +437,9 @@ lack1255tones () {
   # # the PID of the most recently started background process.
   # wait $!
 
-
 norename () {
     local f fs;
-    [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "${fs}" "$1" )" ; shift ; done
+    [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1" )" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
     fs="$(echo "$fs" | sed 's/\.\///' | while IFS= read f ; do [ -f "${f%%/*}" ] && echo "${f%%/*}" ; done)"
     { seq 1 192 ; echo "$fs" ;} \
