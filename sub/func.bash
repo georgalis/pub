@@ -10,8 +10,8 @@
 validfn () { #:> hash comparison to validate shell functions
     [ "$1" ] || {
       cat <<-EOF
-#:: $FUNCNAME {function} ; returns {function} {hash}
-#:: $FUNCNAME {function} {hash} ; return no error, if match
+#:: $FUNCNAME {function} ; returns {function-name} {hash}
+#:: $FUNCNAME {function} {hash} ; return no error, if hash match
 #:: the former is intended to provide data for the latter
 #:: env cksum= to set the cksum program
 EOF
@@ -28,12 +28,11 @@ EOF
     [ "$f $s" = "$v" ] || {
 echo ">>>---
 $FUNCNAME error :
-local='$v'
-   in='$f $s'
+   in:'$f $s'
+local:'$v'
 <<<---" 1>&1 ; return 1 ;}
     } # validfn
 [ "$verb" ] || verb=devnul
-# for a in chkerr chkwrn stderr devnul chkecho source_iff ; do validfn $a ; done
 while IFS= read fndata ; do
 validfn $fndata || { echo "validfn error : $fndata" 1>&2 ; return 1 ;}
 $verb "valid : $fndata"
@@ -77,6 +76,8 @@ alias  grst='git reset HEAD'
 # File Level ===========================================
 #  reset    [commit] <paths>  -    YES     -      YES
 #  checkout [commit] <paths>  -    YES    YES      -
+#
+# git checkout -- .
 #=======================================================
 # https://git-scm.com/docs/git-reset#_discussion
 # https://git-scm.com/docs/giteveryday
@@ -100,7 +101,7 @@ alias  grst='git reset HEAD'
 # bak="${d}/${b}-${t}" # backup dir
 
 
-_youtube_video_playlist () {
+_youtube_video_list () {
 local id="$1"
 [ "$id" ] || read -p "youtube id: " id
              read -p "directory : " d
@@ -108,7 +109,7 @@ local id="$1"
 [ "$d" ] || d="$(pwd -P)"
 youtube-dl --write-info-json --restrict-filenames --abort-on-error --yes-playlist \
     -o "$d/%(playlist_index)s-%(title)s_^%(id)s.%(ext)s" $id
-} # k4_youtube_video
+} # _youtube_video_list
 _youtube_video () {
 local id="$1"
 [ "$id" ] || read -p "youtube id: " id
@@ -117,7 +118,7 @@ local id="$1"
 [ "$d" ] || d="$(pwd -P)"
 youtube-dl --write-info-json --restrict-filenames --abort-on-error --no-playlist \
     -o "$d/%(title)s_^%(id)s.%(ext)s" $id
-} # k4_youtube_video
+} # _youtube_video
 _youtube () {
 local id="$1"
 [ "$id" ] || read -p "youtube id: " id
@@ -126,7 +127,7 @@ local id="$1"
 [ "$d" ] || d="$(pwd -P)"
 youtube-dl --write-info-json --restrict-filenames --abort-on-error \
     --no-playlist --extract-audio -o "$d/%(title)s_^%(id)s.%(ext)s" $id
-} # k4_youtube
+} # _youtube
 _youtube_playlist () {
 local id="$1"
 [ "$id" ] || read -p "youtube id: " id
@@ -170,7 +171,7 @@ f2rb2mp3 () { # file to rubberband to mp3, tuning function
         validfn $fndata || { echo "validfn error : $fndata" 1>&2 ; return 1 ;}
         $verb "valid : $fndata"
     done <<EOF
-# pub/skel/.profile sub/func.bash 20200208
+# pub/skel/.profile pub/sub/func.bash 20200208
 chkerr 1473511298 95
 chkwrn 2268919251 93
 stderr 3041441698 35
@@ -203,7 +204,7 @@ EOF
     local infile="$(basename "$1")"
     cd "$(dirname "$1")"
     touch nulltime
-    $verb "$infile"
+    $verb2 "$infile"
     [ -e "$infile" ] || { chkerr "no input flle $f" ; return 1 ;}
     mkdir -p ./tmp ./loss
     [ -e "./tmp/${infile}.flac" ] || { # make ready the flac for universal read
@@ -256,7 +257,8 @@ EOF
                        sox "./tmp/${infile}${tn}.flac" "./loss/${out}${vn}.mp3" $vc \
           || { chkerr "sox ./tmp/${infile}${tn}.flac ./loss/${out}${vn}.mp3 $vc" ; return 1 ;}
         } # no rb only time and/or volume
-    find $PWD -type f -newer ./nulltime | xargs ls -lrth
+    find "$PWD" -type f -newer ./nulltime | xargs ls -lrth
+    cd "$OLDPWD"
 # convert 5.1 channels to 2
 # https://superuser.com/questions/852400/properly-downmix-5-1-to-stereo-using-ffmpeg
 #ffmpeg -i Mozart-K622-Clarinet-Concerto-A-Maj-Kam-Honeck-2006.m4a \
@@ -441,6 +443,8 @@ lack1255tones () {
   # wait $!
 
 norename () {
+    chkerr "use numlist"
+    return 1
     local f fs;
     [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1" )" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
@@ -449,5 +453,34 @@ norename () {
         | awk 'NR>192 {printf "%s %o4- %s\n",$0,NR,$0}' \
         | sed 's/^[[:xdigit:]]*-//' \
         | awk -v i="$norename" '{printf "mv %s %s%s%s\n",$3,i,$2,$1}'
+    }
+
+nosrename () {
+    chkerr "use numlist"
+    return 1
+    local f fs;
+    [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1" )" ; shift ; done
+    [ "$fs" ] || fs="$(cat)"
+    fs="$(echo "$fs" | sed 's/\.\///' | while IFS= read f ; do [ -f "${f%%/*}" ] && echo "${f%%/*}" ; done)"
+    { seq 1 192 ; echo "$fs" ;} \
+        | awk 'NR>192 {printf "%s %o %s\n",$0,NR,$0}' \
+        | sed -e 's/\(.\)/& &/' -e 's/ [[:xdigit:]]*-/ /' \
+        | awk -v i="$nosrename" -v p="$nosrename1" '{printf "mv %s %s%s%s-%s%s\n",$4,p,$1,$3,i,$2}'
+    }
+
+numlist () {
+    local f fs p ;
+    [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1" )" ; shift ; done
+    [ "$fs" ] || fs="$(cat)"
+    fs="$(echo "$fs" | sed 's/\.\///' | while IFS= read f ; do [ -f "${f%%/*}" ] && echo "${f%%/*}" ; done)"
+    for p in 0 1 2 3 4 5 6 7 8 9 ; do
+        { seq 1 192 ; echo "$fs" | grep "^$p" | sort ;} \
+            | awk 'NR>192 {printf "%s %o %s\n",$0,NR,$0}' \
+            | sed -e 's/\(.\)/& &/' -e 's/ [[:xdigit:]]*-/ /' \
+            | awk -v i="$numlist" -v p="" '{printf "mv %s %s%s%s-%s%s\n",$4,p,$1,$3,i,$2}'
+        done
+        { seq 1 192 ; echo "$fs" | sed '/^[[:digit:]]/d' | sort ;} \
+            | awk 'NR>192 {printf "%s %o %s\n",$0,NR,$0}' \
+            | awk -v i="$numlist" '{printf "mv %s 0%s-%s%s\n",$3,$2,i,$1}'
     }
 
