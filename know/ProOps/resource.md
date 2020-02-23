@@ -21,6 +21,8 @@ Electronic search capability is expected, similar terms are grouped together for
 * [framework](framework/framework.md) : The Proceeding Operations (ProOps) Framework, a template for lean quality, minimal controls for operational standards.
 * production : The operations around delivering the fully developed, qualified product to the customer.
 * development : The operations around defining product, process, controls and delivery.
+* configuration management : A collection of activities focused on establishing and maintaining the integrity of information technology products and information systems, through control of processes for initializing, changing, and monitoring the configurations of those products and systems throughout the system development life cycle. Source: NIST SP 800-53 Rev 4
+
 
 ## Acronym
 
@@ -42,8 +44,8 @@ Electronic search capability is expected, similar terms are grouped together for
 
 * ##### SSDF
     Mitigating the Risk of Software Vulnerabilities by Adopting a Secure Software Development Framework (SSDF)  
-    https://csrc.nist.gov/publications/detail/white-paper/2019/06/11/mitigating-risk-of-software-vulnerabilities-with-ssdf/draft  
-    https://csrc.nist.gov/CSRC/media/Publications/white-paper/2019/06/07/mitigating-risk-of-software-vulnerabilities-with-ssdf/draft/documents/ssdf-for-mitigating-risk-of-software-vulns-draft.pdf
+    [Secure Software Development Framework, SSDF](https://csrc.nist.gov/publications/detail/white-paper/2019/06/11/mitigating-risk-of-software-vulnerabilities-with-ssdf/draft)
+    [Mitigating Risk of Software Vulnerabilities with SSDF](https://csrc.nist.gov/CSRC/media/Publications/white-paper/2019/06/07/mitigating-risk-of-software-vulnerabilities-with-ssdf/draft/documents/ssdf-for-mitigating-risk-of-software-vulns-draft.pdf)
 
 * ##### RMF
     Risk Management Framework (RMF) Overview
@@ -76,16 +78,16 @@ Electronic search capability is expected, similar terms are grouped together for
     https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.200.pdf
 
 * ##### NISTIR 7298
-  * Glossary of Key Information Security Terms (NISTIR 7298 Rev. 3)
-    (no pdf available revision 2 is outdated but available as pdf)  
+  * [Glossary of Key Information Security Terms NISTIR 7298 Rev. 3](https://csrc.nist.gov/glossary),  
+    is not published as a single document! *Revision 2, below, can be downloaded as pdf*)  
     * Abstract: This publication describes an online glossary of terms used in National Institute of Standards and Technology (NIST) and Committee on National Security Systems (CNSS)  publications.  
     https://csrc.nist.gov/publications/detail/nistir/7298/rev-3/final
-    * The online glossary described in this publication is publicly available at https://csrc.nist.gov/glossary
-  * Glossary of Key Information Security Terms (NISTIR 7298 Rev. 2)
-    (revision 2 is outdated but available as pdf)  
+  * [Glossary of Key Information Security Terms NISTIR 7298 Rev. 2](https://nvlpubs.nist.gov/nistpubs/ir/2013/NIST.IR.7298r2.pdf)
     * The National Institute of Standards and Technology (NIST) has received numerous requests to provide a summary glossary for our publications and other relevant sources, and to make the glossary available to practitioners. As a result of these requests, this glossary of common security terms has been extracted from NIST Federal Information Processing Standards (FIPS), the Special Publication (SP) 800 series, NIST Interagency Reports (NISTIRs), and from the Committee for National Security Systems Instruction 4009 (CNSSI-4009). This glossary includes most of the terms in the NIST publications. It also contains nearly all of the terms and definitions from CNSSI-4009. This glossary provides a central resource of terms and definitions most commonly used in NIST information security publications and in CNSS information assurance publications.  
     https://csrc.nist.gov/publications/detail/nistir/7298/rev-2/archive/2013-06-05  
-    https://nvlpubs.nist.gov/nistpubs/ir/2013/NIST.IR.7298r2.pdf
+
+* ##### CNSSI 4009
+  * [Committee on National Security Systems (CNSS) Glossary](https://www.serdp-estcp.org/content/download/47576/453617/file/CNSSI%204009%20Glossary%202015.pdf) April 6, 2015
 
 * ##### GAMP 5 Guide
 Compliant GxP Computerized Systems

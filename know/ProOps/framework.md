@@ -2,12 +2,17 @@
 ---
 # Proceeding Operations and Change Control Framework
 
-The [Components](README.md#Components) overview
-is the entry point for documentation, configuration, source code and change control.
-The framework is a lean integration of quality system controls
-from multiple industries (GAMP-5, OODA Loop, DevOps/Agility, CI/CD, FIPS/RMF, Swiss Cheese
-safety model, Multi/Dual-Vee, 5S, Iceburg and Spiral), to maintain efficient, ongoing
-development.
+The [Components](README.md#Components) overview is the entry point for
+documentation, configurations, code, tests, acceptance and change controls.
+The framework is a lean integration of quality systems
+from multiple industries (GAMP-5, OODA Loop, DevOps/Agility, CI/CD, Shift Left testing,
+FIPS/RMF, Swiss Cheese safety model, Multi/Dual-Vee, 5S, Iceburg and Spiral),
+for efficient, ongoing development. The framework is a template for
+organizations interested in addressing or preventing technical debt without a
+particular governance or compliance requirement. Adaptation to specific GRC
+needs, should be straightforward.
+
+---
 
 The framework is a four phase, continuous feed forward, development model.
 Each phase is divided into three scopes, for broader, middle and finer details.
@@ -23,12 +28,12 @@ and a [Resource](resource.md) document contains a site [Glossary](resource.md#Gl
 [Acronym](resource.md#Acronym) table and bibliographic [Reference](resource.md#Reference) sections.
 
 Typically, project source code will iterate development and live in a version control
-repository.  Eventually, project complexity or collaboration needs, will create risk factors
+repository.  Eventually, project complexity or collaboration needs will create risk factors
 that are addressed by creation of design documents and quality checks. A well developed
 project will document the risk factors, in addition to the design and check phases.
 
 Generally, individuals will have more expertise in one phase, and less in the other three.
-Understanding the scope and development level are the first steps
+Understanding the scope and level of development are the first steps
 in document interpretation. The
 scope classification prepares the handoff recipient and aligns development, across phases.
 Just as a document's scope
@@ -38,7 +43,7 @@ interpretation across areas of expertise, in phase handoffs.
 The coordination between risk and execution; as well as the design and check relationship, is
 calibration and a key elucidation of the framework. In complex projects, this relationship
 contributes to a smooth, focused migration from development to production operations.
-Proceeding development with the framework pattern as a target, sets the stage for coherent
+Proceeding development, with the framework pattern as a target, sets the stage for coherent
 operations.  While, ad hoc execution development can progress with assumptions of
 _undocumented_ design, non-existent quality checks, and no risk analysis; a disposition of
 phase loop interaction is prerequisite to actually achieving development agility.
