@@ -77,13 +77,12 @@ Electronic search capability is expected, similar terms are grouped together for
     FIPS 200 Minimum Security Requirements for Federal Information and Information Systems  
     https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.200.pdf
 
-* ##### NISTIR 7298
-  * [Glossary of Key Information Security Terms NISTIR 7298 Rev. 3](https://csrc.nist.gov/glossary),  
-    is not published as a single document! *Revision 2, below, can be downloaded as pdf*)  
-    * Abstract: This publication describes an online glossary of terms used in National Institute of Standards and Technology (NIST) and Committee on National Security Systems (CNSS)  publications.  
-    https://csrc.nist.gov/publications/detail/nistir/7298/rev-3/final
-  * [Glossary of Key Information Security Terms NISTIR 7298 Rev. 2](https://nvlpubs.nist.gov/nistpubs/ir/2013/NIST.IR.7298r2.pdf)
-    * The National Institute of Standards and Technology (NIST) has received numerous requests to provide a summary glossary for our publications and other relevant sources, and to make the glossary available to practitioners. As a result of these requests, this glossary of common security terms has been extracted from NIST Federal Information Processing Standards (FIPS), the Special Publication (SP) 800 series, NIST Interagency Reports (NISTIRs), and from the Committee for National Security Systems Instruction 4009 (CNSSI-4009). This glossary includes most of the terms in the NIST publications. It also contains nearly all of the terms and definitions from CNSSI-4009. This glossary provides a central resource of terms and definitions most commonly used in NIST information security publications and in CNSS information assurance publications.  
+##### NISTIR 7298  
+* [Glossary of Key Information Security Terms NISTIR 7298 Rev. 3](https://csrc.nist.gov/glossary), is online only! Revision 2, below, can be downloaded as pdf.  
+  * Abstract: This publication describes an online glossary of terms used in National Institute of Standards and Technology (NIST) and Committee on National Security Systems (CNSS) publications.  
+  https://csrc.nist.gov/publications/detail/nistir/7298/rev-3/final
+* [Glossary of Key Information Security Terms NISTIR 7298 Rev. 2](https://nvlpubs.nist.gov/nistpubs/ir/2013/NIST.IR.7298r2.pdf)
+  * The National Institute of Standards and Technology (NIST) has received numerous requests to provide a summary glossary for our publications and other relevant sources, and to make the glossary available to practitioners. As a result of these requests, this glossary of common security terms has been extracted from NIST Federal Information Processing Standards (FIPS), the Special Publication (SP) 800 series, NIST Interagency Reports (NISTIRs), and from the Committee for National Security Systems Instruction 4009 (CNSSI-4009). This glossary includes most of the terms in the NIST publications. It also contains nearly all of the terms and definitions from CNSSI-4009. This glossary provides a central resource of terms and definitions most commonly used in NIST information security publications and in CNSS information assurance publications.  
     https://csrc.nist.gov/publications/detail/nistir/7298/rev-2/archive/2013-06-05  
 
 * ##### CNSSI 4009
