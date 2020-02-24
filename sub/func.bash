@@ -77,7 +77,8 @@ alias  grst='git reset HEAD'
 #  reset    [commit] <paths>  -    YES     -      YES
 #  checkout [commit] <paths>  -    YES    YES      -
 #
-# git checkout -- .
+# restore files #  git checkout -- {opt-file-spec}
+# undo add      #  git reset       {opt-file-spec}
 #=======================================================
 # https://git-scm.com/docs/git-reset#_discussion
 # https://git-scm.com/docs/giteveryday
@@ -205,7 +206,7 @@ EOF
     cd "$(dirname "$1")"
     touch nulltime
     $verb2 "$infile"
-    [ -e "$infile" ] || { chkerr "no input flle $f" ; return 1 ;}
+    [ -e "$infile" ] || { f2rb2mp3 help ; chkerr "no input flle $f" ; return 1 ;}
     mkdir -p ./tmp ./loss
     [ -e "./tmp/${infile}.flac" ] || { # make ready the flac for universal read
         $verb                                      "./tmp/${infile}.flac"     
@@ -245,7 +246,7 @@ EOF
                      $rb --time $t --pitch $p $f --crisp $c $xcf "./tmp/${infile}${tn}.flac" "./tmp/${out}.wav" ; return 1 ;}
               } # final master
             # apply volume and make an mp3 --- some program doesn't respect volume dither so do it last,
-            # though maybe to late for clipping
+            # though maybe too late for clipping
             $verb "./loss/${out}${vn}.mp3"
             $verb2    sox "./tmp/${out}.wav" "./loss/${out}${vn}.mp3" $vc
                       sox "./tmp/${out}.wav" "./loss/${out}${vn}.mp3" $vc \
@@ -442,44 +443,25 @@ lack1255tones () {
   # # the PID of the most recently started background process.
   # wait $!
 
-norename () {
-    chkerr "use numlist"
-    return 1
-    local f fs;
-    [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1" )" ; shift ; done
-    [ "$fs" ] || fs="$(cat)"
-    fs="$(echo "$fs" | sed 's/\.\///' | while IFS= read f ; do [ -f "${f%%/*}" ] && echo "${f%%/*}" ; done)"
-    { seq 1 192 ; echo "$fs" ;} \
-        | awk 'NR>192 {printf "%s %o4- %s\n",$0,NR,$0}' \
-        | sed 's/^[[:xdigit:]]*-//' \
-        | awk -v i="$norename" '{printf "mv %s %s%s%s\n",$3,i,$2,$1}'
-    }
-
-nosrename () {
-    chkerr "use numlist"
-    return 1
-    local f fs;
-    [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1" )" ; shift ; done
-    [ "$fs" ] || fs="$(cat)"
-    fs="$(echo "$fs" | sed 's/\.\///' | while IFS= read f ; do [ -f "${f%%/*}" ] && echo "${f%%/*}" ; done)"
-    { seq 1 192 ; echo "$fs" ;} \
-        | awk 'NR>192 {printf "%s %o %s\n",$0,NR,$0}' \
-        | sed -e 's/\(.\)/& &/' -e 's/ [[:xdigit:]]*-/ /' \
-        | awk -v i="$nosrename" -v p="$nosrename1" '{printf "mv %s %s%s%s-%s%s\n",$4,p,$1,$3,i,$2}'
-    }
-
-numlist () {
+numlist () { #:> number a list of files, retaining first digit
+    # renumber a list of files such that when combined with another list, # the major sequence is retained.
+    # Only act on files with the plan:
+    # get file list as args OR stdin (one file per line)
+    # retain first numeral of each filename
+    # append octal sequience number (starting with 301) to file basename (sans leadinng "digits-")
+    # prepend 0- to files without a leading number
+    # create mv commands for the above result (pipe to shell)
     local f fs p ;
     [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1" )" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
     fs="$(echo "$fs" | sed 's/\.\///' | while IFS= read f ; do [ -f "${f%%/*}" ] && echo "${f%%/*}" ; done)"
     for p in 0 1 2 3 4 5 6 7 8 9 ; do
-        { seq 1 192 ; echo "$fs" | grep "^$p" | sort ;} \
+        { seq 1 192 ; echo "$fs" | grep "^$p" ;} \
             | awk 'NR>192 {printf "%s %o %s\n",$0,NR,$0}' \
             | sed -e 's/\(.\)/& &/' -e 's/ [[:xdigit:]]*-/ /' \
             | awk -v i="$numlist" -v p="" '{printf "mv %s %s%s%s-%s%s\n",$4,p,$1,$3,i,$2}'
         done
-        { seq 1 192 ; echo "$fs" | sed '/^[[:digit:]]/d' | sort ;} \
+        { seq 1 192 ; echo "$fs" | sed '/^[[:digit:]]/d' ;} \
             | awk 'NR>192 {printf "%s %o %s\n",$0,NR,$0}' \
             | awk -v i="$numlist" '{printf "mv %s 0%s-%s%s\n",$3,$2,i,$1}'
     }
