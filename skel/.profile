@@ -20,37 +20,38 @@ ulimit -c 1 # one byte core files memorialize their creation
  #export CLICOLORS=$LSCOLORS
  # define reverse for directory color
  export LSCOLORS='x45x2x3x1x464301060203' # invert directory color
-  alias  l="colorls -FG"
-  alias la="colorls -AFGTl"
-  alias ll="colorls -FGTl"
-  alias lt="colorls -AFGTlrt"
- alias ltd="colorls -AFGTlrtd"
-  alias lS="colorls -AFGTlrS"
+  alias   l="colorls -FGr"
+  alias  lr="colorls -FG"
+  alias  ll="colorls -FGTlr"
+  alias  llr="colorls -FGTl"
+  alias  la="colorls -AFGTl"
+  alias  lt="colorls -AFGTlrt"
+  alias  ltd="colorls -AFGTlrtd"
+  alias  lS="colorls -AFGTlrS"
  } || true # echo "no colorls"
 
 case "$OS" in
 Darwin)
  [ "$TERM" = "xterm" ] && export TERM='xterm-color'
  export LSCOLORS='xefxcxdxbxegedabagacad' # invert directory color
-  alias  l="ls -GFr"
-  alias lr="ls -GF"
-  alias la="ls -AFGTl"
-  alias ll="ls -FTGl"
-  alias lt="ls -AFGTlrt"
- alias ltd="ls -AFGTlrtd"
-  alias lS="ls -AFGTlrS"
+  alias   l="ls -AGFr"
+  alias  lr="ls -AGF"
+  alias  ll="ls -FTGlr"
+  alias llr="ls -FTGl"
+  alias  lt="ls -AFGTlrt"
+  alias  lS="ls -AFGTlrS"
   alias t='tail -F'
   alias top='top -S -n24 -s4 -o cpu'
   alias p='ps -ax -o uid,pid,command -ww'
 ;; # Darwin
 Linux)
  eval $(dircolors | sed 's/di=01;34/di=00;44/')
-  alias  l="ls --color=auto"
-  alias la="ls --color=auto -AFl --full-time --time-style=+%Y%m%d_%H%M%S"
-  alias ll="ls --color=auto -Fl --full-time --time-style=+%Y%m%d_%H%M%S"
-  alias lt="ls --color=auto -AFlrt --full-time --time-style=+%Y%m%d_%H%M%S"
- alias ltd="ls --color=auto -AFlrtd --full-time --time-style=+%Y%m%d_%H%M%S"
-  alias lS="ls --color=auto -AFlrS --full-time --time-style=+%Y%m%d_%H%M%S"
+  alias   l="ls --color=auto -r"
+  alias  lr="ls --color=auto"
+  alias  ll="ls --color=auto -lr"
+  alias llr="ls --color=auto -l"
+  alias  lt="ls --color=auto -AFlrt --full-time --time-style=+%Y%m%d_%H%M%S"
+  alias  lS="ls --color=auto -AFlrS --full-time --time-style=+%Y%m%d_%H%M%S"
   alias t='tail --follow=name'
   alias p='ps -e f -o pid,user,cmd --sort=user'
  #export PAGER='less -G --jump-target=2' 
