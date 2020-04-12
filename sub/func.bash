@@ -101,6 +101,19 @@ alias  grst='git reset HEAD'
 #[ -d "$d" ] || chkerr "$d target (arg2) is not a directory"
 # bak="${d}/${b}-${t}" # backup dir
 
+catfold () { #:> on terminal output, fold long lines on words
+    [ -t 1 ] && {
+        local cols="$(tput cols)"
+        fold -s -w $cols
+        } || cat
+    } # catfold
+cattrunc () { #:> on terminal output, truncate lines to width
+    [ -t 1 ] && {
+        local cols="$(tput cols)";
+        awk -v cols="$((cols-1))" 'length > cols{$0=substr($0,0,cols)"_"}1'
+        } || cat
+    } # cattrunc
+
 
 _youtube_video_list () {
 local id="$1"
@@ -163,14 +176,16 @@ hms2sec () { # passthrough seconds or convert hh:mm:ss to seconds
         | awk '{print "3 k "$1" 60 * "$2" + p"}' | dc
   [[ $1 == *:* ]] || echo $1
   } # hms2sec
-f2rb2mp3 () { # file to rubberband to mp3, tuning function
+f2rb2mp3 () ( # file to rubberband to mp3, tuning function
+    # subshell sets pipefail and ensures PWD on err
+    set -e -o pipefail
     # validate env per
     # https://github.com/georgalis/pub/blob/master/skel/.profile
     # https://github.com/georgalis/pub/blob/master/sub/func.bash
     verb=devnul
     while IFS= read fndata ; do
         validfn $fndata || { echo "validfn error : $fndata" 1>&2 ; return 1 ;}
-        $verb "valid : $fndata"
+        #$verb "valid : $fndata"
     done <<EOF
 # pub/skel/.profile pub/sub/func.bash 20200208
 chkerr 1473511298 95
@@ -190,7 +205,8 @@ EOF
     # https://breakfastquay.com/rubberband/
     echo "# Crisp  0=Mushy 1=piano 2=smooth 3=MULTITIMBRAL 4=two-sources 5=standard 6=percussive "
     echo "# Formant 'y'/''  CenterFocus 'y'/''  volume '0db'/''"
-    echo "# t='1' p='0' C='' F='' CF='' ss='' to='' v='' f2rb2mp3 name.opus"
+    echo "# t='1' p='0' C='' F='' CF='' ss='' to='' ckb='' v='' f2rb2mp3 name.opus"
+    return 0
     }
   [ "$1" ] || { f2rb2mp3 help ; return 1 ;}
     verb="chkwrn"
@@ -203,16 +219,19 @@ EOF
     local f='' c=''
     local out=''
     local infile="$(basename "$1")"
+    # on ckb=y set a default compand, on something else apply ckb value to sox, unless null.
+    [ "$ckb" = "y" ] && local ckbc="compand 0.2,0.9 -70,-70,-60,-55,-50,-45,-35,-35,-20,-25,0,-12 6 -70 0.2"
     cd "$(dirname "$1")"
     touch nulltime
     $verb2 "$infile"
-    [ -e "$infile" ] || { f2rb2mp3 help ; chkerr "no input flle $f" ; return 1 ;}
+    [ -e "$infile" ] || { f2rb2mp3 help ; chkerr "no input flle $infile" ; return 1 ;}
     mkdir -p ./tmp ./loss
     [ -e "./tmp/${infile}.flac" ] || { # make ready the flac for universal read
         $verb                                      "./tmp/${infile}.flac"     
         $verb2    ffmpeg -loglevel 24 -i "$infile" "./tmp/${infile}.flac"     
                   ffmpeg -loglevel 24 -i "$infile" "./tmp/${infile}.flac"   || { chkerr " flack fail ";} ;} # have flack
-    [ "$v" ] && { vc="vol $v dither" vn="-v$v" ;} || true
+    [ "$ckbc" ] && local vc="$ckbc" vn="-ckb"
+    [ "$v" ] && { vc="$vc vol $v dither" vn="${vn}-v$v" ;} || true
     [ "$t" = '1' -a "$p" = '0' -a "$ss" = '' -a "$to" = '' ] && { # none or volume only change
         $verb                                "./loss/${infile}${vn}.mp3"
         $verb2   sox "./tmp/${infile}.flac"  "./loss/${infile}${vn}.mp3" $vc
@@ -237,7 +256,7 @@ EOF
         [ "$C" = "" ] && c='3' || c="$C" # Crispness (rb default = 5)
         [ "$F" = "y" ] && f='-F' || f='' # Formant
         [ "$CF" = "y" ] && cf='-CF' xcf='--centre-focus' || true
-        out="${infile}-t${t}-p${p}${f}-c${c}${cf}${tn}"
+        out="${infile}-t${t}-p${p}-c${c}${f}${cf}${tn}"
         [ -e "./loss/${out}${vn}.mp3" ] || { # make if not exists
             [ -e "./tmp/${out}.wav" ] || { # final master sans volume
               $verb "./tmp/${out}.wav"
@@ -267,7 +286,7 @@ EOF
 # cf Mozart-K622-Clarinet-Concerto-A-Maj-Kam-Honeck-2006.m4a.flac
 # cf chet baker /Users/geo/dot4/5/d/3/a/4/a/^/parm_sox.sh
     # -ss 32:05 -to 39:58.5
-    } # f2rb2mp3
+    ) # f2rb2mp3
 
 
 lacktone () { # monitor lacktone logfile
@@ -459,10 +478,37 @@ numlist () { #:> number a list of files, retaining first digit
         { seq 1 192 ; echo "$fs" | grep "^$p" ;} \
             | awk 'NR>192 {printf "%s %o %s\n",$0,NR,$0}' \
             | sed -e 's/\(.\)/& &/' -e 's/ [[:xdigit:]]*-/ /' \
-            | awk -v i="$numlist" -v p="" '{printf "mv %s %s%s%s-%s%s\n",$4,p,$1,$3,i,$2}'
+            | awk -v i="$numlist" '{printf "mv %s %s%s%s-%s\n",$4,i,$1,$3,$2}'
         done
+    [ "$numlist" ] || local numlist=0
         { seq 1 192 ; echo "$fs" | sed '/^[[:digit:]]/d' ;} \
             | awk 'NR>192 {printf "%s %o %s\n",$0,NR,$0}' \
-            | awk -v i="$numlist" '{printf "mv %s 0%s-%s%s\n",$3,$2,i,$1}'
+            | awk -v i="$numlist" '{printf "mv %s %s%s-%s\n",$3,i,$2,$1}'
+    }
+
+# for p in 0 1 2 3 4 7 8 9  ; do ps=$(( 100 * p +10   )) ; seq 1 $((ps +4)) | awk -v ps=$ps 'NR>ps {printf "%3s %03d \n",$1,$1}' ; done
+# for p in 0 1 2 3 4 ; do ps=$(( 64 * p   )) ; seq 1 $((ps +4)) | awk -v ps=$ps 'NR>ps {printf "%3s %03o \n",$1,$1}' ; done
+numlist () { #:> number a list of files, retaining first digit
+    # renumber a list of files such that when combined with another list, # the major sequence is retained.
+    # Only act on files with the plan:
+    # get file list as args OR stdin (one file per line)
+    # retain first numeral of each filename
+    # append octal sequience number (starting with 301) to file basename (sans leadinng "digits-")
+    # prepend 0- to files without a leading number
+    # create mv commands for the above result (pipe to shell)
+    local f fs p ps ;
+    [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1" )" ; shift ; done
+    [ "$fs" ] || fs="$(cat)"
+    fs="$(echo "$fs" | sed 's/\.\///' | while IFS= read f ; do [ -f "${f%%/*}" ] && echo "${f%%/*}" ; done)"
+    for p in 0 1 2 3 4 5 6 7 8 9 ; do
+        { echo "$fs" | grep "^$p" ;} \
+            | awk -v p=$p 'NR>0 {printf "%s %02d %s\n",$0,NR,$0}' \
+            | sed -e 's/\(.\)/& &/' -e 's/ [[:xdigit:]]*-/ /' \
+            | awk -v i="$numlist" '{printf "mv %s %s%s%s-%s\n",$4,i,$1,$3,$2}'
+        done
+    [ "$numlist" ] || local numlist=00
+        { echo "$fs" | sed '/^[[:digit:]]/d' ;} \
+            | awk 'NR>0 {printf "%s %02d %s\n",$0,NR,$0}' \
+            | awk -v i="$numlist" '{printf "mv %s %s%s-%s\n",$3,i,$2,$1}'
     }
 
