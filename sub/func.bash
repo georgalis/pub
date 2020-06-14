@@ -488,18 +488,21 @@ numlist () { #:> number a list of files, retaining first digit
 
 # for p in 0 1 2 3 4 7 8 9  ; do ps=$(( 100 * p +10   )) ; seq 1 $((ps +4)) | awk -v ps=$ps 'NR>ps {printf "%3s %03d \n",$1,$1}' ; done
 # for p in 0 1 2 3 4 ; do ps=$(( 64 * p   )) ; seq 1 $((ps +4)) | awk -v ps=$ps 'NR>ps {printf "%3s %03o \n",$1,$1}' ; done
-numlist () { #:> number a list of files, retaining first digit
-    # renumber a list of files such that when combined with another list, # the major sequence is retained.
+numlist () { #:> re-number a list of files, retaining the first digit
+    # such that when combined with another list, the major sequence is retained.
     # Only act on files with the plan:
-    # get file list as args OR stdin (one file per line)
+    # get file list as arg@ OR stdin (one file per line)
+    # prepend "$numlist" if not null; or
     # retain first numeral of each filename
-    # append octal sequience number (starting with 301) to file basename (sans leadinng "digits-")
-    # prepend 0- to files without a leading number
+    # append sequience number to file basename (sans leadinng "[[:xdigit:]]*")
+    # prepend 000- to files without a leading number,
     # create mv commands for the above result (pipe to shell)
     local f fs p ps ;
     [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1" )" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
     fs="$(echo "$fs" | sed 's/\.\///' | while IFS= read f ; do [ -f "${f%%/*}" ] && echo "${f%%/*}" ; done)"
+        # next plan, incert two \n before each file, make NR gaps
+        # and remove extra lines
     for p in 0 1 2 3 4 5 6 7 8 9 ; do
         { echo "$fs" | grep "^$p" ;} \
             | awk -v p=$p 'NR>0 {printf "%s %02d %s\n",$0,NR,$0}' \
