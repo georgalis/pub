@@ -130,7 +130,7 @@ local id="$1"
              read -p "directory : " d
 [ "$id" ] || chkerr "no id?"
 [ "$d" ] || d="$(pwd -P)"
-youtube-dl --write-info-json --restrict-filenames --abort-on-error --no-playlist \
+youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --no-playlist \
     -o "$d/%(title)s_^%(id)s.%(ext)s" $id
 } # _youtube_video
 _youtube () {
@@ -139,16 +139,16 @@ local id="$1"
              read -p "directory : " d
 [ "$id" ] || chkerr "no id?"
 [ "$d" ] || d="$(pwd -P)"
-youtube-dl --write-info-json --restrict-filenames --abort-on-error \
+youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub \
     --no-playlist --extract-audio -o "$d/%(title)s_^%(id)s.%(ext)s" $id
 } # _youtube
-_youtube_playlist () {
+_youtube_list () {
 local id="$1"
 [ "$id" ] || read -p "youtube id: " id
              read -p "directory : " d
 [ "$id" ] || chkerr "no id?"
 [ "$d" ] || d="$(pwd -P)"
-youtube-dl --write-info-json --restrict-filenames --abort-on-error \
+youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub \
     --yes-playlist --extract-audio -o "$d/%(playlist_index)s-%(title)s_^%(id)s.%(ext)s" $id
     #--yes-playlist --extract-audio -o "$d/%(playlist_index)s^%(id)s.%(ext)s" $id
 } # k4_youtube
@@ -204,8 +204,8 @@ EOF
     # https://hg.sr.ht/~breakfastquay/rubberband
     # https://breakfastquay.com/rubberband/
     echo "# Crisp  0=Mushy 1=piano 2=smooth 3=MULTITIMBRAL 4=two-sources 5=standard 6=percussive "
-    echo "# Formant 'y'/''  CenterFocus 'y'/''  volume '0db'/''"
-    echo "# t='1' p='0' C='' F='' CF='' ss='' to='' ckb='' v='' f2rb2mp3 name.opus"
+    echo "# Formant 'y'/''  CenterFocus 'y'/''  volume '0db'/'' cmp '{ckb|ckb2}'"
+    echo "# t='1' p='0' C='' F='' CF='' ss='' to='' cmp='' v='' f2rb2mp3 name.opus"
     return 0
     }
   [ "$1" ] || { f2rb2mp3 help ; return 1 ;}
@@ -219,8 +219,14 @@ EOF
     local f='' c=''
     local out=''
     local infile="$(basename "$1")"
-    # on ckb=y set a default compand, on something else apply ckb value to sox, unless null.
-    [ "$ckb" = "y" ] && local ckbc="compand 0.2,0.9 -70,-70,-60,-55,-50,-45,-35,-35,-20,-25,0,-12 6 -70 0.2"
+    local cmpn='' cmpc=''
+    local  ckb="compand 0.2,0.9 -70,-70,-60,-55,-50,-45,-35,-35,-20,-25,0,-12 6 -70 0.2"
+    local ckb2="compand 0.2,0.9 -70,-99,-50,-60,-50,-45,-30,-30,-20,-25,0,-13 6 -70 0.2"
+    local ckb3="compand 0.2,0.8 -60,-99,-50,-56,-38,-32,-23,-18,0,-4         -2 -60 0.2"
+    [ "$cmp" = "y" ]    && local cmpn="ckb2" cmpc="$ckb2"
+    [ "$cmp" = "ckb" ]  && local cmpn="ckb"  cmpc="$ckb"
+    [ "$cmp" = "ckb2" ] && local cmpn="ckb2" cmpc="$ckb2"
+    [ "$cmp" = "ckb3" ] && local cmpn="ckb3" cmpc="$ckb3"
     cd "$(dirname "$1")"
     touch nulltime
     $verb2 "$infile"
@@ -230,14 +236,17 @@ EOF
         $verb                                      "./tmp/${infile}.flac"     
         $verb2    ffmpeg -loglevel 24 -i "$infile" "./tmp/${infile}.flac"     
                   ffmpeg -loglevel 24 -i "$infile" "./tmp/${infile}.flac"   || { chkerr " flack fail ";} ;} # have flack
-    [ "$ckbc" ] && local vc="$ckbc" vn="-ckb"
-    [ "$v" ] && { vc="$vc vol $v dither" vn="${vn}-v$v" ;} || true
+    [ "$cmpn" ] && local vn="-$cmpn" vc="$cmpc"
+    [ "$vn" -a -z "$v" ] && v=0db || true
+    [ "$vn" -o "$v" ] && { vn="${vn}-v$v" vc="$vc vol $v dither" ;} || true
     [ "$t" = '1' -a "$p" = '0' -a "$ss" = '' -a "$to" = '' ] && { # none or volume only change
-        $verb                                "./loss/${infile}${vn}.mp3"
-        $verb2   sox "./tmp/${infile}.flac"  "./loss/${infile}${vn}.mp3" $vc
-                 sox "./tmp/${infile}.flac"  "./loss/${infile}${vn}.mp3" $vc    && return 0 \
+        $verb                                "./tmp/${infile}${vn}.mp3" 
+        $verb2   sox "./tmp/${infile}.flac"  "./tmp/${infile}${vn}.mp3" $vc
+                 sox "./tmp/${infile}.flac"  "./tmp/${infile}${vn}.mp3" $vc \
+          &&  mv "./tmp/${infile}${vn}.mp3" "./loss/${infile}${vn}.mp3" \
+          && return 0 \
           || { chkerr "XXX no flac? vol: sox $infile ./loss/${infile}${vn}.mp3 $vc" ; return 1 ;} ;} # easy mp3 done
-    [ "$ss" -o "$to" ] && { # trim
+    [ "$ss" -o "$to" ] && { # trim times
         [ "$ss" ] && { ssec=$(hms2sec ${ss}) ;}
         [ "$to" ] && { tsec=$(hms2sec ${to}) ;}
           [   "$ss" -a ! "$to" ] && tc="trim $ssec"        tn="-ss$sec"
@@ -267,15 +276,17 @@ EOF
             # apply volume and make an mp3 --- some program doesn't respect volume dither so do it last,
             # though maybe too late for clipping
             $verb "./loss/${out}${vn}.mp3"
-            $verb2    sox "./tmp/${out}.wav" "./loss/${out}${vn}.mp3" $vc
-                      sox "./tmp/${out}.wav" "./loss/${out}${vn}.mp3" $vc \
-       || { chkerr "mp3: sox ./tmp/${out}.wav ./loss/${out}${vn}.mp3 $vc" ; return 1 ;}
+            $verb2    sox "./tmp/${out}.wav" "./tmp/${out}${vn}.mp3" $vc
+                      sox "./tmp/${out}.wav" "./tmp/${out}${vn}.mp3" $vc \
+              && mv "./tmp/${out}${vn}.mp3" "./loss/${out}${vn}.mp3" \
+       || { chkerr "mp3: sox ./tmp/${out}.wav ./tmp/${out}${vn}.mp3 $vc" ; return 1 ;}
             } # rb parm
         }  || { # no rb, only time and/or volume
         $verb "./loss/${out}${vn}.mp3"
-        $verb2         sox "./tmp/${infile}${tn}.flac" "./loss/${out}${vn}.mp3" $vc
-                       sox "./tmp/${infile}${tn}.flac" "./loss/${out}${vn}.mp3" $vc \
-          || { chkerr "sox ./tmp/${infile}${tn}.flac ./loss/${out}${vn}.mp3 $vc" ; return 1 ;}
+        $verb2         sox "./tmp/${infile}${tn}.flac" "./tmp/${out}${vn}.mp3" $vc
+                       sox "./tmp/${infile}${tn}.flac" "./tmp/${out}${vn}.mp3" $vc \
+                        && mv "./tmp/${out}${vn}.mp3" "./loss/${out}${vn}.mp3" \
+          || { chkerr "sox ./tmp/${infile}${tn}.flac ./tmp/${out}${vn}.mp3 $vc" ; return 1 ;}
         } # no rb only time and/or volume
     find "$PWD" -type f -newer ./nulltime | xargs ls -lrth
     cd "$OLDPWD"
