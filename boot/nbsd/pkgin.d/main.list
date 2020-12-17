@@ -1,6 +1,7 @@
-
 # devel/jenkins
 # devel/jq
+# mail/safecat
+# net/djbdns
 # security/mozilla-rootcerts
 # security/openssl
 # textproc/py-yaml
@@ -12,12 +13,15 @@ editors/vim
 mail/safecat
 misc/colorls
 misc/tmux
+net/arpwatch
 net/djbdns
 net/fping
 net/mtr
 net/netcat
 net/nmap
 net/rsync
+net/tcpdump
+net/trafshow
 pkgtools/pkg_chk
 pkgtools/pkg_rolling-replace
 pkgtools/pkgin

@@ -25,6 +25,7 @@ find "$root" -regex '.*/\.git/config$' \
         # parse all the "###### Summary" lines per readme
         # generate full urls (deals with path /blob/master insertions)
         # then genetate markdown links
+        d=
         c1="$(echo "${b%/*}" | sed "s,$root,..,")" # link display
         c2="$(echo "${b%/*}" | sed "s,$root,${urlbase}${name},")" # full url
         # output
@@ -32,4 +33,11 @@ find "$root" -regex '.*/\.git/config$' \
         done
 
 # manually edit output into markdown...
+
+* [../pub/boot/nbsd/pkgin.d](https://github.com/georgalis/pub/boot/nbsd/pkgin.d) Schema for including pkgsrc lists
+
+find . \( -name tmp -o -name .git -o -name .svn \) -prune -o -type f -print0 \
+    | xargs -0 file | grep text| sed 's/:.*//' \
+    | while read a; do sed -e '/^###### /!d' -e "s:^###### :$a ## :" "$a" ; done
+
 
