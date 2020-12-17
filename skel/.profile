@@ -10,6 +10,7 @@ export EDITOR="vi"
 export PAGER='less --jump-target=3'
 export GPG_TTY=$(tty)
 export OS=$(uname)
+# /etc/redhat-release  /etc/centos-release  /etc/os-release
 
 umask 022
 ulimit -c 1 # one byte core files memorialize their creation
@@ -43,6 +44,7 @@ Darwin)
   alias t='tail -F'
   alias top='top -S -n24 -s4 -o cpu'
   alias p='ps -ax -o uid,pid,command -ww'
+  rmxattr () { true ;}
 ;; # Darwin
 Linux)
  eval $(dircolors | sed 's/di=01;34/di=00;44/')
@@ -295,6 +297,12 @@ path_append () { # append $1 if not already in path
 path_prepend () { # prepend $1 if not already in path
  echo $PATH | grep -E "(^$1:|^$1$)" 2>&1 >/dev/null \
   || export PATH="${1}:${PATH}" ;}
+
+# export main functions
+mkdir -p "$HOME/_"
+declare -f | sed '/^ /d' | grep '()' | tr -d '()' >"$HOME/_/${0##*/}.func"
+export -f $(cat "$HOME/_/${0##*/}.func")
+chkecho "export -f \$(cat "$HOME/_/${0##*/}.func")"
 
 # if exists, source...
 #[ -e "$HOME/.profile.local" ] && . "$HOME/.profile.local" && echo "$HOME/.profile.local" || true
