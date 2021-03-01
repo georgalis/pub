@@ -26,8 +26,10 @@ ulimit -c 1 # one byte core files memorialize their creation
   alias  ll="colorls -FGTlr"
   alias  llr="colorls -FGTl"
   alias  la="colorls -AFGTl"
-  alias  lt="colorls -AFGTlrt"
-  alias  ltd="colorls -AFGTlrtd"
+  alias llt="colorls -AFGTlrt"
+  alias  lt="colorls -AFGTrt"
+  alias lltd="colorls -AFGTlrtd"
+  alias  ltd="colorls -AFGTrtd"
   alias  lS="colorls -AFGTlrS"
  } || true # echo "no colorls"
 
@@ -39,7 +41,8 @@ Darwin)
   alias  lr="ls -AGF"
   alias  ll="ls -FTGlr"
   alias llr="ls -FTGl"
-  alias  lt="ls -AFGTlrt"
+  alias llt="ls -AFGTlrt"
+  alias  lt="ls -AFGTrt"
   alias  lS="ls -AFGTlrS"
   alias t='tail -F'
   alias top='top -S -n24 -s4 -o cpu'
@@ -52,7 +55,8 @@ Linux)
   alias  lr="ls --color=auto"
   alias  ll="ls --color=auto -lr"
   alias llr="ls --color=auto -l"
-  alias  lt="ls --color=auto -AFlrt --full-time --time-style=+%Y%m%d_%H%M%S"
+  alias llt="ls --color=auto -AFlrt --full-time --time-style=+%Y%m%d_%H%M%S"
+  alias  lt="ls --color=auto -AFrt --full-time --time-style=+%Y%m%d_%H%M%S"
   alias  lS="ls --color=auto -AFlrS --full-time --time-style=+%Y%m%d_%H%M%S"
   alias t='tail --follow=name'
   alias p='ps -e f -o pid,user,cmd --sort=user'
@@ -178,7 +182,7 @@ ckstat () # Unlimited use with this notice (c) 2017-2019 George Georgalis <georg
     echo "$fs" | while IFS= read f; do
       [ -f "$f" ] && {
         { _stat "$f"; echo "$f"
-        } | tr '\n' ' ' | awk '{printf "%x%07x . % 8x %08x %s\n",$1,$2,$3,$4,$5}'
+        } | tr '\n' ' ' | awk '{printf "% 2x%07x . % 8x %08x %s\n",$1,$2,$3,$4,$5}'
       } || chkerr "$FUNCNAME : not a regular file : $f";
     done
   }
@@ -202,7 +206,7 @@ ckstatsum () # Unlimited use with this notice (c) 2017-2019 George Georgalis <ge
     echo "$fs" | while IFS= read f; do
       [ -f "$f" ] && {
         { _stat "$f"; cksum "$f"
-        } | tr '\n' ' ' | awk '{printf "%x%07x %8x % 8x %08x %s\n",$1,$2,$5,$3,$4,$7}'
+        } | tr '\n' ' ' | awk '{printf "% 2x%07x %8x % 8x %08x %s\n",$1,$2,$5,$3,$4,$7}'
       } || chkerr "$FUNCNAME : not a regular file : $f";
     done
   }
