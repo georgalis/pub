@@ -54,6 +54,9 @@ Electronic search capability is expected, similar terms are grouped together for
   * Risk Management Framework: Quick Start Guides  
   https://csrc.nist.gov/Projects/Risk-Management/rmf-quick-start-guides
 
+  * NISTIR 8286 Integrating Cybersecurity and Enterprise Risk Management (ERM)  
+  https://csrc.nist.gov/publications/detail/nistir/8286/draft
+
 ##### SP 800-37 Rev. 2
     Risk Management Framework for Information Systems and Organizations: A System Life Cycle Approach for Security and Privacy  
     https://csrc.nist.gov/publications/detail/sp/800-37/rev-2/final  
