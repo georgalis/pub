@@ -47,10 +47,10 @@ source_iff 2032202597 101
 EOF
 # validfn run
 
-alias   gst='git status --short'
+alias   gst='git status --short | sed "s/^\?/ \?/" | sort'
 alias   gls='git ls-files'
 alias   gdf='git diff --name-only'
-alias gdiff='git diff'
+alias gdiff='git diff --minimal -U0'
 alias  gadd='git add'
 alias  gcom='git commit'
 alias gpush='git push'
@@ -83,6 +83,16 @@ alias  grst='git reset HEAD'
 # https://git-scm.com/docs/git-reset#_discussion
 # https://git-scm.com/docs/giteveryday
 # https://git-scm.com/book/en/v2/Git-Basics-Undoing-Things
+#
+# all git statuses
+agst () { 
+  local start=$@
+  [ "$start" ] || start='.'
+  find $start -name .git -type d | sort | while IFS= read a ; do
+  ( cd "${a%/*}" ; git status --short ) | awk -v a="${a%/*}" '{printf "%-3s%s%s\n",$1,a"/./",$2,$3}'
+  done ;}
+agstlt () { lt $(agst ~ | awk '{print $2}' | while IFS= read a ; do find "$a" -type f ; done ) ;} # all repo changed/new files by mod time
+
 
 
 ## shell script fragments

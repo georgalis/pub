@@ -48,10 +48,12 @@ Linux)
  eval $(dircolors | sed 's/di=01;34/di=00;44/')
   alias   l="ls --color=auto -r"
   alias  lr="ls --color=auto"
-  alias  ll="ls --color=auto -lr"
-  alias llr="ls --color=auto -l"
-  alias  lt="ls --color=auto -AFlrt --full-time --time-style=+%Y%m%d_%H%M%S"
-  alias  lS="ls --color=auto -AFlrS --full-time --time-style=+%Y%m%d_%H%M%S"
+  alias  ll="ls --color=auto -lr    --full-time --time-style=+%Y%m%d_%H%M%S"
+  alias llr="ls --color=auto -l     --full-time --time-style=+%Y%m%d_%H%M%S"
+  alias  lt="ls --color=auto -AFltr --full-time --time-style=+%Y%m%d_%H%M%S"
+  alias ltr="ls --color=auto -AFlt  --full-time --time-style=+%Y%m%d_%H%M%S"
+  alias  lS="ls --color=auto -AFlSr --full-time --time-style=+%Y%m%d_%H%M%S"
+  alias lSr="ls --color=auto -AFlS  --full-time --time-style=+%Y%m%d_%H%M%S"
   alias t='tail --follow=name'
   alias p='ps -e f -o pid,user,cmd --sort=user'
  #export PAGER='less -G --jump-target=2' 
@@ -94,69 +96,42 @@ export _ntermrev _termrev _ntermul _termul
 [ -x "$(which colordiff 2>/dev/null)" ] && alias diff='colordiff'
 #[ -x "$(which tmux 2>/dev/null)" ] && alias tmux='tmux new -A -s main'
 
-alias back='cd "$OLDPWD"'	# previous directory
-alias g='grep -E'		# grep for the extended regex
-alias v='grep -Ev'		# grep -v for the extended regex
-alias h='fc -l'			# list commands previously entered in shell.
-alias j='jobs -l'		# list background jobs
+alias back='cd "$OLDPWD"'   # previous directory
+alias g='grep -E'       # grep for the extended regex
+alias v='grep -Ev'      # grep -v for the extended regex
+alias h='fc -l'         # list commands previously entered in shell.
+alias j='jobs -l'       # list background jobs
 alias s='less -R'
-alias man='man $man_augment -a'	# $man_augment set in /etc/profile, or not
+alias man='man $man_ops' # typically "-a" etc
 alias scp='scp -pr'
 alias cp='cp -ip'
 alias mv='mv -i'
 alias rm='rm -i'
 alias d='diff'
-alias cal='cal -h'
-
+#alias cal='cal -h'
 
 devnul () { return $? ;} #:> expect nothing in return
 stderr () { echo "$*" 1>&2 ;} #:> return args to stderr
-chkecho () { [ "$*" ] && echo "$*" || true ;} #:> echo args or no operation if none
+chkstd () { [ "$*" ] && echo "$*" || true ;} #:> echo args or no operation if none
 logwrn () { [ "$*" ] && { logger -s "^^ $* ^^"   ; return $? ;} || true ;}
 logerr () { [ "$*" ] && { logger -s ">>> $* <<<" ; return 1  ;} || true ;}
 chkwrn () { [ "$*" ] && { stderr    "^^ $* ^^"   ; return 0 ;} || true ;} #:> if args not null, wrn stderr args return 0
 chkerr () { [ "$*" ] && { stderr    ">>> $* <<<" ; return 1 ;} || true ;} #:> if args not null, err stderr args return 1
-source_iff () { [ -e "$1" ] && { . "$1" && chkecho "$1" || chkerr "error: $1" ;} ;} #:> source arg1 if exists
+chkecho () { [ "$*" ] && echo "$*" || true ;} #:> echo args or no operation if none
+source_iff () { [ -e "$1" ] && { . "$1" && chkstd "$1" || chkerr "error: $1" ;} ;} #:> source arg1 if exists
 
-dufiles () { #:> report the number of files along with total disk use
-    [ "$1" ] || set .
-    { du -sh "$1" ; echo "#" ; find "$1" -type f | wc -l ; echo files ;} \
-       | tr '\n' ' ' ; echo ;}
+std_append () { # extend stdin list with arg1, without duplicating (space deliminated)
+  # usage :  export bc_env=$( echo $bc_env | std_append data)
+  local stdin="$(tr -s '\n' ' ')"
+  { echo "$stdin" | grep -E "(^$1$|^$1 | $1 | $1$)" >/dev/null \
+    && echo "$stdin" \
+    || echo "$stdin $1"
+    } | tr -s ' ' | sed 's/ $//'
+  } # std_append
 
-dusum () { # sort $1 (defaults to $PWD) according to disk use, also show cumulative sum.
-[ -z "$1" ] && d="./" || d="$1"
-find "$d" -maxdepth 1 -mindepth 1 -print0 \
-	| xargs -0 du -sk | sort -n \
-	| awk '{sum += $1; printf "%+11sk %+10sk %s %s %s\n", sum, $1, $2, $3, $4}' ;}
-
-dirper () { # reveal dir permissions of "$*" or "$PWD"
-d="$*";d="${d#./}";[ -z "$d" -o "$d" = "." -o "$d" = "./" ] && d="$PWD"
-[ "$(dirname "$d")" = '.' ] && d="$PWD/$d";
-case "$(uname)" in Linux) ls -Ldl --full-time "$d" ;; *) ls -LTdl "$d" \
-| awk '{printf "%-10s %+8s:%-8s %+8s %8s %2s %3s %s ", \
-	$1, $3, $4, $5, $8, $7, $6, $9}' ; ls -Ld "${d}"
-;; esac ; [ "$d" = "/" ] && return || dirper $(dirname "$d");}
-
-symview () { # report directories and symlinks below args or stdin if $# is 0
-    # for consistancy, please start relitative symlinks with a dot,
-    # like this: ln -s ./tmp sym
-    #  NOT this: ln -s tmp sym
-    #
-    # typical invocation:
-    #   viewsym sym
-    # or
-    #   find . -maxdepth 1 -mindepth 1 | grep -v .git | viewsym | sort | awk '{printf "%- 40s %s\n",$1,$2}'
-    # or
-    #   viewsym . | sort | awk '{print $2,$1}'
-    #
-    local f fs;
-    [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1" )" ; shift ; done
-    [ "$fs" ] || fs="$(cat)"
-    #fs="$(echo "$fs" | sed 's/\.\///' | while IFS= read f ; do [ -f "${f%%/*}" ] && echo "${f%%/*}" ; done)"
-    echo "$fs" | sed -e 's/\.\///' -e '/^$/d' | sort -u | while IFS= read i ; do
-        find "$i" -exec stat -f "%N %Y" \{\} \; 2>/dev/null | sort -u | awk '{printf "%s\t%s\n", $2, $1}'
-        done
-    } # symview
+path_append () { # append $1 if not already in path
+ echo $PATH | grep -E "(^$1$|^$1:|:$1:|:$1$)" 2>&1 >/dev/null \
+  || export PATH="${PATH}:${1}" ;}
 
 ckstat () # Unlimited use with this notice (c) 2017-2019 George Georgalis <george@galis.org>
 { # 2156ca36 .     6147 5e1f9fbb .profile.local
@@ -205,6 +180,69 @@ ckstatsum () # Unlimited use with this notice (c) 2017-2019 George Georgalis <ge
     done
   }
 }
+
+ascii_filter () { while IFS= read a ; do echo "$a" | strings -e s ; done ;}
+
+dufiles () { #:> report the number of files along with total disk use
+    [ "$1" ] || set .
+    { du -sh "$1" ; echo "#" ; find "$1" -type f | wc -l ; echo files ;} \
+       | tr '\n' ' ' ; echo ;}
+
+dusum () { # sort $1 (defaults to $PWD) according to disk use, also show cumulative sum.
+[ -z "$1" ] && d="./" || d="$1"
+find "$d" -maxdepth 1 -mindepth 1 -print0 \
+	| xargs -0 du -sk | sort -n \
+	| awk '{sum += $1; printf "%+11sk %+10sk %s %s %s\n", sum, $1, $2, $3, $4}' ;}
+
+dirper () { # reveal dir permissions of "$*" or "$PWD"
+d="$*";d="${d#./}";[ -z "$d" -o "$d" = "." -o "$d" = "./" ] && d="$PWD"
+[ "$(dirname "$d")" = '.' ] && d="$PWD/$d";
+case "$(uname)" in Linux) ls -Ldl --full-time "$d" ;; *) ls -LTdl "$d" \
+| awk '{printf "%-10s %+8s:%-8s %+8s %8s %2s %3s %s ", \
+	$1, $3, $4, $5, $8, $7, $6, $9}' ; ls -Ld "${d}"
+;; esac ; [ "$d" = "/" ] && return || dirper $(dirname "$d");}
+
+symview () { # report directories and symlinks below args or stdin if $# is 0
+    # for consistancy, please start relitative symlinks with a dot,
+    # like this: ln -s ./tmp sym
+    #  NOT this: ln -s tmp sym
+    #
+    # typical invocation:
+    #   viewsym sym
+    # or
+    #   find . -maxdepth 1 -mindepth 1 | grep -v .git | viewsym | sort | awk '{printf "%- 40s %s\n",$1,$2}'
+    # or
+    #   viewsym . | sort | awk '{print $2,$1}'
+    #
+    local f fs;
+    [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1" )" ; shift ; done
+    [ "$fs" ] || fs="$(cat)"
+    #fs="$(echo "$fs" | sed 's/\.\///' | while IFS= read f ; do [ -f "${f%%/*}" ] && echo "${f%%/*}" ; done)"
+    echo "$fs" | sed -e 's/\.\///' -e '/^$/d' | sort -u | while IFS= read i ; do
+        find "$i" -exec stat -f "%N %Y" \{\} \; 2>/dev/null | sort -u | awk '{printf "%s\t%s\n", $2, $1}'
+        done
+    } # symview
+
+cattrunc () {
+    [ -t 1 ] && {
+        local cols="$(tput cols)";
+        awk -v cols="$((cols-1))" 'length > cols{$0=substr($0,0,cols)"_"}1'
+    } || cat
+  }
+
+
+lock () { # lock to prevent concurent runs
+ mkdir -p "$HOME/var/run"
+ local name="$(basename "$0")"
+ local LOCK="$HOME/var/run/${name}.pid"
+ local NULL="$HOME/var/run/${name}.null"
+ [ -f "$LOCK" ] && { chkerr "Lock exists: $LOCK" ; exit 1 ;} || echo "$$" >"$LOCK" ;}
+unlock () { # remove lock and touch null file
+ local name="$(basename "$0")"
+ local LOCK="$HOME/var/run/${name}.pid"
+ local NULL="$HOME/var/run/${name}.null"
+ rm "$LOCK" ; touch "$NULL" ;}
+
 
 case "$OS" in
 Darwin|NetBSD)
@@ -264,30 +302,44 @@ printf "$(ssh-keygen -if $key_in) " \
  && grep Comment $key_in | sed -e 's/^Comment: "//' -e 's/"$//'
 rm $key_in ;}
 
+#   # ssh socket key and agent managent
+#   printf "${_termrev}"
+#   printf "User $USER "
+#   ##[ -n "$SSH_AUTH_SOCK" ] || { # already forwarded by agent
+#     [ "$(ssh-add -l 2>&1)" = "Could not open a connection to your authentication agent." ] \
+#     && { printf "${USER}@$(hostname): " 
+#       eval $(ssh-agent)
+#       export SSH_AGENT_ENV="SSH_AGENT_PID $SSH_AGENT_PID SHELL_PID $$" # ssh-agent env
+#       } \
+#     || ssh-add -l | cut -d\  -f 3- # show keys in SSH_AUTH_SOCK
+#     [ "$(ssh-add -l 2>&1)" = "The agent has no identities." ] && {
+#       ssh_ids="id_ed25519 id_rsa"
+#       for ssh_id in $ssh_ids ; do # add each identity file
+#         [ -e "$HOME/.ssh/$ssh_id" ] && { # try ssh-add
+#           ssh-add "$HOME/.ssh/$ssh_id" ;}
+#       done ;} # ssh_id
+#   ##  } && { #echo "SSH_AUTH_SOCK forwarded by agent."
+#   ##   ssh-add -l ;} # show keys in SSH_AUTH_SOCK
+#   printf "${_ntermrev}"
+#   ## shell logout trap, eg ~/.bash_logout ~/.ksh_logout
+#   #[ -n "$SSH_AGENT_ENV" ] && set $SSH_AGENT_ENV && [ "$$" = "$4" ] \
+#   #	&& { printf "Logout: " && kill $2 && echo $(hostname) $0 [$4] killed ssh-agent $2 \
+#   #		|| { echo $(hostname) ssh-agent already died? 2>/dev/stderr ; exit 1 ;} ;}
+
+
 # ssh socket key and agent managent
 printf "${_termrev}"
-printf "User $USER "
-##[ -n "$SSH_AUTH_SOCK" ] || { # already forwarded by agent
-  [ "$(ssh-add -l 2>&1)" = "Could not open a connection to your authentication agent." ] \
-  && {
-    printf "${USER}@$(hostname): " 
-    eval $(ssh-agent)
-    export SSH_AGENT_ENV="SSH_AGENT_PID $SSH_AGENT_PID SHELL_PID $$" # ssh-agent env
-    } || ssh-add -l | cut -d\  -f 3- # show keys in SSH_AUTH_SOCK
-  [ "$(ssh-add -l 2>&1)" = "The agent has no identities." ] && {
-    ssh_ids="id_ed25519 id_rsa"
-    for ssh_id in $ssh_ids ; do # add each identity file
-      [ -e "$HOME/.ssh/$ssh_id" ] && { # try ssh-add
-        ssh-add "$HOME/.ssh/$ssh_id" ;}
-    done ;} # ssh_id
-##  } && { #echo "SSH_AUTH_SOCK forwarded by agent."
-##   ssh-add -l ;} # show keys in SSH_AUTH_SOCK
+printf "User ${USER}@$(hostname -f): " 
+[ "$SSH_AGENT_ENV" ] || {
+    eval $(ssh-agent) 
+    ssh-add $(find $HOME/.ssh/ \( -name id_\* -o -name ${USER}\* \) -type f -not -name \*pub )
+    export SSH_AGENT_ENV="SSH_AGENT_PID $SSH_AGENT_PID SHELL_PID $$" ;} 
+ssh-add -l | cut -d\  -f 3- # show keys in SSH_AUTH_SOCK
 printf "${_ntermrev}"
 ## shell logout trap, eg ~/.bash_logout ~/.ksh_logout
 #[ -n "$SSH_AGENT_ENV" ] && set $SSH_AGENT_ENV && [ "$$" = "$4" ] \
 #	&& { printf "Logout: " && kill $2 && echo $(hostname) $0 [$4] killed ssh-agent $2 \
 #		|| { echo $(hostname) ssh-agent already died? 2>/dev/stderr ; exit 1 ;} ;}
-
 
 path_append () { # append $1 if not already in path
  echo $PATH | grep -E "(:$1$|^$1$|^$1:|:$1:)" 2>&1 >/dev/null \
@@ -297,9 +349,6 @@ path_prepend () { # prepend $1 if not already in path
   || export PATH="${1}:${PATH}" ;}
 
 # if exists, source...
-#[ -e "$HOME/.profile.local" ] && . "$HOME/.profile.local" && echo "$HOME/.profile.local" || true
-#[ -e "$HOME/sub/func.bash" ] && . "$HOME/sub/func.bash" && echo "$HOME/sub/func.bash" || true
-source_iff $HOME/sub/func.bash
-source_iff $HOME/.profile.local
-echo "$HOME/.profile"
+echo "$HOME/.profile" # root env, post os/vendor
+source_iff "$HOME/.profile.local"
 
