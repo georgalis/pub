@@ -9,14 +9,14 @@
 # Unlimited use with this notice (c) 2017 George Georgalis <george@galis.org>
 
 set -e
-chkerr () { [ -n "$*" ] && echo "ERR >>-->- $h/$(basename $0) : $* -<--<<" >&2 && exit 1 || true ;}
+chkerr () { [ -n "$*" ] && echo ">>> $h/$(basename $0) : $* <<<" >&2 && exit 1 || true ;}
 main () { # enable local varables
 
 local u h b t s d bak n tf
 u="$USER" # uid running the tests
 h="$(cd $(dirname $0) && pwd -P)" # realpath of this script
 b="$(basename $0 | sed 's/.[^.]*$//')" # this program name less (.sh) extension
-t="$( { date '+%Y%m%d_%H%M%S_' && uuidgen ;} | sed -e 's/-.*//' | tr -d ' \n' )" # time based uniq id
+t="$( { date '+%Y%m%d_%H%M%S_' && uuidgen ;} | sed -e 's/-.*//' | tr -d ' \n' | tr [A-Z] [a-z] )" # time based uniq id
 
 # set src dir
 [ -n "$1" ] && { cd "$1" && s="$PWD" ;} || chkerr "Expecting skel dir as arg1"
@@ -27,7 +27,7 @@ t="$( { date '+%Y%m%d_%H%M%S_' && uuidgen ;} | sed -e 's/-.*//' | tr -d ' \n' )"
 [ -d "$d" ] || chkerr "$d target (arg2) is not a directory"
 
 # backup dir
-bak="${d}/${b}-${t}"
+bak="${d}/.${b}-${t}"
 mkdir $bak
 
 echo installing skel $s to dir $d with backup $bak
