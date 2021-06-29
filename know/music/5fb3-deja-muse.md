@@ -22,12 +22,12 @@ Most filenames follow a general format, to indicate the sequence, artist, work, 
 
 CLI tools are available to convert these filenames, into parameters and commands that transform the original files, for fine tuning. A HUGE THANK YOU to the authors of the free software that made these tools possible: VLC media player, Sonic Visualizer, sox, ffmpeg and rubberband. Also, YouTube for making the scores available.
 
-https://www.videolan.org/
-https://www.sonicvisualiser.org/
-http://sox.sourceforge.net/
-http://ffmpeg.org/
-https://bitbucket.org/breakfastquay/rubberband/commits/all
-https://youtu.be/4V3x-sBnfKQ?t=2677
+* https://www.videolan.org/
+* https://www.sonicvisualiser.org/
+* http://sox.sourceforge.net/
+* http://ffmpeg.org/
+* https://breakfastquay.com/
+* https://youtu.be/4V3x-sBnfKQ?t=2677
 
 ### Highlights
 
