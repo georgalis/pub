@@ -1,8 +1,8 @@
-#!/bin/sh
+#!/usr/bin/env bash
 #
-# Unlimited use with this notice. (C) 2006-2018 George Georgalis <george@galis.org>
+# Unlimited use with this notice. (C) 2006-2021 George Georgalis <george@galis.org>
 #
-#:: This script automates the process of rsync snapshot backup 
+#:: This script automates the process of rsync snapshot backup
 #:: and rotation in a push, pull or localhost configuration.
 #
 
@@ -10,27 +10,39 @@ set -e
 #set -x
 #[ -t 0 ] && set -x || true # verbose if run from terminal
 
-chkerr () { if [ -n "$*" ]; then echo "$*" >&2 && exit 1 ; fi ;}
+devnul () { return $? ;} #:> expect nothing in return
+stderr () { echo "$*" 1>&2 ;} #:> return args to stderr
+chkecho () { [ "$*" ] && echo "$*" || true ;} #:> echo args or no operation if none
+logwrn () { [ "$*" ] && { logger -s "^^ $* ^^"   ; return $? ;} || true ;}
+logerr () { [ "$*" ] && { logger -s ">>> $* <<<" ; return 1  ;} || true ;}
+chkwrn () { [ "$*" ] && { stderr    "^^ $* ^^"   ; return 0 ;} || true ;} #:> if args not null, wrn stderr args return 0
+chkerr () { [ "$*" ] && { stderr    ">>> $* <<<" ; return 1 ;} || true ;} #:> if args not null, err stderr args return 1
+source_iff () { [ -e "$1" ] && { . "$1" && chkecho "$1" || chkerr "error: $1" ;} ;} #:> source arg1 if exists
 
-usage () { echo "Usage: $0
-# $0 local orig prefix
+usage () { cat <<EOF
+Usage: $0
+# ${0##*/} local orig prefix
    makes a local snapshot in prefix/bk/1/ of orig
-# $0 (push|pull) host orig prefix
+# ${0##*/} (push|pull) host orig prefix
    pushes orig to host:/prefix/bk/1/ or from host:/orig to prefix/bk/1/
-# $0 rotate level prefix [host]
+# ${0##*/} rotate level prefix [host]
    generates prefix/bk/level/ from prefix/bk/1/ oprionally on remote host
-# $0 purge level prefix [host]
+# ${0##*/} purge level prefix [host]
    purges excess from prefix/bk/level/ oprionally on remote host
-# $0 merge prefix [host]
+# ${0##*/} merge prefix [host]
    merge like files (dupmerge.c) below prefix, optionally on remote host
-# $0 batch [include]
-   use batch mode on $HOME/.$(basename $0).rc or optionally include
-# $0 batch conf
-   display discovered include file
-# $0 help
+# ${0##*/} help
    display this help message
 Extra parameters are considered an error,
-orig and prefix must be full path." ;}
+RSYNC_OPTS env to incert with rsync exec, eg
+  RSYNC_OPTS='--include /etc --include /root --include /usr/local --exclude=/*'
+orig and prefix must be full path.
+EOF
+# # ${0##*/} batch [include]
+#    use batch mode on $HOME/.$(basename $0).rc or optionally include
+# # ${0##*/} batch conf
+#    display discovered include file
+}
 
 lock () { # lock to prevent multiple generating runs to
  # the same host, you can still shoot yourself in the foot
@@ -44,25 +56,26 @@ remotelast () { ssh $HOST "find $PREFIX/1 -mindepth 1 -maxdepth 1 -type d | sort
 testlast () { [ -z "$LAST" ] && chkerr ">>> No prior backup?  mkdir -p $PREFIX/0 $PREFIX/1/$NOW $PREFIX/2 $PREFIX/3" || true ;}
 
 localsnap () {
- mkdir -p $PREFIX/0/$NOW/$ORIG/
- { rsync $rsync_opt --link-dest="$LAST$ORIG" $ORIG/ $PREFIX/0/$NOW$ORIG/ \
-  || true # files could dissappear durring push
+ mkdir -p "$LAST/$ORIG" "$PREFIX/0/$NOW/$ORIG/"
+ { rsync $rsync_opt --link-dest="$LAST/$ORIG" $ORIG/ $PREFIX/0/$NOW/$ORIG/ \
+  || true # files could dissappear durring rsync
  } | grep -v /$ || true # cleanup output, false exit expected
  mv $PREFIX/0/$NOW $PREFIX/1/
 } # localsnap
 
 pushsnap () {
- ssh $HOST "mkdir -p $PREFIX/0/$NOW/$ORIG/"
+ ssh $HOST "mkdir -p '$LAST/$ORIG' '$PREFIX/0/$NOW/$ORIG/'"
  { rsync $rsync_opt --link-dest="$LAST/$ORIG" $ORIG/ ${HOST}:$PREFIX/0/$NOW/$ORIG/ \
-  || true # files could dissappear durring push
+  || true # files could dissappear durring rsync
  } | grep -v /$ || true # cleanup output, false exit expected
  ssh $HOST "mv $PREFIX/0/$NOW $PREFIX/1/"
 } # pushsnap
 
 pullsnap () {
- mkdir -p $PREFIX/0/$NOW/$ORIG/
- { rsync $rsync_opt --link-dest="$LAST/$ORIG" $HOST:$ORIG/ $PREFIX/0/$NOW/$ORIG/ \
-  || true # files could dissappear durring push
+ mkdir -p  "$LAST/$ORIG" "$PREFIX/0/$NOW/$ORIG/"
+ {
+   rsync $rsync_opt --link-dest="$LAST/$ORIG" $HOST:$ORIG/ $PREFIX/0/$NOW/$ORIG/ 2>/dev/null \
+  || true # files could dissappear durring rsync
  } | grep -v /$ || true # cleanup output, false exit expected
  mv $PREFIX/0/$NOW $PREFIX/1/
 } # pullsnap
@@ -70,6 +83,7 @@ pullsnap () {
 rotlocal () {
  case $LEVEL in
   2|3)
+   mkdir -p "$PREFIX/$LEVEL/"
    mv "$LAST" "$PREFIX/$LEVEL/"
   ;;
   *)
@@ -80,7 +94,7 @@ rotlocal () {
 
 rotremote () {
  case $LEVEL in
-  2|3) ssh $HOST "mv '$LAST' '$PREFIX/$LEVEL/'"
+  2|3) ssh $HOST "mkdir -p '$PREFIX/$LEVEL/' && mv '$LAST' '$PREFIX/$LEVEL/'"
   ;;
   *)
    chkerr "$0 : invalid rotate level."
@@ -96,19 +110,19 @@ rotremote () {
 
 purglocal () {
  case $LEVEL in
-  1) # dispose snapshots older than 3 days, but keep at least 40
+  1) # dispose snapshots older than 4 days, but keep at least 50
    # (sed expresession suppresses 40 lines from tail of input)
-   chkerr $( ls -d $PREFIX/1/* 2>/dev/null | sed -n -e :a -e '$q;N;2,40ba' -e 'P;D' \
-    | while read dir; do
-     find \$dir -maxdepth 0 -mtime +3 -exec rm -rf \{\} \;
-    done 2>&1 )
+   chkerr $( ls -d $PREFIX/1/* 2>/dev/null | sed -n -e :a -e '$q;N;2,50ba' -e 'P;D' \
+              | while read dir; do
+                  find $dir -maxdepth 0 -mtime +4 -exec rm -rf \{\} \;
+                  done 2>&1 )
   ;;
   2) # dispose of dailies older than 14 days but keep at least 20
    # (sed expresession suppresses 20 lines from tail of input)
    chkerr $( ls -d $PREFIX/2/* 2>/dev/null | sed -n -e :a -e "\$q;N;2,20ba" -e "P;D" \
-    | while read dir; do
-     find \$dir -maxdepth 0 -mtime +14 -exec rm -rf \{\} \;
-    done 2>&1 )
+              | while read dir; do
+                  find $dir -maxdepth 0 -mtime +14 -exec rm -rf \{\} \;
+                  done 2>&1 )
   ;;
   *) chkerr "Undefined level for purge: $0 $*" ;;
  esac
@@ -137,7 +151,7 @@ merge () {
  chkerr run dupemerge binary
 }
 
-logger_ () { logger "$*" ; echo "$*" ;}
+_logger () { logger "$*" ; [ -t 1 ] && chkwrn "$*" || true ;}
 
 now () { date +%Y%m%d_%H%M%S ;}
 
@@ -170,22 +184,22 @@ case $op in
    && op=mergeremote \
    || op=mergelocal
  ;;
- batch|conf)
-  [ -n "$3" ] && chkerr $(usage) # extra arg
-  while read include
-   do # assign INCLUDE as last existing in list, and check exec
-    [ -e "$include" ] && INCLUDE="$include"
-   done <<EOF
-/etc/backlinkrc
-/usr/local/etc/backlinkrc
-$HOME/.backlinkrc
-$2
-EOF
-  [ -x "$INCLUDE" ] && true \
-   || { [ -e "$INCLUDE" ] \
-    && chkerr "$0 $1 : $INCLUDE is not exec" \
-    || chkerr "$0 $1 : no include for exec" ;}
- ;;
+#  batch|conf)
+#   [ -n "$3" ] && chkerr $(usage) # extra arg
+#   while read include
+#    do # assign INCLUDE as last existing in list, and check exec
+#     [ -e "$include" ] && INCLUDE="$include"
+#    done <<EOF
+# /etc/backlinkrc
+# /usr/local/etc/backlinkrc
+# $HOME/.backlinkrc
+# $2
+# EOF
+#   [ -x "$INCLUDE" ] && true \
+#    || { [ -e "$INCLUDE" ] \
+#     && chkerr "$0 $1 : $INCLUDE is not exec" \
+#     || chkerr "$0 $1 : no include for exec" ;}
+#  ;;
  help)
   usage ; exit 0
  ;;
@@ -194,7 +208,7 @@ EOF
 esac # $op
 
 case $op in # set LAST
- local|pull|rotlocal) LAST="$(locallast)" 
+ local|pull|rotlocal) LAST="$(locallast)"
   testlast
  ;;
  push|rotremote)      LAST="$(remotelast)"
@@ -209,16 +223,19 @@ NOW=$(now)
 # optimmized for Mac and NetBSD accounts
 # rsync -a = -rlptgoD = --recursive --links --perms --times --group --owner --devices
 #                -vCc = --verbose --cvs-exclude --checksum --numeric-ids
-rsync_opt="--recursive --links --perms --times --group --owner --devices --specials --numeric-ids"
+[ "$UID" = 0 ] && rsync_opt="--recursive --links --perms --times --group         --devices --specials --numeric-ids --chmod=u=rwX" \
+               || rsync_opt="--recursive --links --perms --times --group --owner --devices --specials --numeric-ids --chmod=u=rwX"
 #
 # additional rsync options for terminal (non-cron) backups
 [ -t 0 ] && rsync_opt="$rsync_opt --verbose --progress" || true
 #
 # set typical global excludes
-EXCLUDE=" tmp *.tmp *.core core .Trashes Library/Caches .Spotlight-V100"
-EXCLUDE="$EXCLUDE 2nd/ bak-*/ bk/ dist/ repo/"
-for ex in $EXCLUDE; do rsync_ex="$rsync_ex --exclude $ex" ; done
-rsync_opt="$rsync_opt $rsync_ex"
+#EXCLUDE=" tmp *.tmp *.core core .Trashes Library/Caches .Spotlight-V100"
+#EXCLUDE="$EXCLUDE 2nd/ bak-*/ bk/ dist/ repo/"
+#for ex in $EXCLUDE; do rsync_ex="$rsync_ex --exclude $ex" ; done
+#rsync_opt="$rsync_opt $rsync_ex"
+# add evn options first
+rsync_opt="$rsync_opt $RSYNC_OPTS"
 #
 HOSTNAME=$(hostname)
 #
@@ -237,7 +254,7 @@ HOSTNAME=$(hostname)
 ##PREFIX=/usr/local/bak-${HOSTNAME%%.*}-home-$USER
 ##LAST="$(locallast)" ; testlast
 ##localsnap
-##logger_ "$0 $op : $PREFIX/1/$NOW$ORIG done at $(now)"
+##_logger "$0 $op : $PREFIX/1/$NOW$ORIG done at $(now)"
 ### perge
 ### merge
 ##unlock
@@ -250,7 +267,7 @@ HOSTNAME=$(hostname)
 ##PREFIX=/usr/local/bak-${HOSTNAME%%.*}-home-$USER
 ##LAST="$(locallast)" ; testlast
 ##pushsnap
-##logger_ "$0 $op : $PREFIX/1/$NOW$ORIG done at $(now)"
+##_logger "$0 $op : $PREFIX/1/$NOW$ORIG done at $(now)"
 ### perge
 ### merge
 ##unlock
@@ -262,72 +279,73 @@ HOSTNAME=$(hostname)
 case $op in
  local)
   lock
-  logger_ $0 $op tested 20090106 10:15:09 PM 
+  # _logger $0 $op tested 20090106 10:15:09 PM
   localsnap
-  logger_ "$0 $op : $PREFIX/1/$NOW$ORIG done at $(now)"
+  _logger "$0 $op : $PREFIX/1/$NOW/$ORIG done at $(now)"
   unlock
   exit 0
 ;;
   push)
-  logger_ $0 $op tested 20090106 11:43:02 PM 
+  # _logger $0 $op tested 20090106 11:43:02 PM
   lock
   pushsnap
-  logger_ "$0 $op $HOST : $PREFIX/1/$NOW/$ORIG done at $(now)"
+  _logger "$0 $op $HOST : $PREFIX/1/$NOW/$ORIG done at $(now)"
   unlock
   exit 0
 ;;
   pull)
-  logger_ $0 $op tested 20090107 12:20:04 AM 
+  # _logger $0 $op 20201125_111303
   lock
   pullsnap
-  logger_ "$0 $op $HOST : $PREFIX/1/$NOW/$ORIG done at $(now)"
+  _logger "$0 $op $HOST : $PREFIX/1/$NOW/$ORIG done at $(now)"
   unlock
   exit 0
 ;;
   rotlocal)
-  logger_ $0 $op tested 20090107 12:30:51 AM 
+  #_logger $0 $op tested 20090107 12:30:51 AM
   rotlocal
-  logger_ "$0 rotate local : $LAST to $PREFIX/$LEVEL/ at $(now)"
+  _logger "$0 rotate local : $LAST to $PREFIX/$LEVEL/ at $(now)"
   exit 0
 ;;
   rotremote)
-  logger_ $0 $op tested 20090107 12:35:04 AM 
+  #_logger $0 $op tested 20090107 12:35:04 AM
   rotremote
-  logger_ "$0 rotate $HOST : $LAST to $PREFIX/$LEVEL/ at $(now)"
+  _logger "$0 rotate $HOST : $LAST to $PREFIX/$LEVEL/ at $(now)"
   exit 0
 ;;
-  purgelocal)
-  chkerr $0 $op is beta ready
+  purglocal)
+  #_logger $0 $op 20210402_233911_0aae0ea5
+  _logger
   lock
-  purgelocal
-  logger_ "$0 purge local $LEVEL : from $NOW to $(now)"
+  purglocal
+# _logger "$0 purge local $LEVEL : from $NOW to $(now)"
   unlock
 ;;
   purgeremote)
   chkerr $0 $op is beta ready
   lock
   purgeremote
-  logger_ "$0 purge $HOST $LEVEL : from $NOW to $(now)"
+  _logger "$0 purge $HOST $LEVEL : from $NOW to $(now)"
   unlock
 ;;
   mergeremote)
   chkerr $0 $op is pre alpha
   lock
   mergeremote
-  logger_ "$0 merge $HOST $PREFIX : from $NOW to $(now)"
+  _logger "$0 merge $HOST $PREFIX : from $NOW to $(now)"
   unlock
 ;;
   mergelocal)
   chkerr $0 $op is pre alpha
   lock
   mergelocal
-  logger_ "$0 merge $PREFIX : from $NOW to $(now)"
+  _logger "$0 merge $PREFIX : from $NOW to $(now)"
   unlock
 ;;
   batch)
-  #logger_ $0 $op tested 20090107 03:26:26 PM 
+  #_logger $0 $op tested 20090107 03:26:26 PM
   . $INCLUDE
-  logger_ "$0 batch : $INCLUDE from $NOW to $(now)"
+  _logger "$0 batch : $INCLUDE from $NOW to $(now)"
 ;;
   conf)
   echo $0 uses $INCLUDE
