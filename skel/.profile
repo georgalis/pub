@@ -1,10 +1,11 @@
 # ~/.profile
 
-# Unlimited use with this notice. (C) 2004-2019 George Georgalis
+# Unlimited use with this notice. (C) 2004-2021 George Georgalis
 
-# For Bourne-compatible shells.
+# For Bourne-compatible shells (bash,ksh,zsh,sh)
 
-/usr/bin/tty -s || return # the following for interactive sessions only
+# for interactive sessions only
+/usr/bin/tty -s || return
 
 export EDITOR="vi"
 export PAGER='less --jump-target=3'
@@ -50,8 +51,8 @@ Linux)
  eval $(dircolors | sed 's/di=01;34/di=00;44/')
  alias   l='ls --color=auto -r'
  alias  lr='ls --color=auto'
- alias  ll='ls --color=auto -Alr    --full-time --time-style=+%Y%m%d_%H%M%S'
- alias llr='ls --color=auto -Al     --full-time --time-style=+%Y%m%d_%H%M%S'
+ alias  ll='ls --color=auto -Alr   --full-time --time-style=+%Y%m%d_%H%M%S'
+ alias llr='ls --color=auto -Al    --full-time --time-style=+%Y%m%d_%H%M%S'
  alias  lt='ls --color=auto -AFtr  --full-time --time-style=+%Y%m%d_%H%M%S'
  alias llt='ls --color=auto -AFlrt --full-time --time-style=+%Y%m%d_%H%M%S'
  alias  lS='ls --color=auto -AFlrS --full-time --time-style=+%Y%m%d_%H%M%S'
@@ -61,11 +62,11 @@ Linux)
  #less -j does not take negative number any more Debian Bug report logs - #498746 http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=498746
 ;; # Linux
 OpenBSD)
- t='tail -f'
+ alias t='tail -f'
 ;; # OpenBSD
 NetBSD|FreeBSD|Dragonfly)
- t='tail -F'
- top='top -S -I -s4 -o cpu'
+ alias t='tail -F'
+ alias top='top -S -I -s4 -o cpu'
  [ "$TERM" = "vt220" ] && export TERM=xterm # adds color to some apps in console
  # fix colors in screen on amd64 XXX workaround
  #[ "$(uname -m)" = "amd64" -a "$TERM" = "xterm-color" ] && export TERM="xterm"
@@ -252,7 +253,8 @@ esac
 
 uptime
 
-case "$SHELL" in # start of per $SHELL env
+# per $SHELL env
+case "$SHELL" in
  *bash)
     export PS1=" \u@\h:\w "
     #PROMPT_COMMAND
@@ -261,6 +263,9 @@ case "$SHELL" in # start of per $SHELL env
     export HISTFILESIZE=9600
     export HISTSIZE=2600
     set -o ignoreeof # disable ctrl-d exit
+    set -o errtrace  # any trap on ERR is inherited by shell functions
+    set -o functrace # traps on DEBUG and RETURN are inherited by shell functions
+    set -o pipefail  # exit pipeline on non-zero status (rightmost?)
  ;;
  *ksh)
   export hostname="$(hostname)"
@@ -282,7 +287,7 @@ esac # $SHELL
 
 [ -x "$(which vim 2>/dev/null)" -a "$EDITOR" = "vi" ] \
     && {
-        crontab () { env EDITOR=$(which vi) crontab ;}
+        alias crontab="env EDITOR=$(which vi) crontab"
         alias vi="$(which vim)"
         export EDITOR='vim'
     }
@@ -341,6 +346,8 @@ mkdir -p "$HOME/_"
 declare -f | sed '/^ /d' | grep '()' | tr -d '()' >"$HOME/_/${0##*/}.func"
 export -f $(cat "$HOME/_/${0##*/}.func")
 chkstd "export -f \$(cat "$HOME/_/${0##*/}.func")"
-
 echo "$HOME/.profile"
+
+_env () { mkdir -p "$HOME/_"  ; env | strings >"$HOME/_/_" ;}
+_env # recent init
 
