@@ -318,7 +318,11 @@ EOF
   local Fc='' Fn=''
   local cfc='' cfn=''
   local cc='' cn=''
+  [ "$c" ] && { expr "$c" : '^[012345]$' >/dev/null || { chkerr "$FUNCNAME parm invalid : c=$c" ; return 1 ;} ;}
   [ "$c" ] && cc="--crisp $c" cn="-c${c}" || true
+  expr "$t" : '^-' >/dev/null && { chkerr "$FUNCNAME parm invalid : t=$t" ; return 1 ;}
+  expr "$p" : '^-[[:digit:]]*$' >/dev/null && c="${p}.0" # fixup negative intergers, least test fail... -bash: [: -3: unary operator expected
+  expr "$f" : '^-[[:digit:]]*$' >/dev/null && f="${f}.0" # fixup negative intergers, least test fail
   [ "$t" -o "$p" -o "$f" ] && { # rb parm
     [ "$F" = "y" ]  &&  Fc='--formant'       Fn='-F'  || Fc=''   Fn=''
     [ "$cf" = "y" ] && cfc='--centre-focus' cfn='-cf' || cfc='' cfn=''
