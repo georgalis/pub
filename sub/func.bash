@@ -659,9 +659,9 @@ numlist () { #:> re-number (base32) a list of files, retaining the "major" (firs
     fs="$(echo "$fs" | sed 's/^\.\///' | while IFS= read f ; do [ -f "${f%%/*}" ] && echo "${f%%/*}" ; done)"
     for p in 0 1 2 3 4 5 6 7 8 9 a b c d e f g h j k m n p q r s t u v x y z ; do
         b="$p"
-        [ "$numblistb" -gt 0 ] 2>/dev/null \
+        [ "$numlistb" -gt 0 ] 2>/dev/null \
           && { for a in $(seq 1 $numlistb ) ; do # bump the major sequence by $numlistb if set
-               b="$( echo $b | tr '0123456789abcdefghjkmnpqrstuvxyz' 'z0123456789abcdefghjkmnpqrstuvxy' )"
+               b="$( echo $b | tr '0123456789abcdefghjkmnpqrstuvxyz' '123456789abcdefghjkmnpqrstuvxyz0' )"
                done
              } || true
         { echo "$fs" | grep "^$p" ;} | while IFs= read f ; do printf "\n\n%s\n" "$f" ; done \
