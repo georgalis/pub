@@ -614,77 +614,52 @@ lacks1255tones () {
   # # the PID of the most recently started background process.
   # wait $!
 
-
-numlist () { #:> re-number a list of files, retaining the spectrum (first) character
-    # such that when combined with another list, the general spectrum sequence is retained.
-    # Only act on files
-    # the plan:
-    # get file list as arg@ OR stdin (one file per line)
-    # prepend "$numlist" if not null; or retain first character of each filename
-    # prepend "{spectrum}{sequience}-" string to file basename (sans leadinng "[[:xdigit:]]*-")
-    # prepend 000 to unnumbered files, no match ^[[:xdigit:]]*-
-    # create mv commands for the above result (pipe to shell to exec)
-    local f fs p ps ;
-    [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1" )" ; shift ; done
-    [ "$fs" ] || fs="$(cat)"
-    fs="$(echo "$fs" | sed 's/\.\///' | while IFS= read f ; do [ -f "${f%%/*}" ] && echo "${f%%/*}" ; done)"
-        # next plan, incert two \n before each file, make NR gaps
-        # and remove extra lines
-    for p in 0 1 2 3 4 5 6 7 8 9 ; do
-        { echo "$fs" | grep "^$p" ;} \
-            | awk -v p=$p 'NR>0 {printf "%s %02d %s\n",$0,NR,$0}' \
-            | sed -e 's/\(.\)/& &/' -e 's/ [[:xdigit:]]*-/ /' \
-            | awk -v i="$numlist" '{printf "mv %s %s%s%s-%s\n",$4,i,$1,$3,$2}' \
-              | while IFS= read a ; do set $a ; [ "$2" = "$3" ] || echo "$a" ; done
-        done
-    [ "$numlist" ] || local numlist=00
-        { echo "$fs" | sed '/^[[:digit:]]/d' ;} \
-            | awk 'NR>0 {printf "%s %02d %s\n",$0,NR,$0}' \
-            | awk -v i="$numlist" '{printf "mv %s %s%s-%s\n",$3,i,$2,$1}' \
-              | while IFS= read a ; do set $a ; [ "$2" = "$3" ] || echo "$a" ; done
-    }
-
-
-# 07/10/21 09:37:42 AM 60e9ccf7 1gekk8f eqfdbm
-numlist () { #:> re-number (base32) a list of files, retaining the "major" (first) character
-    # such that when combined with another list, the result is interlaced with major sequence retained.
-    # the plan:
-    # Use base 32 python script to convert dec to base 32 (alnum lower sans 'ilo');
-    # Only act on files;
-    # Get file list as args, OR stdin (one file per line);
-    # Expect filenames to start with sequence characters (base 32 chars, followed by ",");
-    # Retain first sequence character, regenerate base32 sequence in step of 4;
-    # Initilize base32 sequence with "0," for inpurt files that have no sequence;
+# 07/10/21
+# 07/17/21
+numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" (first) character
+    # so that when combined with another list, the result is interlaced with major sequence retained.
+    # Depends: base (python script) converts dec to base 32 (alnum lower sans 'ilo');
+    # Plan:
+    # Accept args OR stdin (one file per line), only act on regular files, squash any leading "./";
+    # Expect filenames to start with sequence characters (three base 32 chars, followed by ",");
+    # Retain the major sequence character, regenerate base 32 sequence, in a step of 3;
+    # Bump up the sequence major value by "$numlistb" if set (interger);
     # Prepend output filenames with the "$numlist" string;
-    # If name changes, and no name colisions, generate mv commands for evaluation or | sh
-    local f fs p b ;
-    [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1" )" ; shift ; done
+    # Initilize base 32 sequence with 0 major for input files that have no sequence;
+    # For name changes, without colisions, generate mv commands for evaluation or "| sh".
+    local f fs p b a ;
+    [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
-    fs="$(echo "$fs" | sed 's/^\.\///' | while IFS= read f ; do [ -f "${f%%/*}" ] && echo "${f%%/*}" ; done)"
-    for p in 0 1 2 3 4 5 6 7 8 9 a b c d e f g h j k m n p q r s t u v x y z ; do
+    fs="$(sed 's/^\.\///' <<<"$fs" | while IFS= read f ; do [ -f "${f%%/*}" ] && echo "${f%%/*}" || true ; done)"
+    for p in 0 1 2 3 4 5 6 7 8 9 a b c d e f g h j k m n p q r s t u v x y z ; do # iterate on each major base 32
         b="$p"
         [ "$numlistb" -gt 0 ] 2>/dev/null \
           && { for a in $(seq 1 $numlistb ) ; do # bump the major sequence by $numlistb if set
-               b="$( echo $b | tr '0123456789abcdefghjkmnpqrstuvxyz' '123456789abcdefghjkmnpqrstuvxyz0' )"
+               b="$(tr '0123456789abcdefghjkmnpqrstuvxyz' '123456789abcdefghjkmnpqrstuvxyz0' <<<$b)"
                done
              } || true
-        { echo "$fs" | grep "^$p" ;} | while IFs= read f ; do printf "\n\n%s\n" "$f" ; done \
+        { grep "^$p[0123456789abcdefghjkmnpqrstuvxyz]*," <<<"$fs" || true ;} \
+            | while IFS= read f ; do printf "\n\n%s\n" "$f" ; done \
+            | awk '{printf "%s %d %s\n",$0,NR,$0}' \
+            | sed -e '/^ /d' -e 's/^[0123456789abcdefghjkmnpqrstuvxyz]*,//' \
+            | while IFS= read a ; do set $a
+                printf "%s %s%s%02s,%s\n" "$3" "$numlist" "$b" "$(base 32 $2)" "$1"
+                done \
+            | while IFS= read a ; do set $a # {orig} {numlist}{p}{seq},{name}
+                grep -q "^[0123456789abcdefghjkmnpqrstuvxyz]*," <<<"$1" && dst="$2" || dst="0,$2"
+                [ "$1" = "$dst" ] || [ -e "$dst" ] || echo "mv \"$1\" \"$dst\""
+                done
+        done # p
+    # and give all files that had no sequence a "0" major (no bump) and sequence
+    { grep -v "^[0123456789abcdefghjkmnpqrstuvxyz]*," <<<"$fs" || true ;} \
+    | while IFS= read f; do printf "\n\n%s\n" "$f" ; done \
         | awk '{printf "%s %d %s\n",$0,NR,$0}' \
-        | sed -e '/^ /d' -e 's/^[0123456789abcdefghjkmnpqrstuvxyz]*,//' \
-        | while IFs= read f ; do set $f
-            printf "%s %s%s%02s,%s\n" "$3" "$numlist" "$b" "$(base 32 $2)" "$1"
+        | sed -e '/^ /d' \
+        | while IFS= read a ; do set $a
+            printf "%s %s%s%02s,%s\n" "$3" "$numlist" "0" "$(base 32 $2)" "$1"
             done \
-        | while IFS= read f ; do set $f
-            echo "$1" | grep -q "^[0123456789abcdefghjkmnpqrstuvxyz]*," || dst="0,$2" && dst="$2"
-            [ "$1" = "$dst" ] && return
-            [ -e "$dst" ] && chkwrn "exists: $dst" || echo "mv -i \"$1\" \"$dst\""
+        | while IFS= read a ; do set $a # {orig} {numlist}0{seq},{name}
+            dst="$2";
+            [ "$1" = "$dst" ] || [ -e "$dst" ] || echo "mv \"$1\" \"$dst\"";
             done
-        done
-    }
-            # \n \n \n 4455,file
-            #  3
-            # 4455,file 4 4455,file
-            # file 4 4455,file
-            # 4455,file n404,file
-            # mv 4455,file n404,file
-
+    } # numlist

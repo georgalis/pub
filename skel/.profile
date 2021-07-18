@@ -256,7 +256,7 @@ uptime
 # per $SHELL env
 case "$SHELL" in
  *bash)
-    export PS1=" \u@\h:\w "
+    export PS1="\${?%0} \u@\h:\w "
     #PROMPT_COMMAND
     export HISTCONTROL=erasedups
     export HISTFILE=~/.bash_history
