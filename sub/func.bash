@@ -254,7 +254,28 @@ EOF
   local infile="$(basename "$1")"
   local indir="$(dirname "$1")"
   local prependt="$2"
-  [ "$t" -o "$p" ] && { [ "$c" ] || local c=3 ;} || true # Crispness (3=MULTITIMBRAL local default, rb standard = 5)
+  [ "$t" -o "$p" ] && { [ "$c" ] || local c=5 ;} || true # "Crispness"
+  # "Crispness" levels:
+  #   -c 0   equivalent to --no-transients --no-lamination --window-long
+  #   -c 1   equivalent to --detector-soft --no-lamination --window-long (for piano)
+  #   -c 2   equivalent to --no-transients --no-lamination
+  #   -c 3   equivalent to --no-transients
+  #   -c 4   equivalent to --bl-transients
+  #   -c 5   default processing options (none of below)
+  #   -c 6   equivalent to --no-lamination --window-short (may be good for drums)
+  #
+  #   -L,    --loose          Relax timing in hope of better transient preservation
+  #          --no-transients  Disable phase resynchronisation at transients
+  #          --bl-transients  Band-limit phase resync to extreme frequencies
+  #          --no-lamination  Disable phase lamination
+  #          --window-long    Use longer processing window (actual size may vary)
+  #          --window-short   Use shorter processing window
+  #          --smoothing      Apply window presum and time-domain smoothing
+  #          --detector-perc  Use percussive transient detector (as in pre-1.5)
+  #          --detector-soft  Use soft transient detector
+  #          --centre-focus   Preserve focus of centre material in stereo
+  #                           (at a cost in width and individual channel quality)
+  #
   local tc='' tn=''
   [ "$t" ] && tc="--time $t"  tn="-t${t}" || true
   local pc='' pn=''
@@ -297,15 +318,16 @@ EOF
   [ "$cmpn" ] && vn="-$cmpn" vc="$cmpc" || true # sox compand is basically a volume adjustment...
   [ "$cmpn" -a -z "$v" ] && local v=0db || true # set an unset volume (v) param, if we have compand w/o volume
   [ "$v" ] && { vn="${vn}-v${v}" vc="$vc vol ${v} dither" ;} || true # set vol name (vn) and vol command (vc) if needed
+  [ "$rev" = "y" ] && vn="${vn}-rev" vc="$vc reverse"
   local secc='' secn='' ssec='' tsec=''
   # if unset, set end to duration of longest stream
-  [ "$to" ] || local to="$(ffprobe -hide_banner -loglevel warning "$infile" | grep DURATION | awk '{print $3}' | sort | tail -n1 )"
+  [ "$to" ] || local to="$(ffprobe -hide_banner  -loglevel info "$infile" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')"
   [ "$ss" -o "$to" ] && { # trim times
     [   "$ss" ] && { ssec=$(hms2sec ${ss}) ;}
     [   "$to" ] && { tsec=$(hms2sec ${to}) ;}
     [ -z "$ss" -a "$to"    ] && secc="trim 0 =$tsec"     secn="-to$tsec"
     [    "$ss" -a "$to"    ] && secc="trim $ssec =$tsec" secn="-ss${ssec}-to${tsec}"
-    [    "$ss" -a -z "$to" ] && secc="trim $ssec" secn="-ss${ssec}" # when ffprobe fails to detect
+#   [    "$ss" -a -z "$to" ] && secc="trim $ssec" secn="-ss${ssec}" # when ffprobe fails to detect
     [ -e "./tmp/${infile}${secn}.flac" ] || { # make trimmed flack
       $verb                             "./tmp/${infile}${secn}.flac"
       $verb2 sox "./tmp/${infile}.flac" "./tmp/${infile}${secn}.flac" $secc
@@ -321,7 +343,7 @@ EOF
   [ "$c" ] && { expr "$c" : '^[012345]$' >/dev/null || { chkerr "$FUNCNAME parm invalid : c=$c" ; return 1 ;} ;}
   [ "$c" ] && cc="--crisp $c" cn="-c${c}" || true
   expr "$t" : '^-' >/dev/null && { chkerr "$FUNCNAME parm invalid : t=$t" ; return 1 ;}
-  expr "$p" : '^-[[:digit:]]*$' >/dev/null && c="${p}.0" # fixup negative intergers, least test fail... -bash: [: -3: unary operator expected
+  expr "$p" : '^-[[:digit:]]*$' >/dev/null && p="${p}.0" # fixup negative intergers, least test fail... -bash: [: -3: unary operator expected
   expr "$f" : '^-[[:digit:]]*$' >/dev/null && f="${f}.0" # fixup negative intergers, least test fail
   [ "$t" -o "$p" -o "$f" ] && { # rb parm
     [ "$F" = "y" ]  &&  Fc='--formant'       Fn='-F'  || Fc=''   Fn=''
@@ -347,7 +369,7 @@ EOF
     # prepend output filename
     $verb "./loss/${prependt}${out}${vn}.mp3"
              prependf "./tmp/${out}${vn}.mp3" "$prependt" \
-                 && mv "./tmp/${prependt}${out}${vn}.mp3" "./loss/"
+                 && mv -f "./tmp/${prependt}${out}${vn}.mp3" "./loss/"
     find "$PWD" -type f -name \*"$infile"\* -newer "$null" | xargs ls -lrth
     rm -f "$null"
     cd "$OLDPWD"
@@ -406,7 +428,7 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
         # verb=chkwrn t='1' p='0' c='3' F='' cf='' ss='' to='' cmp='' v='' f2rb2mp3 {file-in} {prepend-out}
         local args="$(echo "^${a##*^}" | sed -E -e "s/.*\.${ext}//" -e "s/.mp3$//" \
           -e 's/^/ verb=chkwrn/' \
-          -e 's/-ss/ ss=/' -e 's/-to/ to=/' -e 's/-v/ v=/' \
+          -e 's/-ss/ ss=/' -e 's/-to/ to=/' -e 's/-rev/ rev=y/' -e 's/-v/ v=/' \
           -e "s/-t/ t=/" -e 's/-p/ p=/' -e 's/-(bhz|chz)/ f=\1/' \
           -e 's/-(kbd|hrn|cps)/ cmp=\1/' \
           -e 's/-f/ f=/' \
@@ -615,7 +637,6 @@ lacks1255tones () {
   # wait $!
 
 # 07/10/21
-# 07/17/21
 numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" (first) character
     # so that when combined with another list, the result is interlaced with major sequence retained.
     # Depends: base (python script) converts dec to base 32 (alnum lower sans 'ilo');
@@ -627,7 +648,7 @@ numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" 
     # Prepend output filenames with the "$numlist" string;
     # Initilize base 32 sequence with 0 major for input files that have no sequence;
     # For name changes, without colisions, generate mv commands for evaluation or "| sh".
-    local f fs p b a ;
+    local f fs p b a src dst;
     [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
     fs="$(sed 's/^\.\///' <<<"$fs" | while IFS= read f ; do [ -f "${f%%/*}" ] && echo "${f%%/*}" || true ; done)"
@@ -639,20 +660,21 @@ numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" 
                done
              } || true
         { grep "^$p[0123456789abcdefghjkmnpqrstuvxyz]*," <<<"$fs" || true ;} \
-            | while IFS= read f ; do printf "\n\n%s\n" "$f" ; done \
+            | while IFS= read f ; do printf "\n%s\n" "$f" ; done \
             | awk '{printf "%s %d %s\n",$0,NR,$0}' \
             | sed -e '/^ /d' -e 's/^[0123456789abcdefghjkmnpqrstuvxyz]*,//' \
             | while IFS= read a ; do set $a
                 printf "%s %s%s%02s,%s\n" "$3" "$numlist" "$b" "$(base 32 $2)" "$1"
                 done \
             | while IFS= read a ; do set $a # {orig} {numlist}{p}{seq},{name}
-                grep -q "^[0123456789abcdefghjkmnpqrstuvxyz]*," <<<"$1" && dst="$2" || dst="0,$2"
-                [ "$1" = "$dst" ] || [ -e "$dst" ] || echo "mv \"$1\" \"$dst\""
+                src="$1"
+                grep -q "^[0123456789abcdefghjkmnpqrstuvxyz]*," <<<"$src" && dst="$2" || dst="0,$2"
+                [ "$src" = "$dst" ] || [ -e "$dst" ] || echo "mv \"$src\" \"$dst\""
                 done
         done # p
     # and give all files that had no sequence a "0" major (no bump) and sequence
     { grep -v "^[0123456789abcdefghjkmnpqrstuvxyz]*," <<<"$fs" || true ;} \
-    | while IFS= read f; do printf "\n\n%s\n" "$f" ; done \
+    | while IFS= read f; do printf "\n%s\n" "$f" ; done \
         | awk '{printf "%s %d %s\n",$0,NR,$0}' \
         | sed -e '/^ /d' \
         | while IFS= read a ; do set $a
@@ -660,6 +682,39 @@ numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" 
             done \
         | while IFS= read a ; do set $a # {orig} {numlist}0{seq},{name}
             dst="$2";
-            [ "$1" = "$dst" ] || [ -e "$dst" ] || echo "mv \"$1\" \"$dst\"";
+            [ "$1" = "$dst" ] || [ -e "$dst" ] && chkwrn "$FUNCNAME collision : $dst" || echo "mv \"$1\" \"$dst\"";
             done
     } # numlist
+
+# 07/26/21
+numlistdst () { # distribute filenames across base 32 major
+    # in the future accept distribution major range (start/stop)
+    local f fs fss
+    [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
+    [ "$fs" ] || fs="$(cat)"
+    fs="$(sed 's/^\.\///' <<<"$fs" | while IFS= read f ; do [ -f "${f%%/*}" ] && echo "${f%%/*}" || true ; done)"
+    m=$(dc -e "8 k 31 $(awk 'END{print NR}' <<<"$fs") / p") # 0-31 * NR, for major, does not overflow major
+    awk '{printf "%s %s\n",$0,NR}' <<<"$fs" \
+        | while IFS= read a ; do set $a
+            b=$(sed 's/^[0123456789abcdefghjkmnpqrstuvxyz]*,//' <<<"$1") # remove any sequence from the destination base
+            # then make sequence in base 32, with distributed major
+            printf "%s %s%02s,%s\n" "$1" "$(base 32 $(dc -e "$2 $m * p" | awk '{printf "%.0f\n",$1}') )" "$(base 32 $2)" "$b"
+            done \
+        | while IFS= read a ; do set $a # {orig} {dist-major}{seq},{name}
+            local src="$1" dst="$2"
+            [ "$src" = "$dst" ] || [ -e "$dst" ] && chkwrn "$FUNCNAME collision : $dst" || echo "mv \"$src\" \"$dst\"";
+            done
+    } # numlistdst
+
+playff () { # use ffplay to play files (args OR stdin filename per linebnb)
+    local f fs p b a ;
+    [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
+    [ "$fs" ] || fs="$(cat)"
+    echo "$fs" | while read f; do
+        [ -f "$f" ] && {
+        hms2sec $(ffprobe -hide_banner  -loglevel info  "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')
+        ffplay -hide_banner -stats -autoexit -loglevel info -x 1088 -y 336 "$f" || return 1
+        }
+        done
+    } # playff
+
