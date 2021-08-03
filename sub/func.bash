@@ -10,7 +10,7 @@
 validfn () { #:> hash comparison to validate shell functions
     [ "$1" ] || {
       cat <<-EOF
-#:: $FUNCNAME {function} ; returns {function-name} {hash}
+#:: $FUNCNAME {function}        ; returns {function-name} {hash}
 #:: $FUNCNAME {function} {hash} ; return no error, if hash match
 #:: the former is intended to provide data for the latter
 #:: env cksum= to set the cksum program
@@ -28,13 +28,13 @@ EOF
     [ "$f $s" = "$v" ] || {
 echo ">>>---
 $FUNCNAME error :
-   in:'$f $s'
-local:'$v'
-<<<---" 1>&1 ; return 1 ;}
+ unit:'$f $s'
+  env:'$v'
+<<<---" 1>&2 ; return 1 ;}
     } # validfn
 #
 # Now that validfn is defined, run the framework on functions expected from .profile
-# (this is less "needed" than an example of syetem environment validation)
+# (an example of syetem environment validation)
 #
 # eg generate hashses (to /dev/null)...
 while read f; do validfn $f >/dev/null; done <<EOF
@@ -63,7 +63,7 @@ chkwrn 2268919251 93
 chkerr 1473511298 95
 logwrn 3850395782 97
 logerr 4292729202 98
-source_iff 2171782376 100
+source_iff 806310338 131
 EOF
 
 alias   gst='git status --short | sed "s/^\?/ \?/" | sort'
@@ -639,7 +639,7 @@ lacks1255tones () {
 # 07/10/21
 numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" (first) character
     # so that when combined with another list, the result is interlaced with major sequence retained.
-    # Depends: base (python script) converts dec to base 32 (alnum lower sans 'ilo');
+    # Depends: base (python script) converts dec to base 32 (alnum lower sans 'ilow');
     # Plan:
     # Accept args OR stdin (one file per line), only act on regular files, squash any leading "./";
     # Expect filenames to start with sequence characters (three base 32 chars, followed by ",");
@@ -687,8 +687,8 @@ numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" 
     } # numlist
 
 # 07/26/21
-numlistdst () { # distribute filenames across base 32 major
-    # in the future accept distribution major range (start/stop)
+numlistdst () { # distribute filenames across base 32 major (alnum lower sans 'ilow')
+    # in the future accept distribution major range (start/stop for the distribution)
     local f fs fss
     [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
     [ "$fs" ] || fs="$(cat)"

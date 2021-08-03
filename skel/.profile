@@ -107,7 +107,7 @@ chkwrn () { [ "$*" ] && { stderr    "^^ $* ^^"   ; return 0 ;} || true ;}  #:> w
 chkerr () { [ "$*" ] && { stderr    ">>> $* <<<" ; return 1 ;} || true ;}  #:> err stderr args return 1, noop if null
 logwrn () { [ "$*" ] && { logger -s "^^ $* ^^"   ; return $? ;} || true ;} #:> wrn stderr+log args return 0, noop if null
 logerr () { [ "$*" ] && { logger -s ">>> $* <<<" ; return 1  ;} || true ;} #:> err stderr+log args return 1, noop if null
-source_iff () { [ -e "$1" ] && { . "$1" && chkwrn "$1" || chkerr "error: $1" ;} ;} #:> source arg1 if exists
+source_iff () { [ -e "$1" ] && { . "$1" && chkwrn "$2 : $1" || chkerr "$2 : eval $1" ;} || chkerr "$2 : -e $1" ;} #:> source arg1 if exists, arg2 (optional) traceback calling file
 
 path_append () { # append $1 if not already in path
  echo $PATH | grep -E "(:$1$|^$1$|^$1:|:$1:)" 2>&1 >/dev/null \
@@ -338,8 +338,7 @@ printf "${_ntermrev}"
 #	&& { printf "Logout: " && kill $2 && echo $(hostname) $0 [$4] killed ssh-agent $2 \
 #		|| { echo $(hostname) ssh-agent already died? 2>/dev/stderr ; exit 1 ;} ;}
 
-# if exists, source...
-source_iff "$HOME/.profile.local"
+source_iff "$HOME/.profile.local" "~/.profile"
 
 # export env
 _env () { mkdir -p "$HOME/_"  ; env | strings >"$HOME/_/_" ;}
@@ -347,7 +346,7 @@ _env # recent init
 chkwrn "$HOME/_/_"
 # export functions
 mkdir -p "$HOME/_"
-declare -f | sed '/^ /d' | grep '()' | tr -d '()' >"$HOME/_/${0##*/}.func"
+declare -f | grep '()' | sed -e 's/ () //' -e '/^ /d' >"$HOME/_/${0##*/}.func"
 export -f $(cat "$HOME/_/${0##*/}.func")
 chkwrn "$HOME/_/${0##*/}.func"
 chkwrn "$HOME/.profile"

@@ -3,7 +3,7 @@
 import sys
 import string
 # digs = string.digits + string.ascii_letters
-# shift out characters "ilo"
+# shift out characters "ilow"
 digs = "0123456789abcdefghjkmnpqrstuvxyz"
 def d2b(base,x):
     if x < 0:
