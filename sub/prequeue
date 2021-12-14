@@ -1,0 +1,153 @@
+#!/bin/sh
+#
+# $Id: prequeue 386 2008-05-18 14:45:51Z root $
+# $GeorgalisG: prequeue$
+#
+# primary goal here is to spam/virus filter in smtp for sender
+# notification of rejections with zero forgery back-scatter, yet
+# deliver locally with filter hooks so users have access to (and
+# can report) false positives, if senders report them to rcpt.
+#
+# this script functions as a QMAILQUEUE program for "in SMTP"
+# (active) filtering of email. It accepts stdin from qmail-smtpd,
+# and expects associated environmentals including fd1. after
+# defining functions and variables, it checks for $DENY (which
+# may have been set by ipsvd), logging a drop if so. then it
+# tests with clamav. continuing, it checks if $ACCEPT was set
+# (by ipsvd) to bypass remaining tests. if not, sbl-xbl hits
+# will create an ipsvd reject script for that ip (which can be
+# purged after days, by cron, the ipsvd.cdb file should also
+# be rebuilt by cron). RBLs and their action can be adjusted
+# to taste. next, spamassassin passes or fails. SMTP rejected
+# messages have appropriate headers added, their return-path
+# is removed and a local delivery is attempted. users should
+# filter 554 messages to a spam folder where old messages are
+# automatically purged. for now, the various scanners run as
+# user qmaild, so all programs have the read/write access they
+# need. there may be better way (such as umask and supplementary
+# groups), but...
+#
+# As root, run this once, to initialize
+# pq="prequeue"
+# install -o qmaild -g qmail -m 2770 -d ~qmaild/count ~qmaild/$pq ~qmaild/$pq/new ~qmaild/$pq/tmp  ~qmaild/$pq/cur 
+#
+# LICENSE: <george@galis.org> wrote this file. As long as you retain this
+# notice, you can do anything with it or buy beer -- George Georgalis
+#
+# exit 31 = permanently refuse
+# exit 71 = temporarily refuse
+#
+
+#set -x # for debug to /var/log/qmail/smtpd/current
+
+ptr () { # reverse a dotted quad or subnet
+ rev="$(echo "$1" | cut -d\. -f1).$2" ; ip="$(echo "$1" | cut -d\. -f2-)"
+ [ "$ip" = "$1" ] && echo "${rev}" || ptr $ip $rev ;}
+
+rmfrom () { # remove envelope from
+	printf "F\x00" >${tmp}.env-$$
+	tr '\0' '\n' <${tmp}.env | sed -e '1d' | tr '\n' '\0' >>${tmp}.env-$$
+	mv ${tmp}.env-$$ ${tmp}.env ;}
+
+count () { # increment a counter for stats
+ printf '.' >>count/${prog}.$1
+}
+
+failforward () { # update ipsvd-instruct(5), cdb regenerated separately
+ peerd="supervise/qmail-smtpd/peer" # ipsvd-cdb(8) config, group qmaild write perm
+ peerm='#!/bin/sh\necho  "220 smtp port"\necho  "250 smtp host"\necho  "550'
+ umask 002 ; printf "$peerm $opinion\"\n" >$peerd/$TCPREMOTEIP
+ chmod +x $peerd/$TCPREMOTEIP
+ echo "${prog}: failforward: $opinion" 1>&2 # to log
+ rmfrom # remove envelope from
+ formail -f -b -A "X-${prog}: 554 $host mail server permanently rejected message" \
+	-A "$opinion" <"$tmp" | ./bin/qmail-queue 1<${tmp}.env # mark and queue
+ rm -f "$tmp" ${tmp}.env
+ count failforward
+ exit 31 ;} # permanently refuse
+
+fail () { # mark the message with failure report and refuse
+ rmfrom # remove envelope from
+ formail -f -b -A "X-${prog}: 554 $host mail server permanently rejected message" \
+	-A "$opinion" <"$tmp" | ./bin/qmail-queue 1<${tmp}.env # mark and queue
+ echo "${prog}: fail: $opinion" 1>&2 # to log
+ rm -f "$tmp" ${tmp}.env
+ count fail
+ exit 31 ;} # permanently refuse
+
+drop () { # just log the drop and delete the tmp
+ echo "${prog}: drop: $opinion" 1>&2 # to log
+ rm -f "$tmp" ${tmp}.env
+ count drop
+ exit 31 ;} # permanently refuse
+
+warn () { # error, log then temporarily refuse
+# formail -f -b -A "X-${prog}: 430 $host mail server temporarily rejected message" \
+#	-A "$opinion" <"$tmp" | ./bin/qmail-queue 1<${tmp}.env # mark and queue
+ echo "${prog}: warn: $opinion" 1>&2
+ rm -f "$tmp" ${tmp}.env
+ count warn
+ exit 71 ;} # temporarily refuse
+
+pass () { # mark it and pass to the regular queue
+ echo "${prog}: pass: $opinion" 1>&2 # to log, before fd/2 is connected to qmail-queue
+ formail -f -b -A "X-${prog}: 250 $host accepted message" \
+	-A "$opinion" <"$tmp" | ./bin/qmail-queue 1<${tmp}.env ; testexit=$?
+ count pass
+ rm "$tmp" ${tmp}.env ; exit $testexit ;} # return whatever qmail-queue exits as
+
+cd /var/qmail
+pq="prequeue" # a maildir with qmaild write perms
+now=$(date "+%x %r %Z")
+host=$(head -n1 control/me)
+prog=$(basename $0)
+ptrip=$(ptr ${TCPREMOTEIP})
+# $pq/tmp is a tmp for this operation, $pq is tmp for this program
+# $pq is also a maildir for messages rejected by this program
+tmp="$pq/$(/usr/pkg/bin/safecat $pq/tmp $pq)" || exit 71 # </dev/stdin # put message to disk, if possible
+cat <&1 >"${tmp}.env" || exit 71 # save envelope
+count '' # grand total
+
+if [ -n "$DENY" ]; then
+ opinion="${TCPREMOTEIP} $DENY"
+ count fail.ipsvd
+ drop
+fi
+ 
+score="X-clamav: $(clamdscan --config-file=/usr/local/etc/clamav/clamd.conf --no-summary ${tmp})" ; testexit=$?
+case $testexit in
+ 0) true ; count pass.clamav ;; # no virus
+ 1) opinion="$(echo $score | sed -e "s;${PWD}/${tmp}: ;;") ($now)" ; count fail.clamav ; drop ;; # virus found
+ *) opinion="$(echo $score | sed -e "s;${PWD}/${tmp}: ;;") ($now)" ; count warn.clamav ; warn ;; # clamav error
+esac
+
+# Check if $ACCEPT is set to tag message and bypass remaining tests
+if [ -n "$ACCEPT" ]; then
+ opinion="X-ipsvd: $ACCEPT ($now)"
+ count pass.ipsvd
+ pass
+fi
+
+opinion="X-sbl-xbl:$(dnstxt ${ptrip}sbl-xbl.spamhaus.org \
+ | sed 's/http/ http/g' | grep http) ($now)" && count fail.sbl-xbl && failforward \
+	|| count pass.sbl-xbl
+
+# too many major ISP relays added
+#opinion="X-sorbs-spam: $(dnstxt ${ptrip}spam.dnsbl.sorbs.net \
+# | grep http)" && fail
+
+# blocked yahoo groups... will restore after ACCEPT peer is fortified
+# opinion="X-spamcop: $(dnstxt ${ptrip}bl.spamcop.net \
+# | grep http) ($now)" && fail
+
+# score upto 300KB with spamd, 250KB default, but no workie -s 307200 
+score=$(spamc -x -c  <"$tmp") ; testexit=$?
+opinion="X-spamc: ${score} ${TCPREMOTEIP} ${host} ($now)"
+case $testexit in
+ 0) pass ; count pass.spamd ;; # ham
+ 1) fail ; count fail.spamd ;; # spam 
+ *) warn ; count warn.spamd ;; # spamc error 
+esac
+
+count fail.bug
+exit 81 # Internal bug

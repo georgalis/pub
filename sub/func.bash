@@ -63,7 +63,7 @@ chkwrn 2268919251 93
 chkerr 1473511298 95
 logwrn 3850395782 97
 logerr 4292729202 98
-source_iff 806310338 131
+source_iff 1184734797 141
 EOF
 
 alias   gst='git status --short | sed "s/^\?/ \?/" | sort'
@@ -149,9 +149,12 @@ local id="$1"
              read -p "directory : " d
 [ "$id" ] || chkerr "no id?"
 [ "$d" ] || d="$(pwd -P)"
-youtube-dl --write-info-json --restrict-filenames --abort-on-error --yes-playlist \
-    --audio-quality 0 --audio-format best \
-    -o "$d/%(playlist_index)s-%(title)s_^%(id)s.%(ext)s" $id
+youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --yes-playlist \
+ --audio-quality 0 --audio-format best --extract-audio --playlist-start 1 \
+ -o "$d/%(title)s_^%(id)s.%(ext)s" $id
+youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --yes-playlist \
+ --audio-quality 0 --audio-format best --playlist-start 1 \
+ -o "$d/%(playlist_index)s-%(title)s_^%(id)s.%(ext)s" $id
 } # _youtube_video_list
 
 _youtube_video () {
@@ -161,11 +164,11 @@ local id="$1"
 [ "$id" ] || chkerr "no id?"
 [ "$d" ] || d="$(pwd -P)"
 youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --no-playlist \
-    --audio-quality 0 --audio-format best --extract-audio \
-    -o "$d/%(title)s_^%(id)s.%(ext)s" $id
+ --audio-quality 0 --audio-format best --extract-audio \
+ -o "$d/%(title)s_^%(id)s.%(ext)s" $id
 youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --no-playlist \
-    --audio-quality 0 --audio-format best \
-    -o "$d/%(title)s_^%(id)s.%(ext)s" $id
+ --audio-quality 0 --audio-format best \
+ -o "$d/%(title)s_^%(id)s.%(ext)s" $id
 } # _youtube_video
 
 _youtube () {
@@ -175,8 +178,8 @@ local id="$1"
 [ "$id" ] || chkerr "no id?"
 [ "$d" ] || d="$(pwd -P)"
 youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --no-playlist \
-    --audio-quality 0 --audio-format best --extract-audio \
-    -o "$d/%(title)s_^%(id)s.%(ext)s" $id
+ --audio-quality 0 --audio-format best --extract-audio \
+ -o "$d/%(title)s_^%(id)s.%(ext)s" $id
 } # _youtube
 
 _youtube_list () {
@@ -186,10 +189,9 @@ local id="$1"
 [ "$id" ] || chkerr "no id?"
 [ "$d" ] || d="$(pwd -P)"
 youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --yes-playlist \
-    --audio-quality 0 --audio-format best --extract-audio \
-    -o "$d/%(playlist_index)s-%(title)s_^%(id)s.%(ext)s" $id
-    #--yes-playlist --extract-audio -o "$d/%(playlist_index)s^%(id)s.%(ext)s" $id
-} # k4_youtube
+ --audio-quality 0 --audio-format best --extract-audio --playlist-start 1 \
+ -o "$d/%(playlist_index)s-%(title)s_^%(id)s.%(ext)s" $id
+} # _youtube_list
 
 hms2sec () { # passthrough seconds or convert hh:mm:ss to seconds
     # must provide ss which may be ss.nn, hh: and hh:mm: are optional
@@ -241,9 +243,9 @@ EOF
     # https://hg.sr.ht/~breakfastquay/rubberband
     # https://github.com/breakfastquay/rubberband
     # https://breakfastquay.com/rubberband/
-    echo "# Crisp  0=mushy 1=piano 2=smooth 3=MULTITIMBRAL 4=two-sources 5=standard 6=percussive "
     echo "# Formant y/''  CenterFocus y/'' cmp (ckb|hrn|cps)(1..)/y/'' vol 0db/''"
-    echo "# f= bhz|rev|x rev= y/''"
+    echo "# f= bhz|chz|x rev= y/''"
+    echo "# Crisp  0=mushy 1=piano 2=smooth 3=MULTITIMBRAL 4=two-sources 5=standard 6=percussive "
     echo "# verb=chkwrn t='1' p='0' f='' c='' F='' CF='' ss='' to='' cmp='' v='' f2rb2mp3 {file-in} {prepend-out}"
     return 0
     }
@@ -382,6 +384,26 @@ EOF
     # -ss 32:05 -to 39:58.5
     ) # f2rb2mp3
 
+# export c=100 ; rm -rf png/* ; for a in *Couperin-kbd*mp3 ; do b=$(sed -e 's/.*,//' <<<$a) ; echo $b ; done | sort | while read b ; do a=$(ls *$b) ; c=$(( ++c )) ; sox $a -n remix - trim 0 =3 -3 spectrogram -o png/${c},${a}.png ; echo -n .  ; done
+
+# verb=chkwrn p=4 c=1 ss=434 to=471.2 cmp=cps1 v=9db f2rb2mp3 @/_^NPk-cE047PU.opus 52r,Couperin-kbd_01-Gmaj-Etcheverry-07_Menuet
+formfilespec () { # generate spectrograph for ss-1 to ss+3 and to-3 to to+1
+   #local p="${1%/*}" f="${1##*/}"
+    local in="$1"
+    mkdir -p "./png"
+    set $( formfile "${in##*/}" | sed -e 's/.*f2rb2mp3//' )
+    local orig=$1 pass=$2
+    [ -e "$orig" ] || { chkwrn "$orig not found" ; return 1 ;}
+    echo -n "sox $orig -n remix - trim "
+    set $(formfile "${in##*/}" | sed -e 's/f2rb2mp3.*//' )
+    #dc -e "$ss 1-p $ss 3+p $to 3-p $to 1+p" | tr '\n' ' ' | sed -e 's/^/=/' -e 's/ / =/g' -e  's/=$//'
+    dc -e "$ss 1-p $ss 3+p $to 3-p $to 1+p" | sed -e 's/^/=/' | tr '\n' ' '
+   #b=$(sed -e 's/,.*//' <<<$in)
+    echo "spectrogram -o ./png/${in##*/}.png"
+    
+    }
+
+
 formfile () { # create a f2rb2mp3 command to render the file, given the input filename
   # filter ^.*
   #   file type      ext="$(echo "^${a##*^}" | sed -e 's/[^.]*.//' \
@@ -417,7 +439,7 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
       && {
         chkwrn "Usage, for arg1 (or per line stdin)"
         chkwrn "decompose into rendering command(s)"
-    } || {
+    } || { # process the filelist $fs
       echo "$fs" | while IFS= read a ; do
         a="${a##*/}" # basename
         local ext="$(echo "^${a##*^}" | sed -e 's/[^.]*.//' -e 's/-.*//')" # expect ^ to proceed hash, followed by a dot mime, plus parm (.ext[-parm]*)
@@ -439,7 +461,7 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
     #   local title="$(echo "${a%%_^*}" | sed -e "s/^${seq}-//")"
         local title="${a%%_^*}"
     #   local  dirs=$(find "$link/@" "$links/@" "@" -maxdepth 0 -type d 2>/dev/null)
-        local files="$(find "@" "$link/@" "$links/@" -maxdepth 1 -type f -name \*${hash}\* 2>/dev/null)"
+        local files="$(find $(find $links -name \@) -maxdepth 1 -type f -name \*${hash}\* 2>/dev/null )"
         local orig=''
         [ "$files" ] && orig="$(echo "${files}" | awk 'NR==1')"
     #   local files="$(find ${dirs} -maxdepth 1 -type f -name \*${hash}\* 2>/dev/null | head -n1 )"
@@ -450,8 +472,8 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
         # f2rb2mp3 help
         echo $args f2rb2mp3 $orig $title
         done
-    }
-}
+    } # { # process the filelist $fs
+} # formfile () { # create a f2rb2mp3 command to render the file, given the input filename
 
 masterlink () {
 verb2=chkwrn
@@ -660,7 +682,7 @@ numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" 
                done
              } || true
         { grep "^$p[0123456789abcdefghjkmnpqrstuvxyz]*," <<<"$fs" || true ;} \
-            | while IFS= read f ; do printf "\n%s\n" "$f" ; done \
+            | while IFS= read f ; do printf "%s\n" "$f" ; done \
             | awk '{printf "%s %d %s\n",$0,NR,$0}' \
             | sed -e '/^ /d' -e 's/^[0123456789abcdefghjkmnpqrstuvxyz]*,//' \
             | while IFS= read a ; do set $a
@@ -674,7 +696,7 @@ numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" 
         done # p
     # and give all files that had no sequence a "0" major (no bump) and sequence
     { grep -v "^[0123456789abcdefghjkmnpqrstuvxyz]*," <<<"$fs" || true ;} \
-    | while IFS= read f; do printf "\n%s\n" "$f" ; done \
+    | while IFS= read f; do printf "%s\n" "$f" ; done \
         | awk '{printf "%s %d %s\n",$0,NR,$0}' \
         | sed -e '/^ /d' \
         | while IFS= read a ; do set $a

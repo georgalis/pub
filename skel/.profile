@@ -101,13 +101,15 @@ back () { cd "$OLDPWD" ;} # previous directory
 
 # common functions for shell verbose management....
 devnul () { return $? ;}                                                   #:> never direct args
-stderr () { echo "$*" 1>&2 ;}                                              #:> args to stderr
-chkstd () { [ "$*" ] && echo "$*" || true ;}                               #:> args to stdout, or noop if null
-chkwrn () { [ "$*" ] && { stderr    "^^ $* ^^"   ; return 0 ;} || true ;}  #:> wrn stderr args return 0, noop if null
-chkerr () { [ "$*" ] && { stderr    ">>> $* <<<" ; return 1 ;} || true ;}  #:> err stderr args return 1, noop if null
+stderr () { [ "$*" ] && echo "$*" 1>&2 || true ;}                          #:> args to stderr, or noop if null
+chkstd () { [ "$*" ] && echo "$*"      || true ;}                          #:> args to stdout, or noop if null
+chkwrn () { [ "$*" ] && { stderr    "^^ $* ^^"   ; return $? ;} || true ;} #:> wrn stderr args return 0, noop if null
+chkerr () { [ "$*" ] && { stderr    ">>> $* <<<" ; return 1  ;} || true ;} #:> err stderr args return 1, noop if null
 logwrn () { [ "$*" ] && { logger -s "^^ $* ^^"   ; return $? ;} || true ;} #:> wrn stderr+log args return 0, noop if null
 logerr () { [ "$*" ] && { logger -s ">>> $* <<<" ; return 1  ;} || true ;} #:> err stderr+log args return 1, noop if null
-source_iff () { [ -e "$1" ] && { . "$1" && chkwrn "$2 : $1" || chkerr "$2 : eval $1" ;} || chkerr "$2 : -e $1" ;} #:> source arg1 if exists, arg2 (optional) traceback calling file
+chkexit () { [ "$*" ] && { stderr    ">>> $* <<<" ; exit 1   ;} || true ;} #:> err stderr args exit 1, noop if null
+logexit () { [ "$*" ] && { logger -s ">>> $* <<<" ; exit 1   ;} || true ;} #:> err stderr+log args exit 1, noop if null
+source_iff () { [ -e "$1" ] && { . "$1" && stderr "<> $@ <>" || chkerr ". $@" ; return 1 ;} || chkerr "nofile $1" ;} #:> source arg1 if exists, arg2 (optional) traceback calling file
 
 path_append () { # append $1 if not already in path
  echo $PATH | grep -E "(:$1$|^$1$|^$1:|:$1:)" 2>&1 >/dev/null \
@@ -136,14 +138,12 @@ ckstat () # Unlimited use with this notice (c) 2017-2019 George Georgalis <georg
     chkwrn "Usage, for arg1 (or per line stdin)";
     chkwrn "return: n-inode chksum size mdate filename"
   } || { OS="$(uname)"
-    [ "$OS" = "Linux" ] && _stat ()
-    { stat -c %h\ %i\ %s\ %Y "$1" ;} || true
-    [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat ()
-    { stat -f %l\ %i\ %z\ %m "$1" ;} || true
+    [ "$OS" = "Linux" ] && _stat () {                      stat -c %h\ %i\ %s\ %Y "$1" ;} || true
+    [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat () { stat -f %l\ %i\ %z\ %m "$1" ;} || true
     echo "$fs" | while IFS= read f; do
       [ -f "$f" ] && {
-        { _stat "$f"; echo "$f"
-        } | tr '\n' ' ' | awk '{printf "% 2x%07x . % 8x %08x %s\n",$1,$2,$3,$4,$5}'
+        _stat "$f" | awk '{printf "% 2x%07x . % 8x %08x ",$1,$2,$3,$4}'
+        echo "$f"
       } || chkerr "$FUNCNAME : not a regular file : $f";
     done
   }
@@ -160,14 +160,13 @@ ckstatsum () # Unlimited use with this notice (c) 2017-2019 George Georgalis <ge
     chkwrn "Usage, for arg1 (or per line stdin)";
     chkwrn "return: n-inode chksum size mdate filename"
   } || { OS="$(uname)"
-    [ "$OS" = "Linux" ] && _stat ()
-    { stat -c %h\ %i\ %s\ %Y "$1" ;} || true
-    [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat ()
-    { stat -f %l\ %i\ %z\ %m "$1" ;} || true
+    [ "$OS" = "Linux" ] && _stat () {                      stat -c %h\ %i\ %s\ %Y "$1" ;} || true
+    [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat () { stat -f %l\ %i\ %z\ %m "$1" ;} || true
     echo "$fs" | while IFS= read f; do
       [ -f "$f" ] && {
-        { _stat "$f"; cksum "$f"
-        } | tr '\n' ' ' | awk '{printf "% 2x%07x %8x % 8x %08x %s\n",$1,$2,$5,$3,$4,$7}'
+        { _stat "$f" ; cksum <"$f"
+            } | tr '\n' ' ' | awk '{printf "% 2x%07x %8x % 8x %08x ",$1,$2,$5,$3,$4}'
+        echo "$f"
       } || chkerr "$FUNCNAME : not a regular file : $f";
     done
   }
@@ -341,14 +340,16 @@ printf "${_ntermrev}"
 source_iff "$HOME/.profile.local" "~/.profile"
 
 # export env
-_env () { mkdir -p "$HOME/_"  ; env | strings >"$HOME/_/_" ;}
+_env () {
+    mkdir -p "$HOME/_"
+    # export varables
+    env | tr -cd '[:print:]' >"$HOME/_/.profile"
+    stderr "< $HOME/_/_.profile >"
+    declare -f | grep '()' | sed -e 's/ () //' -e '/^ /d' >"$HOME/_/${0##*/}.func"
+    # export functions
+    export -f $(cat "$HOME/_/${0##*/}.func")
+    stderr "< $HOME/_/${0##*/}.func >"
+    stderr "<> $HOME/.profile <>"
+    }
 _env # recent init
-chkwrn "$HOME/_/_"
-# export functions
-mkdir -p "$HOME/_"
-declare -f | grep '()' | sed -e 's/ () //' -e '/^ /d' >"$HOME/_/${0##*/}.func"
-export -f $(cat "$HOME/_/${0##*/}.func")
-chkwrn "$HOME/_/${0##*/}.func"
-chkwrn "$HOME/.profile"
-
 
