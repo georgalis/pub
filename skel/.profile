@@ -1,6 +1,6 @@
 # ~/.profile
 
-# Unlimited use with this notice. (C) 2004-2021 George Georgalis
+# Unlimited use with this notice. (C) 2004-2022 George Georgalis
 
 # For Bourne-compatible shells (bash,ksh,zsh,sh)
 
@@ -15,21 +15,6 @@ export OS=$(uname)
 
 umask 022
 ulimit -c 1 # one byte core files memorialize their creation
-
-# setup ls aliases
-[ -x "$(which colorls 2>/dev/null)" ] && { # setup colorls
- #export LSCOLORS='xefxcxdxbxegedabagacad'
- #export CLICOLORS=$LSCOLORS
- # define reverse for directory color
- export LSCOLORS='x45x2x3x1x464301060203' # invert directory color
- alias   l='colorls -FGr'
- alias  lr='colorls -FG'
- alias  ll='colorls -AFGTlr'
- alias llr='colorls -AFGTl'
- alias  lt='colorls -AFGTrt'
- alias llt='colorls -AFGTlrt'
- alias  lS='colorls -AFGTlrS'
- } || true # echo "no colorls"
 
 case "$OS" in
 Darwin)
@@ -65,6 +50,13 @@ OpenBSD)
  alias t='tail -f'
 ;; # OpenBSD
 NetBSD|FreeBSD|Dragonfly)
+ alias   l='ls -Fr'
+ alias  lr='ls -F'
+ alias  ll='ls -AFTlr'
+ alias llr='ls -AFTl'
+ alias  lt='ls -AFTrt'
+ alias llt='ls -AFTlrt'
+ alias  lS='ls -AFTlrS'
  alias t='tail -F'
  alias top='top -S -I -s4 -o cpu'
  [ "$TERM" = "vt220" ] && export TERM=xterm # adds color to some apps in console
@@ -72,6 +64,21 @@ NetBSD|FreeBSD|Dragonfly)
  #[ "$(uname -m)" = "amd64" -a "$TERM" = "xterm-color" ] && export TERM="xterm"
 ;; # NetBSD|FreeBSD|Dragonfly
 esac
+
+# setup ls aliases
+[ -x "$(which colorls 2>/dev/null)" ] && { # setup colorls
+ #export LSCOLORS='xefxcxdxbxegedabagacad'
+ #export CLICOLORS=$LSCOLORS
+ # define reverse for directory color
+ export LSCOLORS='x45x2x3x1x464301060203' # invert directory color
+ alias   l='colorls -FGr'
+ alias  lr='colorls -FG'
+ alias  ll='colorls -AFGTlr'
+ alias llr='colorls -AFGTl'
+ alias  lt='colorls -AFGTrt'
+ alias llt='colorls -AFGTlrt'
+ alias  lS='colorls -AFGTlrS'
+ } || true # echo "no colorls"
 
 # terminfo
 [ -z "${OS#Linux}" ] &&  { _ntermrev='rmso' ; _ntermul='rmul'
@@ -109,7 +116,11 @@ logwrn () { [ "$*" ] && { logger -s "^^ $* ^^"   ; return $? ;} || true ;} #:> w
 logerr () { [ "$*" ] && { logger -s ">>> $* <<<" ; return 1  ;} || true ;} #:> err stderr+log args return 1, noop if null
 chkexit () { [ "$*" ] && { stderr    ">>> $* <<<" ; exit 1   ;} || true ;} #:> err stderr args exit 1, noop if null
 logexit () { [ "$*" ] && { logger -s ">>> $* <<<" ; exit 1   ;} || true ;} #:> err stderr+log args exit 1, noop if null
-source_iff () { [ -e "$1" ] && { . "$1" && stderr "<> $@ <>" || chkerr ". $@" ; return 1 ;} || chkerr "nofile $1" ;} #:> source arg1 if exists, arg2 (optional) traceback calling file
+#source_iff () { [ -e "$1" ] && { . "$1" && stderr "<> $@ <>" || chkerr ". $@" ; return 1 ;} || chkwrn "nofile $1" ;} #:> source arg1 if exists, arg2 (optional) traceback calling file
+#source_iff () { [ -e "$1" ] && { . "$1" && stderr "<> ${2}: . $1 <>" || chkerr "${2}: . $1" ; return 1 ;} || chkwrn "${2}: no file $1" ;} #:> source arg1 if exists, arg2 (optional) traceback calling file
+siff () { [ -e "$1" ] && { stderr "<>${siff}${2}: . $1 <>" && siff="( ${siff}" && . "$1" && siff="${siff#( }" || chkerr "${siff}${2}: . $1" ; return 1 ;} || chkwrn "${siff}${2}: no file $1" ;} #:> source arg1 if exists, optional calling file arg2 for backtrace
+siff () { [ -e "$1" ] && { stderr "<>${siff}${2}: . $1 <>" && siff="siff ${siff}" && . "$1" && siff="${siff#siff }" || chkerr "${siff}${2}: . $1" ; siff="${siff#siff }" ; return 1 ;} || chkwrn "${siff}${2}: no file $1" ; siff="${siff#siff }" ;} #:> source arg1 if exists, optional calling file arg2 for backtrace
+siff () { [ -e "$1" ] && { stderr "<> ${2}: . $1 <>" && . "$1" ;} || { chkerr "fail" ; return 1 ;} || chkwrn "siff ${2}: no file $1" ;} #:> source arg1 if exists, optional calling file arg2 for backtrace
 
 path_append () { # append $1 if not already in path
  echo $PATH | grep -E "(:$1$|^$1$|^$1:|:$1:)" 2>&1 >/dev/null \
@@ -268,7 +279,7 @@ case "$SHELL" in
  ;;
  *ksh)
   export hostname="$(hostname)"
-  export PS1=" \${USER}@\${hostname}:\${PWD} "
+  export PS1="\${?%0} \${USER}@\${hostname}:\${PWD} "
   set -o ignoreeof # disable ctrl-d exit
   set -o braceexpand
   bind '^XH'=beginning-of-line
@@ -325,10 +336,10 @@ rm $key_in ;}
 
 # ssh socket key and agent managent
 printf "${_termrev}"
-printf "User ${USER}@$(hostname -f): "
+printf "User ${USER}@${hostname}: "
 [ "$SSH_AGENT_ENV" ] || {
     eval $(ssh-agent)
-    ssh-add $(find $HOME/.ssh/ \( -name id_\* -o -name ${USER}\* \) -type f -not -name \*pub )
+    ssh-add $(find $HOME/.ssh/ \( -name id_\* -o -name ${USER}\* \) -type f \! -name \*pub )
     export SSH_AGENT_ENV="SSH_AGENT_PID $SSH_AGENT_PID SHELL_PID $$" ;}
 ssh-add -l | cut -d\  -f 3- # show keys in SSH_AUTH_SOCK
 printf "${_ntermrev}"
@@ -337,19 +348,6 @@ printf "${_ntermrev}"
 #	&& { printf "Logout: " && kill $2 && echo $(hostname) $0 [$4] killed ssh-agent $2 \
 #		|| { echo $(hostname) ssh-agent already died? 2>/dev/stderr ; exit 1 ;} ;}
 
-source_iff "$HOME/.profile.local" "~/.profile"
+siff "$HOME/.profile.local" "~/.profile"
 
-# export env
-_env () {
-    mkdir -p "$HOME/_"
-    # export varables
-    env | tr -cd '[:print:]' >"$HOME/_/.profile"
-    stderr "< $HOME/_/_.profile >"
-    declare -f | grep '()' | sed -e 's/ () //' -e '/^ /d' >"$HOME/_/${0##*/}.func"
-    # export functions
-    export -f $(cat "$HOME/_/${0##*/}.func")
-    stderr "< $HOME/_/${0##*/}.func >"
-    stderr "<> $HOME/.profile <>"
-    }
-_env # recent init
 

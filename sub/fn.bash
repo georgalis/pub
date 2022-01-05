@@ -7,63 +7,72 @@
 # echo "$BASH_VERSINFO"      "${BASH_VERSINFO[0]}" "${BASH_VERSINFO[1]}" "${BASH_VERSINFO[2]}"
 # echo "${BASH_VERSINFO[3]}" "${BASH_VERSINFO[4]}" "${BASH_VERSINFO[5]}"
 
+# for verbosity, these would be set to chkwrn or chkerr
+verb="${verb:-devnul}"
+verb1="${verb1:-devnul}"
+verb2="${verb2:-devnul}"
+
 validfn () { #:> hash comparison to validate shell functions
     [ "$1" ] || {
-      cat <<-EOF
-#:: $FUNCNAME {function}        ; returns {function-name} {hash}
-#:: $FUNCNAME {function} {hash} ; return no error, if hash match
-#:: the former is intended to provide data for the latter
-#:: env cksum= to set the cksum program
-EOF
-    return 1 ;}
-    [ "$1" = '#' ] && return 0 || true # comment
-    [ "${SHELL##*/}" = "bash" ] || { echo "Not bash" >&2 ; return 1 ;}
-    [ "$cksum" ] || local cksum=cksum # for bugs... use stronger for nefarious env
-    [ -x "$(which $cksum)" ] || { echo "No cksum : $cksum" >&2 ; return 1 ;}
-    local f="$1"
+      cat 1>&2 <<-'EOF'
+		#:: $FUNCNAME {function}        ; returns {function-name} {hash}
+		#:: $FUNCNAME {function} {hash} ; return no error, if hash match
+		#:: the former is intended to provide data for the latter
+		#:: env hashfn= to set the hashing function, "%08x %8x %s\n" cksum program
+		EOF
+      return 1 ;}
+    [ "${SHELL##*/}" = "bash" ] || { echo "> > > ${0} : Not bash < < <" >&2 ; return 1 ;}
+    local _hashfn
+    [ "$hashfn" ] || { _hashfn () { declare -f "$1" | printf "%s %08x %08x\n" "$1" $(cksum) ;} && _hashfn="_hashfn" ;}
+    [ "$_hashfn" ] || _hashfn="$hashfn" # for bugs... use stronger hash for nefarious env
+    local fn="$1" ; fn="$(sed '/^[ ]*#/d' <<<"$fn")"
+    [ "$fn" ] || return 0 # drop comments
     shift
-    local s="$*"
-    local v="$( { echo "$f" ; declare -f "$f" | "$cksum" ;} | tr -s '\n' ' ' | sed 's/ $//' )"
-    [ "$s" ] || { echo $v ; return 0 ;}
-    [ "$f $s" = "$v" ] || {
-echo ">>>---
-$FUNCNAME error :
- unit:'$f $s'
-  env:'$v'
-<<<---" 1>&2 ; return 1 ;}
+    local sum="$fn $*"
+    local check="$( "$_hashfn" "$fn" )"
+    [ "$*" ] || { echo "$check" ; return 0 ;} # provide hash data if none given to check
+    [ "$sum" = "$check" ] || { # report hash data discrepancies on failed check
+    cat 1>&2 <<-EOF
+		>>>---
+		$FUNCNAME error :
+		 unit:'$sum'
+		  env:'$check'
+		<<<---
+		EOF
+    return 1 ;}
     } # validfn
 #
 # Now that validfn is defined, run the framework on functions expected from .profile
 # (an example of syetem environment validation)
 #
-# eg generate hashses (to /dev/null)...
-while read f; do validfn $f >/dev/null; done <<EOF
-devnul
-stderr
-chkstd
-chkwrn
-chkerr
-logwrn
-logerr
-source_iff
-EOF
+# eg first, generate hashses of known functions...
 #
-# run validfn
-# (to check the generated hashes in new context)
+# while read f; do validfn $f ; done <<EOF
+# devnul
+# stderr
+# chkstd
+# chkwrn
+# chkerr
+# logwrn
+# logerr
+# siff
+# EOF
+#
+# run validfn to check the operational env vs the generated hashes
 [ "$verb" ] || verb=devnul
 while IFS= read fndata ; do
 $verb "validfn $fndata"
        validfn $fndata && true || { echo "validfn error : $fndata" 1>&2 ; return 1 ;}
 done <<EOF
-# pub/skel/.profile 20210628
-devnul 2725980892 30
-stderr 3041441698 35
-chkstd 3997869157 50
-chkwrn 2268919251 93
-chkerr 1473511298 95
-logwrn 3850395782 97
-logerr 4292729202 98
-source_iff 1184734797 141
+# pub/skel/.profile 20220104
+devnul a27b2adc 0000001e
+stderr 7ccc5704 00000037
+chkstd ee4aa465 00000032
+chkwrn 18c46093 0000005e
+chkerr 57d3ff82 0000005f
+logwrn e5806086 00000061
+logerr ffddd972 00000062
+siff 760f8a04 000000ac
 EOF
 
 alias   gst='git status --short | sed "s/^\?/ \?/" | sort'
@@ -227,8 +236,8 @@ f2rb2mp3 () ( # subshell function "file to rubberband to mp3", transcoding/tunin
   done <<EOF
 # pub/skel/.profile 20210628
 devnul 2725980892 30
-stderr 3041441698 35
-chkwrn 2268919251 93
+stderr 2093766404 55
+chkwrn 415522963 94
 chkerr 1473511298 95
 # pub/sub/func.bash 20210628
 hms2sec 3886070923 470
@@ -461,7 +470,8 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
     #   local title="$(echo "${a%%_^*}" | sed -e "s/^${seq}-//")"
         local title="${a%%_^*}"
     #   local  dirs=$(find "$link/@" "$links/@" "@" -maxdepth 0 -type d 2>/dev/null)
-        local files="$(find $(find $links -name \@) -maxdepth 1 -type f -name \*${hash}\* 2>/dev/null )"
+    #   local files="$(find $(find $links -name \@) -maxdepth 1 -type f -name \*${hash}\* 2>/dev/null )"
+        local files="$(find $(find . .. -name \@) -maxdepth 1 -type f -name \*${hash}\* 2>/dev/null )"
         local orig=''
         [ "$files" ] && orig="$(echo "${files}" | awk 'NR==1')"
     #   local files="$(find ${dirs} -maxdepth 1 -type f -name \*${hash}\* 2>/dev/null | head -n1 )"
@@ -735,7 +745,7 @@ playff () { # use ffplay to play files (args OR stdin filename per linebnb)
     echo "$fs" | while read f; do
         [ -f "$f" ] && {
         hms2sec $(ffprobe -hide_banner  -loglevel info  "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')
-        ffplay -hide_banner -stats -autoexit -loglevel info -x 1088 -y 336 "$f" || return 1
+        ffplay -hide_banner -stats -autoexit -loglevel info -top 64 -x 1088 -y 336 "$f" || return 1
         }
         done
     } # playff
