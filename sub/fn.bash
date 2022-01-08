@@ -234,14 +234,14 @@ f2rb2mp3 () ( # subshell function "file to rubberband to mp3", transcoding/tunin
   while IFS= read fndata ; do
     validfn $fndata || { echo "validfn error : $fndata" 1>&2 ; return 1 ;}
   done <<EOF
-# pub/skel/.profile 20210628
-devnul 2725980892 30
-stderr 2093766404 55
-chkwrn 415522963 94
-chkerr 1473511298 95
-# pub/sub/func.bash 20210628
-hms2sec 3886070923 470
-prependf 2889475370 434
+# pub/skel/.profile 20220105
+devnul a27b2adc 0000001e
+stderr 7ccc5704 00000037
+chkwrn 18c46093 0000005e
+chkerr 57d3ff82 0000005f
+# pub/sub/fn.bash 20220105
+hms2sec e7a0bc8b 000001d6
+prependf ac39e52a 000001b2
 EOF
   [ -x "$(which "$rb")"  ] || { chkerr "$FUNCNAME : env rb not set to rubberband executable" ; return 1 ;}
   [ -x "$(which ffmpeg)" ] || { chkerr "$FUNCNAME : ffmpeg not in path" ; return 1 ;}
