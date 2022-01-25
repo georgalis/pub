@@ -7,11 +7,6 @@
 # echo "$BASH_VERSINFO"      "${BASH_VERSINFO[0]}" "${BASH_VERSINFO[1]}" "${BASH_VERSINFO[2]}"
 # echo "${BASH_VERSINFO[3]}" "${BASH_VERSINFO[4]}" "${BASH_VERSINFO[5]}"
 
-# for verbosity, these would be set to chkwrn or chkerr
-verb="${verb:-devnul}"
-verb1="${verb1:-devnul}"
-verb2="${verb2:-devnul}"
-
 validfn () { #:> hash comparison to validate shell functions
     [ "$1" ] || {
       cat 1>&2 <<-'EOF'
@@ -59,20 +54,20 @@ validfn () { #:> hash comparison to validate shell functions
 # EOF
 #
 # run validfn to check the operational env vs the generated hashes
-[ "$verb" ] || verb=devnul
+verb2="${verb2:-devnul}"
 while IFS= read fndata ; do
-$verb "validfn $fndata"
+$verb2 "validfn $fndata"
        validfn $fndata && true || { echo "validfn error : $fndata" 1>&2 ; return 1 ;}
 done <<EOF
 # pub/skel/.profile 20220104
-devnul a27b2adc 0000001e
+devnul 216e1370 0000001d
 stderr 7ccc5704 00000037
 chkstd ee4aa465 00000032
 chkwrn 18c46093 0000005e
 chkerr 57d3ff82 0000005f
 logwrn e5806086 00000061
 logerr ffddd972 00000062
-siff 760f8a04 000000ac
+siff 651922db 000000d6
 EOF
 
 alias   gst='git status --short | sed "s/^\?/ \?/" | sort'
@@ -163,7 +158,7 @@ youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub -
  -o "$d/%(title)s_^%(id)s.%(ext)s" $id
 youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --yes-playlist \
  --audio-quality 0 --audio-format best --playlist-start 1 \
- -o "$d/%(playlist_index)s-%(title)s_^%(id)s.%(ext)s" $id
+ -o "$d/0%(playlist_index)s,-%(title)s_^%(id)s.%(ext)s" $id
 } # _youtube_video_list
 
 _youtube_video () {
@@ -177,7 +172,7 @@ youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub -
  -o "$d/%(title)s_^%(id)s.%(ext)s" $id
 youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --no-playlist \
  --audio-quality 0 --audio-format best \
- -o "$d/%(title)s_^%(id)s.%(ext)s" $id
+ -o "$d/0,%(title)s_^%(id)s.%(ext)s" $id
 } # _youtube_video
 
 _youtube () {
@@ -188,7 +183,7 @@ local id="$1"
 [ "$d" ] || d="$(pwd -P)"
 youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --no-playlist \
  --audio-quality 0 --audio-format best --extract-audio \
- -o "$d/%(title)s_^%(id)s.%(ext)s" $id
+ -o "$d/0,%(title)s_^%(id)s.%(ext)s" $id
 } # _youtube
 
 _youtube_list () {
@@ -199,7 +194,7 @@ local id="$1"
 [ "$d" ] || d="$(pwd -P)"
 youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --yes-playlist \
  --audio-quality 0 --audio-format best --extract-audio --playlist-start 1 \
- -o "$d/%(playlist_index)s-%(title)s_^%(id)s.%(ext)s" $id
+ -o "$d/0%(playlist_index)s,-%(title)s_^%(id)s.%(ext)s" $id
 } # _youtube_list
 
 hms2sec () { # passthrough seconds or convert hh:mm:ss to seconds
@@ -235,7 +230,7 @@ f2rb2mp3 () ( # subshell function "file to rubberband to mp3", transcoding/tunin
     validfn $fndata || { echo "validfn error : $fndata" 1>&2 ; return 1 ;}
   done <<EOF
 # pub/skel/.profile 20220105
-devnul a27b2adc 0000001e
+devnul 216e1370 0000001d
 stderr 7ccc5704 00000037
 chkwrn 18c46093 0000005e
 chkerr 57d3ff82 0000005f
@@ -252,12 +247,21 @@ EOF
     # https://hg.sr.ht/~breakfastquay/rubberband
     # https://github.com/breakfastquay/rubberband
     # https://breakfastquay.com/rubberband/
+    echo "# crisp:  0=mushy 1=piano 2=smooth 3=MULTITIMBRAL 4=two-sources 5=standard 6=percussive "
     echo "# Formant y/''  CenterFocus y/'' cmp (ckb|hrn|cps)(1..)/y/'' vol 0db/''"
-    echo "# f= bhz|chz|x rev= y/''"
-    echo "# Crisp  0=mushy 1=piano 2=smooth 3=MULTITIMBRAL 4=two-sources 5=standard 6=percussive "
-    echo "# verb=chkwrn t='1' p='0' f='' c='' F='' CF='' ss='' to='' cmp='' v='' f2rb2mp3 {file-in} {prepend-out}"
+    echo "# frequency (bhz|chz|N)/'' reverse y/''"
+    echo "# verb=chkwrn t='1' p='0' f= c= F= CF= ss= to= cmp= v= f2rb2mp3 {file-in} {prepend-out}"
+    echo "# ln=-33+-3+6 {i+tp+lra}"
     return 0
-    }
+    # loudnorm: see $link/lufs/normff.fn.bash
+     # -y -i "$1" -af "loudnorm=print_format=json,loudnorm=i=-33,loudnorm=tp=-3,loudnorm=lra=6" -f flac "${1}.1.flac" 2>&1 \
+    [ -e "./tmp/${infile}.measure" ] || { ffmpeg -hide_banner -loglevel info -benchmark \
+      -y -i "$1" -af "loudnorm=print_format=json" -f null "/dev/null" 2>&1 \
+        | awk '/^{/,0' \
+        | jq --compact-output '{in__i:.input_i,in__tr:.input_thresh,in__lra:.input_lra,in__tp:.input_tp},{out_i:.output_i,out_tr:.output_thresh,out_lra:.output_lra,out_tp:.output_tp}' \
+        | column -t -s,
+      } # ./tmp/${infile}.measure
+    } # help
   [ "$1" ] || { f2rb2mp3 help ; return 1 ;}
   [ "$verb" ]  || local verb="devnul"
   [ "$verb2" ] || local verb2="devnul"
@@ -324,7 +328,7 @@ EOF
   [ -e "./tmp/${infile}.flac" ] || { # make ready the flac for universal read
       $verb2    ffmpeg -hide_banner -loglevel warning -i "$infile" "./tmp/${infile}.flac"
                 ffmpeg -hide_banner -loglevel warning -i "$infile" "./tmp/${infile}.flac" \
-                  || { chkerr " flack fail ";}
+                  || { chkwrn " flack fail ";}
                 } # have flack # -loglevel fatal
   [ "$cmpn" ] && vn="-$cmpn" vc="$cmpc" || true # sox compand is basically a volume adjustment...
   [ "$cmpn" -a -z "$v" ] && local v=0db || true # set an unset volume (v) param, if we have compand w/o volume
@@ -393,26 +397,6 @@ EOF
     # -ss 32:05 -to 39:58.5
     ) # f2rb2mp3
 
-# export c=100 ; rm -rf png/* ; for a in *Couperin-kbd*mp3 ; do b=$(sed -e 's/.*,//' <<<$a) ; echo $b ; done | sort | while read b ; do a=$(ls *$b) ; c=$(( ++c )) ; sox $a -n remix - trim 0 =3 -3 spectrogram -o png/${c},${a}.png ; echo -n .  ; done
-
-# verb=chkwrn p=4 c=1 ss=434 to=471.2 cmp=cps1 v=9db f2rb2mp3 @/_^NPk-cE047PU.opus 52r,Couperin-kbd_01-Gmaj-Etcheverry-07_Menuet
-formfilespec () { # generate spectrograph for ss-1 to ss+3 and to-3 to to+1
-   #local p="${1%/*}" f="${1##*/}"
-    local in="$1"
-    mkdir -p "./png"
-    set $( formfile "${in##*/}" | sed -e 's/.*f2rb2mp3//' )
-    local orig=$1 pass=$2
-    [ -e "$orig" ] || { chkwrn "$orig not found" ; return 1 ;}
-    echo -n "sox $orig -n remix - trim "
-    set $(formfile "${in##*/}" | sed -e 's/f2rb2mp3.*//' )
-    #dc -e "$ss 1-p $ss 3+p $to 3-p $to 1+p" | tr '\n' ' ' | sed -e 's/^/=/' -e 's/ / =/g' -e  's/=$//'
-    dc -e "$ss 1-p $ss 3+p $to 3-p $to 1+p" | sed -e 's/^/=/' | tr '\n' ' '
-   #b=$(sed -e 's/,.*//' <<<$in)
-    echo "spectrogram -o ./png/${in##*/}.png"
-    
-    }
-
-
 formfile () { # create a f2rb2mp3 command to render the file, given the input filename
   # filter ^.*
   #   file type      ext="$(echo "^${a##*^}" | sed -e 's/[^.]*.//' \
@@ -466,24 +450,81 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
           -e 's/-cf/ cf=y/' -e 's/-c/ c=/' -e 's/-F/ F=y/' \
           )"
     #   local   seq="$(echo "${a%%^*}"  | sed -e 's/[^-]*-.*//')"
-    #   local   seq=''
     #   local title="$(echo "${a%%_^*}" | sed -e "s/^${seq}-//")"
         local title="${a%%_^*}"
     #   local  dirs=$(find "$link/@" "$links/@" "@" -maxdepth 0 -type d 2>/dev/null)
     #   local files="$(find $(find $links -name \@) -maxdepth 1 -type f -name \*${hash}\* 2>/dev/null )"
         local files="$(find $(find . .. -name \@) -maxdepth 1 -type f -name \*${hash}\* 2>/dev/null )"
-        local orig=''
+    #   local orig=''
         [ "$files" ] && orig="$(echo "${files}" | awk 'NR==1')"
-    #   local files="$(find ${dirs} -maxdepth 1 -type f -name \*${hash}\* 2>/dev/null | head -n1 )"
-    #   local  orig="$(ls -t find ${dirs} -maxdepth 1 -type f -name \*${hash}\* 2>/dev/null | head -n1 )"
-    #   local orig="$(find  .              -maxdepth 1 -type f -name \*${hash}\* | grep -v '(.vtt$|.json$)' | head -n1 )"
-    #   [ "$orig" ] || orig=${hash}.${ext} ; masterlink "${hash}.${ext}" "$dir" || chkwrn $FUNCNAME masterlink error ;}
-        [ "$orig" ] || orig="'_${hash}.${ext}'"
+        [ "$orig" ] || orig="'_^${hash}.${ext}'"
         # f2rb2mp3 help
         echo $args f2rb2mp3 $orig $title
         done
     } # { # process the filelist $fs
 } # formfile () { # create a f2rb2mp3 command to render the file, given the input filename
+
+formfilestats () { # accept dir(s) as args, report formfile time and pitch stats from @ dir/*mp3
+  local dir a b
+  for dir in $@ ; do
+    [ -d "$dir" ] && {
+      for b in "$dir"/*mp3 ; do
+        a="${b##*/}"
+        ext="$( sed -e 's/[^.]*.//' -e 's/-.*//' <<<"^${a##*^}" )"
+        hash="$( sed "s/\.${ext}.*//" <<<"^${a##*^}" )"
+        args="$(echo \
+          | sed -E -e "
+            # start with verbatim block from formfile
+            s/.*\.${ext}//
+            s/.mp3$//
+            s/^/ verb=chkwrn/
+            s/-ss/ ss=/
+            s/-to/ to=/
+            s/-rev/ rev=y/
+            s/-v/ v=/
+            s/-t/ t=/
+            s/-p/ p=/
+            s/-(bhz|chz)/ f=\1/
+            s/-(kbd|hrn|cps)/ cmp=\1/
+            s/-f/ f=/
+            s/-cf/ cf=y/
+            s/-c/ c=/
+            s/-F/ F=y/
+            # squash verbatim formfile to time, pitch parameters
+            s/ verb=chkwrn//
+            s/ ss=.*//
+            s/ to=.*//
+            s/ c=.*//
+            s/ F=.*//
+            s/ rev=y//
+            s/ v=.*db//
+            s/^ p/ t=1 p/
+            / t=1 p=0$/d
+            " <<<"^${a##*^}" )"
+        echo "$args" | awk '{printf "%- 11s %- 11s %s %s %s\n",$1,$2,$3,$4,$5}'
+        done # b in "$dir"/*mp3
+        } || true # $dir
+       done | sort -n -t '=' -k 2 | uniq -c # sort result and count uniq
+  } #
+
+
+# export c=100 ; rm -rf png/* ; for a in *Couperin-kbd*mp3 ; do b=$(sed -e 's/.*,//' <<<$a) ; echo $b ; done | sort | while read b ; do a=$(ls *$b) ; c=$(( ++c )) ; sox $a -n remix - trim 0 =3 -3 spectrogram -o png/${c},${a}.png ; echo -n .  ; done
+
+# verb=chkwrn p=4 c=1 ss=434 to=471.2 cmp=cps1 v=9db f2rb2mp3 @/_^NPk-cE047PU.opus 52r,Couperin-kbd_01-Gmaj-Etcheverry-07_Menuet
+formfilespec () { # generate spectrograph for ss-1 to ss+3 and to-3 to to+1
+   #local p="${1%/*}" f="${1##*/}"
+    local in="$1"
+    mkdir -p "./png"
+    set $( formfile "${in##*/}" | sed -e 's/.*f2rb2mp3//' )
+    local orig=$1 pass=$2
+    [ -e "$orig" ] || { chkwrn "$orig not found" ; return 1 ;}
+    echo -n "sox $orig -n remix - trim "
+    set $(formfile "${in##*/}" | sed -e 's/f2rb2mp3.*//' )
+    #dc -e "$ss 1-p $ss 3+p $to 3-p $to 1+p" | tr '\n' ' ' | sed -e 's/^/=/' -e 's/ / =/g' -e  's/=$//'
+    dc -e "$ss 1-p $ss 3+p $to 3-p $to 1+p" | sed -e 's/^/=/' | tr '\n' ' '
+   #b=$(sed -e 's/,.*//' <<<$in)
+    echo "spectrogram -o ./png/${in##*/}.png"
+    }
 
 masterlink () {
 verb2=chkwrn
