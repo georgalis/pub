@@ -197,6 +197,61 @@ youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub -
  -o "$d/0%(playlist_index)s,-%(title)s_^%(id)s.%(ext)s" $id
 } # _youtube_list
 
+# BETA!
+normff () { # use ffmpeg loudnorm...
+    [ -f "$1" ] || { chkerr "$0 : provide audio file (arg1)" ; return 1 ;}
+    inf="$1"
+    # loudnorm filter parameters:
+    # i      integrated loudness target.  Range is -70.0 -  -5.0. Default -24.0
+    # tp     maximum true peak.           Range is  -9.0 -  +0.0. Default  -2.0
+    # lra    loudness range target.       Range is   1.0 -  20.0. Default   7.0
+    # offset offset gain.                 Range is -99.0 - +99.0. Default  +0.0
+    #        (Gain is applied before the true-peak limiter.)
+    # set default values if unset:
+    local ln_off="${ln_off:=0}" ln_i="${ln_i:=-24}" ln_tp="${ln_tp:=-2}" ln_lra="${ln_lra:=7}"
+    local outf="${inf}-lra${ln_lra}-tp${ln_tp}-off${ln_off}-i${ln_i}.flac"
+    # measure inf, set values, and filter
+echo xx ln_off="${ln_off}" ln_i="${ln_i}" ln_tp="${ln_tp}" ln_lra="${ln_lra}" outf="${outf}" xx
+    eval "local $( ln_off="${ln_off:=0}" ln_i="${ln_i:=-24}" ln_tp="${ln_tp:=-2}" ln_lra="${ln_lra:=7}" \
+      ffmpeg -hide_banner -loglevel info -benchmark \
+        -y -i "$inf" -af "loudnorm=print_format=json,
+                          loudnorm=i=${ln_i},loudnorm=tp=${ln_tp},loudnorm=lra=${ln_lra} \
+                         " -f null /dev/null 2>&1 \
+      | awk '/^{/,0' \
+      | jq --compact-output '{measured_I:.input_i,measured_TP:.input_tp,measured_LRA:.input_lra,measured_thresh:.input_thresh}' \
+      | tr -d '{}' | sed -e 's/^"//' -e 's/":/=/g' -e s/',"/ /g' )"
+
+        #   [ "$(dc -e "1000 $ln_lra * p" | sed 's/\..*//' )" -lt "$(dc -e "1000 $measured_LRA * p" | sed 's/\..*//' )" ] && ln_lra="${measured_LRA}" || true
+        # [ "$(( ${measured_TP} + ${ln_off} )) -gt ${ln_tp} ] && ln_tp=$(( ln_tp - ${measured_TP} + ${ln_off} 
+
+        #   linear: Normalize by linearly scaling the source audio.  "measured_I", "measured_LRA", "measured_TP", and "measured_thresh" must all be
+        #           specified. Target LRA shouldn't be lower than source LRA and the change in integrated loudness shouldn't result in a true peak
+        #           which exceeds the target TP. If any of these conditions aren't met, normalization mode will revert to dynamic.  Options are "true"
+        #           or "false". Default is "true".
+echo ${outf}
+echo " 
+                          loudnorm=print_format=json,loudnorm=linear=true,loudnorm=offset=${ln_off},
+                          loudnorm=measured_I=${measured_I},loudnorm=measured_TP=${measured_TP},
+                          loudnorm=measured_LRA=${measured_LRA},loudnorm=measured_thresh=${measured_thresh},
+                          loudnorm=i=${ln_i},loudnorm=tp=${ln_tp},loudnorm=lra=${ln_lra}
+" | tr -s ' ' | column -t -s,
+
+      ffmpeg -hide_banner -loglevel info -benchmark \
+        -y -i "$inf" -af "loudnorm=print_format=json,loudnorm=linear=true,loudnorm=offset=${ln_off},
+                          loudnorm=measured_I=${measured_I},loudnorm=measured_TP=${measured_TP},
+                          loudnorm=measured_LRA=${measured_LRA},loudnorm=measured_thresh=${measured_thresh},
+                          loudnorm=i=${ln_i},loudnorm=tp=${ln_tp},loudnorm=lra=${ln_lra}" \
+        -f flac ${outf} 2>&1
+
+ #      -f flac ${outf} 2>&1 \
+ #      | awk '/^{/,0' \
+ #      | jq --compact-output '{measured_I:.input_i,measured_TP:.input_tp,measured_LRA:.input_lra,measured_thresh:.input_thresh},
+ #                             {out_i_LUFS:.output_i,out_tp_dBTP:.output_tp,out_lra_LU:.output_lra,out_tr_LUFS:.output_thresh},
+ #                             {linear:.linear,offset_LU:.target_offset}' \
+ #          | tr -d '{}' | sed -e 's/^"//' -e 's/":/=/g' -e s/',"/ /g' \
+ #          | column -t -s, ; echo ${outf}
+
+    }
 hms2sec () { # passthrough seconds or convert hh:mm:ss to seconds
     # must provide ss which may be ss.nn, hh: and hh:mm: are optional
     # a number must proceed every colin
