@@ -208,7 +208,7 @@ normff () { # use ffmpeg loudnorm...
     # offset offset gain.                 Range is -99.0 - +99.0. Default  +0.0
     #        (Gain is applied before the true-peak limiter.)
     # set default values if unset:
-    local ln_off="${ln_off:=0}" ln_i="${ln_i:=-24}" ln_tp="${ln_tp:=-2}" ln_lra="${ln_lra:=7}"
+    local ln_off="${ln_off:=0}" ln_tp="${ln_tp:=-2}" ln_lra="${ln_lra:=7}" ln_i="${ln_i:=-24}" 
     local outf="${inf}-lra${ln_lra}-tp${ln_tp}-off${ln_off}-i${ln_i}.flac"
     # measure inf, set values, and filter
 echo xx ln_off="${ln_off}" ln_i="${ln_i}" ln_tp="${ln_tp}" ln_lra="${ln_lra}" outf="${outf}" xx
@@ -219,15 +219,57 @@ echo xx ln_off="${ln_off}" ln_i="${ln_i}" ln_tp="${ln_tp}" ln_lra="${ln_lra}" ou
                          " -f null /dev/null 2>&1 \
       | awk '/^{/,0' \
       | jq --compact-output '{measured_I:.input_i,measured_TP:.input_tp,measured_LRA:.input_lra,measured_thresh:.input_thresh}' \
-      | tr -d '{}' | sed -e 's/^"//' -e 's/":/=/g' -e s/',"/ /g' )"
+      | tr -d '{}' | sed -e 's/^"//' -e 's/":/=/g' -e 's/","/" /g' )"
 
         #   [ "$(dc -e "1000 $ln_lra * p" | sed 's/\..*//' )" -lt "$(dc -e "1000 $measured_LRA * p" | sed 's/\..*//' )" ] && ln_lra="${measured_LRA}" || true
         # [ "$(( ${measured_TP} + ${ln_off} )) -gt ${ln_tp} ] && ln_tp=$(( ln_tp - ${measured_TP} + ${ln_off} 
 
-        #   linear: Normalize by linearly scaling the source audio.  "measured_I", "measured_LRA", "measured_TP", and "measured_thresh" must all be
-        #           specified. Target LRA shouldn't be lower than source LRA and the change in integrated loudness shouldn't result in a true peak
-        #           which exceeds the target TP. If any of these conditions aren't met, normalization mode will revert to dynamic.  Options are "true"
-        #           or "false". Default is "true".
+# loudnorm
+#     EBU R128 loudness normalization. Includes both dynamic and linear normalization modes.  Support for both single pass (livestreams,
+#     files) and double pass (files) modes.  This algorithm can target IL, LRA, and maximum true peak. In dynamic mode, to accurately detect
+#     true peaks, the audio stream will be upsampled to 192 kHz.  Use the "-ar" option or "aresample" filter to explicitly set an output
+#     sample rate.
+# 
+#     The filter accepts the following options:
+# 
+#     I, i
+#         Set integrated loudness target.  Range is -70.0 - -5.0. Default value is -24.0.
+# 
+#     LRA, lra
+#         Set loudness range target.  Range is 1.0 - 20.0. Default value is 7.0.
+# 
+#     TP, tp
+#         Set maximum true peak.  Range is -9.0 - +0.0. Default value is -2.0.
+# 
+#     measured_I, measured_i
+#         Measured IL of input file.  Range is -99.0 - +0.0.
+# 
+#     measured_LRA, measured_lra
+#         Measured LRA of input file.  Range is  0.0 - 99.0.
+# 
+#     measured_TP, measured_tp
+#         Measured true peak of input file.  Range is  -99.0 - +99.0.
+# 
+#     measured_thresh
+#         Measured threshold of input file.  Range is -99.0 - +0.0.
+# 
+#     offset
+#         Set offset gain. Gain is applied before the true-peak limiter.  Range is  -99.0 - +99.0. Default is +0.0.
+# 
+#     linear
+#         Normalize by linearly scaling the source audio.  "measured_I", "measured_LRA", "measured_TP", and "measured_thresh" must all be
+#         specified. Target LRA shouldn't be lower than source LRA and the change in integrated loudness shouldn't result in a true peak
+#         which exceeds the target TP. If any of these conditions aren't met, normalization mode will revert to dynamic.  Options are "true"
+#         or "false". Default is "true".
+# 
+#     dual_mono
+#         Treat mono input files as "dual-mono". If a mono file is intended for playback on a stereo system, its EBU R128 measurement will be
+#         perceptually incorrect.  If set to "true", this option will compensate for this effect.  Multi-channel input files are not affected
+#         by this option.  Options are true or false. Default is false.
+# 
+#     print_format
+#         Set print format for stats. Options are summary, json, or none.  Default value is none.
+
 echo ${outf}
 echo " 
                           loudnorm=print_format=json,loudnorm=linear=true,loudnorm=offset=${ln_off},
@@ -249,6 +291,7 @@ echo "
  #                             {out_i_LUFS:.output_i,out_tp_dBTP:.output_tp,out_lra_LU:.output_lra,out_tr_LUFS:.output_thresh},
  #                             {linear:.linear,offset_LU:.target_offset}' \
  #          | tr -d '{}' | sed -e 's/^"//' -e 's/":/=/g' -e s/',"/ /g' \
+ #          | tr -d '{}' | sed -e 's/^"//' -e 's/":/=/g' -e 's/","/" /g' \
  #          | column -t -s, ; echo ${outf}
 
     }
@@ -302,27 +345,29 @@ EOF
     # https://hg.sr.ht/~breakfastquay/rubberband
     # https://github.com/breakfastquay/rubberband
     # https://breakfastquay.com/rubberband/
+    echo "# loudnorm defaults off=0 tp=-2 lra=7 i=-24"
     echo "# crisp:  0=mushy 1=piano 2=smooth 3=MULTITIMBRAL 4=two-sources 5=standard 6=percussive "
     echo "# Formant y/''  CenterFocus y/'' cmp (ckb|hrn|cps)(1..)/y/'' vol 0db/''"
     echo "# frequency (bhz|chz|N)/'' reverse y/''"
     echo "# verb=chkwrn t='1' p='0' f= c= F= CF= ss= to= cmp= v= f2rb2mp3 {file-in} {prepend-out}"
-    echo "# ln=-33+-3+6 {i+tp+lra}"
     return 0
-    # loudnorm: see $link/lufs/normff.fn.bash
-     # -y -i "$1" -af "loudnorm=print_format=json,loudnorm=i=-33,loudnorm=tp=-3,loudnorm=lra=6" -f flac "${1}.1.flac" 2>&1 \
-    [ -e "./tmp/${infile}.measure" ] || { ffmpeg -hide_banner -loglevel info -benchmark \
-      -y -i "$1" -af "loudnorm=print_format=json" -f null "/dev/null" 2>&1 \
-        | awk '/^{/,0' \
-        | jq --compact-output '{in__i:.input_i,in__tr:.input_thresh,in__lra:.input_lra,in__tp:.input_tp},{out_i:.output_i,out_tr:.output_thresh,out_lra:.output_lra,out_tp:.output_tp}' \
-        | column -t -s,
-      } # ./tmp/${infile}.measure
     } # help
-  [ "$1" ] || { f2rb2mp3 help ; return 1 ;}
-  [ "$verb" ]  || local verb="devnul"
-  [ "$verb2" ] || local verb2="devnul"
-  [ "$verb3" ] || local verb3="devnul"
-  local infile="$(basename "$1")"
-  local indir="$(dirname "$1")"
+ #   # loudnorm
+ #   # -y -i "$1" -af "loudnorm=print_format=json,loudnorm=i=-33,loudnorm=tp=-3,loudnorm=lra=6" -f flac "${1}.1.flac" 2>&1 \
+ #  [ -e "${infilep}/tmp/${infile}.meas" ] || { ffmpeg -hide_banner -loglevel info -benchmark \
+ #    -y -i "$1" -af "loudnorm=print_format=json" -f null "/dev/null" 2>&1 \
+ #      | awk '/^{/,0' \
+ #      | jq --compact-output '{in__i:.input_i,in__tr:.input_thresh,in__lra:.input_lra,in__tp:.input_tp},{out_i:.output_i,out_tr:.output_thresh,out_lra:.output_lra,out_tp:.output_tp}' \
+ #      | column -t -s,
+ #    } # ${infilep}/tmp/${infile}.measure
+  [    "$1" ] || { f2rb2mp3 help ; return 1 ;}
+  [ -f "$1" ] || { f2rb2mp3 help ; chkerr "no input flle $1" ; return 1 ;}
+  local  verb="${verb:=chkwrn}"
+  local verb2="${verb2:=devnul}"
+  local verb3="${verb3:=devnul}"
+  local infile="${1##*/}" # basename
+  expr "$1" : ".*/" >/dev/null && inpath="${1%/*}" || inpath="." # input dirname 
+  local infilep="$(cd "${inpath}" ; pwd -P)/${infile}" # full filepath
   local prependt="$2"
   [ "$t" -o "$p" ] && { [ "$c" ] || local c=5 ;} || true # "Crispness"
   # "Crispness" levels:
@@ -346,10 +391,8 @@ EOF
   #          --centre-focus   Preserve focus of centre material in stereo
   #                           (at a cost in width and individual channel quality)
   #
-  local tc='' tn=''
-  [ "$t" ] && tc="--time $t"  tn="-t${t}" || true
-  local pc='' pn=''
-  [ "$p" ] && pc="--pitch $p" pn="-p${p}" || true
+  local tc='' tn='' ; [ "$t" ] && tc="--time $t"  tn="-t${t}" || true
+  local pc='' pn='' ; [ "$p" ] && pc="--pitch $p" pn="-p${p}" || true
   local fhzc='' fhzn=''
   [ "$f" = "bhz" ] && { fhzc="-f 0.98181818181818" ; fhzn="-bhz" ;} || true # baroque 432 hz tuning, from classical 440
   [ "$f" = "chz" ] && { fhzc="-f 1.01851851851851" ; fhzn="-chz" ;} || true # classical 440 hz tuning, from baroque 432
@@ -370,43 +413,65 @@ EOF
   [ "$cmp" = "hrn1" ] && cmpn="$cmp" cmpc="$hrn1"
   [ "$cmp" = "cps1" ] && cmpn="$cmp" cmpc="$cps1"
   local vn='' vc=''
-  local out=''
-  $verb2 "cmpn='$cmpn'"
-  $verb2 "cmpc='$cmpc'"
-  $verb2 "input='$indir/$infile'"
-  [ -f "$indir/$infile" ] || { f2rb2mp3 help ; chkerr "no input flle $infile" ; return 1 ;}
-  cd "$indir"
-  mkdir -p ./tmp ./loss
-  null=$(mktemp ./tmp/nulltime-XXXXX)
-      $verb "./tmp/${infile}.flac"
-      $verb2 "...next refactor move sox trim to this ffmpeg step"
-  [ -e "./tmp/${infile}.flac" ] || { # make ready the flac for universal read
-      $verb2    ffmpeg -hide_banner -loglevel warning -i "$infile" "./tmp/${infile}.flac"
-                ffmpeg -hide_banner -loglevel warning -i "$infile" "./tmp/${infile}.flac" \
-                  || { chkwrn " flack fail ";}
-                } # have flack # -loglevel fatal
+ #$verb2 "cmpn='$cmpn'"
+ #$verb2 "cmpc='$cmpc'"
+ #$verb2 "input='$inpath/$infile'"
+  mkdir -p "${inpath}/tmp" "${inpath}/loss"
+  null="$(mktemp "${inpath}/tmp/nulltime-XXXXX")"
+  null="${null##*/}" # basename
   [ "$cmpn" ] && vn="-$cmpn" vc="$cmpc" || true # sox compand is basically a volume adjustment...
   [ "$cmpn" -a -z "$v" ] && local v=0db || true # set an unset volume (v) param, if we have compand w/o volume
-  [ "$v" ] && { vn="${vn}-v${v}" vc="$vc vol ${v} dither" ;} || true # set vol name (vn) and vol command (vc) if needed
+  [ "$v" ] && { vn="${vn}-v${v}" vc="${vc} vol ${v} dither" ;} || true # set vol name (vn) and vol command (vc) if needed
   [ "$rev" = "y" ] && vn="${vn}-rev" vc="$vc reverse"
   local secc='' secn='' ssec='' tsec=''
-  # if unset, set end to duration of longest stream
-  [ "$to" ] || local to="$(ffprobe -hide_banner  -loglevel info "$infile" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')"
-  [ "$ss" -o "$to" ] && { # trim times
-    [   "$ss" ] && { ssec=$(hms2sec ${ss}) ;}
-    [   "$to" ] && { tsec=$(hms2sec ${to}) ;}
-    [ -z "$ss" -a "$to"    ] && secc="trim 0 =$tsec"     secn="-to$tsec"
-    [    "$ss" -a "$to"    ] && secc="trim $ssec =$tsec" secn="-ss${ssec}-to${tsec}"
-#   [    "$ss" -a -z "$to" ] && secc="trim $ssec" secn="-ss${ssec}" # when ffprobe fails to detect
-    [ -e "./tmp/${infile}${secn}.flac" ] || { # make trimmed flack
-      $verb                             "./tmp/${infile}${secn}.flac"
-      $verb2 sox "./tmp/${infile}.flac" "./tmp/${infile}${secn}.flac" $secc
-             sox "./tmp/${infile}.flac" "./tmp/${infile}${secn}.flac" $secc || { chkerr \
-       "trim: sox ./tmp/${infile}.flac ./tmp/${infile}${secn}.flac $secc" ; return 1 ;}
-      } # made trimmed
-    } # have trimmed flac
-  out="${infile}${secn}"
+  # always set duration
+  [ "$to" ] || local to="$(ffprobe -hide_banner -loglevel info "$infilep" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')"
+  [ "$ss" ] && { ssec=$(hms2sec ${ss}) ;} || true
+  [ "$to" ] && { tsec=$(hms2sec ${to}) ;} 
+  [ -z "$ss" -a "$to" ] && secc="-to $tsec"           secn="-to$tsec"
+  [    "$ss" -a "$to" ] && secc="-ss $ssec -to $tsec" secn="-ss${ssec}-to${tsec}"
+  [ -f "${inpath}/tmp/${infile}${secn}.flac" -a -f "${inpath}/tmp/${infile}${secn}.flac.meas" ] || { # trim and measure
+    $verb "${inpath}/tmp/${infile}${secn}.flac"
+    $verb "${inpath}/tmp/${infile}${secn}.flac.meas"
+    ffmpeg -hide_banner -loglevel info -benchmark -y $secc -i "$infilep" \
+                   -af "loudnorm=print_format=json " -f flac "${inpath}/tmp/${infile}${secn}.flac" 2>&1 \
+          | awk '/^{/,0' \
+          | jq --compact-output '{measured_I:.input_i,measured_TP:.input_tp,measured_LRA:.input_lra,measured_thresh:.input_thresh}' \
+          | tr -d '{}' | sed -e 's/^"//' -e 's/":/=/g' -e 's/","/" /g' \
+          >"${inpath}/tmp/${infile}${secn}.flac.meas" # trimmed, measured
+    #     cat >"${inpath}/tmp/${infile}${secn}.flac.meas" <<-EOF
+    #             trimmed="${infile}${secn}.flac"
+    #             measured_thresh="${measured_thresh}"
+    #             measured_TP="${measured_TP}"
+    #             measured_LRA="${measured_LRA}"
+    #             measured_I="${measured_I}"
+    # EOF
+    } # have trimmed and measured data
+  local lnn offn tpn lran in measured_thresh measured_LRA measured_TP measured_I
+  [ "$off" ] && offn="-off$off"
+  [ "$lra" ] && lran="-lra$lra"
+  [ "$tp"  ] &&  tpn="-tp$tp"
+  [ "$i"   ] &&   in="-i$i"
+  [ "${offn}${lran}${tpn}${in}" ] && lnn="${offn}${lran}${tpn}${in}" || lnn="-ln"
+  local off="${off:=0}" tp="${tp:=-2}" lra="${lra:=7}" i="${i:=-24}" # assign unset to default values
+  $verb ${inpath}/tmp/${infile}${secn}${lnn}.flac
+  eval "local $(cat "${inpath}/tmp/${infile}${secn}.flac.meas")"
+  ffmpeg -hide_banner -loglevel info -benchmark \
+    -y -i "${inpath}/tmp/${infile}${secn}.flac" \
+                 -af "loudnorm=print_format=json,loudnorm=linear=true,loudnorm=offset=${off},
+                      loudnorm=measured_I=${measured_I},    loudnorm=measured_TP=${measured_TP},
+                      loudnorm=measured_LRA=${measured_LRA},loudnorm=measured_thresh=${measured_thresh},
+                      loudnorm=tp=${tp},loudnorm=lra=${lra},loudnorm=i=${i}" \
+        -f flac "${inpath}/tmp/${infile}${secn}${lnn}.flac" 2>&1 \
+          | awk '/^{/,0' \
+          | jq --compact-output '{linear:.linear,offset_LU:.target_offset},
+                                 {measured_I:.input_i,measured_TP:.input_tp,measured_LRA:.input_lra,measured_thresh:.input_thresh},
+                                 {out_i_LUFS:.output_i,out_tp_dBTP:.output_tp,out_lra_LU:.output_lra,out_tr_LUFS:.output_thresh}
+                                ' \
+          | tr -d '{}' | sed -e 's/^"//' -e 's/":/=/g' -e 's/","/" /g' \
+          | column -t -s,
   ##### begin rb section ######################################
+  local out="${infile}${secn}${lnn}"
   local Fc='' Fn=''
   local cfc='' cfn=''
   local cc='' cn=''
@@ -418,31 +483,31 @@ EOF
   [ "$t" -o "$p" -o "$f" ] && { # rb parm
     [ "$F" = "y" ]  &&  Fc='--formant'       Fn='-F'  || Fc=''   Fn=''
     [ "$cf" = "y" ] && cfc='--centre-focus' cfn='-cf' || cfc='' cfn=''
-    out="${infile}${tn}${pn}${fhzn}${cn}${Fn}${cfn}${secn}"
-    [ -e "./tmp/${out}.wav" ] || { # master sans volume
-      $verb "./tmp/${out}.wav"
-      $verb2 $rb -q $tc $pc $fhzc $cc $Fn $cfc "./tmp/${infile}${secn}.flac" "./tmp/${out}.wav"
-             $rb -q $tc $pc $fhzc $cc $Fn $cfc "./tmp/${infile}${secn}.flac" "./tmp/${out}.wav" || { chkerr \
-             $rb -q $tc $pc $fhzc $cc $Fn $cfc "./tmp/${infile}${secn}.flac" "./tmp/${out}.wav" ; return 1 ;}
-      } # final master sans volume
-    # apply volume and make an mp3 --- hopefully the input is not clipped already!
-    $verb "./tmp/${out}${vn}.mp3"
-    $verb2         sox "./tmp/${out}.wav" "./tmp/${out}${vn}.mp3" $vc
-                   sox "./tmp/${out}.wav" "./tmp/${out}${vn}.mp3" $vc || { chkerr \
-                  "sox ./tmp/${out}.wav ./tmp/${out}${vn}.mp3 $vc" ; return 1 ;}
+    local out="${infile}${tn}${pn}${fhzn}${cn}${Fn}${cfn}${secn}${lnn}"
+      [ -e "${inpath}/tmp/${out}.wav" ] || { # master sans volume
+        $verb "${inpath}/tmp/${out}.wav"
+        $verb2 $rb -q $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav"
+               $rb -q $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav" || { chkerr \
+               $rb -q $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav" ; return 1 ;}
+        } # final master, sans sox volume
+      # apply volume and make an mp3 --- hopefully the input is not clipped already!
+      $verb "${inpath}/tmp/${out}${vn}.mp3"
+      $verb2         sox "${inpath}/tmp/${out}.wav" "${inpath}/tmp/${out}${vn}.mp3" $vc
+                     sox "${inpath}/tmp/${out}.wav" "${inpath}/tmp/${out}${vn}.mp3" $vc || { chkerr \
+                    "sox ${inpath}/tmp/${out}.wav ${inpath}/tmp/${out}${vn}.mp3 $vc" ; return 1 ;}
     } || { # no rb input parms (only time, volume or neither)
-         $verb "./tmp/${out}${vn}.mp3"
-         $verb2         sox "./tmp/${infile}${secn}.flac" "./tmp/${out}${vn}.mp3" $vc
-                        sox "./tmp/${infile}${secn}.flac" "./tmp/${out}${vn}.mp3" $vc \
-           || { chkerr "sox ./tmp/${infile}${secn}.flac ./tmp/${out}${vn}.mp3 $vc" ; return 1 ;}
+         $verb "${inpath}/tmp/${out}${vn}.mp3"
+         $verb2         sox "${inpath}/tmp/${infile}${secn}.flac" "${inpath}/tmp/${out}${vn}.mp3" $vc
+                        sox "${inpath}/tmp/${infile}${secn}.flac" "${inpath}/tmp/${out}${vn}.mp3" $vc \
+           || { chkerr "sox ${inpath}/tmp/${infile}${secn}.flac ${inpath}/tmp/${out}${vn}.mp3 $vc" ; return 1 ;}
          }
     # prepend output filename
-    $verb "./loss/${prependt}${out}${vn}.mp3"
-             prependf "./tmp/${out}${vn}.mp3" "$prependt" \
-                 && mv -f "./tmp/${prependt}${out}${vn}.mp3" "./loss/"
-    find "$PWD" -type f -name \*"$infile"\* -newer "$null" | xargs ls -lrth
-    rm -f "$null"
-    cd "$OLDPWD"
+    $verb "${inpath}/loss/${prependt}${out}${vn}.mp3"
+             prependf "${inpath}/tmp/${out}${vn}.mp3" "$prependt" \
+                 && mv -f "${inpath}/tmp/${prependt}${out}${vn}.mp3" "${inpath}/loss/"
+    echo "$infilep"
+    find "$inpath" -type f -name \*"$infile"\* -newer "${inpath}/tmp/$null" | xargs ls -lrth
+    rm -f "${inpath}/tmp/$null"
 # convert 5.1 channels to 2
 # https://superuser.com/questions/852400/properly-downmix-5-1-to-stereo-using-ffmpeg
 #ffmpeg -i Mozart-K622-Clarinet-Concerto-A-Maj-Kam-Honeck-2006.m4a \
