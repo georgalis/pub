@@ -356,14 +356,6 @@ EOF
     echo "# verb=chkwrn t='1' p='0' f= c= F= CF= ss= to= cmp= v= f2rb2mp3 {file-in} {prepend-out}"
     return 0
     } # help
- #   # loudnorm
- #   # -y -i "$1" -af "loudnorm=print_format=json,loudnorm=i=-33,loudnorm=tp=-3,loudnorm=lra=6" -f flac "${1}.1.flac" 2>&1 \
- #  [ -e "${infilep}/tmp/${infile}.meas" ] || { ffmpeg -hide_banner -loglevel info -benchmark \
- #    -y -i "$1" -af "loudnorm=print_format=json" -f null "/dev/null" 2>&1 \
- #      | awk '/^{/,0' \
- #      | jq --compact-output '{in__i:.input_i,in__tr:.input_thresh,in__lra:.input_lra,in__tp:.input_tp},{out_i:.output_i,out_tr:.output_thresh,out_lra:.output_lra,out_tp:.output_tp}' \
- #      | column -t -s,
- #    } # ${infilep}/tmp/${infile}.measure
   [    "$1" ] || { f2rb2mp3 help ; return 1 ;}
   [ -f "$1" ] || { f2rb2mp3 help ; chkerr "no input flle $1" ; return 1 ;}
   local  verb="${verb:=chkwrn}"
@@ -396,6 +388,9 @@ EOF
   #          --centre-focus   Preserve focus of centre material in stereo
   #                           (at a cost in width and individual channel quality)
   #
+  [ "$t" = 1 ] && local t= || true
+  [ "$p" = 0 ] && local p= || true
+  [ "$f" = 1 ] && local f= || true
   local tc='' tn='' ; [ "$t" ] && tc="--time $t"  tn="-t${t}" || true
   local pc='' pn='' ; [ "$p" ] && pc="--pitch $p" pn="-p${p}" || true
   local fhzc='' fhzn=''
@@ -430,14 +425,14 @@ EOF
   [ "$rev" = "y" ] && vn="${vn}-rev" vc="$vc reverse"
   local secc='' secn='' ssec='' tsec=''
   # always set duration
+  [ "$ss" = 0 ] && local ss= || { ssec=$(hms2sec ${ss}) ;}
   [ "$to" ] || local to="$(ffprobe -hide_banner -loglevel info "$infilep" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')"
-  [ "$ss" ] && { ssec=$(hms2sec ${ss}) ;} || true
   [ "$to" ] && { tsec=$(hms2sec ${to}) ;} 
   [ -z "$ss" -a "$to" ] && secc="-to $tsec"           secn="-to$tsec"
   [    "$ss" -a "$to" ] && secc="-ss $ssec -to $tsec" secn="-ss${ssec}-to${tsec}"
+  $verb "${inpath}/tmp/${infile}${secn}.meas"
   [ -f "${inpath}/tmp/${infile}${secn}.meas" ] || { # measure
-    { $verb "${inpath}/tmp/${infile}${secn}.meas"
-       echo             "# ${infile}${secn}.meas infile secn meas flac"
+    { echo             "# ${infile}${secn}.meas infile secn meas flac"
       ffmpeg -hide_banner -loglevel info -benchmark -y $secc -i "$infilep" \
         -af "loudnorm=print_format=json" \
         -f flac "${inpath}/tmp/${infile}${secn}.flac" 2>&1 \
@@ -456,13 +451,13 @@ EOF
   [ "$lra" ] && lran="-lra$lra"
   [ "$tp"  ] &&  tpn="-tp$tp"
   [ "$i"   ] &&   in="-i$i"
-  [ "${offn}${lran}${tpn}${in}" ] && lnn="${offn}${lran}${tpn}${in}" || lnn="-ln"
+  [ "${offn}${lran}${tpn}${in}" ] && lnn="-ln${lran}${tpn}${in}${offn}" || lnn="-ln"
+  $verb "${inpath}/tmp/${infile}${secn}${lnn}.flac"
+  $verb "${inpath}/tmp/${infile}${secn}${lnn}.meas"
   [ -f "${inpath}/tmp/${infile}${secn}${lnn}.flac" ] || { # make loudnorm flac 
     local off="${off:=0}" tp="${tp:=-2}" lra="${lra:=7}" i="${i:=-24}" # assign unset parm to default values
     local $(grep measured "${inpath}/tmp/${infile}${secn}.meas")
-    { $verb "${inpath}/tmp/${infile}${secn}${lnn}.meas"
-      $verb "${inpath}/tmp/${infile}${secn}${lnn}.flac"
-       echo "# ${infile}${secn}${lnn}.flac infile ln flac"
+    { echo "# ${infile}${secn}${lnn}.flac infile ln flac"
       ffmpeg -hide_banner -loglevel info -benchmark -y $secc -i "$infilep" \
           -af "loudnorm=print_format=json:linear=true
                    :measured_I=${measured_I}:measured_TP=${measured_TP}
@@ -475,6 +470,7 @@ EOF
                                    {linear:.linear}
                                   ' | tr -d '"{}' | tr ':' '=' | awk -F, '{printf "% 18s % 18s % 18s % 22s % 15s \n",$1,$2,$3,$4,$5}'
     } >"${inpath}/tmp/${infile}${secn}${lnn}.meas"
+cat "${inpath}/tmp/${infile}${secn}${lnn}.meas"
   } # make loudnorm flac
   ##### begin rb section ######################################
   local out="${infile}${secn}${lnn}"
@@ -489,7 +485,7 @@ EOF
   [ "$t" -o "$p" -o "$f" ] && { # rb parm
     [ "$F" = "y" ]  &&  Fc='--formant'       Fn='-F'  || Fc=''   Fn=''
     [ "$cf" = "y" ] && cfc='--centre-focus' cfn='-cf' || cfc='' cfn=''
-    local out="${infile}${tn}${pn}${fhzn}${cn}${Fn}${cfn}${secn}${lnn}"
+    local out="${infile}${secn}${tn}${pn}${fhzn}${cn}${Fn}${cfn}${lnn}"
       [ -e "${inpath}/tmp/${out}.wav" ] || { # master sans volume
         $verb "${inpath}/tmp/${out}.wav"
         $verb2 $rb -q $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav"
@@ -512,7 +508,7 @@ EOF
              prependf "${inpath}/tmp/${out}${vn}.mp3" "$prependt" \
                  && mv -f "${inpath}/tmp/${prependt}${out}${vn}.mp3" "${inpath}/loss/"
     echo "$infilep"
-    find "${infilep%/*}" -type f -name \*"$infile"\* -newer "${inpath}/tmp/$null" | xargs ls -rth
+    find "${infilep%/*}" -type f -name \*"$infile"\*.ln.meas -o -name \*"$infile"\*mp3 -newer "${inpath}/tmp/$null" | xargs ls -rth
     rm -f "${inpath}/tmp/$null"
 # convert 5.1 channels to 2
 # https://superuser.com/questions/852400/properly-downmix-5-1-to-stereo-using-ffmpeg
@@ -569,7 +565,7 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
         # verb=chkwrn t='1' p='0' c='3' F='' cf='' ss='' to='' cmp='' v='' f2rb2mp3 {file-in} {prepend-out}
         local args="$(echo "^${a##*^}" | sed -E -e "s/.*\.${ext}//" -e "s/.mp3$//" \
           -e 's/^/ verb=chkwrn/' \
-          -e 's/-ss/ ss=/' -e 's/-to/ to=/' -e 's/-rev/ rev=y/' -e 's/-v/ v=/' \
+          -e 's/-ss/ ss=/' -e 's/-to/ to=/' -e 's/-rev/ rev=y/' -e 's/-v/ v=/' -e 's/-ln//' \
           -e "s/-t/ t=/" -e 's/-p/ p=/' -e 's/-(bhz|chz)/ f=\1/' \
           -e 's/-(kbd|hrn|cps)/ cmp=\1/' \
           -e 's/-f/ f=/' \
@@ -585,7 +581,7 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
         [ "$files" ] && orig="$(echo "${files}" | awk 'NR==1')"
         [ "$orig" ] || orig="'_^${hash}.${ext}'"
         # f2rb2mp3 help
-        echo $args f2rb2mp3 $orig $title
+        echo $args cmp=cps1 v=5db f2rb2mp3 $orig $title
         done
     } # { # process the filelist $fs
 } # formfile () { # create a f2rb2mp3 command to render the file, given the input filename
