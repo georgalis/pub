@@ -148,11 +148,12 @@ cattrunc () { #:> on terminal output, truncate lines to width
 
 
 _youtube_video_list () {
-local id="$1"
+local id="$1" d="$2"
 [ "$id" ] || read -p "youtube id: " id
-             read -p "directory : " d
-[ "$id" ] || chkerr "no id?"
-[ "$d" ] || d="$(pwd -P)"
+[ "$id" ] || { chkerr "no id?" ; return 1 ;}
+[ "$d" ]  || read -p "directory : " d
+[ -d "$d" ] || d="$(pwd -P)"
+[ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
 youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --yes-playlist \
  --audio-quality 0 --audio-format best --extract-audio --playlist-start 1 \
  -o "$d/%(title)s_^%(id)s.%(ext)s" $id
@@ -162,36 +163,39 @@ youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub -
 } # _youtube_video_list
 
 _youtube_video () {
-local id="$1"
+local id="$1" d="$2"
 [ "$id" ] || read -p "youtube id: " id
-             read -p "directory : " d
-[ "$id" ] || chkerr "no id?"
-[ "$d" ] || d="$(pwd -P)"
+[ "$id" ] || { chkerr "no id?" ; return 1 ;}
+[ "$d" ]  || read -p "directory : " d
+[ -d "$d" ] || d="$(pwd -P)"
+[ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
 youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --no-playlist \
  --audio-quality 0 --audio-format best --extract-audio \
  -o "$d/%(title)s_^%(id)s.%(ext)s" $id
 youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --no-playlist \
  --audio-quality 0 --audio-format best \
- -o "$d/0,%(title)s_^%(id)s.%(ext)s" $id
+ -o "$d/%(title)s_^%(id)s.%(ext)s" $id
 } # _youtube_video
 
 _youtube () {
-local id="$1"
+local id="$1" d="$2"
 [ "$id" ] || read -p "youtube id: " id
-             read -p "directory : " d
-[ "$id" ] || chkerr "no id?"
-[ "$d" ] || d="$(pwd -P)"
+[ "$id" ] || { chkerr "no id?" ; return 1 ;}
+[ "$d" ]  || read -p "directory : " d
+[ -d "$d" ] || d="$(pwd -P)"
+[ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
 youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --no-playlist \
  --audio-quality 0 --audio-format best --extract-audio \
- -o "$d/0,%(title)s_^%(id)s.%(ext)s" $id
+ -o "$d/%(title)s_^%(id)s.%(ext)s" $id
 } # _youtube
 
 _youtube_list () {
-local id="$1"
+local id="$1" d="$2"
 [ "$id" ] || read -p "youtube id: " id
-             read -p "directory : " d
-[ "$id" ] || chkerr "no id?"
-[ "$d" ] || d="$(pwd -P)"
+[ "$id" ] || { chkerr "no id?" ; return 1 ;}
+[ "$d" ]  || read -p "directory : " d
+[ -d "$d" ] || d="$(pwd -P)"
+[ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
 youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --yes-playlist \
  --audio-quality 0 --audio-format best --extract-audio --playlist-start 1 \
  -o "$d/0%(playlist_index)s,-%(title)s_^%(id)s.%(ext)s" $id
@@ -369,6 +373,7 @@ EOF
   expr "$1" : ".*/" >/dev/null && inpath="${1%/*}" || inpath="." # input dirname 
   local infilep="$(cd "${inpath}" ; pwd -P)/${infile}" # full filepath
   local prependt="$2"
+  [ "${prependt}" ] || prependt=00,
   [ "$t" -o "$p" ] && { [ "$c" ] || local c=5 ;} || true # "Crispness"
   # "Crispness" levels:
   #   -c 0   equivalent to --no-transients --no-lamination --window-long
@@ -430,46 +435,47 @@ EOF
   [ "$to" ] && { tsec=$(hms2sec ${to}) ;} 
   [ -z "$ss" -a "$to" ] && secc="-to $tsec"           secn="-to$tsec"
   [    "$ss" -a "$to" ] && secc="-ss $ssec -to $tsec" secn="-ss${ssec}-to${tsec}"
-  [ -f "${inpath}/tmp/${infile}${secn}.flac" -a -f "${inpath}/tmp/${infile}${secn}.flac.meas" ] || { # trim and measure
-    $verb "${inpath}/tmp/${infile}${secn}.flac"
-    $verb "${inpath}/tmp/${infile}${secn}.flac.meas"
-    ffmpeg -hide_banner -loglevel info -benchmark -y $secc -i "$infilep" \
-                   -af "loudnorm=print_format=json " -f flac "${inpath}/tmp/${infile}${secn}.flac" 2>&1 \
-          | awk '/^{/,0' \
-          | jq --compact-output '{measured_I:.input_i,measured_TP:.input_tp,measured_LRA:.input_lra,measured_thresh:.input_thresh}' \
-          | tr -d '{}' | sed -e 's/^"//' -e 's/":/=/g' -e 's/","/" /g' \
-          >"${inpath}/tmp/${infile}${secn}.flac.meas" # trimmed, measured
-    #     cat >"${inpath}/tmp/${infile}${secn}.flac.meas" <<-EOF
-    #             trimmed="${infile}${secn}.flac"
-    #             measured_thresh="${measured_thresh}"
-    #             measured_TP="${measured_TP}"
-    #             measured_LRA="${measured_LRA}"
-    #             measured_I="${measured_I}"
-    # EOF
-    } # have trimmed and measured data
+  [ -f "${inpath}/tmp/${infile}${secn}.meas" ] || { # measure
+    { $verb "${inpath}/tmp/${infile}${secn}.meas"
+       echo             "# ${infile}${secn}.meas infile secn meas flac"
+      ffmpeg -hide_banner -loglevel info -benchmark -y $secc -i "$infilep" \
+        -af "loudnorm=print_format=json" \
+        -f flac "${inpath}/tmp/${infile}${secn}.flac" 2>&1 \
+            | awk '/^{/,0' | jq --compact-output '
+                                 {measured_I:.input_i,measured_TP:.input_tp,measured_LRA:.input_lra,measured_thresh:.input_thresh},
+                                 {out_i_LUFS:.output_i,out_tp_dBTP:.output_tp,out_lra_LU:.output_lra,out_tr_LUFS:.output_thresh,offset_LU:.target_offset},
+                                 {linear:.linear}
+                                ' | tr -d '"{}' | tr ':' '=' | awk -F, '{printf "% 18s % 18s % 18s % 22s % 15s \n",$1,$2,$3,$4,$5}'
+     } >"${inpath}/tmp/${infile}${secn}.meas"
+    } # have trimmed measured flac
+#     i   Set integrated loudness target.  Range is -70.0 - -5.0. Default value is -24.0.
+#     lra Set loudness range target.  Range is 1.0 - 20.0. Default value is 7.0.
+#     tp  Set maximum true peak.  Range is -9.0 - +0.0. Default value is -2.0.
   local lnn offn tpn lran in measured_thresh measured_LRA measured_TP measured_I
   [ "$off" ] && offn="-off$off"
   [ "$lra" ] && lran="-lra$lra"
   [ "$tp"  ] &&  tpn="-tp$tp"
   [ "$i"   ] &&   in="-i$i"
   [ "${offn}${lran}${tpn}${in}" ] && lnn="${offn}${lran}${tpn}${in}" || lnn="-ln"
-  local off="${off:=0}" tp="${tp:=-2}" lra="${lra:=7}" i="${i:=-24}" # assign unset to default values
-  $verb ${inpath}/tmp/${infile}${secn}${lnn}.flac
-  eval "local $(cat "${inpath}/tmp/${infile}${secn}.flac.meas")"
-  ffmpeg -hide_banner -loglevel info -benchmark \
-    -y -i "${inpath}/tmp/${infile}${secn}.flac" \
-                 -af "loudnorm=print_format=json,loudnorm=linear=true,loudnorm=offset=${off},
-                      loudnorm=measured_I=${measured_I},    loudnorm=measured_TP=${measured_TP},
-                      loudnorm=measured_LRA=${measured_LRA},loudnorm=measured_thresh=${measured_thresh},
-                      loudnorm=tp=${tp},loudnorm=lra=${lra},loudnorm=i=${i}" \
-        -f flac "${inpath}/tmp/${infile}${secn}${lnn}.flac" 2>&1 \
-          | awk '/^{/,0' \
-          | jq --compact-output '{linear:.linear,offset_LU:.target_offset},
-                                 {measured_I:.input_i,measured_TP:.input_tp,measured_LRA:.input_lra,measured_thresh:.input_thresh},
-                                 {out_i_LUFS:.output_i,out_tp_dBTP:.output_tp,out_lra_LU:.output_lra,out_tr_LUFS:.output_thresh}
-                                ' \
-          | tr -d '{}' | sed -e 's/^"//' -e 's/":/=/g' -e 's/","/" /g' \
-          | column -t -s,
+  [ -f "${inpath}/tmp/${infile}${secn}${lnn}.flac" ] || { # make loudnorm flac 
+    local off="${off:=0}" tp="${tp:=-2}" lra="${lra:=7}" i="${i:=-24}" # assign unset parm to default values
+    local $(grep measured "${inpath}/tmp/${infile}${secn}.meas")
+    { $verb "${inpath}/tmp/${infile}${secn}${lnn}.meas"
+      $verb "${inpath}/tmp/${infile}${secn}${lnn}.flac"
+       echo "# ${infile}${secn}${lnn}.flac infile ln flac"
+      ffmpeg -hide_banner -loglevel info -benchmark -y $secc -i "$infilep" \
+          -af "loudnorm=print_format=json:linear=true
+                   :measured_I=${measured_I}:measured_TP=${measured_TP}
+                   :measured_LRA=${measured_LRA}:measured_thresh=${measured_thresh}
+                   :offset=${off}:i=${i}:tp=${tp}:lra=${lra}" \
+          -f flac "${inpath}/tmp/${infile}${secn}${lnn}.flac" 2>&1 \
+            | awk '/^{/,0' | jq --compact-output '
+                                   {measured_I:.input_i,measured_TP:.input_tp,measured_LRA:.input_lra,measured_thresh:.input_thresh},
+                                   {out_i_LUFS:.output_i,out_tp_dBTP:.output_tp,out_lra_LU:.output_lra,out_tr_LUFS:.output_thresh,offset_LU:.target_offset},
+                                   {linear:.linear}
+                                  ' | tr -d '"{}' | tr ':' '=' | awk -F, '{printf "% 18s % 18s % 18s % 22s % 15s \n",$1,$2,$3,$4,$5}'
+    } >"${inpath}/tmp/${infile}${secn}${lnn}.meas"
+  } # make loudnorm flac
   ##### begin rb section ######################################
   local out="${infile}${secn}${lnn}"
   local Fc='' Fn=''
@@ -494,19 +500,19 @@ EOF
       $verb "${inpath}/tmp/${out}${vn}.mp3"
       $verb2         sox "${inpath}/tmp/${out}.wav" "${inpath}/tmp/${out}${vn}.mp3" $vc
                      sox "${inpath}/tmp/${out}.wav" "${inpath}/tmp/${out}${vn}.mp3" $vc || { chkerr \
-                    "sox ${inpath}/tmp/${out}.wav ${inpath}/tmp/${out}${vn}.mp3 $vc" ; return 1 ;}
+                    "sox '${inpath}/tmp/${out}.wav' '${inpath}/tmp/${out}${vn}.mp3' $vc" ; return 1 ;}
     } || { # no rb input parms (only time, volume or neither)
          $verb "${inpath}/tmp/${out}${vn}.mp3"
-         $verb2         sox "${inpath}/tmp/${infile}${secn}.flac" "${inpath}/tmp/${out}${vn}.mp3" $vc
-                        sox "${inpath}/tmp/${infile}${secn}.flac" "${inpath}/tmp/${out}${vn}.mp3" $vc \
-           || { chkerr "sox ${inpath}/tmp/${infile}${secn}.flac ${inpath}/tmp/${out}${vn}.mp3 $vc" ; return 1 ;}
+         $verb2         sox "${inpath}/tmp/${out}.flac" "${inpath}/tmp/${out}${vn}.mp3" $vc
+                        sox "${inpath}/tmp/${out}.flac" "${inpath}/tmp/${out}${vn}.mp3" $vc \
+           || { chkerr "sox '${inpath}/tmp/${out}.flac' '${inpath}/tmp/${out}${vn}.mp3' $vc" ; return 1 ;}
          }
     # prepend output filename
     $verb "${inpath}/loss/${prependt}${out}${vn}.mp3"
              prependf "${inpath}/tmp/${out}${vn}.mp3" "$prependt" \
                  && mv -f "${inpath}/tmp/${prependt}${out}${vn}.mp3" "${inpath}/loss/"
     echo "$infilep"
-    find "$inpath" -type f -name \*"$infile"\* -newer "${inpath}/tmp/$null" | xargs ls -lrth
+    find "${infilep%/*}" -type f -name \*"$infile"\* -newer "${inpath}/tmp/$null" | xargs ls -rth
     rm -f "${inpath}/tmp/$null"
 # convert 5.1 channels to 2
 # https://superuser.com/questions/852400/properly-downmix-5-1-to-stereo-using-ffmpeg
