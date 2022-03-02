@@ -198,32 +198,8 @@ local id="$1" d="$2"
 [ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
 youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --yes-playlist \
  --audio-quality 0 --audio-format best --extract-audio --playlist-start 1 \
- -o "$d/0%(playlist_index)s,-%(title)s_^%(id)s.%(ext)s" $id
+ -o "$d/0%(playlist_index)s,%(title)s_^%(id)s.%(ext)s" $id
 } # _youtube_list
-
-# BETA!
-normff () { # use ffmpeg loudnorm...
-    [ -f "$1" ] || { chkerr "$0 : provide audio file (arg1)" ; return 1 ;}
-    inf="$1"
-    # loudnorm filter parameters:
-    # i      integrated loudness target.  Range is -70.0 -  -5.0. Default -24.0
-    # tp     maximum true peak.           Range is  -9.0 -  +0.0. Default  -2.0
-    # lra    loudness range target.       Range is   1.0 -  20.0. Default   7.0
-    # offset offset gain.                 Range is -99.0 - +99.0. Default  +0.0
-    #        (Gain is applied before the true-peak limiter.)
-    # set default values if unset:
-    local ln_off="${ln_off:=0}" ln_tp="${ln_tp:=-2}" ln_lra="${ln_lra:=7}" ln_i="${ln_i:=-24}" 
-    local outf="${inf}-lra${ln_lra}-tp${ln_tp}-off${ln_off}-i${ln_i}.flac"
-    # measure inf, set values, and filter
-echo xx ln_off="${ln_off}" ln_i="${ln_i}" ln_tp="${ln_tp}" ln_lra="${ln_lra}" outf="${outf}" xx
-    eval "local $( ln_off="${ln_off:=0}" ln_i="${ln_i:=-24}" ln_tp="${ln_tp:=-2}" ln_lra="${ln_lra:=7}" \
-      ffmpeg -hide_banner -loglevel info -benchmark \
-        -y -i "$inf" -af "loudnorm=print_format=json,
-                          loudnorm=i=${ln_i},loudnorm=tp=${ln_tp},loudnorm=lra=${ln_lra} \
-                         " -f null /dev/null 2>&1 \
-      | awk '/^{/,0' \
-      | jq --compact-output '{measured_I:.input_i,measured_TP:.input_tp,measured_LRA:.input_lra,measured_thresh:.input_thresh}' \
-      | tr -d '{}' | sed -e 's/^"//' -e 's/":/=/g' -e 's/","/" /g' )"
 
         #   [ "$(dc -e "1000 $ln_lra * p" | sed 's/\..*//' )" -lt "$(dc -e "1000 $measured_LRA * p" | sed 's/\..*//' )" ] && ln_lra="${measured_LRA}" || true
         # [ "$(( ${measured_TP} + ${ln_off} )) -gt ${ln_tp} ] && ln_tp=$(( ln_tp - ${measured_TP} + ${ln_off} 
@@ -274,31 +250,6 @@ echo xx ln_off="${ln_off}" ln_i="${ln_i}" ln_tp="${ln_tp}" ln_lra="${ln_lra}" ou
 #     print_format
 #         Set print format for stats. Options are summary, json, or none.  Default value is none.
 
-echo ${outf}
-echo " 
-                          loudnorm=print_format=json,loudnorm=linear=true,loudnorm=offset=${ln_off},
-                          loudnorm=measured_I=${measured_I},loudnorm=measured_TP=${measured_TP},
-                          loudnorm=measured_LRA=${measured_LRA},loudnorm=measured_thresh=${measured_thresh},
-                          loudnorm=i=${ln_i},loudnorm=tp=${ln_tp},loudnorm=lra=${ln_lra}
-" | tr -s ' ' | column -t -s,
-
-      ffmpeg -hide_banner -loglevel info -benchmark \
-        -y -i "$inf" -af "loudnorm=print_format=json,loudnorm=linear=true,loudnorm=offset=${ln_off},
-                          loudnorm=measured_I=${measured_I},loudnorm=measured_TP=${measured_TP},
-                          loudnorm=measured_LRA=${measured_LRA},loudnorm=measured_thresh=${measured_thresh},
-                          loudnorm=i=${ln_i},loudnorm=tp=${ln_tp},loudnorm=lra=${ln_lra}" \
-        -f flac ${outf} 2>&1
-
- #      -f flac ${outf} 2>&1 \
- #      | awk '/^{/,0' \
- #      | jq --compact-output '{measured_I:.input_i,measured_TP:.input_tp,measured_LRA:.input_lra,measured_thresh:.input_thresh},
- #                             {out_i_LUFS:.output_i,out_tp_dBTP:.output_tp,out_lra_LU:.output_lra,out_tr_LUFS:.output_thresh},
- #                             {linear:.linear,offset_LU:.target_offset}' \
- #          | tr -d '{}' | sed -e 's/^"//' -e 's/":/=/g' -e s/',"/ /g' \
- #          | tr -d '{}' | sed -e 's/^"//' -e 's/":/=/g' -e 's/","/" /g' \
- #          | column -t -s, ; echo ${outf}
-
-    }
 hms2sec () { # passthrough seconds or convert hh:mm:ss to seconds
     # must provide ss which may be ss.nn, hh: and hh:mm: are optional
     # a number must proceed every colin
@@ -353,7 +304,7 @@ EOF
     echo "# crisp:  0=mushy 1=piano 2=smooth 3=MULTITIMBRAL 4=two-sources 5=standard 6=percussive "
     echo "# Formant y/''  CenterFocus y/'' cmp (ckb|hrn|cps)(1..)/y/'' vol 0db/''"
     echo "# frequency (bhz|chz|N)/'' reverse y/''"
-    echo "# verb=chkwrn t='1' p='0' f= c= F= CF= ss= to= cmp= v= f2rb2mp3 {file-in} {prepend-out}"
+    echo "# t= p= f= c= F= CF= ss= to= cmp=cps1 v=5db f2rb2mp3 {file-in} {prepend-out}"
     return 0
     } # help
   [    "$1" ] || { f2rb2mp3 help ; return 1 ;}
@@ -387,7 +338,6 @@ EOF
   #          --detector-soft  Use soft transient detector
   #          --centre-focus   Preserve focus of centre material in stereo
   #                           (at a cost in width and individual channel quality)
-  #
   [ "$t" = 1 ] && local t= || true
   [ "$p" = 0 ] && local p= || true
   [ "$f" = 1 ] && local f= || true
@@ -416,7 +366,7 @@ EOF
  #$verb2 "cmpn='$cmpn'"
  #$verb2 "cmpc='$cmpc'"
  #$verb2 "input='$inpath/$infile'"
-  mkdir -p "${inpath}/tmp" "${inpath}/loss"
+  mkdir -p "${inpath}/tmp" "./loss"
   null="$(mktemp "${inpath}/tmp/nulltime-XXXXX")"
   null="${null##*/}" # basename
   [ "$cmpn" ] && vn="-$cmpn" vc="$cmpc" || true # sox compand is basically a volume adjustment...
@@ -504,9 +454,9 @@ cat "${inpath}/tmp/${infile}${secn}${lnn}.meas"
            || { chkerr "sox '${inpath}/tmp/${out}.flac' '${inpath}/tmp/${out}${vn}.mp3' $vc" ; return 1 ;}
          }
     # prepend output filename
-    $verb "${inpath}/loss/${prependt}${out}${vn}.mp3"
+    $verb "./loss/${prependt}${out}${vn}.mp3"
              prependf "${inpath}/tmp/${out}${vn}.mp3" "$prependt" \
-                 && mv -f "${inpath}/tmp/${prependt}${out}${vn}.mp3" "${inpath}/loss/"
+                 && mv -f "${inpath}/tmp/${prependt}${out}${vn}.mp3" "./loss/"
     echo "$infilep"
     find "${infilep%/*}" -type f -name \*"$infile"\*.ln.meas -o -name \*"$infile"\*mp3 -newer "${inpath}/tmp/$null" | xargs ls -rth
     rm -f "${inpath}/tmp/$null"
@@ -559,10 +509,7 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
         a="${a##*/}" # basename
         local ext="$(echo "^${a##*^}" | sed -e 's/[^.]*.//' -e 's/-.*//')" # expect ^ to proceed hash, followed by a dot mime, plus parm (.ext[-parm]*)
         local hash="$(echo "^${a##*^}" | sed "s/\.${ext}.*//")"      # hash from between "^ .ext"
-        # convert encoded args
-        # Crisp  0=Mushy 1=piano 2=smooth 3=MULTITIMBRAL 4=two-sources 5=standard 6=percussive
-        # Formant y/''  CenterFocus y/'' cmp (ckb|hrn)(1..)/y/'' vol 0db/''
-        # verb=chkwrn t='1' p='0' c='3' F='' cf='' ss='' to='' cmp='' v='' f2rb2mp3 {file-in} {prepend-out}
+        # convert f2rb2mp3 encoded args
         local args="$(echo "^${a##*^}" | sed -E -e "s/.*\.${ext}//" -e "s/.mp3$//" \
           -e 's/^/ verb=chkwrn/' \
           -e 's/-ss/ ss=/' -e 's/-to/ to=/' -e 's/-rev/ rev=y/' -e 's/-v/ v=/' -e 's/-ln//' \
@@ -581,7 +528,7 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
         [ "$files" ] && orig="$(echo "${files}" | awk 'NR==1')"
         [ "$orig" ] || orig="'_^${hash}.${ext}'"
         # f2rb2mp3 help
-        echo $args cmp=cps1 v=5db f2rb2mp3 $orig $title
+        echo $args f2rb2mp3 $orig $title
         done
     } # { # process the filelist $fs
 } # formfile () { # create a f2rb2mp3 command to render the file, given the input filename
