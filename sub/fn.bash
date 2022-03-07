@@ -300,6 +300,26 @@ EOF
     # https://hg.sr.ht/~breakfastquay/rubberband
     # https://github.com/breakfastquay/rubberband
     # https://breakfastquay.com/rubberband/
+    # "Crispness" levels:
+    #   -c 0   equivalent to --no-transients --no-lamination --window-long
+    #   -c 1   equivalent to --detector-soft --no-lamination --window-long (for piano)
+    #   -c 2   equivalent to --no-transients --no-lamination
+    #   -c 3   equivalent to --no-transients
+    #   -c 4   equivalent to --bl-transients
+    #   -c 5   default processing options (none of below)
+    #   -c 6   equivalent to --no-lamination --window-short (may be good for drums)
+    #
+    #   -L,    --loose          Relax timing in hope of better transient preservation
+    #          --no-transients  Disable phase resynchronisation at transients
+    #          --bl-transients  Band-limit phase resync to extreme frequencies
+    #          --no-lamination  Disable phase lamination
+    #          --window-long    Use longer processing window (actual size may vary)
+    #          --window-short   Use shorter processing window
+    #          --smoothing      Apply window presum and time-domain smoothing
+    #          --detector-perc  Use percussive transient detector (as in pre-1.5)
+    #          --detector-soft  Use soft transient detector
+    #          --centre-focus   Preserve focus of centre material in stereo
+    #                           (at a cost in width and individual channel quality)
     echo "# loudnorm defaults off=0 tp=-2 lra=7 i=-24"
     echo "# crisp:  0=mushy 1=piano 2=smooth 3=MULTITIMBRAL 4=two-sources 5=standard 6=percussive "
     echo "# Formant y/''  CenterFocus y/'' cmp (ckb|hrn|cps)(1..)/y/'' vol 0db/''"
@@ -318,26 +338,6 @@ EOF
   local prependt="$2"
   [ "${prependt}" ] || prependt=00,
   [ "$t" -o "$p" ] && { [ "$c" ] || local c=5 ;} || true # "Crispness"
-  # "Crispness" levels:
-  #   -c 0   equivalent to --no-transients --no-lamination --window-long
-  #   -c 1   equivalent to --detector-soft --no-lamination --window-long (for piano)
-  #   -c 2   equivalent to --no-transients --no-lamination
-  #   -c 3   equivalent to --no-transients
-  #   -c 4   equivalent to --bl-transients
-  #   -c 5   default processing options (none of below)
-  #   -c 6   equivalent to --no-lamination --window-short (may be good for drums)
-  #
-  #   -L,    --loose          Relax timing in hope of better transient preservation
-  #          --no-transients  Disable phase resynchronisation at transients
-  #          --bl-transients  Band-limit phase resync to extreme frequencies
-  #          --no-lamination  Disable phase lamination
-  #          --window-long    Use longer processing window (actual size may vary)
-  #          --window-short   Use shorter processing window
-  #          --smoothing      Apply window presum and time-domain smoothing
-  #          --detector-perc  Use percussive transient detector (as in pre-1.5)
-  #          --detector-soft  Use soft transient detector
-  #          --centre-focus   Preserve focus of centre material in stereo
-  #                           (at a cost in width and individual channel quality)
   [ "$t" = 1 ] && local t= || true
   [ "$p" = 0 ] && local p= || true
   [ "$f" = 1 ] && local f= || true
@@ -385,13 +385,15 @@ EOF
     { echo             "# ${infile}${secn}.meas infile secn meas flac"
       ffmpeg -hide_banner -loglevel info -benchmark -y $secc -i "$infilep" \
         -af "loudnorm=print_format=json" \
-        -f flac "${inpath}/tmp/${infile}${secn}.flac" 2>&1 \
+        -f flac "${inpath}/tmp/${infile}${secn}.flac~" 2>&1 \
             | awk '/^{/,0' | jq --compact-output '
                                  {measured_I:.input_i,measured_TP:.input_tp,measured_LRA:.input_lra,measured_thresh:.input_thresh},
                                  {out_i_LUFS:.output_i,out_tp_dBTP:.output_tp,out_lra_LU:.output_lra,out_tr_LUFS:.output_thresh,offset_LU:.target_offset},
                                  {linear:.linear}
                                 ' | tr -d '"{}' | tr ':' '=' | awk -F, '{printf "% 18s % 18s % 18s % 22s % 15s \n",$1,$2,$3,$4,$5}'
-     } >"${inpath}/tmp/${infile}${secn}.meas"
+     } >"${inpath}/tmp/${infile}${secn}.meas~"
+    mv "${inpath}/tmp/${infile}${secn}.flac~" "${inpath}/tmp/${infile}${secn}.flac"
+    mv "${inpath}/tmp/${infile}${secn}.meas~" "${inpath}/tmp/${infile}${secn}.meas"
     } # have trimmed measured flac
 #     i   Set integrated loudness target.  Range is -70.0 - -5.0. Default value is -24.0.
 #     lra Set loudness range target.  Range is 1.0 - 20.0. Default value is 7.0.
@@ -413,21 +415,23 @@ EOF
                    :measured_I=${measured_I}:measured_TP=${measured_TP}
                    :measured_LRA=${measured_LRA}:measured_thresh=${measured_thresh}
                    :offset=${off}:i=${i}:tp=${tp}:lra=${lra}" \
-          -f flac "${inpath}/tmp/${infile}${secn}${lnn}.flac" 2>&1 \
+          -f flac "${inpath}/tmp/${infile}${secn}${lnn}.flac~" 2>&1 \
             | awk '/^{/,0' | jq --compact-output '
                                    {measured_I:.input_i,measured_TP:.input_tp,measured_LRA:.input_lra,measured_thresh:.input_thresh},
                                    {out_i_LUFS:.output_i,out_tp_dBTP:.output_tp,out_lra_LU:.output_lra,out_tr_LUFS:.output_thresh,offset_LU:.target_offset},
                                    {linear:.linear}
                                   ' | tr -d '"{}' | tr ':' '=' | awk -F, '{printf "% 18s % 18s % 18s % 22s % 15s \n",$1,$2,$3,$4,$5}'
-    } >"${inpath}/tmp/${infile}${secn}${lnn}.meas"
-cat "${inpath}/tmp/${infile}${secn}${lnn}.meas"
+    } >"${inpath}/tmp/${infile}${secn}${lnn}.meas~"
+    mv "${inpath}/tmp/${infile}${secn}${lnn}.flac~" "${inpath}/tmp/${infile}${secn}${lnn}.flac"
+    mv "${inpath}/tmp/${infile}${secn}${lnn}.meas~" "${inpath}/tmp/${infile}${secn}${lnn}.meas"
+    grep -E '(measured|out)' "${inpath}/tmp/${infile}${secn}${lnn}.meas"
   } # make loudnorm flac
   ##### begin rb section ######################################
   local out="${infile}${secn}${lnn}"
   local Fc='' Fn=''
   local cfc='' cfn=''
   local cc='' cn=''
-  [ "$c" ] && { expr "$c" : '^[012345]$' >/dev/null || { chkerr "$FUNCNAME parm invalid : c=$c" ; return 1 ;} ;}
+  [ "$c" ] && { expr "$c" : '^[0123456]$' >/dev/null || { chkerr "$FUNCNAME parm invalid : c=$c" ; return 1 ;} ;}
   [ "$c" ] && cc="--crisp $c" cn="-c${c}" || true
   expr "$t" : '^-' >/dev/null && { chkerr "$FUNCNAME parm invalid : t=$t" ; return 1 ;}
   expr "$p" : '^-[[:digit:]]*$' >/dev/null && p="${p}.0" # fixup negative intergers, least test fail... -bash: [: -3: unary operator expected
@@ -438,27 +442,33 @@ cat "${inpath}/tmp/${infile}${secn}${lnn}.meas"
     local out="${infile}${secn}${tn}${pn}${fhzn}${cn}${Fn}${cfn}${lnn}"
       [ -e "${inpath}/tmp/${out}.wav" ] || { # master sans volume
         $verb "${inpath}/tmp/${out}.wav"
-        $verb2 $rb -q $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav"
-               $rb -q $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav" || { chkerr \
-               $rb -q $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav" ; return 1 ;}
+        $verb2 $rb -q $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav~"
+               $rb -q $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav~" || { chkerr \
+               $rb -q $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav~" ; return 1 ;}
+        mv "${inpath}/tmp/${out}.wav~" "${inpath}/tmp/${out}.wav"
         } # final master, sans sox volume
       # apply volume and make an mp3 --- hopefully the input is not clipped already!
       $verb "${inpath}/tmp/${out}${vn}.mp3"
-      $verb2         sox "${inpath}/tmp/${out}.wav" "${inpath}/tmp/${out}${vn}.mp3" $vc
-                     sox "${inpath}/tmp/${out}.wav" "${inpath}/tmp/${out}${vn}.mp3" $vc || { chkerr \
-                    "sox '${inpath}/tmp/${out}.wav' '${inpath}/tmp/${out}${vn}.mp3' $vc" ; return 1 ;}
+                    # not seeing sox format specifier for ".mp3~" type files... 
+      $verb2         sox "${inpath}/tmp/${out}.wav" "${inpath}/tmp/${out}${vn}.tmp.mp3" $vc
+                     sox "${inpath}/tmp/${out}.wav" "${inpath}/tmp/${out}${vn}.tmp.mp3" $vc || { chkerr \
+                    "sox '${inpath}/tmp/${out}.wav' '${inpath}/tmp/${out}${vn}.tmp.mp3' $vc" ; return 1 ;}
+      mv "${inpath}/tmp/${out}${vn}.tmp.mp3" "${inpath}/tmp/${out}${vn}.mp3"
     } || { # no rb input parms (only time, volume or neither)
-         $verb "${inpath}/tmp/${out}${vn}.mp3"
-         $verb2         sox "${inpath}/tmp/${out}.flac" "${inpath}/tmp/${out}${vn}.mp3" $vc
-                        sox "${inpath}/tmp/${out}.flac" "${inpath}/tmp/${out}${vn}.mp3" $vc \
-           || { chkerr "sox '${inpath}/tmp/${out}.flac' '${inpath}/tmp/${out}${vn}.mp3' $vc" ; return 1 ;}
+        $verb "${inpath}/tmp/${out}${vn}.mp3"
+        $verb2         sox "${inpath}/tmp/${out}.flac" "${inpath}/tmp/${out}${vn}.tmp.mp3" $vc
+                       sox "${inpath}/tmp/${out}.flac" "${inpath}/tmp/${out}${vn}.tmp.mp3" $vc \
+          || { chkerr "sox '${inpath}/tmp/${out}.flac' '${inpath}/tmp/${out}${vn}.tmp.mp3' $vc" ; return 1 ;}
+        mv "${inpath}/tmp/${out}${vn}.tmp.mp3" "${inpath}/tmp/${out}${vn}.mp3"
          }
     # prepend output filename
     $verb "./loss/${prependt}${out}${vn}.mp3"
              prependf "${inpath}/tmp/${out}${vn}.mp3" "$prependt" \
                  && mv -f "${inpath}/tmp/${prependt}${out}${vn}.mp3" "./loss/"
-    echo "$infilep"
-    find "${infilep%/*}" -type f -name \*"$infile"\*.ln.meas -o -name \*"$infile"\*mp3 -newer "${inpath}/tmp/$null" | xargs ls -rth
+    find "${inpath}" ./loss -type f \
+        -regex "${inpath}/tmp/\*${infile}\*.ln.meas" -o \
+        -regex "./loss/\*${infile}\*mp3" \
+        -newer "${inpath}/tmp/$null" | xargs ls -rth
     rm -f "${inpath}/tmp/$null"
 # convert 5.1 channels to 2
 # https://superuser.com/questions/852400/properly-downmix-5-1-to-stereo-using-ffmpeg
@@ -540,17 +550,15 @@ formfilestats () { # accept dir(s) as args, report formfile time and pitch stats
       for b in "$dir"/*mp3 ; do
         a="${b##*/}"
         ext="$( sed -e 's/[^.]*.//' -e 's/-.*//' <<<"^${a##*^}" )"
-        hash="$( sed "s/\.${ext}.*//" <<<"^${a##*^}" )"
-        args="$(echo \
-          | sed -E -e "
-            # start with verbatim block from formfile
+        sed -E -e "
+            # start with block from formfile
             s/.*\.${ext}//
             s/.mp3$//
-            s/^/ verb=chkwrn/
             s/-ss/ ss=/
             s/-to/ to=/
             s/-rev/ rev=y/
             s/-v/ v=/
+            s/-ln//
             s/-t/ t=/
             s/-p/ p=/
             s/-(bhz|chz)/ f=\1/
@@ -559,18 +567,14 @@ formfilestats () { # accept dir(s) as args, report formfile time and pitch stats
             s/-cf/ cf=y/
             s/-c/ c=/
             s/-F/ F=y/
-            # squash verbatim formfile to time, pitch parameters
-            s/ verb=chkwrn//
-            s/ ss=.*//
-            s/ to=.*//
-            s/ c=.*//
-            s/ F=.*//
-            s/ rev=y//
-            s/ v=.*db//
+            # squash to tempo and pitch parameters
+            s/[ ](ss|to|cmp|F|v|c|rev)=[^ ]*//g
+            /^$/d
+            # fixup odd case
             s/^ p/ t=1 p/
             / t=1 p=0$/d
-            " <<<"^${a##*^}" )"
-        echo "$args" | awk '{printf "%- 11s %- 11s %s %s %s\n",$1,$2,$3,$4,$5}'
+          " <<<"^${a##*^}" \
+          | awk '{printf "%- 11s %- 11s %s %s %s\n",$1,$2,$3,$4,$5}'
         done # b in "$dir"/*mp3
         } || true # $dir
        done | sort -n -t '=' -k 2 | uniq -c # sort result and count uniq
@@ -786,7 +790,7 @@ numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" 
     # Accept args OR stdin (one file per line), only act on regular files, squash any leading "./";
     # Expect filenames to start with sequence characters (three base 32 chars, followed by ",");
     # Retain the major sequence character, regenerate base 32 sequence, in a step of 3;
-    # Bump up the sequence major value by "$numlistb" if set (interger);
+    # Bump up the sequence major value by "$numlistbump" if set (interger);
     # Prepend output filenames with the "$numlist" string;
     # Initilize base 32 sequence with 0 major for input files that have no sequence;
     # For name changes, without colisions, generate mv commands for evaluation or "| sh".
@@ -796,8 +800,8 @@ numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" 
     fs="$(sed 's/^\.\///' <<<"$fs" | while IFS= read f ; do [ -f "${f%%/*}" ] && echo "${f%%/*}" || true ; done)"
     for p in 0 1 2 3 4 5 6 7 8 9 a b c d e f g h j k m n p q r s t u v x y z ; do # iterate on each major base 32
         b="$p"
-        [ "$numlistb" -gt 0 ] 2>/dev/null \
-          && { for a in $(seq 1 $numlistb ) ; do # bump the major sequence by $numlistb if set
+        [ "$numlistbump" -gt 0 ] 2>/dev/null \
+          && { for a in $(seq 1 $numlistbump ) ; do # bump the major sequence by $numlistbump if set
                b="$(tr '0123456789abcdefghjkmnpqrstuvxyz' '123456789abcdefghjkmnpqrstuvxyz0' <<<$b)"
                done
              } || true
