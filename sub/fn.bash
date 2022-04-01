@@ -67,7 +67,7 @@ chkwrn 18c46093 0000005e
 chkerr 57d3ff82 0000005f
 logwrn e5806086 00000061
 logerr ffddd972 00000062
-siff 651922db 000000d6
+siff 1ff96e34 000000fc
 EOF
 
 alias   gst='git status --short | sed "s/^\?/ \?/" | sort'
@@ -123,10 +123,14 @@ agstlt () { lt $(agst ~ | awk '{print $2}' | while IFS= read a ; do find "$a" -t
 #
 #local u h b t s d bak n tf
 #u="$USER" # uid running the tests
+# filein="${1##*/}" # basename arg1
+# expr "$1" : ".*/" >/dev/null && pathin="${1%/*}" || pathin="." # dirname arg1
+# filepin="$(cd "${pathin}" ; pwd -P)/${filein}" # full filepath
 #h="$(cd $(dirname $0) && pwd -P)" # realpath of this script
 #b="$(basename $0 | sed 's/.[^.]*$//')" # this program name less (.sh) extension
 #t="$( { date '+%Y%m%d_%H%M%S_' && uuidgen ;} | sed -e 's/-.*//' | tr -d ' \n' )" # time based uniq id
-# find . \( -path ./skel -o -path ./mkinst \) \! -prune -o -type f
+# find . \( -path ./skel -o -path ./mkinst -o -path ./.git \) \! -prune -o -type f
+# find -E . -regex '\./(skel|mkinst|\.git)$' -not -prune -o -type f
 #[ -n "$1" ] && { cd "$1" && s="$PWD" ;} || chkerr "Expecting dir as arg1" # set src dir
 #[ -d "$s" ] || chkerr "$s (arg1) is not a directory"
 #[ -n "$2" ] && cd "$2" && d="$(pwd -P)" || d="$HOME" # set dest dir
@@ -146,7 +150,6 @@ cattrunc () { #:> on terminal output, truncate lines to width
         } || cat
     } # cattrunc
 
-
 _youtube_video_list () {
 local id="$1" d="$2"
 [ "$id" ] || read -p "youtube id: " id
@@ -156,10 +159,10 @@ local id="$1" d="$2"
 [ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
 youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --yes-playlist \
  --audio-quality 0 --audio-format best --extract-audio --playlist-start 1 \
- -o "$d/%(title)s_^%(id)s.%(ext)s" $id
+ -o "$d/0%(playlist_index)s,%(title)s-%(playlist_title)s-%(uploader_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
 youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --yes-playlist \
  --audio-quality 0 --audio-format best --playlist-start 1 \
- -o "$d/0%(playlist_index)s,-%(title)s_^%(id)s.%(ext)s" $id
+ -o "$d/0%(playlist_index)s,%(title)s-%(playlist_title)s-%(uploader_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
 } # _youtube_video_list
 
 _youtube_video () {
@@ -171,10 +174,10 @@ local id="$1" d="$2"
 [ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
 youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --no-playlist \
  --audio-quality 0 --audio-format best --extract-audio \
- -o "$d/%(title)s_^%(id)s.%(ext)s" $id
+ -o "$d/0,%(title)s-%(uploader_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
 youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --no-playlist \
  --audio-quality 0 --audio-format best \
- -o "$d/%(title)s_^%(id)s.%(ext)s" $id
+ -o "$d/0,%(title)s-%(uploader_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
 } # _youtube_video
 
 _youtube () {
@@ -186,7 +189,7 @@ local id="$1" d="$2"
 [ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
 youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --no-playlist \
  --audio-quality 0 --audio-format best --extract-audio \
- -o "$d/%(title)s_^%(id)s.%(ext)s" $id
+ -o "$d/0,%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
 } # _youtube
 
 _youtube_list () {
@@ -198,55 +201,55 @@ local id="$1" d="$2"
 [ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
 youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --yes-playlist \
  --audio-quality 0 --audio-format best --extract-audio --playlist-start 1 \
- -o "$d/0%(playlist_index)s,%(title)s_^%(id)s.%(ext)s" $id
+ -o "$d/0%(playlist_index)s,%(title)s-%(playlist_title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
 } # _youtube_list
 
         #   [ "$(dc -e "1000 $ln_lra * p" | sed 's/\..*//' )" -lt "$(dc -e "1000 $measured_LRA * p" | sed 's/\..*//' )" ] && ln_lra="${measured_LRA}" || true
-        # [ "$(( ${measured_TP} + ${ln_off} )) -gt ${ln_tp} ] && ln_tp=$(( ln_tp - ${measured_TP} + ${ln_off} 
+        # [ "$(( ${measured_TP} + ${ln_off} )) -gt ${ln_tp} ] && ln_tp=$(( ln_tp - ${measured_TP} + ${ln_off}
 
 # loudnorm
 #     EBU R128 loudness normalization. Includes both dynamic and linear normalization modes.  Support for both single pass (livestreams,
 #     files) and double pass (files) modes.  This algorithm can target IL, LRA, and maximum true peak. In dynamic mode, to accurately detect
 #     true peaks, the audio stream will be upsampled to 192 kHz.  Use the "-ar" option or "aresample" filter to explicitly set an output
 #     sample rate.
-# 
+#
 #     The filter accepts the following options:
-# 
+#
 #     I, i
 #         Set integrated loudness target.  Range is -70.0 - -5.0. Default value is -24.0.
-# 
+#
 #     LRA, lra
 #         Set loudness range target.  Range is 1.0 - 20.0. Default value is 7.0.
-# 
+#
 #     TP, tp
 #         Set maximum true peak.  Range is -9.0 - +0.0. Default value is -2.0.
-# 
+#
 #     measured_I, measured_i
 #         Measured IL of input file.  Range is -99.0 - +0.0.
-# 
+#
 #     measured_LRA, measured_lra
 #         Measured LRA of input file.  Range is  0.0 - 99.0.
-# 
+#
 #     measured_TP, measured_tp
 #         Measured true peak of input file.  Range is  -99.0 - +99.0.
-# 
+#
 #     measured_thresh
 #         Measured threshold of input file.  Range is -99.0 - +0.0.
-# 
+#
 #     offset
 #         Set offset gain. Gain is applied before the true-peak limiter.  Range is  -99.0 - +99.0. Default is +0.0.
-# 
+#
 #     linear
 #         Normalize by linearly scaling the source audio.  "measured_I", "measured_LRA", "measured_TP", and "measured_thresh" must all be
 #         specified. Target LRA shouldn't be lower than source LRA and the change in integrated loudness shouldn't result in a true peak
 #         which exceeds the target TP. If any of these conditions aren't met, normalization mode will revert to dynamic.  Options are "true"
 #         or "false". Default is "true".
-# 
+#
 #     dual_mono
 #         Treat mono input files as "dual-mono". If a mono file is intended for playback on a stereo system, its EBU R128 measurement will be
 #         perceptually incorrect.  If set to "true", this option will compensate for this effect.  Multi-channel input files are not affected
 #         by this option.  Options are true or false. Default is false.
-# 
+#
 #     print_format
 #         Set print format for stats. Options are summary, json, or none.  Default value is none.
 
@@ -320,11 +323,12 @@ EOF
     #          --detector-soft  Use soft transient detector
     #          --centre-focus   Preserve focus of centre material in stereo
     #                           (at a cost in width and individual channel quality)
-    echo "# loudnorm defaults off=0 tp=-2 lra=7 i=-24"
+    echo "# loudnorm defaults off=0 tp=-1 lra=7 i=-23 local off=6 tp=-0.5"
     echo "# crisp:  0=mushy 1=piano 2=smooth 3=MULTITIMBRAL 4=two-sources 5=standard 6=percussive "
-    echo "# Formant y/''  CenterFocus y/'' cmp (ckb|hrn|cps)(1..)/y/'' vol 0db/''"
-    echo "# frequency (bhz|chz|N)/'' reverse y/''"
-    echo "# t= p= f= c= F= CF= ss= to= cmp=cps1 v=5db f2rb2mp3 {file-in} {prepend-out}"
+    echo "# Formant y/''  CenterFocus y/'' vol 0db/'' frequency (bhz|chz|N)/'' reverse y/''"
+    echo "# cmp= $(declare -f $FUNCNAME | sed -e '/compand/!d' -e '/sed/d' -e 's/=.*//' -e 's/local//' | tr -s ' \n' '|')"
+    declare -f $FUNCNAME | sed -e '/compand/!d' -e '/sed/d' | while IFS= read a ; do ${verb2} "$a" ; done
+    echo "# ss= to= t= p= f= c= F= CF= off= tp= lra= i= cmp= v= f2rb2mp3 {file-in} {prepend-out}"
     return 0
     } # help
   [    "$1" ] || { f2rb2mp3 help ; return 1 ;}
@@ -333,7 +337,7 @@ EOF
   local verb2="${verb2:=devnul}"
   local verb3="${verb3:=devnul}"
   local infile="${1##*/}" # basename
-  expr "$1" : ".*/" >/dev/null && inpath="${1%/*}" || inpath="." # input dirname 
+  expr "$1" : ".*/" >/dev/null && inpath="${1%/*}" || inpath="." # input dirname
   local infilep="$(cd "${inpath}" ; pwd -P)/${infile}" # full filepath
   local prependt="$2"
   [ "${prependt}" ] || prependt=00,
@@ -354,6 +358,12 @@ EOF
   local hrn2="compand 0.08,0.3 -68,-68,-50,-46,-18,-18,-0,-6                -2 -68 0"
   local hrn3="compand 0.08,0.3 -74,-80,-50,-46,-18,-18,-0,-6                -1 -68 0"
   local cps1="compand 0.06,0.3 -70,-84,-50,-45,-32,-33,-0,-21              1.8 -71 0.013"
+  local cps1="compand 0.07,0.25 -70,-84,-50,-45,-32,-33,-0,-21               3 -71 0.07"
+  local par2="compand 0.09,0.25 -100,-116,-88,-97,-80,-80,-63,-72,-54,-60,-23,-48,0,-36             24 -95 0.08"
+  local parc="compand 0.09,0.25 -97,-106,-85,-89,-73,-73,-57,-61,-40,-49,-21,-37,0,-25              12 -95 0.08"
+  local para="compand 0.09,0.25 -95,-111,-85,-94,-75,-79,-65,-65,-51,-55,-36,-45,-19,-35,0,-25      10 -95 0.08"
+  local par9="compand 0.09,0.25 -88,-104,-79,-88,-70,-74,-61,-61,-48,-52,-34,-43,-18,-34,0,-25       9 -88 0.08"
+  local par8="compand 0.09,0.25 -80,-106,-72,-81,-65,-69,-57,-57,-45,-49,-32,-41,-17,-33,0,-25       8 -80 0.08"
   [ "$cmp" = "ckb" ]  && cmpn="$cmp" cmpc="$ckb0"
   [ "$cmp" = "hrn" ]  && cmpn="$cmp" cmpc="$hrn1"
   [ "$cmp" = "hrn2" ] && cmpn="$cmp" cmpc="$hrn2"
@@ -362,22 +372,28 @@ EOF
   [ "$cmp" = "ckb3" ] && cmpn="$cmp" cmpc="$ckb3"
   [ "$cmp" = "hrn1" ] && cmpn="$cmp" cmpc="$hrn1"
   [ "$cmp" = "cps1" ] && cmpn="$cmp" cmpc="$cps1"
+  [ "$cmp" = "cps" ]  && cmpn="$cmp" cmpc="$cps1"
+  [ "$cmp" = "par2" ] && cmpn="$cmp" cmpc="$par2"
+  [ "$cmp" = "parc" ] && cmpn="$cmp" cmpc="$parc"
+  [ "$cmp" = "para" ] && cmpn="$cmp" cmpc="$para"
+  [ "$cmp" = "par9" ] && cmpn="$cmp" cmpc="$par9"
+  [ "$cmp" = "par8" ] && cmpn="$cmp" cmpc="$par8"
   local vn='' vc=''
- #$verb2 "cmpn='$cmpn'"
- #$verb2 "cmpc='$cmpc'"
- #$verb2 "input='$inpath/$infile'"
+  $verb2 "cmpn='$cmpn'"
+  $verb2 "cmpc='$cmpc'"
+  $verb2 "input='$inpath/$infile'"
   mkdir -p "${inpath}/tmp" "./loss"
   null="$(mktemp "${inpath}/tmp/nulltime-XXXXX")"
   null="${null##*/}" # basename
   [ "$cmpn" ] && vn="-$cmpn" vc="$cmpc" || true # sox compand is basically a volume adjustment...
-  [ "$cmpn" -a -z "$v" ] && local v=0db || true # set an unset volume (v) param, if we have compand w/o volume
+# [ "$cmpn" -a -z "$v" ] && local v=0db || true # set an unset volume (v) param, if we have compand w/o volume
   [ "$v" ] && { vn="${vn}-v${v}" vc="${vc} vol ${v} dither" ;} || true # set vol name (vn) and vol command (vc) if needed
   [ "$rev" = "y" ] && vn="${vn}-rev" vc="$vc reverse"
   local secc='' secn='' ssec='' tsec=''
   # always set duration
   [ "$ss" = 0 ] && local ss= || { ssec=$(hms2sec ${ss}) ;}
   [ "$to" ] || local to="$(ffprobe -hide_banner -loglevel info "$infilep" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')"
-  [ "$to" ] && { tsec=$(hms2sec ${to}) ;} 
+  [ "$to" ] && { tsec=$(hms2sec ${to}) ;}
   [ -z "$ss" -a "$to" ] && secc="-to $tsec"           secn="-to$tsec"
   [    "$ss" -a "$to" ] && secc="-ss $ssec -to $tsec" secn="-ss${ssec}-to${tsec}"
   $verb "${inpath}/tmp/${infile}${secn}.meas"
@@ -392,7 +408,7 @@ EOF
                                  {linear:.linear}
                                 ' | tr -d '"{}' | tr ':' '=' | awk -F, '{printf "% 18s % 18s % 18s % 22s % 15s \n",$1,$2,$3,$4,$5}'
      } >"${inpath}/tmp/${infile}${secn}.meas~"
-    mv "${inpath}/tmp/${infile}${secn}.flac~" "${inpath}/tmp/${infile}${secn}.flac"
+    mv -f "${inpath}/tmp/${infile}${secn}.flac~" "${inpath}/tmp/${infile}${secn}.flac"
     mv "${inpath}/tmp/${infile}${secn}.meas~" "${inpath}/tmp/${infile}${secn}.meas"
     } # have trimmed measured flac
 #     i   Set integrated loudness target.  Range is -70.0 - -5.0. Default value is -24.0.
@@ -406,8 +422,10 @@ EOF
   [ "${offn}${lran}${tpn}${in}" ] && lnn="-ln${lran}${tpn}${in}${offn}" || lnn="-ln"
   $verb "${inpath}/tmp/${infile}${secn}${lnn}.flac"
   $verb "${inpath}/tmp/${infile}${secn}${lnn}.meas"
-  [ -f "${inpath}/tmp/${infile}${secn}${lnn}.flac" ] || { # make loudnorm flac 
-    local off="${off:=0}" tp="${tp:=-2}" lra="${lra:=7}" i="${i:=-24}" # assign unset parm to default values
+  [ -f "${inpath}/tmp/${infile}${secn}${lnn}.flac" ] || { # make loudnorm flac https://en.wikipedia.org/wiki/EBU_R_128
+  # local off="${off:=0}" tp="${tp:=-2}"   lra="${lra:=7}" i="${i:=-24}" # assign unset parm to default values
+  # local off="${off:=0}" tp="${tp:=-1}"   lra="${lra:=7}" i="${i:=-23}" # https://tech.ebu.ch/docs/r/r128.pdf revision 2020
+    local off="${off:=0}" tp="${tp:=-0.5}" lra="${lra:=7}" i="${i:=-23}" # assign unset parm to local defaults
     local $(grep measured "${inpath}/tmp/${infile}${secn}.meas")
     { echo "# ${infile}${secn}${lnn}.flac infile ln flac"
       ffmpeg -hide_banner -loglevel info -benchmark -y $secc -i "$infilep" \
@@ -424,7 +442,8 @@ EOF
     } >"${inpath}/tmp/${infile}${secn}${lnn}.meas~"
     mv "${inpath}/tmp/${infile}${secn}${lnn}.flac~" "${inpath}/tmp/${infile}${secn}${lnn}.flac"
     mv "${inpath}/tmp/${infile}${secn}${lnn}.meas~" "${inpath}/tmp/${infile}${secn}${lnn}.meas"
-    grep -E '(measured|out)' "${inpath}/tmp/${infile}${secn}${lnn}.meas"
+    grep -E '(measured|out)' "${inpath}/tmp/${infile}${secn}${lnn}.meas" \
+        | while IFS= read a ; do ${verb2} "$a" ; done
   } # make loudnorm flac
   ##### begin rb section ######################################
   local out="${infile}${secn}${lnn}"
@@ -433,9 +452,9 @@ EOF
   local cc='' cn=''
   [ "$c" ] && { expr "$c" : '^[0123456]$' >/dev/null || { chkerr "$FUNCNAME parm invalid : c=$c" ; return 1 ;} ;}
   [ "$c" ] && cc="--crisp $c" cn="-c${c}" || true
-  expr "$t" : '^-' >/dev/null && { chkerr "$FUNCNAME parm invalid : t=$t" ; return 1 ;}
-  expr "$p" : '^-[[:digit:]]*$' >/dev/null && p="${p}.0" # fixup negative intergers, least test fail... -bash: [: -3: unary operator expected
-  expr "$f" : '^-[[:digit:]]*$' >/dev/null && f="${f}.0" # fixup negative intergers, least test fail
+  expr "$t" : '^-' >/dev/null && { chkerr "$FUNCNAME parm invalid : t=$t" ; return 1 ;} || true
+  expr "$p" : '^-[[:digit:]]*$' >/dev/null && p="${p}.0" || true # fixup negative intergers, least test fail... -bash: [: -3: unary operator expected
+  expr "$f" : '^-[[:digit:]]*$' >/dev/null && f="${f}.0" || true # fixup negative intergers, least test fail
   [ "$t" -o "$p" -o "$f" ] && { # rb parm
     [ "$F" = "y" ]  &&  Fc='--formant'       Fn='-F'  || Fc=''   Fn=''
     [ "$cf" = "y" ] && cfc='--centre-focus' cfn='-cf' || cfc='' cfn=''
@@ -443,33 +462,38 @@ EOF
       [ -e "${inpath}/tmp/${out}.wav" ] || { # master sans volume
         $verb "${inpath}/tmp/${out}.wav"
         $verb2 $rb -q $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav~"
-               $rb -q $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav~" || { chkerr \
+             { $rb -q $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav~" 2>&1 \
+                 | while IFS= read a ; do ${verb} "$a" ; done ;} || { chkerr \
                $rb -q $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav~" ; return 1 ;}
         mv "${inpath}/tmp/${out}.wav~" "${inpath}/tmp/${out}.wav"
         } # final master, sans sox volume
       # apply volume and make an mp3 --- hopefully the input is not clipped already!
       $verb "${inpath}/tmp/${out}${vn}.mp3"
-                    # not seeing sox format specifier for ".mp3~" type files... 
+                    # not seeing sox format specifier for ".mp3~" type files...
       $verb2         sox "${inpath}/tmp/${out}.wav" "${inpath}/tmp/${out}${vn}.tmp.mp3" $vc
-                     sox "${inpath}/tmp/${out}.wav" "${inpath}/tmp/${out}${vn}.tmp.mp3" $vc || { chkerr \
+                 {   sox "${inpath}/tmp/${out}.wav" "${inpath}/tmp/${out}${vn}.tmp.mp3" $vc 2>&1 \
+                 | while IFS= read a ; do ${verb} "$a" ; done ;} || { chkerr \
                     "sox '${inpath}/tmp/${out}.wav' '${inpath}/tmp/${out}${vn}.tmp.mp3' $vc" ; return 1 ;}
       mv "${inpath}/tmp/${out}${vn}.tmp.mp3" "${inpath}/tmp/${out}${vn}.mp3"
     } || { # no rb input parms (only time, volume or neither)
         $verb "${inpath}/tmp/${out}${vn}.mp3"
         $verb2         sox "${inpath}/tmp/${out}.flac" "${inpath}/tmp/${out}${vn}.tmp.mp3" $vc
-                       sox "${inpath}/tmp/${out}.flac" "${inpath}/tmp/${out}${vn}.tmp.mp3" $vc \
-          || { chkerr "sox '${inpath}/tmp/${out}.flac' '${inpath}/tmp/${out}${vn}.tmp.mp3' $vc" ; return 1 ;}
+                 {     sox "${inpath}/tmp/${out}.flac" "${inpath}/tmp/${out}${vn}.tmp.mp3" $vc 2>&1 \
+                 | while IFS= read a ; do ${verb} "$a" ; done ;} || { chkerr \
+                      "sox '${inpath}/tmp/${out}.flac' '${inpath}/tmp/${out}${vn}.tmp.mp3' $vc" ; return 1 ;}
         mv "${inpath}/tmp/${out}${vn}.tmp.mp3" "${inpath}/tmp/${out}${vn}.mp3"
          }
+   find "${inpath}" ./loss -type f -newer "${inpath}/tmp/$null" \
+       -regex ".*${infile}.*\.ln\.meas" -o \
+       -name "\*${out}${vn}.mp3" \
+        | xargs ls -rth
     # prepend output filename
     $verb "./loss/${prependt}${out}${vn}.mp3"
              prependf "${inpath}/tmp/${out}${vn}.mp3" "$prependt" \
-                 && mv -f "${inpath}/tmp/${prependt}${out}${vn}.mp3" "./loss/"
-    find "${inpath}" ./loss -type f \
-        -regex "${inpath}/tmp/\*${infile}\*.ln.meas" -o \
-        -regex "./loss/\*${infile}\*mp3" \
-        -newer "${inpath}/tmp/$null" | xargs ls -rth
-    rm -f "${inpath}/tmp/$null"
+                 && mv -f "${inpath}/tmp/${prependt}${out}${vn}.mp3" "./loss/" \
+                 && rm -f "${inpath}/tmp/$null" \
+    && echo "./loss/${prependt}${out}${vn}.mp3"
+
 # convert 5.1 channels to 2
 # https://superuser.com/questions/852400/properly-downmix-5-1-to-stereo-using-ffmpeg
 #ffmpeg -i Mozart-K622-Clarinet-Concerto-A-Maj-Kam-Honeck-2006.m4a \
@@ -520,14 +544,23 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
         local ext="$(echo "^${a##*^}" | sed -e 's/[^.]*.//' -e 's/-.*//')" # expect ^ to proceed hash, followed by a dot mime, plus parm (.ext[-parm]*)
         local hash="$(echo "^${a##*^}" | sed "s/\.${ext}.*//")"      # hash from between "^ .ext"
         # convert f2rb2mp3 encoded args
-        local args="$(echo "^${a##*^}" | sed -E -e "s/.*\.${ext}//" -e "s/.mp3$//" \
-          -e 's/^/ verb=chkwrn/' \
-          -e 's/-ss/ ss=/' -e 's/-to/ to=/' -e 's/-rev/ rev=y/' -e 's/-v/ v=/' -e 's/-ln//' \
-          -e "s/-t/ t=/" -e 's/-p/ p=/' -e 's/-(bhz|chz)/ f=\1/' \
-          -e 's/-(kbd|hrn|cps)/ cmp=\1/' \
-          -e 's/-f/ f=/' \
-          -e 's/-cf/ cf=y/' -e 's/-c/ c=/' -e 's/-F/ F=y/' \
-          )"
+        local args="$(echo "^${a##*^}" | sed -E -e "
+            s/.*\.${ext}//
+            s/.mp3$//
+            s/-ss/ ss=/
+            s/-to/ to=/
+            s/-t/ t=/
+            s/-p/ p=/
+            s/-f/ f=/
+            s/-(bhz|chz)/ f=\1/
+            s/-F/ F=y/
+            s/-cf/ cf=y/
+            s/-c/ c=/
+            s/-(ckb|hrn|cps|par)/ cmp=\1/
+            s/-rev/ rev=y/
+            s/-v/ v=/
+            s/-ln//
+            ")"
     #   local   seq="$(echo "${a%%^*}"  | sed -e 's/[^-]*-.*//')"
     #   local title="$(echo "${a%%_^*}" | sed -e "s/^${seq}-//")"
         local title="${a%%_^*}"
@@ -583,21 +616,21 @@ formfilestats () { # accept dir(s) as args, report formfile time and pitch stats
 
 # export c=100 ; rm -rf png/* ; for a in *Couperin-kbd*mp3 ; do b=$(sed -e 's/.*,//' <<<$a) ; echo $b ; done | sort | while read b ; do a=$(ls *$b) ; c=$(( ++c )) ; sox $a -n remix - trim 0 =3 -3 spectrogram -o png/${c},${a}.png ; echo -n .  ; done
 
-# verb=chkwrn p=4 c=1 ss=434 to=471.2 cmp=cps1 v=9db f2rb2mp3 @/_^NPk-cE047PU.opus 52r,Couperin-kbd_01-Gmaj-Etcheverry-07_Menuet
-formfilespec () { # generate spectrograph for ss-1 to ss+3 and to-3 to to+1
-   #local p="${1%/*}" f="${1##*/}"
-    local in="$1"
-    mkdir -p "./png"
-    set $( formfile "${in##*/}" | sed -e 's/.*f2rb2mp3//' )
-    local orig=$1 pass=$2
-    [ -e "$orig" ] || { chkwrn "$orig not found" ; return 1 ;}
-    echo -n "sox $orig -n remix - trim "
-    set $(formfile "${in##*/}" | sed -e 's/f2rb2mp3.*//' )
-    #dc -e "$ss 1-p $ss 3+p $to 3-p $to 1+p" | tr '\n' ' ' | sed -e 's/^/=/' -e 's/ / =/g' -e  's/=$//'
-    dc -e "$ss 1-p $ss 3+p $to 3-p $to 1+p" | sed -e 's/^/=/' | tr '\n' ' '
-   #b=$(sed -e 's/,.*//' <<<$in)
-    echo "spectrogram -o ./png/${in##*/}.png"
-    }
+ # # verb=chkwrn p=4 c=1 ss=434 to=471.2 cmp=cps1 v=9db f2rb2mp3 @/_^NPk-cE047PU.opus 52r,Couperin-kbd_01-Gmaj-Etcheverry-07_Menuet
+ # formfilespec () { # generate spectrograph for ss-1 to ss+3 and to-3 to to+1
+ #    #local p="${1%/*}" f="${1##*/}"
+ #     local in="$1"
+ #     mkdir -p "./png"
+ #     set $( formfile "${in##*/}" | sed -e 's/.*f2rb2mp3//' )
+ #     local orig=$1 pass=$2
+ #     [ -e "$orig" ] || { chkwrn "$orig not found" ; return 1 ;}
+ #     echo -n "sox $orig -n remix - trim "
+ #     set $(formfile "${in##*/}" | sed -e 's/f2rb2mp3.*//' )
+ #     #dc -e "$ss 1-p $ss 3+p $to 3-p $to 1+p" | tr '\n' ' ' | sed -e 's/^/=/' -e 's/ / =/g' -e  's/=$//'
+ #     dc -e "$ss 1-p $ss 3+p $to 3-p $to 1+p" | sed -e 's/^/=/' | tr '\n' ' '
+ #    #b=$(sed -e 's/,.*//' <<<$in)
+ #     echo "spectrogram -o ./png/${in##*/}.png"
+ #     }
 
 masterlink () {
 verb2=chkwrn
@@ -851,6 +884,12 @@ numlistdst () { # distribute filenames across base 32 major (alnum lower sans 'i
             [ "$src" = "$dst" ] || [ -e "$dst" ] && chkwrn "$FUNCNAME collision : $dst" || echo "mv \"$src\" \"$dst\"";
             done
     } # numlistdst
+
+playffr () { # use ffplayr to continiously repeat invocations of ffplay
+    [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
+    [ "$fs" ] || fs="$(cat)"
+    while :; do echo "$fs" | playff || return 1 ; done
+    }
 
 playff () { # use ffplay to play files (args OR stdin filename per linebnb)
     local f fs p b a ;

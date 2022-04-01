@@ -121,12 +121,15 @@ logexit () { [ "$*" ] && { logger -s ">>> $* <<<" ; exit 1   ;} || true ;} #:> e
 siff () { [ -e "$1" ] && { stderr "<>${siff}${2}: . $1 <>" && siff="( ${siff}" && . "$1" && siff="${siff#( }" || chkerr "${siff}${2}: . $1" ; return 1 ;} || chkwrn "${siff}${2}: no file $1" ;} #:> source arg1 if exists, optional calling file arg2 for backtrace
 siff () { [ -e "$1" ] && { stderr "<>${siff}${2}: . $1 <>" && siff="siff ${siff}" && . "$1" && siff="${siff#siff }" || chkerr "${siff}${2}: . $1" ; siff="${siff#siff }" ; return 1 ;} || chkwrn "${siff}${2}: no file $1" ; siff="${siff#siff }" ;} #:> source arg1 if exists, optional calling file arg2 for backtrace
 siff () { [ -e "$1" ] && { stderr "<> ${2}: . $1 <>" && . "$1" ;} || { chkerr "fail" ; return 1 ;} || chkwrn "siff ${2}: no file $1" ;} #:> source arg1 if exists, optional calling file arg2 for backtrace
-siff () { [ -e "$1" ] && { { ${verb} "<> ${2}: . $1 <>" && . "$1" ;} || { chkerr "fail $1" ; return 1 ;} ;} || chkwrn "${2} siff : no file $1" ;} #:> source arg1 if exists, optional calling file arg2 for backtrace
+siff () { local verb="${verb:=devnul}"
+    [ -e "$1" ] \
+        && { { ${verb} "<> ${2}: . ${1} <>" && . "${1}" ;} || { chkerr "fail $1" ; return 1 ;} ;} \
+        || chkwrn "${2}: siff: no file $1" ;} #:> source arg1 if exists, optional calling file arg2 for backtrace
 
-# for verbosity, these would be set to chkwrn or chkerr
-verb="${verb:=devnul}"
-verb2="${verb2:=devnul}"
-verb3="${verb3:=devnul}"
+# for verbosity, these typically could be set to devnul or chkwrn, possibly chkerr
+#verb="${verb:=devnul}"
+#verb2="${verb2:=devnul}"
+#verb3="${verb3:=devnul}"
 
 path_append () { # append $1 if not already in path
  echo $PATH | grep -E "(:$1$|^$1$|^$1:|:$1:)" 2>&1 >/dev/null \
