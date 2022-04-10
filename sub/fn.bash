@@ -323,7 +323,6 @@ EOF
     #          --detector-soft  Use soft transient detector
     #          --centre-focus   Preserve focus of centre material in stereo
     #                           (at a cost in width and individual channel quality)
-    echo "# loudnorm defaults off=0 tp=-1 lra=7 i=-23 local off=6 tp=-0.5"
     echo "# crisp:  0=mushy 1=piano 2=smooth 3=MULTITIMBRAL 4=two-sources 5=standard 6=percussive "
     echo "# Formant y/''  CenterFocus y/'' vol 0db/'' frequency (bhz|chz|N)/'' reverse y/''"
     echo "# cmp= $(declare -f $FUNCNAME | sed -e '/compand/!d' -e '/sed/d' -e 's/=.*//' -e 's/local//' | tr -s ' \n' '|')"
@@ -493,6 +492,8 @@ EOF
                  && mv -f "${inpath}/tmp/${prependt}${out}${vn}.mp3" "./loss/" \
                  && rm -f "${inpath}/tmp/$null" \
     && echo "./loss/${prependt}${out}${vn}.mp3"
+# extract audio from video
+# for a in *Caprices_For_FLUTE*webm ; do ext=$(ffprobe -hide_banner  -loglevel info $a 2>&1 | sed -e '/Audio/!d' -e 's/.*Audio: //' -e 's/,.*//'); name=$(sed "s/[^.]*$/$ext/" <<<$a) ; ffmpeg -i $a -q:a 0 -map a -acodec copy $name ; done
 
 # convert 5.1 channels to 2
 # https://superuser.com/questions/852400/properly-downmix-5-1-to-stereo-using-ffmpeg
@@ -536,44 +537,65 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
     [ "$1" ] && $FUNCNAME $@;
     [ "$fs" = "-h" -o "$fs" = "--help" ] \
       && {
-        chkwrn "Usage, for arg1 (or per line stdin)"
-        chkwrn "decompose into rendering command(s)"
+        chkwrn "Usage, for args (or per line stdin) decompose"
+        chkwrn "each filename into a rendering command."
     } || { # process the filelist $fs
       echo "$fs" | while IFS= read a ; do
         a="${a##*/}" # basename
-        local ext="$(echo "^${a##*^}" | sed -e 's/[^.]*.//' -e 's/-.*//')" # expect ^ to proceed hash, followed by a dot mime, plus parm (.ext[-parm]*)
-        local hash="$(echo "^${a##*^}" | sed "s/\.${ext}.*//")"      # hash from between "^ .ext"
-        # convert f2rb2mp3 encoded args
-        local args="$(echo "^${a##*^}" | sed -E -e "
+        local ext="$(sed -e 's/_^[^.]*.//' -e 's/-.*//' <<<"_^${a##*_^}")" # expect ^ to proceed hash, followed by a dot mime, plus parm (.ext[-parm]*)
+        local hash="$(sed "s/\.${ext}.*//" <<<"${a##*_^}")"      # hash from between "^ .ext"
+        # decode f2rb2mp3 arguments
+        local args="$(sed -E -e "
             s/.*\.${ext}//
             s/.mp3$//
+            s/-(ckb|hrn|cps|par)/ cmp=\1/
+            s/-(bhz|chz)/ f=\1/
+            s/-rev/ rev=y/
             s/-ss/ ss=/
             s/-to/ to=/
             s/-t/ t=/
             s/-p/ p=/
             s/-f/ f=/
-            s/-(bhz|chz)/ f=\1/
             s/-F/ F=y/
             s/-cf/ cf=y/
             s/-c/ c=/
-            s/-(ckb|hrn|cps|par)/ cmp=\1/
-            s/-rev/ rev=y/
             s/-v/ v=/
             s/-ln//
-            ")"
+            s/-off/ off=/
+            s/-tp/ tp=/
+            s/-lra/ lra=/
+            s/-i/ i=/
+            " <<<"_^${a##*_^}")"
     #   local   seq="$(echo "${a%%^*}"  | sed -e 's/[^-]*-.*//')"
-    #   local title="$(echo "${a%%_^*}" | sed -e "s/^${seq}-//")"
         local title="${a%%_^*}"
     #   local  dirs=$(find "$link/@" "$links/@" "@" -maxdepth 0 -type d 2>/dev/null)
-    #   local files="$(find $(find $links -name \@) -maxdepth 1 -type f -name \*${hash}\* 2>/dev/null )"
-        local files="$(find $(find . .. -name \@) -maxdepth 1 -type f -name \*${hash}\* 2>/dev/null )"
-    #   local orig=''
-        [ "$files" ] && orig="$(echo "${files}" | awk 'NR==1')"
+        local path ; expr "$a" : ".*/" >/dev/null && path="${a%/*}" || path="." # dirname $a
+        local files="$(find $(find "$path" . .. -name \@) -maxdepth 1 -type f -name \*${hash}\* 2>/dev/null )"
+        local orig=
+        [ "$files" ] && orig="$(awk 'NR==1' <<<"${files}")"
         [ "$orig" ] || orig="'_^${hash}.${ext}'"
-        # f2rb2mp3 help
+        # ss= to= t= p= f= c= F= CF= off= tp= lra= i= cmp= v=
+        expr "$args" : ".* v="    >/dev/null && true || args="$args v="
+        expr "$args" : ".* cmp="  >/dev/null && true || args="$args cmp="
+        expr "$args" : ".* F="    >/dev/null && true || args="$args F="
+        expr "$args" : ".* c="    >/dev/null && true || args="$args c="
+       #expr "$args" : ".* f="    >/dev/null && true || args="$args f="
+        expr "$args" : ".* p="    >/dev/null && true || args="$args p="
+        expr "$args" : ".* t="    >/dev/null && true || args="$args t="
+        expr "$args" : ".* to="   >/dev/null && true || args="$args to="
+        expr "$args" : ".* ss="   >/dev/null && true || args="$args ss=0"
+        args="$(tr ' ' '\n' <<<"$args")"
+        local sortargs=
+        for a in ss= to= t= p= f= c= F= CF= off= tp= lra= i= cmp= v= ; do 
+            sortargs="$sortargs $(grep "^$a" <<<"$args")"
+            done
+        # sortargs="$args $(grep -Ev '(^ss=|^to=|^t=|^p=|^f=|^c=|^F=|^CF=|^off=|^tp=|^lra=|^i=|^cmp=|^v=)' <<<"$sortargs")"
+        args=$(sed -e 's/^[ ]*//' -e 's/[ ]*/ /' -e 's/[ ]*$//' <<<$sortargs)
         echo $args f2rb2mp3 $orig $title
         done
     } # { # process the filelist $fs
+# export _f=0,artist_^30Ug3e46sss.info.json ; jq --compact-output 'del(.formats)' $_f | yq -P  >${_f}.txt
+# :e! ++enc=utf8
 } # formfile () { # create a f2rb2mp3 command to render the file, given the input filename
 
 formfilestats () { # accept dir(s) as args, report formfile time and pitch stats from @ dir/*mp3
@@ -887,8 +909,11 @@ numlistdst () { # distribute filenames across base 32 major (alnum lower sans 'i
 
 playffr () { # use ffplayr to continiously repeat invocations of ffplay
     [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
+#   [ "$1" ] && fs="$1" || fs="$(cat)" ; shift;
+#   [ "$1" ] && $FUNCNAME $@;
     [ "$fs" ] || fs="$(cat)"
-    while :; do echo "$fs" | playff || return 1 ; done
+    while :; do playff <<<"$fs" || return 1 ; done
+   #while :; do echo "$fs" | playff || return 1 ; done
     }
 
 playff () { # use ffplay to play files (args OR stdin filename per linebnb)

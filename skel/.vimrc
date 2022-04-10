@@ -1,6 +1,10 @@
 " .vimrc
 
-" Unlimited use with this notice. (C) 2017-2018 George Georgalis <george@galis.org>
+" Unlimited use with this notice. (C) 2017-2022 George Georgalis <george@galis.org>
+
+" %  jump to matching ([{}]), start/end of C-style comment, or preprocessor conditional
+" [{ [( ]} ]) code block jump
+" zm zr foldmethod=indent foldmethod=syntax foldlevel=20
 
 set nocompatible
 set modelines=0 " prior to 6.3.83, modelines could could execute arbitrary commands

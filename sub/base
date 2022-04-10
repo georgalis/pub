@@ -3,7 +3,8 @@
 import sys
 import string
 # digs = string.digits + string.ascii_letters
-# shift out characters "ilow"
+# digs = "0123456789abcdefghijklmnpqrstuvwxyz"
+# shift out characters "ilow" for visual acuity
 digs = "0123456789abcdefghjkmnpqrstuvxyz"
 def d2b(base,x):
     if x < 0:
