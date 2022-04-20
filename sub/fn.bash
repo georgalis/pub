@@ -160,7 +160,7 @@ local id="$1" d="$2"
 youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --yes-playlist \
  --audio-quality 0 --audio-format best --extract-audio --playlist-start 1 \
  -o "$d/0%(playlist_index)s,%(title)s-%(playlist_title)s-%(uploader_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
-youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --yes-playlist \
+youtube-dl --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --yes-playlist \
  --audio-quality 0 --audio-format best --playlist-start 1 \
  -o "$d/0%(playlist_index)s,%(title)s-%(playlist_title)s-%(uploader_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
 } # _youtube_video_list
@@ -175,7 +175,7 @@ local id="$1" d="$2"
 youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --no-playlist \
  --audio-quality 0 --audio-format best --extract-audio \
  -o "$d/0,%(title)s-%(uploader_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
-youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --no-playlist \
+youtube-dl --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --no-playlist \
  --audio-quality 0 --audio-format best \
  -o "$d/0,%(title)s-%(uploader_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
 } # _youtube_video
@@ -187,7 +187,7 @@ local id="$1" d="$2"
 [ "$d" ]  || read -p "directory : " d
 [ -d "$d" ] || d="$(pwd -P)"
 [ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
-youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --no-playlist \
+youtube-dl --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --no-playlist \
  --audio-quality 0 --audio-format best --extract-audio \
  -o "$d/0,%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
 } # _youtube
@@ -199,11 +199,14 @@ local id="$1" d="$2"
 [ "$d" ]  || read -p "directory : " d
 [ -d "$d" ] || d="$(pwd -P)"
 [ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
-youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --yes-playlist \
+youtube-dl --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --yes-playlist \
  --audio-quality 0 --audio-format best --extract-audio --playlist-start 1 \
  -o "$d/0%(playlist_index)s,%(title)s-%(playlist_title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
 } # _youtube_list
 
+_youtube_json2txt () {
+    jq --compact-output 'del(.formats, .thumbnail, .thumbnails, .downloader_options, .http_headers)' "$1" | yq -P
+    }
         #   [ "$(dc -e "1000 $ln_lra * p" | sed 's/\..*//' )" -lt "$(dc -e "1000 $measured_LRA * p" | sed 's/\..*//' )" ] && ln_lra="${measured_LRA}" || true
         # [ "$(( ${measured_TP} + ${ln_off} )) -gt ${ln_tp} ] && ln_tp=$(( ln_tp - ${measured_TP} + ${ln_off}
 
@@ -418,6 +421,7 @@ EOF
   [ "$lra" ] && lran="-lra$lra"
   [ "$tp"  ] &&  tpn="-tp$tp"
   [ "$i"   ] &&   in="-i$i"
+  $verb "$(hms2sec $(ffprobe -hide_banner  -loglevel info  "${inpath}/tmp/${infile}${secn}.flac" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //') )"
   [ "${offn}${lran}${tpn}${in}" ] && lnn="-ln${lran}${tpn}${in}${offn}" || lnn="-ln"
   $verb "${inpath}/tmp/${infile}${secn}${lnn}.flac"
   $verb "${inpath}/tmp/${infile}${secn}${lnn}.meas"
@@ -467,6 +471,7 @@ EOF
         mv "${inpath}/tmp/${out}.wav~" "${inpath}/tmp/${out}.wav"
         } # final master, sans sox volume
       # apply volume and make an mp3 --- hopefully the input is not clipped already!
+      $verb "$(hms2sec $(ffprobe -hide_banner  -loglevel info  "${inpath}/tmp/${out}.wav" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //') )"
       $verb "${inpath}/tmp/${out}${vn}.mp3"
                     # not seeing sox format specifier for ".mp3~" type files...
       $verb2         sox "${inpath}/tmp/${out}.wav" "${inpath}/tmp/${out}${vn}.tmp.mp3" $vc
@@ -475,6 +480,7 @@ EOF
                     "sox '${inpath}/tmp/${out}.wav' '${inpath}/tmp/${out}${vn}.tmp.mp3' $vc" ; return 1 ;}
       mv "${inpath}/tmp/${out}${vn}.tmp.mp3" "${inpath}/tmp/${out}${vn}.mp3"
     } || { # no rb input parms (only time, volume or neither)
+        $verb "$(hms2sec $(ffprobe -hide_banner  -loglevel info  "${inpath}/tmp/${out}.wav" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //') )"
         $verb "${inpath}/tmp/${out}${vn}.mp3"
         $verb2         sox "${inpath}/tmp/${out}.flac" "${inpath}/tmp/${out}${vn}.tmp.mp3" $vc
                  {     sox "${inpath}/tmp/${out}.flac" "${inpath}/tmp/${out}${vn}.tmp.mp3" $vc 2>&1 \
@@ -614,6 +620,9 @@ formfilestats () { # accept dir(s) as args, report formfile time and pitch stats
             s/-rev/ rev=y/
             s/-v/ v=/
             s/-ln//
+            s/-lra/ lra=/
+            s/-off/ off=/
+            s/-i/ i=/
             s/-t/ t=/
             s/-p/ p=/
             s/-(bhz|chz)/ f=\1/
@@ -623,7 +632,8 @@ formfilestats () { # accept dir(s) as args, report formfile time and pitch stats
             s/-c/ c=/
             s/-F/ F=y/
             # squash to tempo and pitch parameters
-            s/[ ](ss|to|cmp|F|v|c|rev)=[^ ]*//g
+          # s/[ ](ss|to|cmp|F|v|c|rev)=[^ ]*//g
+            s/[ ](ss|to|cmp|v|rev)=[^ ]*//g
             /^$/d
             # fixup odd case
             s/^ p/ t=1 p/
@@ -923,7 +933,7 @@ playff () { # use ffplay to play files (args OR stdin filename per linebnb)
     echo "$fs" | while read f; do
         [ -f "$f" ] && {
         hms2sec $(ffprobe -hide_banner  -loglevel info  "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')
-        ffplay -hide_banner -stats -autoexit -loglevel info -top 64 -x 1088 -y 336 "$f" || return 1
+        ffplay -hide_banner -stats -autoexit -loglevel info -top 52 -x 1088 -y 280 "$f" || return 1
         }
         done
     } # playff
