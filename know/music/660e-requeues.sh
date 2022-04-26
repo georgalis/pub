@@ -38,7 +38,7 @@ ckstatsum ()
 # Main
 
 find "$link" -maxdepth 1 -type f -name \*mp3 \
-    | sed "s=${link}/==" \
+    | sed -e "s=${link}/==" -e '/^0/d' \
     | sort >660e-requeues.lst
 
 sed -e '
@@ -83,4 +83,4 @@ sed -e '
     | sort -f -k2 | column -t | sed -e 's/  / /' -e 's/  / /' >660e-requeues.tab
 
 # 660e-requeues.lst
-ls $link/*mp3 | while read a ; do ckstatsum $a ; done >660e-requeues.sum
+ls $link/*mp3 | sed -e '/\/0/d' | while read a ; do ckstatsum $a ; done >660e-requeues.sum
