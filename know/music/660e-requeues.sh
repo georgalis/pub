@@ -2,9 +2,45 @@
 
 set -e
 cd "$(dirname "$0")"
-find $link -maxdepth 1 -type f -name \*mp3 \
+
+ckstatsum () 
+{ 
+    local f fs;
+    [ "$1" ] && fs="$1" || fs="$(cat)";
+    shift;
+    [ "$1" ] && $FUNCNAME $@;
+    [ "$fs" = "-h" -o "$fs" = "--help" ] && { 
+        chkwrn "Usage, for arg1 (or per line stdin)";
+        chkwrn "return: n-inode chksum size mdate filename"
+    } || { 
+        OS="$(uname)";
+        [ "$OS" = "Linux" ] && function _stat () 
+        { 
+            stat -c %h\ %i\ %s\ %Y "$1"
+        } || true;
+        [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && function _stat () 
+        { 
+            stat -f %l\ %i\ %z\ %m "$1"
+        } || true;
+        echo "$fs" | while IFS= read f; do
+            [ -f "$f" ] && { 
+                { 
+                    _stat "$f";
+                    cksum < "$f"
+                } | tr '\n' ' ' | awk '{printf "% 2x%07x %8x % 8x %08x ",$1,$2,$5,$3,$4}';
+                echo "${f##*/}"
+            } || chkerr "$FUNCNAME : not a regular file : $f";
+        done
+    }
+}
+
+
+# Main
+
+find "$link" -maxdepth 1 -type f -name \*mp3 \
     | sed "s=${link}/==" \
-    | sort >660e-requeues-all.txt
+    | sort >660e-requeues.lst
+
 sed -e '
         s/_^/ _^/
         s/,/ /
@@ -43,6 +79,8 @@ sed -e '
         s/Dmin-1_Sarabande_en_Rondeau/Dmin-1_Sarabande/
         s/15-Neufieme_Suitte-2_Courante_Affectueusement/15-Neufieme_Suitte-2_Courante/
         s/Suitte-2_Allemande_Pas_trop_viste/Suitte-2_Allemande/
-        ' 660e-requeues-all.txt \
-    | sort -f -k2 | column -t | sed -e 's/  / /' -e 's/  / /' >660e-requeues-artist.txt
+        ' <660e-requeues.lst \
+    | sort -f -k2 | column -t | sed -e 's/  / /' -e 's/  / /' >660e-requeues.tab
 
+# 660e-requeues.lst
+ls $link/*mp3 | while read a ; do ckstatsum $a ; done >660e-requeues.sum
