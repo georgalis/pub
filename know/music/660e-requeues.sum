@@ -1,16 +1,6 @@
  123de812 378f25e7   d9c800 625a6a4d 01a,Horace_Silver-Que_Pasa-Natives_Are_Restless_^eTwKg7eczK4.opus-ss1935-to2827-ln-cps1.mp3
  20073e89 2103a503   16b480 5fe97af1 01d,A_Scarlatti-La_Folia_Espagne_Piano_^7xwxthXoDvQ.opus-t1.12-p0.02-c1-ss0-to83-v-4db.mp3
  20073e7c 6b7945ac   177000 5ed45a48 01f,A_Scarlatti-Folia_^ZDBs5fEIPyc.webm-t1.12-p0.02-c1-F-v-5db.mp3
- 124e036c 7e61eaee   480780 62673b39 0a1,Stan_Hunter-Trip_On_The_Strip-Trip_On_The_Strip-1965_^Tw6zmXjALm8-ms.wav-to295-ln-cps1-v6db.mp3
- 124e037b a173ce0b   259b00 62673b3d 0a2,Stan_Hunter-Yesterday-Trip_On_The_Strip-1965_^Tw6zmXjALm8-ms.wav-ss295-to449-ln-cps1-v6db.mp3
- 124e038b b8f7f806   413100 62673b41 0a3,Stan_Hunter-Corn_Flakes-Trip_On_The_Strip-1965_^Tw6zmXjALm8-ms.wav-ss449-to716-ln-cps1-v6db.mp3
- 124e1031 2f314bae   298380 626744e9 0a4,Stan_Hunter-This_Is_All_I_Ask-Trip_On_The_Strip-1965_^Tw6zmXjALm8-ms.wav-ss716-to886-ln-cps1-v6db.mp3
- 124e0397 a400fa99   1f2300 62673b44 0a4,Stan_Hunter-This_Is_All_I_Ask-Trip_On_The_Strip-1965_^Tw6zmXjALm8-ms.wav-ss716-to886-t0.75-c5-ln-cps1-v6db.mp3
- 124e03a6 2e82d901   59da80 62673b4a 0b1,Stan_Hunter-HFR-Trip_On_The_Strip-1965_^Tw6zmXjALm8-ms.wav-ss886-to1254-ln-cps1-v6db.mp3
- 124e1041 238d126a   747600 626744f5 0b2,Stan_Hunter-Invitation-Trip_On_The_Strip-1965_^Tw6zmXjALm8-ms.wav-ss1254-to1731-ln-cps1-v6db.mp3
- 124e03b4 74a5157f   40a400 62673b51 0b2,Stan_Hunter-Invitation-Trip_On_The_Strip-1965_^Tw6zmXjALm8-ms.wav-ss1254-to1731-t0.555-c5-ln-cps1-v6db.mp3
- 124e1058 f8459611   34c080 626744f8 0b3,Stan_Hunter-Sonnys_Mood-Trip_On_The_Strip-1965_^Tw6zmXjALm8-ms.wav-ss1731-to2099-ln-cps1-v6db.mp3
- 124e03c6 b8a21cfb   4b5a00 62673b56 0b3,Stan_Hunter-Sonnys_Mood-Trip_On_The_Strip-1965_^Tw6zmXjALm8-ms.wav-ss1731-to2099-t1.4285-c5-ln-cps1-v6db.mp3
  120d3d70 8e4ae6c0   586380 623f4fea 101,Lou_Donaldson-Back_Street-Back_Street_^tT09P9tO2M0.opus-ss1672-to2034-ln-cps1.mp3
  11cbc38c 7b70ee82   744180 621073dc 102,Stan_Getz-Cafe_Montmartre_Blues-At_Large_^hyaTChd-7BY.opus-ss2664-to3148-t0.9838-p3-c1-F-ln-hrn3-v4db.mp3
  122fbf7d a5b0f583    68280 62521f93 103,Eddie_Lockjaw_Davis-pre_Nina_Never_Knew-Lock_The_Fox-1966_^jzC31UmCrOs.opus-to12-t2.22-c5-ln.mp3
@@ -237,6 +227,8 @@
  11cc312c d3a7619f   45d500 62114d1e 502,Wynton_Kelly_Trio_Sextet-Green_Dolphin_Street_^oH024zIFcm4.opus-ss1047-to1333-ln-cps1-v5db.mp3
  11cc311e 7f03b9d7   9f6f00 62114cf7 503,Wynton_Kelly_Trio_Sextet-Kelly_Blue_^oH024zIFcm4.opus-to653-ln-cps1-v5db.mp3
  11cc315f bc40e07f   710e80 62114d84 504,Wynton_Kelly_Trio_Sextet-Old_Clothes_^oH024zIFcm4.opus-ss2160-to2623.07-ln-cps1-v5db.mp3
+ 224e036c 7e61eaee   480780 62673b39 504c001,Stan_Hunter-Trip_On_The_Strip-Trip_On_The_Strip-1965_^Tw6zmXjALm8-ms.wav-to295-ln-cps1-v6db.mp3
+ 224e038b b8f7f806   413100 62673b41 504c002,Stan_Hunter-Corn_Flakes-Trip_On_The_Strip-1965_^Tw6zmXjALm8-ms.wav-ss449-to716-ln-cps1-v6db.mp3
  11dedfea 83f1cc00   5f85e0 621e8849 505,Lee_Morgan-Helens_Ritual-Caramba-1968_^fUzdpFJTN8U.m4a-to391.23-ln-cps1-v5db.mp3
  11dedfd0 e5c3489f   592053 621e8835 506,Lee_Morgan-Soulita-Caramba-1968_^vr_BJEEaZoE.m4a-to365-ln-cps1-v5db.mp3
  11cc3141 7a5525d2   6f5580 62114d5d 507,Wynton_Kelly_Trio_Sextet-Keep_It_Moving_^oH024zIFcm4.opus-ss1704-to2160-ln-cps1-v5db.mp3
@@ -253,10 +245,12 @@
  12356aee 52d1fae4   398700 625500ca 50j,Bach-BWV831-French_Suite-Bmin_A-6_Bourree-1733-Watchorn_^QlyggQbN_Ec.opus-ss1641-to1868-t1.0379-p-2.013-c1-F-ln-cps1-v-4db.mp3
  122e4198 f363c34d   4cf680 6250e42d 50k,Abel-1-Viola_Gamba_Suite-Dmaj_Bf-04_Andante-Pandolf_^ZIVwgFuvB6c.opus-to288.63-t1.0921-p7.9934-c3-F-ln-cps1-v9db.mp3
  1247e7b0 3923d6bf   30fd80 6261c3f6 50k8,Lester_Young-Taxi_War_Dance_Take_2-86_Takes-20160310_^NGMAaRgQykg.opus-to168.19-t1.193-p-2.966-c5-F-ln-cps1-v9db.mp3
- 124b4e75 ab96545e   202200 62648c69 50m,Stan_Hunter-This_Is_All_I_Ask-Trip_On_The_Strip-1965_^Tw6zmXjleft.flac-to170-t0.774-p-2.97841-c1-ln-cps1-v6db.mp3
- 124b4e20  9b67969   40a400 62648a07 50n,Stan_Hunter-Invitation-Trip_On_The_Strip-1965_^Tw6zmXjleft.wav-to477-t0.555-p-0.0207-c1-F-ln-cps1-v5db.mp3
+ 224e1031 2f314bae   298380 626744e9 50m,Stan_Hunter-This_Is_All_I_Ask-Trip_On_The_Strip-1965_^Tw6zmXjALm8-ms.wav-ss716-to886-ln-cps1-v6db.mp3
+ 224e0397 a400fa99   1f2300 62673b44 50m,Stan_Hunter-This_Is_All_I_Ask-Trip_On_The_Strip-1965_^Tw6zmXjALm8-ms.wav-ss716-to886-t0.75-c5-ln-cps1-v6db.mp3
+ 224e1041 238d126a   747600 626744f5 50n,Stan_Hunter-Invitation-Trip_On_The_Strip-1965_^Tw6zmXjALm8-ms.wav-ss1254-to1731-ln-cps1-v6db.mp3
+ 224e03b4 74a5157f   40a400 62673b51 50n,Stan_Hunter-Invitation-Trip_On_The_Strip-1965_^Tw6zmXjALm8-ms.wav-ss1254-to1731-t0.555-c5-ln-cps1-v6db.mp3
  223f65b4 81d665aa   4d1c00 625b785c 50n8,Sarah_Vaughan-Willow_Weep_For_Me-Mister_Kellys_Chicago-1957_^5_O1KJALZzA.opus-ss7-to322.81-ln-cps1.mp3
- 124b4d02 6f329a59   6b3100 6264839f 50p,Stan_Hunter-HFR-Trip_On_The_Strip-1965_^Tw6zmXjleft.wav-to368-t1.193-p-2.966-c3-F-ln-cps1-v4db.mp3
+ 224e03a6 2e82d901   59da80 62673b4a 50p,Stan_Hunter-HFR-Trip_On_The_Strip-1965_^Tw6zmXjALm8-ms.wav-ss886-to1254-ln-cps1-v6db.mp3
  12356b40 fd726b8b   2c5b00 625500d9 50q,Bach-BWV831-French_Suite-Bmin_A-7_Gigue-1733-Watchorn_^QlyggQbN_Ec.opus-ss1868-to2043-t1.0379-p-2.013-c1-F-ln-cps1-v-4db.mp3
  12356b9a ff1c4f2b   387600 625500eb 50r,Bach-BWV831-French_Suite-Bmin_F-8_Echo-1733-Watchorn_^QlyggQbN_Ec.opus-ss2043-to2248-t1.128-p-6.016-c1-F-ln-cps1-v-4db.mp3
  122e41aa aa651162   3ae000 6250e48b 50s,Abel-1-Viola_Gamba_Suite-Dmaj_Bf-05_Allegro-Pandolf_^AnLBk8JY2UI.opus-to220.79-t1.0921-p7.9934-c3-F-ln-cps1-v9db.mp3
@@ -284,7 +278,8 @@
  11cc3479 c7419884   714a80 62115039 51f,Eddie_Higgins-Its_Magic-Its_Magic_^38-TJxbYRFc.opus-to464-ln-cps1-v5db.mp3
  11cc3498 11cde93b   538080 62115052 51g,Eddie_Higgins-Mood_Indigo-Its_Magic_^38-TJxbYRFc.opus-ss1193-to1535-ln-cps1-v5db.mp3
  11cc34de bdce8460   5fb680 6211506d 51h,Eddie_Higgins-The_Touch_Of_Your_Lips-Its_Magic_^38-TJxbYRFc.opus-ss3137-to3529-ln-cps1-v5db.mp3
- 124b4d65 18b7eb22   805b00 6264860a 51j,Stan_Hunter-Sonnys_Mood-Trip_On_The_Strip-1965_^Tw6zmXjleft.wav-to368-t1.42857-c5-ln.mp3
+ 224e1058 f8459611   34c080 626744f8 51j,Stan_Hunter-Sonnys_Mood-Trip_On_The_Strip-1965_^Tw6zmXjALm8-ms.wav-ss1731-to2099-ln-cps1-v6db.mp3
+ 224e03c6 b8a21cfb   4b5a00 62673b56 51j,Stan_Hunter-Sonnys_Mood-Trip_On_The_Strip-1965_^Tw6zmXjALm8-ms.wav-ss1731-to2099-t1.4285-c5-ln-cps1-v6db.mp3
  11cc34fc e607c8e1   2e2600 62115079 51k,Duke_Pearson-The_Phantom-Blues_For_Alvina_^FoYyz9-1N4M.opus-ss619-to808-ln-cps1-v5db.mp3
  11cc3517 93b67f18   5c4a80 62115090 51m,Duke_Pearson-The_Phantom-The_Happy_Eyes_^FoYyz9-1N4M.opus-ss1154-to1532-ln-cps1-v5db.mp3
  11cc3528  f21bee4   49fb00 621150a3 51n,Eddie_Higgins-Begin_The_Beguine-Amor_^BVom3fAPVI4.opus-to303-ln-cps1-v5db.mp3
@@ -481,6 +476,13 @@
  11cc4671 1b221f64   4f2bc1 62115f82 80x,Peter_Gabriel-Sledgehammer_^OJWJE0x7T4Q.m4a-ss9-to309-t1.0808399-p4-bhz-c1-F-ln-cps1-v5db.mp3
  11cc46a3 d9dce6a3   194700 62115f98 80z,Hotaru_no_Hikari-The_Light_of_Fireflies-Auld_Lang_Syne_^RGs8W2xnThE.m4a-to103.5-ln-cps1-v5db.mp3
  11cc46c0 3d8e00b7   38e380 62115fac 810,yurisa-haiiro_to_ao_^ieGKMldpp-M.opus-to221-t1.0542-p-1.96-c5-ln-cps1-v5db.mp3
+ 124ecf23 7f6de640   25d100 6267a41b 90001,Beatles-Get_Back-Let_It_Be_Naked-2013_^6f2sZM8jat4.opus-to154.87-ln.mp3
+ 124ecf2e a9f6dbb7   35458d 6267a41d 90002,Beatles-Dig_A_Pony-Let_It_Be_Naked-2013_^v5X2CwCU0a0.m4a-to218.14-ln.mp3
+ 124ecf46 ca1c59da   309249 6267a420 90008,Beatles-Don_t_Let_Me_Down-Let_It_Be_Naked-2013_^u2Hz7sRhFRo.m4a-to198.87-ln.mp3
+ 124ecf53 a7eed9de   228c00 6267a422 90009,Beatles-I_Me_Mine-Let_It_Be_Naked-2013_^rTEIgJsddyM.opus-to141.49-ln.mp3
+ 124ecf8e 387cc8cd   354a80 6267a425 90010,Beatles-Across_The_Universe-Let_It_Be_Naked-2013_^NLddD6Xf-8g.opus-to218.25-ln.mp3
+ 124ecfb0 ae4754ed   397b00 6267a429 90011,Beatles-Let_It_Be-Let_It_Be_Naked-2013_^lcA-qlMP11s.opus-to235.41-ln.mp3
+ 224e037b a173ce0b   259b00 62673b3d 9002,Stan_Hunter-Yesterday-Trip_On_The_Strip-1965_^Tw6zmXjALm8-ms.wav-ss295-to449-ln-cps1-v6db.mp3
  11cc430a 35e9990d   5d6900 62115bda 901,Tommy_Flanagan-Beyond_The_Blue_Bird-09_Something_Borrowed_Something_Blue_^P5eGheMI2OU.opus-ss3222-to3629-t0.94-p0.974-c1-F-ln-cps1-v5db.mp3
  11cc431c 384b611c   3a5c00 62115be1 902,Stan_Getz-Just_a_Child-At_Large_^hyaTChd-7BY.opus-ss2164-to2403-ln-cps1-v5db.mp3
  122fcf5c 685bcc27   a77a80 625227ea 903,Freddie_Hubbard-All_Blues-2_God_Bless_The_Child_^dUo9GegfBWE.opus-ss1066-to1761-t0.987-p-4.0127-c5-F-ln-cps1-v1db.mp3
