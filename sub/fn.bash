@@ -150,112 +150,85 @@ cattrunc () { #:> on terminal output, truncate lines to width
         } || cat
     } # cattrunc
 
-_youtube_video_list () {
-local id="$1" d="$2"
-[ "$id" ] || read -p "youtube id: " id
-[ "$id" ] || { chkerr "no id?" ; return 1 ;}
-[ "$d" ]  || read -p "directory : " d
-[ -d "$d" ] || d="$(pwd -P)"
-[ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
-youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --yes-playlist \
- --audio-quality 0 --audio-format best --extract-audio --playlist-start 1 \
- -o "$d/0%(playlist_index)s,%(title)s-%(playlist_title)s-%(uploader_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
-youtube-dl --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --yes-playlist \
- --audio-quality 0 --audio-format best --playlist-start 1 \
- -o "$d/0%(playlist_index)s,%(title)s-%(playlist_title)s-%(uploader_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
-} # _youtube_video_list
-
-_youtube_video () {
-local id="$1" d="$2"
-[ "$id" ] || read -p "youtube id: " id
-[ "$id" ] || { chkerr "no id?" ; return 1 ;}
-[ "$d" ]  || read -p "directory : " d
-[ -d "$d" ] || d="$(pwd -P)"
-[ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
-youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --no-playlist \
- --audio-quality 0 --audio-format best --extract-audio \
- -o "$d/0,%(title)s-%(uploader_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
-youtube-dl --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --no-playlist \
- --audio-quality 0 --audio-format best \
- -o "$d/0,%(title)s-%(uploader_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
-} # _youtube_video
-
-_youtube () {
-local id="$1" d="$2"
-[ "$id" ] || read -p "youtube id: " id
-[ "$id" ] || { chkerr "no id?" ; return 1 ;}
-[ "$d" ]  || read -p "directory : " d
-[ -d "$d" ] || d="$(pwd -P)"
-[ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
-youtube-dl --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --no-playlist \
- --audio-quality 0 --audio-format best --extract-audio \
- -o "$d/0,%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
-} # _youtube
+# for comments download: yt-dlp is a youtube-dl fork based on the now inactive youtube-dlc
+# https://github.com/yt-dlp/yt-dlp
+# also, aparently (?) youtube throttles is you do not run javascript first (youtube-dl vs yt-dlp)
+# cf https://github.com/ytdl-org/youtube-dl/issues/29326#issuecomment-894619419
 
 _youtube_list () {
-local id="$1" d="$2"
-[ "$id" ] || read -p "youtube id: " id
-[ "$id" ] || { chkerr "no id?" ; return 1 ;}
-[ "$d" ]  || read -p "directory : " d
-[ -d "$d" ] || d="$(pwd -P)"
-[ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
-youtube-dl --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --yes-playlist \
- --audio-quality 0 --audio-format best --extract-audio --playlist-start 1 \
- -o "$d/0%(playlist_index)s,%(title)s-%(playlist_title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
-} # _youtube_list
+  local id="$1" d="$2"
+  [ "$id" ] || read -p "youtube id: " id
+  [ "$id" ] || { chkerr "no id?" ; return 1 ;}
+  [ "$d" ]  || read -p "directory : " d
+  [ -d "$d" ] || d="$(pwd -P)"
+  [ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
+  youtube-dl --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --yes-playlist \
+   --audio-quality 0 --audio-format best --extract-audio --playlist-start 1 \
+   -o "$d/%(playlist_title)s-%(playlist_id)s/0%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+  } # _youtube_list 20220516
+
+_youtube_video_list () {
+  local id="$1" d="$2"
+  [ "$id" ] || read -p "youtube id: " id
+  [ "$id" ] || { chkerr "no id?" ; return 1 ;}
+  [ "$d" ]  || read -p "root directory : " d
+  [ -d "$d" ] || d="$(pwd -P)"
+  [ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
+  youtube-dl --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --yes-playlist \
+   --audio-quality 0 --audio-format best --playlist-start 1 \
+   -o "$d/%(playlist_title)s-%(playlist_id)s/0%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+  youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --yes-playlist \
+   --audio-quality 0 --audio-format best --extract-audio --playlist-start 1 \
+   -o "$d/%(playlist_title)s-%(playlist_id)s/0%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+  } # _youtube_video_list 20220516
+
+_youtube () {
+  local id="$1" d="$2"
+  [ "$id" ] || read -p "youtube id: " id
+  [ "$id" ] || { chkerr "no id?" ; return 1 ;}
+  [ "$d" ]  || read -p "directory : " d
+  [ -d "$d" ] || d="$(pwd -P)"
+  [ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
+  #[ "$ua" ] && uac="--user-agent '$ua'" || uac=''
+  youtube-dl --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --no-playlist \
+   --audio-quality 0 --audio-format best --extract-audio \
+   -o "$d/0,%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+  } # _youtube 20220516
+
+_youtube_video () {
+  local id="$1" d="$2"
+  [ "$id" ] || read -p "youtube id: " id
+  [ "$id" ] || { chkerr "no id?" ; return 1 ;}
+  [ "$d" ]  || read -p "directory : " d
+  [ -d "$d" ] || d="$(pwd -P)"
+  [ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
+  youtube-dl --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --no-playlist \
+   --audio-quality 0 --audio-format best \
+   -o "$d/0,%(title)s-%(uploader_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+  youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --no-playlist \
+   --audio-quality 0 --audio-format best --extract-audio \
+   -o "$d/0,%(title)s-%(uploader_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+  } # _youtube_video 20220516
 
 _youtube_json2txt () {
-    jq --compact-output 'del(.formats, .thumbnail, .thumbnails, .downloader_options, .http_headers)' "$1" | yq -P
+  [ -f "${1}" ]     || { chkerr "$FUNCNAME : not a file : ${1}" ; return 1 ;}
+  [ -f "${1}.txt" ] && { chkerr "$FUNCNAME : ${1}.txt exists" ; return 1 ;}
+  jq --compact-output 'del(.formats, .thumbnail, .thumbnails, .downloader_options, .http_headers)' "$1" \
+    | yq -P >"${1}.txt"
+  echo "${1}.txt"
+  } # _youtube_json2txt 20220516
+
+sp2ssto () { # start (arg1) span (arg2) to start (ss=) stop (to=) w/ remaining args
+    # used to calculate ss= to= f2rb2mp3 parameters, given track legnths
+    # eg
+    # offset=1 sp2ssto 0       5:54 Ad_Lib_Blues
+    # offset=1 sp2ssto $to     0:53 I_Cant_Get_Started
+    local ss=$1  span=$2 offc=
+    [ "$offset" ] && offc="$offset +" || offc=''
+    export to=$(dc -e "$(hms2sec $ss) $(hms2sec $span) + $offc p")
+    shift 2
+    echo ss=$ss to=$to f2rb2mp3 '$_f' '0,${_a}-'$*
     }
-        #   [ "$(dc -e "1000 $ln_lra * p" | sed 's/\..*//' )" -lt "$(dc -e "1000 $measured_LRA * p" | sed 's/\..*//' )" ] && ln_lra="${measured_LRA}" || true
-        # [ "$(( ${measured_TP} + ${ln_off} )) -gt ${ln_tp} ] && ln_tp=$(( ln_tp - ${measured_TP} + ${ln_off}
-
-# loudnorm
-#     EBU R128 loudness normalization. Includes both dynamic and linear normalization modes.  Support for both single pass (livestreams,
-#     files) and double pass (files) modes.  This algorithm can target IL, LRA, and maximum true peak. In dynamic mode, to accurately detect
-#     true peaks, the audio stream will be upsampled to 192 kHz.  Use the "-ar" option or "aresample" filter to explicitly set an output
-#     sample rate.
-#
-#     The filter accepts the following options:
-#
-#     I, i
-#         Set integrated loudness target.  Range is -70.0 - -5.0. Default value is -24.0.
-#
-#     LRA, lra
-#         Set loudness range target.  Range is 1.0 - 20.0. Default value is 7.0.
-#
-#     TP, tp
-#         Set maximum true peak.  Range is -9.0 - +0.0. Default value is -2.0.
-#
-#     measured_I, measured_i
-#         Measured IL of input file.  Range is -99.0 - +0.0.
-#
-#     measured_LRA, measured_lra
-#         Measured LRA of input file.  Range is  0.0 - 99.0.
-#
-#     measured_TP, measured_tp
-#         Measured true peak of input file.  Range is  -99.0 - +99.0.
-#
-#     measured_thresh
-#         Measured threshold of input file.  Range is -99.0 - +0.0.
-#
-#     offset
-#         Set offset gain. Gain is applied before the true-peak limiter.  Range is  -99.0 - +99.0. Default is +0.0.
-#
-#     linear
-#         Normalize by linearly scaling the source audio.  "measured_I", "measured_LRA", "measured_TP", and "measured_thresh" must all be
-#         specified. Target LRA shouldn't be lower than source LRA and the change in integrated loudness shouldn't result in a true peak
-#         which exceeds the target TP. If any of these conditions aren't met, normalization mode will revert to dynamic.  Options are "true"
-#         or "false". Default is "true".
-#
-#     dual_mono
-#         Treat mono input files as "dual-mono". If a mono file is intended for playback on a stereo system, its EBU R128 measurement will be
-#         perceptually incorrect.  If set to "true", this option will compensate for this effect.  Multi-channel input files are not affected
-#         by this option.  Options are true or false. Default is false.
-#
-#     print_format
-#         Set print format for stats. Options are summary, json, or none.  Default value is none.
-
 hms2sec () { # passthrough seconds or convert hh:mm:ss to seconds
     # must provide ss which may be ss.nn, hh: and hh:mm: are optional
     # a number must proceed every colin
@@ -400,6 +373,8 @@ EOF
   [    "$ss" -a "$to" ] && secc="-ss $ssec -to $tsec" secn="-ss${ssec}-to${tsec}"
   $verb "${inpath}/tmp/${infile}${secn}.meas"
   [ -f "${inpath}/tmp/${infile}${secn}.meas" ] || { # measure
+    # XXX check ss -lt to etc
+    # echo ffmpeg -hide_banner -loglevel info -benchmark -y $secc -i "$infilep" \
     { echo             "# ${infile}${secn}.meas infile secn meas flac"
       ffmpeg -hide_banner -loglevel info -benchmark -y $secc -i "$infilep" \
         -af "loudnorm=print_format=json" \
@@ -581,18 +556,18 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
         [ "$files" ] && orig="$(awk 'NR==1' <<<"${files}")"
         [ "$orig" ] || orig="'_^${hash}.${ext}'"
         # ss= to= t= p= f= c= F= CF= off= tp= lra= i= cmp= v=
-        expr "$args" : ".* v="    >/dev/null && true || args="$args v="
-        expr "$args" : ".* cmp="  >/dev/null && true || args="$args cmp="
-        expr "$args" : ".* F="    >/dev/null && true || args="$args F="
-        expr "$args" : ".* c="    >/dev/null && true || args="$args c="
-       #expr "$args" : ".* f="    >/dev/null && true || args="$args f="
-        expr "$args" : ".* p="    >/dev/null && true || args="$args p="
-        expr "$args" : ".* t="    >/dev/null && true || args="$args t="
-        expr "$args" : ".* to="   >/dev/null && true || args="$args to="
-        expr "$args" : ".* ss="   >/dev/null && true || args="$args ss=0"
+        expr "$args" : ".* v="    >/dev/null && true || args="$args v=$v"
+        expr "$args" : ".* cmp="  >/dev/null && true || args="$args cmp=$cmp"
+        expr "$args" : ".* F="    >/dev/null && true || args="$args F=$F"
+        expr "$args" : ".* c="    >/dev/null && true || args="$args c=$c"
+        expr "$args" : ".* f="    >/dev/null && true || args="$args f=$f"
+        expr "$args" : ".* p="    >/dev/null && true || args="$args p=$p"
+        expr "$args" : ".* t="    >/dev/null && true || args="$args t=$t"
+        expr "$args" : ".* to="   >/dev/null && true || args="$args to=$to"
+        expr "$args" : ".* ss="   >/dev/null && true || { [ "$ss" ] && args="$args ss=$ss" || args="$args ss=0" ;}
         args="$(tr ' ' '\n' <<<"$args")"
         local sortargs=
-        for a in ss= to= t= p= f= c= F= CF= off= tp= lra= i= cmp= v= ; do 
+        for a in ss= to= t= p= f= c= F= CF= off= tp= lra= i= cmp= v= ; do
             sortargs="$sortargs $(grep "^$a" <<<"$args")"
             done
         # sortargs="$args $(grep -Ev '(^ss=|^to=|^t=|^p=|^f=|^c=|^F=|^CF=|^off=|^tp=|^lra=|^i=|^cmp=|^v=)' <<<"$sortargs")"
@@ -917,24 +892,70 @@ numlistdst () { # distribute filenames across base 32 major (alnum lower sans 'i
             done
     } # numlistdst
 
+mp3range () { # mp3 listing limiter
+    # of regex arg1 start pass through,
+    # to regex arg2 stop (or null) end
+    # from within each remaining args
+    # or current dir if no remaining args.
+    local start="$1" stop="$2" dirs= a=
+    #local verb="chkwrn"
+    #$verb for expr "${stop}" : "${start}"
+    [ "$stop" ] && { expr "${stop}" : "${start}" >/dev/null \
+            && chkwrn "$FUNCNAME : unintended consequences : $start $stop"
+        stop="/^${stop}/" ;} \
+        || stop="0"
+    start="/^${start}/"
+    #chkwrn for awk \"${start},${stop}\"
+    shift 2 || shift || true # shift 2 fails if $# = 1, so "shift 2 without err signal" in all cases...
+    #chkwrn "#$# @=$@"
+    [ $# -gt 0 ] && dirs="$1" ; shift
+    [ $# -gt 0 ] && while [ $# -gt 0 ] ; do dirs="$(printf "%s\n%s\n" "$dirs" "$1")" ; shift ; done
+    [ "$dirs" ] || dirs="./"
+    #$verb pwd=$PWD dirs=$dirs
+    #echo "$dirs"     | sed '/^$/d' | while IFS= read a; do ${verb} "ead $a" ; done
+    echo "$dirs" | sed '/^$/d' | while IFS= read a; do
+        ( [ -d "$a" ] && {
+            cd "$a"
+            ls *.mp3 | awk ${start},${stop} | sed "s=^=$PWD/="
+            } || chkwrn "not a dir with mp3 files : '$a'" ) # subshell to preserve $OLDPWD after cd
+        done
+    } # mp3range 20220516
+
 playffr () { # use ffplayr to continiously repeat invocations of ffplay
+    local fs
+    [ $# -gt 0 ] && fs="$1" ; shift
     [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
-#   [ "$1" ] && fs="$1" || fs="$(cat)" ; shift;
-#   [ "$1" ] && $FUNCNAME $@;
     [ "$fs" ] || fs="$(cat)"
     while :; do playff <<<"$fs" || return 1 ; done
    #while :; do echo "$fs" | playff || return 1 ; done
     }
 
-playff () { # use ffplay to play files (args OR stdin filename per linebnb)
-    local f fs p b a ;
+playff () { # use ffplay to play files (args OR stdin filename per line)
+    local f fs
+    [ $# -gt 0 ] && fs="$1" ; shift
     [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
-    echo "$fs" | while read f; do
+    echo "$fs" | while IFS= read f; do
+        chkwrn "$f"
         [ -f "$f" ] && {
         hms2sec $(ffprobe -hide_banner  -loglevel info  "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')
         ffplay -hide_banner -stats -autoexit -loglevel info -top 52 -x 1088 -y 280 "$f" || return 1
-        }
+        } || chkwrn "$0 : not a file : '$f'"
         done
     } # playff
 
+probeff () { # use ffprobe to extract duration of files (args OR stdin filename per line)
+    local f fs
+    [ $# -gt 0 ] && fs="$1" ; shift
+    [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
+    [ "$fs" ] || fs="$(cat)"
+    echo "$fs" | while IFS= read f; do
+        local inpath infile="${f##*/}" # basename
+        expr "$f" : ".*/" >/dev/null && inpath="${f%/*}" || inpath="." # input dirname
+        local infilep="$(cd "${inpath}" ; pwd -P)/${infile}" # full filepath
+        [ -f "$infilep" ] && {
+            d="$(ffprobe -hide_banner -loglevel info "$infilep" 2>&1 | sed -e '/Duration: N\/A, /d' -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')"
+            [ "$d" ] && echo "$d $infilep" || true
+        }
+        done
+    }
