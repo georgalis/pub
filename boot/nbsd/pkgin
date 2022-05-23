@@ -14,10 +14,13 @@ PKG_EX="/usr/pkg/share/examples/pkgin/repositories.conf.example"
 # ftp also works
 URL_ROOT="http://ftp.netbsd.org/pub"
 URL_ROOT="http://nyftp.netbsd.org/pub"
+URL_ROOT="https://cdn.netbsd.org/pub"
 URL_BASE="pkgsrc/packages/$(uname -s)/$(uname -m)"
 # rc     "${URL_ROOT}/pkgsrc/packages/NetBSD/$(uname -m)/$(uname -r|cut -f 1 -d _)/All"
-PKG_LIST="${URL_ROOT}/${URL_BASE}/$(uname -r|cut -f 1 -d _)/SHA512.bz2"
-PKG_PATH="${URL_ROOT}/${URL_BASE}/$(uname -r|cut -f 1 -d _)/All"
+PKG_LIST="${URL_ROOT}/${URL_BASE}/$(uname -r|cut -f 1 -d _ | sed 's/\..*/.0/')/SHA512.bz2"
+PKG_PATH="${URL_ROOT}/${URL_BASE}/$(uname -r|cut -f 1 -d _ | sed 's/\..*/.0/')/All"
+PKG_LIST="${URL_ROOT}/${URL_BASE}/$(uname -r|cut -f 1 -d _ )/SHA512.bz2"
+PKG_PATH="${URL_ROOT}/${URL_BASE}/$(uname -r|cut -f 1 -d _ )/All"
 PKGIN="$(ftp -Vo - "$PKG_LIST" | bzip2 -d | sed -e '/All\/pkgin-/!d' -e 's/All\/pkgin/pkgin/' \
     -e 's/.*(//' -e 's/).*//')"
 
