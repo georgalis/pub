@@ -1,0 +1,26 @@
+#!/bin/sh
+
+# REQUIRE: 
+# BEFORE:
+# PROVIDE: compile
+# KEYWORD: nbsd
+
+set -e 
+
+URL_ROOT="https://cdn.netbsd.org/pub"
+URL_BASE="NetBSD/NetBSD-$(uname -s)/$(uname -m)/binary/sets"
+URL_COMP="${URL_ROOT}/${URL_BASE}/comp.tar.xz"
+DIST_PATH="/usr/local/dist/${URL_BASE}"
+mkdir -p "$DIST_PATH"
+ftp -o "${DIST_PATH}/comp.tar.xz" "${URL_COMP}" \
+  && cd / \
+  && tar xzf "${DIST_PATH}/comp.tar.xz"
+
+# https://wiki.netbsd.org/pkgsrc/gcc/
+#cd $(dirname $0)
+#pkgin -y import ./pkgin.d/compile.list
+#cat >>/etc/profile<<'EOF'
+#export PATH=$PATH:/usr/pkg/gcc5/bin
+#EOF
+
+exit 0

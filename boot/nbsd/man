@@ -1,0 +1,19 @@
+#!/bin/sh
+
+# REQUIRE: 
+# BEFORE:
+# PROVIDE: man
+# KEYWORD: nbsd
+
+set -e 
+
+URL_ROOT="https://cdn.netbsd.org/pub"
+URL_BASE="NetBSD/NetBSD-$(uname -s)/$(uname -m)/binary/sets"
+URL_COMP="${URL_ROOT}/${URL_BASE}/man.tar.xz"
+DIST_PATH="/usr/local/dist/${URL_BASE}"
+mkdir -p "$DIST_PATH"
+ftp -o "${DIST_PATH}/man.tar.xz" "${URL_COMP}" \
+  && cd / \
+  && tar xzf "${DIST_PATH}/man.tar.xz"
+
+exit 0
