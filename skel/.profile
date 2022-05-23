@@ -163,7 +163,7 @@ ckstat () # Unlimited use with this notice (c) 2017-2019 George Georgalis <georg
     echo "$fs" | while IFS= read f; do
       [ -f "$f" ] && {
         _stat "$f" | awk '{printf "% 2x%07x . % 8x %08x ",$1,$2,$3,$4}'
-        echo "$f"
+        echo "${f##*/}" "$f" # basename and input filepath
       } || chkerr "$FUNCNAME : not a regular file : $f";
     done
   }
@@ -186,7 +186,7 @@ ckstatsum () # Unlimited use with this notice (c) 2017-2019 George Georgalis <ge
       [ -f "$f" ] && {
         { _stat "$f" ; cksum <"$f"
             } | tr '\n' ' ' | awk '{printf "% 2x%07x %8x % 8x %08x ",$1,$2,$5,$3,$4}'
-        echo "$f"
+        echo "${f##*/}" "$f" # basename and input filepath
       } || chkerr "$FUNCNAME : not a regular file : $f";
     done
   }
