@@ -2,7 +2,7 @@
 
 # REQUIRE: shell
 # BEFORE:
-# PROVIDE: plgsrc
+# PROVIDE: pkgsrc
 # KEYWORD: opt-nbsd
 
 set -e 

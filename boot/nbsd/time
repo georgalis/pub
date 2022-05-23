@@ -3,7 +3,7 @@
 # REQUIRE:
 # BEFORE:
 # PROVIDE: time
-# KEYWORD: opt-nbsd
+# KEYWORD: nbsd
 
 # set the clock and turn on ntp before touching any other file
 
