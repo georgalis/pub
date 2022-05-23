@@ -218,17 +218,22 @@ _youtube_json2txt () {
   echo "${1}.txt"
   } # _youtube_json2txt 20220516
 
-sp2ssto () { # start (arg1) span (arg2) to start (ss=) stop (to=) w/ remaining args
+span2ssto () { # start (arg1) span (arg2) and remaining args to f2rb2mp3
     # used to calculate ss= to= f2rb2mp3 parameters, given track legnths
     # eg
-    # offset=1 sp2ssto 0       5:54 Ad_Lib_Blues
-    # offset=1 sp2ssto $to     0:53 I_Cant_Get_Started
-    local ss=$1  span=$2 offc=
-    [ "$offset" ] && offc="$offset +" || offc=''
-    export to=$(dc -e "$(hms2sec $ss) $(hms2sec $span) + $offc p")
-    shift 2
-    echo ss=$ss to=$to f2rb2mp3 '$_f' '0,${_a}-'$*
-    }
+     # export offset=1
+    # sp2ssto 0   7:14 01,\${a}-Song_For_My_Father-\${_r}
+    # sp2ssto $to 6:07 02,\${a}-The_Natives_Are_Restless_Tonight-\${_r}
+    # ss=0   to=435 f2rb2mp3 $_f 01,${a}-Song_For_My_Father-${_r}
+    # ss=435 to=803 f2rb2mp3 $_f 02,${a}-The_Natives_Are_Restless_Tonight-${_r}
+    local ss=$1 span= offc=;
+    [ "$offset" ] && offc="$offset +" || offc='';
+    span=$(dc -e "$2 $offc p")
+    export to=$(dc -e "$(hms2sec $ss) $(hms2sec $span) + $offc p");
+    shift 2 || shift || true
+    echo ss=$ss to=$to f2rb2mp3 '$_f' $*
+    echo "# $to is 0x$(kdb_xs2hu $(printf '%x' $to))"
+    } # span2ssto 20220519
 hms2sec () { # passthrough seconds or convert hh:mm:ss to seconds
     # must provide ss which may be ss.nn, hh: and hh:mm: are optional
     # a number must proceed every colin
@@ -248,7 +253,7 @@ prependf () {
   [ "$title" ] || return 0 # no operation
   local basefn="$(basename "$basefp")"
   ( cd $(dirname "$basefp") && mv -f "$basefn" "${title}${basefn}" )
-  }
+  } # prependf
 f2rb2mp3 () ( # subshell function "file to rubberband to mp3", transcoding/tuning function
   # subshell sets pipefail and ensures PWD on err
     set -o errexit   # Exit on command non-zero status
@@ -304,6 +309,7 @@ EOF
     echo "# cmp= $(declare -f $FUNCNAME | sed -e '/compand/!d' -e '/sed/d' -e 's/=.*//' -e 's/local//' | tr -s ' \n' '|')"
     declare -f $FUNCNAME | sed -e '/compand/!d' -e '/sed/d' | while IFS= read a ; do ${verb2} "$a" ; done
     echo "# ss= to= t= p= f= c= F= CF= off= tp= lra= i= cmp= v= f2rb2mp3 {file-in} {prepend-out}"
+    echo "# ss=$ss to=$to t=$t p=$p f=$f c=$c F=$F CF=$CF off=$off tp=$tp lra=$lra i=$i cmp=$cmp v=$v f2rb2mp3 {file-in} {prepend-out}"
     return 0
     } # help
   [    "$1" ] || { f2rb2mp3 help ; return 1 ;}
