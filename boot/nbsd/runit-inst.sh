@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# REQUIRE: etc
+# REQUIRE: etc compile
 # BEFORE: runit-conf
 # PROVIDE: runit-inst
 # KEYWORD: nbsd
@@ -9,6 +9,7 @@
 # http://smarden.org/runit/install.html
 
 set -e
+which gcc || . /etc/profile
 
 version=2.1.2
 

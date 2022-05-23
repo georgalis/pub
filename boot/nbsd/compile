@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# REQUIRE: pkgin
+# BEFORE:
+# PROVIDE: compile
+# KEYWORD: dev-nbsd
+
+set -e 
+
+cd $(dirname $0)
+pkgin -y import ./pkgin.d/compile.list
+cat >>/etc/profile<<'EOF'
+export PATH=$PATH:/usr/pkg/gcc5/bin
+EOF
+
+exit 0

@@ -1,11 +1,12 @@
 #!/bin/sh
 
-# REQUIRE: socklog-conf
+# REQUIRE: socklog-conf compile
 # BEFORE:
 # PROVIDE: ipsvd-inst
 # KEYWORD: nbsd
 
 set -e
+which gcc || . /etc/profile
 
 version=1.0.0
 

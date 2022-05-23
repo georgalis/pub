@@ -10,11 +10,7 @@ set -e
 cat >>/sbin/runsvdir-start <<'EOF'
 #!/bin/sh
 
-export PATH=/sbin:/usr/sbin:/bin:/usr/bin
-export PATH=$PATH:/usr/pkg/sbin:/usr/pkg/bin
-export PATH=$PATH:/usr/X11R7/bin
-export PATH=$PATH:/usr/local/sbin:/usr/local/bin
-export PATH=$PATH:/usr/local/sub
+. /etc/profile
 
 exec env - PATH=$PATH \
 runsvdir -P /etc/sv "log: ................................................................................................................................................................................................................................................................................................................................................................................................................"

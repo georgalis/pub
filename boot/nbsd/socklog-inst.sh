@@ -2,13 +2,13 @@
 
 # http://smarden.org/socklog/install.html
 
-# REQUIRE: runit-conf 
+# REQUIRE: runit-conf compile
 # BEFORE:
 # PROVIDE: socklog-inst
 # KEYWORD: nbsd
 
 set -e
-#set -x
+which gcc || . /etc/profile
 
 version=2.0.3
 

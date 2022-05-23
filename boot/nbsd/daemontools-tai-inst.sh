@@ -7,12 +7,13 @@
 #
 # ...only need tai64 tools
 
-# REQUIRE: 
+# REQUIRE: compile
 # BEFORE:
 # PROVIDE: tai64
 # KEYWORD: nbsd
 
 set -e
+which gcc || . /etc/profile
 
      mkdir -p /usr/local/dist /usr/local/src /usr/local/bin
      cd /usr/local/dist
