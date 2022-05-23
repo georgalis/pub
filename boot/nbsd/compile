@@ -3,7 +3,7 @@
 # REQUIRE: pkgin
 # BEFORE:
 # PROVIDE: compile
-# KEYWORD: dev-nbsd
+# KEYWORD: nbsd
 
 set -e 
 
