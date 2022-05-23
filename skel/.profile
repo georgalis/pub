@@ -116,11 +116,6 @@ logwrn () { [ "$*" ] && { logger -s "^^ $* ^^"   ; return $? ;} || true ;} #:> w
 logerr () { [ "$*" ] && { logger -s ">>> $* <<<" ; return 1  ;} || true ;} #:> err stderr+log args return 1, noop if null
 chkexit () { [ "$*" ] && { stderr    ">>> $* <<<" ; exit 1   ;} || true ;} #:> err stderr args exit 1, noop if null
 logexit () { [ "$*" ] && { logger -s ">>> $* <<<" ; exit 1   ;} || true ;} #:> err stderr+log args exit 1, noop if null
-#source_iff () { [ -e "$1" ] && { . "$1" && stderr "<> $@ <>" || chkerr ". $@" ; return 1 ;} || chkwrn "nofile $1" ;} #:> source arg1 if exists, arg2 (optional) traceback calling file
-#source_iff () { [ -e "$1" ] && { . "$1" && stderr "<> ${2}: . $1 <>" || chkerr "${2}: . $1" ; return 1 ;} || chkwrn "${2}: no file $1" ;} #:> source arg1 if exists, arg2 (optional) traceback calling file
-siff () { [ -e "$1" ] && { stderr "<>${siff}${2}: . $1 <>" && siff="( ${siff}" && . "$1" && siff="${siff#( }" || chkerr "${siff}${2}: . $1" ; return 1 ;} || chkwrn "${siff}${2}: no file $1" ;} #:> source arg1 if exists, optional calling file arg2 for backtrace
-siff () { [ -e "$1" ] && { stderr "<>${siff}${2}: . $1 <>" && siff="siff ${siff}" && . "$1" && siff="${siff#siff }" || chkerr "${siff}${2}: . $1" ; siff="${siff#siff }" ; return 1 ;} || chkwrn "${siff}${2}: no file $1" ; siff="${siff#siff }" ;} #:> source arg1 if exists, optional calling file arg2 for backtrace
-siff () { [ -e "$1" ] && { stderr "<> ${2}: . $1 <>" && . "$1" ;} || { chkerr "fail" ; return 1 ;} || chkwrn "siff ${2}: no file $1" ;} #:> source arg1 if exists, optional calling file arg2 for backtrace
 siff () { local verb="${verb:=devnul}"
     [ -e "$1" ] \
         && { { ${verb} "<> ${2}: . ${1} <>" && . "${1}" ;} || { chkerr "fail $1" ; return 1 ;} ;} \
