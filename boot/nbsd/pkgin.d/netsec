@@ -1,0 +1,10 @@
+
+# snortsnarf-20050314.1nb6  Generate HTML report summaries from snort incident alerts
+# snort-2.9.9.0nb1 =   The Open Source Network Intrusion Detection System
+# pulledpork-0.7.2nb1  Script for Snort and Suricata rule management
+# oinkmaster-2.0nb6    Manage snort rule updates
+# barnyard-0.2.0nb4    Fast output system for snort
+
+# security/openssl
+sysutils/pftop
+

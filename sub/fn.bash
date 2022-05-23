@@ -70,7 +70,8 @@ logerr ffddd972 00000062
 siff 1ff96e34 000000fc
 EOF
 
-alias   gst='git status --short | sed "s/^\?/ \?/" | sort'
+alias       gst='git status --short | sed "s/^\?/ \?/" | sort'
+alias   gstatus='git status --short' # less functionality but allows path as arg1 (&c)
 alias   gls='git ls-files'
 alias   gdf='git diff --name-only'
 alias gdiff='git diff --minimal -U0'
@@ -81,7 +82,7 @@ alias gpull='git pull'
 alias   gbr='git branch'
 alias   gco='git checkout'
 alias  grst='git reset'
-#alias  gmv='git mv'
+#alias  gmv='git mv' # it can get messy, do it manually
 alias  glog='git log'
 alias  gref='git reflog'
 alias  grst='git reset HEAD'

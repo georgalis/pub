@@ -10,7 +10,9 @@ set -e
 URL_ROOT="https://cdn.netbsd.org/pub"
 URL_BASE="NetBSD/NetBSD-$(uname -r|cut -f 1 -d _ )/$(uname -m)/binary/sets"
 URL_COMP="${URL_ROOT}/${URL_BASE}/comp.tar.xz"
+# eg https://cdn.netbsd.org/pub/NetBSD/NetBSD-9.2/amd64/binary/sets/comp.tar.xz
 DIST_PATH="/usr/local/dist/${URL_BASE}"
+# eg /usr/local/dist/NetBSD/NetBSD-9.2/amd64/binary/sets
 mkdir -p "$DIST_PATH"
 ftp -o "${DIST_PATH}/comp.tar.xz" "${URL_COMP}" \
   && cd / \

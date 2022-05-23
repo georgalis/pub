@@ -1,16 +1,11 @@
 # devel/jenkins
-# devel/jq
-# mail/safecat
+# devel/subversion-base
 # net/djbdns
-# security/mozilla-rootcerts
-# security/openssl
-# textproc/py-yaml
 # time/remind
 # www/apache-tomcat8
-devel/git-base
-devel/git-docs
+devel/git
+devel/jq
 editors/vim
-mail/safecat
 misc/colorls
 misc/tmux
 net/arpwatch
@@ -29,7 +24,7 @@ security/gnupg2
 sysutils/file
 sysutils/htop
 sysutils/lsof
-sysutils/pftop
+sysutils/psmisc
 sysutils/pstree
 textproc/aspell-en
 textproc/par

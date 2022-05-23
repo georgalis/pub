@@ -54,7 +54,7 @@ echo "$PKG_PATH" >>${PKGIN_CONF}~ \
 /usr/pkg/bin/pkgin -y full-upgrade
 
 cd $(dirname $0)
-for e in ./pkgin.d/*.list ./pkgin.d/min.list ; do
+for e in ./pkgin.d/*.list ; do
         pkgin -y import $e
 done
 
