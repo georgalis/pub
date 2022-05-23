@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# REQUIRE: socklog-conf compile
+# REQUIRE: socklog-conf comp
 # BEFORE:
 # PROVIDE: ipsvd-inst
 # KEYWORD: nbsd

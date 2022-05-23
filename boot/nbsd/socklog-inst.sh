@@ -2,7 +2,7 @@
 
 # http://smarden.org/socklog/install.html
 
-# REQUIRE: runit-conf compile
+# REQUIRE: runit-conf comp
 # BEFORE:
 # PROVIDE: socklog-inst
 # KEYWORD: nbsd

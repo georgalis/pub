@@ -7,7 +7,7 @@
 #
 # ...only need tai64 tools
 
-# REQUIRE: compile
+# REQUIRE: comp
 # BEFORE:
 # PROVIDE: tai64
 # KEYWORD: nbsd

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# REQUIRE: etc compile
+# REQUIRE: etc comp
 # BEFORE: runit-conf
 # PROVIDE: runit-inst
 # KEYWORD: nbsd
