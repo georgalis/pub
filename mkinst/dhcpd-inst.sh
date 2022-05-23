@@ -1,9 +1,8 @@
 #!/bin/sh
-
-# ./pub
-# ./mkinst/dhcpd-inst.sh
-
-# Unlimited use with this notice (c) 2017 George Georgalis <george@galis.org>
+# $Id: dhcpd-inst.sh 411 2008-07-06 04:01:37Z geo $
+#
+# LICENSE: <george@galis.org> wrote this file. As long as you retain this
+# notice, you can do anything with it or buy beer -- George Georgalis
 
 set -x
 set -e
