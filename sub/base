@@ -5,6 +5,7 @@ import string
 # digs = string.digits + string.ascii_letters
 # digs = "0123456789abcdefghijklmnpqrstuvwxyz"
 # shift out characters "ilow" for visual acuity
+#      "0123456789abcdefghijklmnpqrstuvwxyz"
 digs = "0123456789abcdefghjkmnpqrstuvxyz"
 def d2b(base,x):
     if x < 0:
