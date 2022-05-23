@@ -8,7 +8,7 @@
 set -e 
 
 URL_ROOT="https://cdn.netbsd.org/pub"
-URL_BASE="NetBSD/NetBSD-$(uname -s)/$(uname -m)/binary/sets"
+URL_BASE="NetBSD/NetBSD-$(uname -r|cut -f 1 -d _ )/$(uname -m)/binary/sets"
 URL_COMP="${URL_ROOT}/${URL_BASE}/man.tar.xz"
 DIST_PATH="/usr/local/dist/${URL_BASE}"
 mkdir -p "$DIST_PATH"
