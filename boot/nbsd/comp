@@ -15,9 +15,9 @@ DIST_PATH="/usr/local/dist/${URL_BASE}"
 # eg /usr/local/dist/NetBSD/NetBSD-9.2/amd64/binary/sets
 mkdir -p "$DIST_PATH"
 ftp -o "${DIST_PATH}/comp.tar.xz" "${URL_COMP}" \
-  && cd / \
-  && tar xzf "${DIST_PATH}/comp.tar.xz"
+  && tar -C / -xzf "${DIST_PATH}/comp.tar.xz"
 
+# https://wiki.netbsd.org/tutorials/clang/
 # https://wiki.netbsd.org/pkgsrc/gcc/
 #cd $(dirname $0)
 #pkgin -y import ./pkgin.d/compile.list
