@@ -48,11 +48,11 @@ lock () { # lock to prevent multiple generating runs to
  # the same host, you can still shoot yourself in the foot
  #[ ! "$(id -u)" = "0" ] && chkerr "You must be root to lock $(basename $0) in /var/run"
  LOCK="/tmp/$(basename $0)-${USER}-${HOST}.pid"
- [ -f "$LOCK" ] && chkerr "Lock exists: $LOCK" || echo "$$" >"$LOCK" ;}
+ [ -f "$LOCK" ] && { chkerr "Lock exists: $LOCK" ; exit 1 ;} || echo "$$" >"$LOCK" ;}
 unlock () { rm $LOCK ;}
 
-locallast () { find $PREFIX/1 -mindepth 1 -maxdepth 1 -type d | sort | tail -n1 ;}
-remotelast () { ssh $HOST "find $PREFIX/1 -mindepth 1 -maxdepth 1 -type d | sort | tail -n1" ;}
+locallast () { find "$PREFIX/1" -mindepth 1 -maxdepth 1 -type d | sort | tail -n1 ;}
+remotelast () { ssh "$HOST" "find "$PREFIX/1" -mindepth 1 -maxdepth 1 -type d | sort | tail -n1" ;}
 testlast () { [ -z "$LAST" ] && chkerr ">>> No prior backup?  mkdir -p $PREFIX/0 $PREFIX/1/$NOW $PREFIX/2 $PREFIX/3" || true ;}
 
 localsnap () {
@@ -158,28 +158,27 @@ now () { date +%Y%m%d_%H%M%S ;}
 op=$1 # operation
 case $op in
  local)
-  [ -n "$3" ] || chkerr "$(usage)" # extra arg
+  [ $# = 3 ] || chkerr "local : not 3 args : $(usage)"
   ORIG="$2" ; PREFIX="$3"/bk
  ;;
  push|pull)
-  [ -n "$4" ] || chkerr "$(usage)" # extra arg
+  [ $# = 4 ] || chkerr "(push|pull) : not 4 args : $(usage)"
   HOST="$2" ; ORIG="$3" ; PREFIX="$4"/bk
  ;;
  rotate)
-  [ -n "$3" ] || chkerr "$(usage)" # extra arg
+  [ $# = 3 -o $# = 4 ] || chkerr "rotate : not 3 or 4 args : $(usage)"
   LEVEL="$2" ; PREFIX="$3"/bk ; [ -n "$4" ] && HOST="$4" \
    && { op=rotremote ;} \
    || { op=rotlocal ;}
  ;;
  purge)
-  [ -n "$3" ] || chkerr "$(usage)" # extra arg
+  [ $# = 3 -o $# = 4 ] || chkerr "purge : not 3 or 4  args : $(usage)"
   LEVEL="$2" ; PREFIX="$3"/bk ; [ -n "$4" ] && HOST="$4" \
    && { op=purgremote ;} \
    || { op=purglocal ;}
  ;;
  merge)
-  [ -n "$4" ] || chkerr "$(usage)" # extra arg
-  [ -n "$2" ] || chkerr "$(usage)" # missing arg
+  [ $# = 2 -o $# = 4 ] || chkerr "merge : not 2 or 4 args : $(usage)"
   PREFIX="$2" ; [ -n "$3" ] && HOST="$3" \
    && op=mergeremote \
    || op=mergelocal
