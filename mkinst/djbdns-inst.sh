@@ -16,7 +16,7 @@ cd $dist
 
 ftp http://cr.yp.to/djbdns/djbdns-1.05.tar.gz
 cp -p \
-	$base/patch/djbdns-chpst-socklog.2.patch \
+	$base/patch/djbdns-runit-socklog.2.patch \
 	$base/patch/djbdns-dnscache-cname.patch \
 	$base/patch/djbdns-dnscache-sigpipe.patch \
 	$base/patch/djbdns-1.05.cache-save.patch.diff \
