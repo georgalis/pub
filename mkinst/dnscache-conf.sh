@@ -5,7 +5,9 @@
 set -e
 #set -x
 
-chkerr () { [ -n "$*" ] && echo "ERR ${0}: $*" 1>&2 && exit 1 || true ;}
+stderr () { [ "$*" ] && echo "$*" 1>&2 || true ;}                          #:> args to stderr, or noop if null
+chkwrn () { [ "$*" ] && { stderr    "^^ $* ^^"   ; return $? ;} || true ;} #:> wrn stderr args return 0, noop if null
+chkerr () { [ "$*" ] && { stderr    ">>> $* <<<" ; return 1  ;} || true ;} #:> err stderr args return 1, noop if null
 
 # this version only tested on netbsd
 [ "$(uname)" = "NetBSD" ] || exit 1
@@ -21,8 +23,6 @@ umask 0022
 # http://cr.yp.to/djbdns/dnscache.html
 # Also see
 # http://tinydns.org/
-
-# check if srv patched djbdns is available
 
 # Create accounts and chroot directories for dnscache to run in
 acct=dns
@@ -48,14 +48,16 @@ grep -qe "^${acct}:" /etc/passwd || useradd -g ${group} -d / -s /sbin/nologin $a
 grep -qe "^${log}:"  /etc/passwd || useradd -g ${group} -d / -s /sbin/nologin $log
 }
 
+test $(which -a dnscache-conf | wc -l) -eq 1 || chkerr "which -a dnscache-conf"
+
 # create service
 mkdir -p /usr/local/etc
-dnscache-conf $acct $log /usr/local/etc/dnscache-$dnscacheip $dnscacheip
+/usr/local/bin/dnscache-conf $acct $log /usr/local/etc/dnscache-$dnscacheip $dnscacheip
 
 # populate root servers
-dnsqr ns . | awk '/answer:/ {print $5;}' \
+/usr/local/bin/dnsqr ns . | awk '/answer:/ {print $5;}' \
 	| while read ns ; do
-		dnsqr a $ns
+		/usr/local/bin/dnsqr a $ns
 	done | awk '/answer:/ {print $5;}' \
 	>/usr/local/etc/dnscache-$dnscacheip/root/servers/@
 
@@ -69,5 +71,4 @@ chmod 4770 /usr/local/etc/dnscache-$dnscacheip
 
 # start the service
 ln -sf /usr/local/etc/dnscache-$dnscacheip $srv
-
 
