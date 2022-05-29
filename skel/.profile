@@ -1,6 +1,6 @@
 # ~/.profile
 
-# Unlimited use with this notice. (C) 2004-2022 George Georgalis
+# (C) 2004-2022 George Georgalis unlimited use with this notice
 
 # For Bourne-compatible shells (bash,ksh,zsh,sh)
 
@@ -59,9 +59,7 @@ NetBSD|FreeBSD|Dragonfly)
  alias  lS='ls -AFTlrS'
  alias t='tail -F'
  alias top='top -S -I -s4 -o cpu'
- alias p >/dev/null 2>&1    || alias p='ps ax'
- [ -x "$(which pstree)" ]   && alias p="pstree -upnla" || true
- [ -x "$(which proctree)" ] && alias p="proctree -w"      || true
+ alias p >/dev/null 2>&1 || alias p='ps ax'
  [ "$TERM" = "vt220" ] && export TERM=xterm # adds color to some apps in console
  # fix colors in screen on amd64 XXX workaround
  #[ "$(uname -m)" = "amd64" -a "$TERM" = "xterm-color" ] && export TERM="xterm"
@@ -95,8 +93,8 @@ _ntermrev="$(tput "$_ntermrev")" ; _ntermul="$(tput "$_ntermul")"
  _termrev="$(tput  "$_termrev")"  ; _termul="$(tput  "$_termul")"
 export _ntermrev _termrev _ntermul _termul
 
-alias    g='grep -E'   # grep for the extended regex
-alias    v='grep -Ev'  # grep -v for the extended regex
+alias    g='grep'   # grep for the extended regex
+alias    v='grep -v'  # grep -v for the extended regex
 alias    h='fc -l'     # list commands previously entered in shell.
 alias    j='jobs -l'   # list background jobs
 alias    s='less -R'   # less
@@ -276,9 +274,7 @@ case "$SHELL" in
     export PS1="\${?%0} \u@\h:\w "
     #PROMPT_COMMAND
     export HISTCONTROL=erasedups
-    export HISTFILE=~/.bash_history
-    export HISTFILESIZE=9600
-    export HISTSIZE=2600
+    export HISTFILE="${HOME}/.bash_history" HISTFILESIZE=9600 HISTSIZE=2600
     set -o ignoreeof # disable ctrl-d exit
     set -o errtrace  # any trap on ERR is inherited by shell functions
     set -o functrace # traps on DEBUG and RETURN are inherited by shell functions
@@ -287,12 +283,11 @@ case "$SHELL" in
  *ksh)
   export hostname="$(hostname)"
   export PS1="\${?%0} \${USER}@\${hostname}:\${PWD} "
+  export HISTFILE="${HOME}/.ksh_history" HISTSIZE=4096
   set -o ignoreeof # disable ctrl-d exit
   set -o braceexpand
   bind '^XH'=beginning-of-line
   bind '^XF'=end-of-line
-  export HISTFILE=$HOME/.ksh_hist
-  export HISTSIZE=2600
   VISUAL=emacs # don't export, least override EDITOR
   [ -e ~/.ksh_logout ] && trap '. ~/.ksh_logout' EXIT || true
  ;; # *ksh
@@ -356,5 +351,4 @@ printf "${_ntermrev}"
 #		|| { echo $(hostname) ssh-agent already died? 2>/dev/stderr ; exit 1 ;} ;}
 
 siff "$HOME/.profile.local" "~/.profile"
-
 

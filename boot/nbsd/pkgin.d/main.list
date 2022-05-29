@@ -5,6 +5,7 @@
 # www/apache-tomcat8
 devel/git
 devel/jq
+devel/yq
 editors/vim
 misc/colorls
 misc/tmux
