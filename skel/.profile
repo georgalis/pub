@@ -61,7 +61,7 @@ NetBSD|FreeBSD|Dragonfly)
  alias top='top -S -I -s4 -o cpu'
  alias p >/dev/null 2>&1    || alias p='ps ax'
  [ -x "$(which pstree)" ]   && alias p="pstree -upnla" || true
- [ -x "$(which proctree)" ] && alias p="proctree"      || true
+ [ -x "$(which proctree)" ] && alias p="proctree -w"      || true
  [ "$TERM" = "vt220" ] && export TERM=xterm # adds color to some apps in console
  # fix colors in screen on amd64 XXX workaround
  #[ "$(uname -m)" = "amd64" -a "$TERM" = "xterm-color" ] && export TERM="xterm"
