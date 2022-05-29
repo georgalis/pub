@@ -1,41 +1,80 @@
 #!/bin/sh
-# 
-# $Id: djbdns-inst.sh 319 2007-10-15 15:20:37Z geo $
-# $GeorgalisG: mkinst/djbdns-inst.sh,v 1.3 2006/02/13 03:53:44 geo Exp $
-#
-# LICENSE: <george@galis.org> wrote this file. As long as you retain this
-# notice, you can do anything with it or buy beer -- George Georgalis
-#
+
+# (c) 2017-2022 George Georgalis <george@galis.org> unlimited use with this notice 
 
 set -e
-#set -x
 
+stderr () { echo ">>> $* <<<" 1>&2 ;} # return args to stderr
+chkerr () { [ "$*" ] && { stderr "$*" ; return 1 ;} || true ;}
+
+cd $(dirname "$0")
+base="$PWD"
 dist=/usr/local/dist
 src=/usr/local/src
 mkdir -p $dist $src
 cd $dist
 
 ftp http://cr.yp.to/djbdns/djbdns-1.05.tar.gz
-# http://www.tinydns.org/
-# http://homepages.tesco.net/~J.deBoynePollard/Softwares/djbdns/
-ftp http://metrg.net/pub/mkinst/patch/djbdns-chpst-socklog.1.patch
-ftp http://metrg.net/pub/mkinst/patch/djbdns-dnscache-sigpipe.patch
-ftp http://metrg.net/pub/mkinst/patch/djbdns-dnscache-cname.patch
+cp -p \
+	$base/patch/djbdns-chpst-socklog.2.patch \
+	$base/patch/djbdns-dnscache-cname.patch \
+	$base/patch/djbdns-dnscache-sigpipe.patch \
+	$base/patch/djbdns-1.05.cache-save.patch.diff \
+	./
+
+# https://web.archive.org/web/20161203224414/http://tinydns.org/
+#
+# Felix von Leitner:
+#  An ipv6 patch for djbdns.             http://www.fefe.de/dns/      http://www.fefe.de/dns/djbdns-1.05-test28.diff.xz
+#  libowfat packages up Dan's libraries. http://www.fefe.de/libowfat/ http://www.fefe.de/libowfat/libowfat-0.32.tar.xz
+#
+# for srv records, see
+# https://anders.com/projects/sysadmin/djbdnsRecordBuilder/
+# https://anders.com/cms/37/djbdns/tinydns/SRV/NAPTR/record.builder
+
 cd $src
+rm -rf djbdns-1.05
 # http://cr.yp.to/djbdns/install.html
 tar xzf $dist/djbdns-1.05.tar.gz
-# use chpst and socklog 
-patch <$dist/djbdns-chpst-socklog.1.patch
 cd djbdns-1.05
-# protects dnscache from SIGPIPEs
-patch <$dist/djbdns-dnscache-sigpipe.patch
+
+# use runit and socklog 
+patch <$dist/djbdns-runit-socklog.2.patch
+
 # handle client-side aliases ("CNAME" records) correctly
 patch <$dist/djbdns-dnscache-cname.patch
 
+# protects dnscache from SIGPIPEs
+patch <$dist/djbdns-dnscache-sigpipe.patch
+
+# save cache on sigterm, restore on start, mkdir -p $ROOT/cache
+patch <$dist/djbdns-1.05.cache-save.patch.diff
+
+# Jeremy Kister has an all-in-one patch for djbdns  for various resource record types
+#patch <$dist/djbdns-1.05.isp.patch
+
 # djbware patch for GNU C Library (glibc) 2.3.x and later (and earlier)
-echo gcc -O2 --include /usr/include/errno.h >|conf-cc
+echo gcc -O2 --include /usr/include/errno.h >conf-cc
 make
 make setup check # under /usr/local
+
+# Patch resources:
+
+# port of djbdns for OpenWRT https://github.com/arduino/linino/tree/master/packages/net/djbdns
+
+# https://web.archive.org/web/20170514223220/https://jdebp.eu/Softwares/djbwares/djbdns-patches.html
+#  These are some minor softwares for use with Dan Bernstein's djbdns.
+# 
+#     Summarising configuration information
+#     Making tinydns-data abort on semantic errors
+#     Making dnscache handle client-side aliases
+#     Making tinydns and axfrdns publish complete client-side alias chains
+#     Printing all of the domain names that an IP address maps to
+#     Making dnscache ignore referral responses in "forwardonly" mode
+#     Making the database compilers use a non-conflicting temporary filename
+#     Making the tools recognise a space character as the address separator in ${DNSCACHEIP}
+#     Querying non-default proxy DNS servers 
+
 
 #Cc: dns@list.cr.yp.to
 #Date: Mon, 10 May 2004 16:24:13 +0200
@@ -52,3 +91,8 @@ make setup check # under /usr/local
 #Patch8: djbdns-1.05-multiip.diff
 #Patch9: dnscache-multiple-ip.patch
 #Patch10: dnsroots.global.patch
+
+# not using djbdns-1.05-srvnaptr.diff
+# Guilherme Balena Versiani has added support for SRV+NAPTR
+# https://web.archive.org/web/20080924183040/http://mywebpage.netscape.com/guibv/#djb
+# https://web.archive.org/web/20080924183040/http://mywebpage.netscape.com/guibv/djbdns-1.05-srvnaptr.diff

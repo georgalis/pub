@@ -1,0 +1,213 @@
+djbdns
+
+djbdns contains tinydns, which is a dns server, and dnscache, which is a dns cache. Normally, dnscache does not accept answers from dns servers outside the chain from the root servers to the authorative server. Answers are cached for later queries. If you restart dnscache, this in-memory cache gets lost and it has to be rebuild on next startup by querying the root servers, the tld servers, and so on. This procedure can be a waste of traffic and time. This is totally unnecessary, since most records have a long time-to-live value.
+cache save patch for dnscache
+
+After applying my patch, re-compiling and re-installing djbdns, if you send dnscache a SIGTERM, it will save its cache to $ROOT/cache/cache and shutdown. This file is read upon next startup automatically. Of course you have to create the directory $ROOT/cache first and make it writeable for the account under which dnscache runs.
+The cache file can be copied from a big endian to a little endian machine and vice versa as every integer value is strictly stored in big endian format. The cache file is at least 4 bytes per entry smaller than $CACHESIZE.
+download
+
+djbdns-1.05.cache-save.patch.diff 
+
+https://ogris.de/djbdns/
+https://ogris.de/djbdns/djbdns-1.05.cache-save.patch.diff
+
+diff -dru djbdns-1.05/cache.c djbdns-1.05.fjo/cache.c
+--- djbdns-1.05/cache.c	Sun Feb 11 22:11:45 2001
++++ djbdns-1.05.fjo/cache.c	Mon Nov 10 13:43:11 2003
+@@ -1,9 +1,17 @@
++#include <unistd.h>
++#include <stdio.h>
++#include <fcntl.h>
++#include <sys/stat.h>
++#include <string.h>
++#include <endian.h>
++#include <signal.h>
+ #include "alloc.h"
+ #include "byte.h"
+ #include "uint32.h"
+ #include "exit.h"
+ #include "tai.h"
+ #include "cache.h"
++#include "strerr.h"
+ 
+ uint64 cache_motion = 0;
+ 
+@@ -14,6 +22,143 @@
+ static uint32 oldest;
+ static uint32 unused;
+ 
++int do_cache_save = 0;
++int do_cache_save_impossible_now = 1;
++
++int cache_save_entry (char *cache, uint32 *len, uint32 *pos)
++{
++  char *dest = cache + *len, *source = x + *pos;
++  uint32 keylen, keylen_bigendian, datalen, datalen_bigendian;
++
++#if __BYTE_ORDER == __BIG_ENDIAN
++  uint32_unpack(source + 4, &keylen_bigendian);
++  uint32_unpack(source + 8, &datalen_bigendian);
++  keylen = keylen_bigendian;
++  datalen = datalen_bigendian;
++#else
++  uint32_unpack_big(source + 4, &keylen_bigendian);
++  uint32_unpack_big(source + 8, &datalen_bigendian);
++  uint32_unpack(source + 4, &keylen);
++  uint32_unpack(source + 8, &datalen);
++#endif
++
++  /* stored in big endian */
++  byte_copy(dest, 4, &keylen_bigendian);                        /* keylen  */
++  byte_copy(dest + 4, 4, &datalen_bigendian);                   /* datalen */
++
++  /* tai is always stored big endian */
++  byte_copy(dest + 8, 8, source + 12);                          /* expire  */
++  byte_copy(dest + 16, keylen, source + 20);                    /* key     */
++  byte_copy(dest + 16 + keylen, datalen, source + 20 + keylen); /* data    */
++  *pos += keylen + datalen + 20;
++  *len += keylen + datalen + 16;
++  return 0;
++}
++
++#define CACHEFILE "cache/cache"
++#define CACHETMPFILE CACHEFILE ".tmp"
++int cache_save ()
++{
++  char *cache;
++  int fh;
++  uint32 len, pos;
++
++  cache = alloc(size);
++  if (!cache) return -1;
++
++  for (pos = hsize, len = 0; pos < writer; )
++    if (cache_save_entry(cache, &len, &pos) == -1) return -1;
++
++  for (pos = oldest; pos < unused; )
++    if (cache_save_entry(cache, &len, &pos) == -1) return -1;
++
++  fh = open(CACHETMPFILE, O_CREAT | O_TRUNC | O_WRONLY, 0640);
++  if (fh < 0) return -1;
++
++  if (write(fh, cache, len) != len) {
++    close(fh);
++    unlink(CACHETMPFILE);
++    return -1;
++  }
++
++  if (close(fh)) {
++    unlink(CACHETMPFILE);
++    return -1;
++  }
++
++  if (rename(CACHETMPFILE, CACHEFILE)) {
++    unlink(CACHETMPFILE);
++    return -1;
++  }
++
++  alloc_free(cache);
++  return 0;
++}
++
++int cache_load ()
++{
++  int fh;
++  struct stat st;
++  char *cache, *key, *data;
++  struct tai now, expire;
++  uint32 keylen, datalen;
++  off_t len, tmp;
++
++  fh = open(CACHEFILE, O_RDONLY);
++  if (fh < 0) return 0;
++  if (fstat(fh, &st)) return -1;
++  len = st.st_size;
++  cache = alloc(len);
++  if (!cache) return -1;
++  if (read(fh, cache, len) != len) return -1;
++  if (close(fh)) return -1;
++  tai_now(&now);
++  for (tmp = 0; tmp < len;) {
++
++    uint32_unpack_big(cache + tmp, &keylen);
++    uint32_unpack_big(cache + tmp + 4, &datalen);
++    tai_unpack(cache + tmp + 8, &expire);
++
++    if (len < tmp + 16 + keylen + datalen) break;
++
++    key = cache + tmp + 16;
++    data = key + keylen;
++    if (expire.x > now.x) {
++      tai_sub(&expire, &expire, &now);
++      cache_set(key, keylen, data, datalen, expire.x);
++    }
++    tmp += 16 + keylen + datalen;
++  }
++
++  alloc_free(cache);
++  return 0;
++}
++
++const char *fatal;
++void cache_sighandler (int i)
++{
++  if (do_cache_save_impossible_now)
++    do_cache_save = 1;
++  else {
++    if (cache_save() == -1)
++      strerr_die2x(111,fatal,"unable to save cache file");
++    do_cache_save = 0;
++    strerr_warn1("cache saved", 0);
++    strerr_die1x(0, "going down");
++  }
++}
++
++int cache_set_sighandler (const char *c)
++{
++  struct sigaction sa;
++
++  fatal = c;
++  byte_zero((char*) &sa, sizeof(struct sigaction));
++  sa.sa_handler = cache_sighandler;
++  do_cache_save_impossible_now = 0;
++  return sigaction(SIGTERM, &sa, NULL);
++}
++
+ /*
+ 100 <= size <= 1000000000.
+ 4 <= hsize <= size/16.
+@@ -141,6 +286,8 @@
+ 
+   entrylen = keylen + datalen + 20;
+ 
++  do_cache_save_impossible_now = 1;
++
+   while (writer + entrylen > oldest) {
+     if (oldest == unused) {
+       if (writer <= hsize) return;
+@@ -179,6 +326,8 @@
+   set4(keyhash,writer);
+   writer += entrylen;
+   cache_motion += entrylen;
++  do_cache_save_impossible_now = 0;
++  if (do_cache_save) cache_sighandler(0);
+ }
+ 
+ int cache_init(unsigned int cachesize)
+diff -dru djbdns-1.05/dnscache.c djbdns-1.05.fjo/dnscache.c
+--- djbdns-1.05/dnscache.c	Sun Feb 11 22:11:45 2001
++++ djbdns-1.05.fjo/dnscache.c	Mon Nov 10 13:43:11 2003
+@@ -442,6 +442,12 @@
+   if (socket_listen(tcp53,20) == -1)
+     strerr_die2sys(111,FATAL,"unable to listen on TCP socket: ");
+ 
++  if (cache_load() == -1)
++    strerr_die2x(111,FATAL,"unable to load cache file");
++
++  if (cache_set_sighandler(FATAL) == -1)
++    strerr_die2x(111,FATAL,"unable to set signal handler");
++
+   log_startup();
+   doit();
+ }

@@ -1,0 +1,93 @@
+# all djbdns-1.05 need patching to use runit/ipsvd...
+#
+# chpst -u setuidgid
+# chpst -U envuidgid
+# chpst -b argv0
+# chpst -e envdir
+# chpst as softlimit...
+#       -m bytes limit memory
+#         -d bytes limit data segment
+#         -o n     limit open files
+#         -p n     limit processes
+#       -f bytes limit output size
+#       -c bytes limit core size
+    
+# rm -rf djbdns-1.05
+# tar xzf djbdns-1.05.tar.gz && mv djbdns-1.05 djbdns-1.05.orig
+# tar xzf djbdns-1.05.tar.gz 
+# find djbdns-1.05 -type f -name \*.c -exec grep -Eq '(setuidgid|envuidgid|argv0|envdir|softlimit|tcpserver)' \{\} \; -print \
+#  | while read a; do
+#     sed -e '
+#       s/multilog t/svlogd -t/
+#       s/setuidgid/chpst -u/
+#       s/envuidgid/chpst -U/
+#       s/argv0/chpst -b/
+#       s/envdir/chpst -e/
+#       s/softlimit/chpst/
+#       s/tcpserver -vDRHl0/tcpsvd -vRHl0/
+#     ' $a >${a}~ && mv -f ${a}~ ${a}
+#     done
+# diff -U0  djbdns-1.05.orig djbdns-1.05 >patch/djbdns-chpst-socklog.2.patch
+
+
+diff -U0 djbdns-1.05.orig/axfrdns-conf.c djbdns-1.05/axfrdns-conf.c
+--- djbdns-1.05.orig/axfrdns-conf.c	2001-02-11 13:11:45.000000000 -0800
++++ djbdns-1.05/axfrdns-conf.c	2022-05-29 00:54:49.123832952 -0700
+@@ -52,2 +52,2 @@
+-  outs("#!/bin/sh\nexec 2>&1\nexec envdir ./env sh -c '\n  exec envuidgid "); outs(user);
+-  outs(" softlimit -d300000 tcpserver -vDRHl0 -x tcp.cdb -- \"$IP\" 53 ");
++  outs("#!/bin/sh\nexec 2>&1\nexec chpst -e ./env sh -c '\n  exec chpst -U "); outs(user);
++  outs(" chpst -d300000 tcpsvd -vRHl0 -x tcp.cdb -- \"$IP\" 53 ");
+diff -U0 djbdns-1.05.orig/dnscache-conf.c djbdns-1.05/dnscache-conf.c
+--- djbdns-1.05.orig/dnscache-conf.c	2001-02-11 13:11:45.000000000 -0800
++++ djbdns-1.05/dnscache-conf.c	2022-05-29 00:54:49.093717137 -0700
+@@ -124,2 +124,2 @@
+-  outs("#!/bin/sh\nexec 2>&1\nexec <seed\nexec envdir ./env sh -c '\n  exec envuidgid "); outs(user);
+-  outs(" softlimit -o250 -d \"$DATALIMIT\" ");
++  outs("#!/bin/sh\nexec 2>&1\nexec <seed\nexec chpst -e ./env sh -c '\n  exec chpst -U "); outs(user);
++  outs(" chpst -o250 -d \"$DATALIMIT\" ");
+@@ -129,2 +129,2 @@
+-  outs("#!/bin/sh\nexec setuidgid "); outs(loguser);
+-  outs(" multilog t ./main\n"); finish();
++  outs("#!/bin/sh\nexec chpst -u "); outs(loguser);
++  outs(" svlogd -t ./main\n"); finish();
+diff -U0 djbdns-1.05.orig/generic-conf.c djbdns-1.05/generic-conf.c
+--- djbdns-1.05.orig/generic-conf.c	2001-02-11 13:11:45.000000000 -0800
++++ djbdns-1.05/generic-conf.c	2022-05-29 00:54:49.143682962 -0700
+@@ -95,2 +95,2 @@
+-  outs(" setuidgid "); outs(user);
+-  outs(" multilog t ./main\n");
++  outs(" chpst -u "); outs(user);
++  outs(" svlogd -t ./main\n");
+diff -U0 djbdns-1.05.orig/pickdns-conf.c djbdns-1.05/pickdns-conf.c
+--- djbdns-1.05.orig/pickdns-conf.c	2001-02-11 13:11:45.000000000 -0800
++++ djbdns-1.05/pickdns-conf.c	2022-05-29 00:54:49.109190745 -0700
+@@ -48,2 +48,2 @@
+-  outs("#!/bin/sh\nexec 2>&1\nexec envuidgid "); outs(user);
+-  outs(" envdir ./env softlimit -d250000 ");
++  outs("#!/bin/sh\nexec 2>&1\nexec chpst -U "); outs(user);
++  outs(" chpst -e ./env chpst -d250000 ");
+diff -U0 djbdns-1.05.orig/rbldns-conf.c djbdns-1.05/rbldns-conf.c
+--- djbdns-1.05.orig/rbldns-conf.c	2001-02-11 13:11:45.000000000 -0800
++++ djbdns-1.05/rbldns-conf.c	2022-05-29 00:54:49.104215442 -0700
+@@ -53,2 +53,2 @@
+-  outs("#!/bin/sh\nexec 2>&1\nexec envuidgid "); outs(user);
+-  outs(" envdir ./env softlimit -d250000 ");
++  outs("#!/bin/sh\nexec 2>&1\nexec chpst -U "); outs(user);
++  outs(" chpst -e ./env chpst -d250000 ");
+diff -U0 djbdns-1.05.orig/tinydns-conf.c djbdns-1.05/tinydns-conf.c
+--- djbdns-1.05.orig/tinydns-conf.c	2001-02-11 13:11:45.000000000 -0800
++++ djbdns-1.05/tinydns-conf.c	2022-05-29 00:54:49.114520748 -0700
+@@ -48,2 +48,2 @@
+-  outs("#!/bin/sh\nexec 2>&1\nexec envuidgid "); outs(user);
+-  outs(" envdir ./env softlimit -d300000 ");
++  outs("#!/bin/sh\nexec 2>&1\nexec chpst -U "); outs(user);
++  outs(" chpst -e ./env chpst -d300000 ");
+diff -U0 djbdns-1.05.orig/walldns-conf.c djbdns-1.05/walldns-conf.c
+--- djbdns-1.05.orig/walldns-conf.c	2001-02-11 13:11:45.000000000 -0800
++++ djbdns-1.05/walldns-conf.c	2022-05-29 00:54:49.098972340 -0700
+@@ -48,2 +48,2 @@
+-  outs("#!/bin/sh\nexec 2>&1\nexec envuidgid "); outs(user);
+-  outs(" envdir ./env softlimit -d250000 ");
++  outs("#!/bin/sh\nexec 2>&1\nexec chpst -U "); outs(user);
++  outs(" chpst -e ./env chpst -d250000 ");
