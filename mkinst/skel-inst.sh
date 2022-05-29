@@ -2,11 +2,11 @@
 #
 # ./pub/mkinst/skel-inst.sh
 #
-# install skel files in prefix or $HOME
+# install skel files from dir arg1 to dest dir arg2 (default $HOME)
 #
 # Usage: sh $0 /usr/local/pub/skel /etc/skel
 #
-# Unlimited use with this notice (c) 2017 George Georgalis <george@galis.org>
+# (c) 2017-2022 George Georgalis <george@galis.org> unlimited use with this notice
 
 set -e
 chkerr () { [ -n "$*" ] && echo ">>> $h/$(basename $0) : $* <<<" >&2 && exit 1 || true ;}
