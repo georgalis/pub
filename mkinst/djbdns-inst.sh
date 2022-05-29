@@ -32,6 +32,10 @@ cp -p \
 # https://anders.com/projects/sysadmin/djbdnsRecordBuilder/
 # https://anders.com/cms/37/djbdns/tinydns/SRV/NAPTR/record.builder
 
+# html rfc
+# DOMAIN NAMES - IMPLEMENTATION AND SPECIFICATION
+# https://web.archive.org/web/20170305000254/http://crynwr.com/rfc1035/rfc1035.html
+
 cd $src
 rm -rf djbdns-1.05
 # http://cr.yp.to/djbdns/install.html
