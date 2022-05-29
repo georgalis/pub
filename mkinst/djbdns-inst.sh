@@ -12,7 +12,6 @@ base="$PWD"
 dist=/usr/local/dist
 src=/usr/local/src
 mkdir -p $dist $src
-cd $dist
 
 ftp http://cr.yp.to/djbdns/djbdns-1.05.tar.gz
 cp -p \
@@ -20,7 +19,7 @@ cp -p \
 	$base/patch/djbdns-dnscache-cname.patch \
 	$base/patch/djbdns-dnscache-sigpipe.patch \
 	$base/patch/djbdns-1.05.cache-save.patch.diff \
-	./
+	"${dist}"
 
 # https://web.archive.org/web/20161203224414/http://tinydns.org/
 #
