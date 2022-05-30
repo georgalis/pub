@@ -53,8 +53,9 @@ mkdir -p /usr/local/etc
 /usr/local/bin/dnscache-conf $acct $log "/usr/local/etc/dnscache-${DNSCACHEIP}" "${DNSCACHEIP}"
 
 # populate root servers
-/usr/local/bin/dnsqr ns . | awk '/answer:/ {print $5;}' \
+/usr/local/bin/dnsqr ns . | awk '/answer:/ {print $5;}' | sort -r \
 	| while read ns ; do
+        echo "/usr/local/bin/dnsqr a $ns ..." >&2
 		/usr/local/bin/dnsqr a $ns
 	done | awk '/answer:/ {print $5;}' \
 	>"/usr/local/etc/dnscache-${DNSCACHEIP}/root/servers/@"
@@ -64,7 +65,7 @@ mkdir -p /usr/local/etc
 #done
 
 # make way for djbdns-1.05.cache-save.patch.diff
-mkdir -p /etc/sv/dnscache-${DNSCACHEIP}/cache
+            mkdir -p "/usr/local/etc/dnscache-${DNSCACHEIP}/root/cache"
 chown ${acct}:${log} "/usr/local/etc/dnscache-${DNSCACHEIP}/root/cache"
 
 # set perms
