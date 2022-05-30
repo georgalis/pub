@@ -72,6 +72,10 @@ chown ${acct}:${log} "/usr/local/etc/dnscache-${DNSCACHEIP}/root/cache"
 chown $acct "/usr/local/etc/dnscache-${DNSCACHEIP}"
 chmod 4770  "/usr/local/etc/dnscache-${DNSCACHEIP}"
 
+# enable non-routable nets
+touch /usr/local/etc/dnscache-${DNSCACHEIP}/root/ip/192.168
+touch /usr/local/etc/dnscache-${DNSCACHEIP}/root/ip/10
+
 # start the service
 ln -sf "/usr/local/etc/dnscache-${DNSCACHEIP}" $srv
 
