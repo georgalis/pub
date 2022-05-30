@@ -1,51 +1,26 @@
 #!/bin/sh
 
-# Unlimited use with this notice (c) 2017 George Georgalis <george@galis.org>
-
-chkerr () { [ -n "$*" ] && echo "> > > ERR: $0: $* < < <" >&2 && exit 1 ;}
+# (c) 2017-2022 George Georgalis <george@galis.org> unlimited use with this notice 
 
 set -e
-#set -x
 
-# $tinydnsip env must be defined
-[ -z "$tinydnsip" ] && [ -n "$1" ] && tinydnsip="$1"
-[ -z "$tinydnsip" ] && chkerr "Usage: $0 127.0.0.1"
+stderr () { [ "$*" ] && echo "$*" 1>&2 || true ;}                          #:> args to stderr, or noop if null
+chkwrn () { [ "$*" ] && { stderr    "^^ $* ^^"   ; return $? ;} || true ;} #:> wrn stderr args return 0, noop if null
+chkerr () { [ "$*" ] && { stderr    ">>> $* <<<" ; return 1  ;} || true ;} #:> err stderr args return 1, noop if null
 
-[ "`uname`" = "NetBSD" ] || chkerr "This version only tested on NetBSD."
+[ "$(uname)" = "NetBSD" ] || { chkerr "only tested on netbsd, COS, RH, and Debian believed to work..." ; exit 1 ;}
+
+# address to run service on
+# $TINYDNSIP env must be defined or as arg1
+[ -z "$TINYDNSIP" ] && [ -n "$1" ] && TINYDNSIP="$1"
+[ -z "$TINYDNSIP" ] && chkerr "Usage: $0 127.0.0.1"
 
 # Create and start an authoritative tinydns server
 # http://cr.yp.to/djbdns.html
-# Also see
-# http://tinydns.org/
-
-# Make sure they are installed..
-#  daemontools
-#  ucspi-tcp
-#  djbdns
-# or because Patch djbdns-1.05 to use
-#  chpst of http://smarden.org/runit/
-# and
-#  svlogd of http://smarden.org/socklog/
 
 # Create accounts and chroot directories for tinydns to run in
 acct=dns
 log=log
-
-# use -M for redhat...
-#useradd -M $acct 
-#useradd -M $log
-
-# for deb...
-#grep -qe "^nogroup:" /etc/group || groupadd nogroup
-#grep -qe "^${acct}:" /etc/passwd || useradd -d / -g nogroup -s /bin/false ${acct}
-#grep -qe "^${log}:"  /etc/passwd || useradd -d / -g nogroup -s /bin/false ${log}
-
-# for NetBSD...
-grep -qe "^${acct}:" /etc/passwd || useradd -d "" -g =uid -r 1..99 -s /sbin/nologin ${acct}
-grep -qe "^${log}:"  /etc/passwd || useradd -d "" -g =uid -r 1..99 -s /sbin/nologin ${log}
-
-mkdir -p /usr/local/etc
-tinydns-conf $acct $log /usr/local/etc/tinydns $tinydnsip
 
 # probe the service directory
 [ -d /etc/sv ] &&				srv=/etc/sv/ \
@@ -54,15 +29,33 @@ tinydns-conf $acct $log /usr/local/etc/tinydns $tinydnsip
 		} # /var/service
 	} # /service
 # /etc/sv
-[ -z "$srv" ] && chkerr "No service directory"
+[ -d "$srv" ] || { chkerr "No service directory" ; exit 1 ;}
 
-# Create the authoritave entries.
+[ "$(uname)" = "NetBSD" ] && { # for NetBSD...
+grep -qe "^${acct}:" /etc/passwd || useradd -d "" -g =uid -r 1..99 -s /sbin/nologin ${acct}
+grep -qe "^${log}:"  /etc/passwd || useradd -d "" -g =uid -r 1..99 -s /sbin/nologin ${log}
+} || \
+[ "$(uname)" = "Linux" ] && { # for COS, RH, or Debian...
+grep -qe "^${group}:" /etc/group || groupadd   ${group}
+grep -qe "^${acct}:" /etc/passwd || useradd -g ${group} -d / -s /sbin/nologin $acct
+grep -qe "^${log}:"  /etc/passwd || useradd -g ${group} -d / -s /sbin/nologin $log
+}
+
+test $(which -a tinydns-conf | wc -l) -eq 1 || chkerr "which -a tinydns-conf"
+
+# create service
+mkdir -p /usr/local/etc
+/usr/local/bin/tinydns-conf $acct $log "/usr/local/etc/tinydns-${TINYDNSIP}" "${TINYDNSIP}"
+
+# Create the authoritave data template.
 # The data file format is defined at
 # http://cr.yp.to/djbdns/tinydns-data.html
 
-data=/usr/local/etc/tinydns/root/data
-[ -s $data ] \
-|| cat >$data<<EOF
+# set sticky perms
+chown dns:dns "/usr/local/etc/tinydns-${TINYDNSIP}"
+chmod 4770    "/usr/local/etc/tinydns-${TINYDNSIP}"
+
+cat >/usr/local/etc/tinydns-${TINYDNSIP}/data<<EOF
 # a simple example
 .ez.com:216.215.214.213
 =ez.com:216.215.214.213
@@ -142,14 +135,12 @@ $(dnsqr ns . | awk '/answer:/ {print $5;}' | cut -b1 \
 	done)
 EOF
 
-# start the service
-ln -sf /usr/local/etc/tinydns $srv
+# create the db
+make -C "/usr/local/etc/tinydns-${TINYDNSIP}"
 
-# create the db and let tinydns start using it.
-cd `dirname $data`
-chgrp dns . $data 
-chmod 2770 .
-make
+# start the service
+ln -sf /usr/local/etc/tinydns-${TINYDNSIP} $srv
+
 exit
 # end of tinydns 
 

@@ -19,8 +19,6 @@ umask 0022
 
 # Start up a dnscache to handle recursive queries.
 # http://cr.yp.to/djbdns/dnscache.html
-# Also see
-# http://tinydns.org/
 
 # Create accounts and chroot directories for dnscache to run in
 acct=dns
