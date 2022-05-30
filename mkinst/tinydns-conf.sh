@@ -34,7 +34,7 @@ log=log
 [ "$(uname)" = "NetBSD" ] && { # for NetBSD...
 grep -qe "^${acct}:" /etc/passwd || useradd -d "" -g =uid -r 1..99 -s /sbin/nologin ${acct}
 grep -qe "^${log}:"  /etc/passwd || useradd -d "" -g =uid -r 1..99 -s /sbin/nologin ${log}
-} || \
+}
 [ "$(uname)" = "Linux" ] && { # for COS, RH, or Debian...
 grep -qe "^${group}:" /etc/group || groupadd   ${group}
 grep -qe "^${acct}:" /etc/passwd || useradd -g ${group} -d / -s /sbin/nologin $acct
@@ -52,10 +52,10 @@ mkdir -p /usr/local/etc
 # http://cr.yp.to/djbdns/tinydns-data.html
 
 # set sticky perms
-chown dns:dns "/usr/local/etc/tinydns-${TINYDNSIP}"
-chmod 4770    "/usr/local/etc/tinydns-${TINYDNSIP}"
+chown dns:dns "/usr/local/etc/tinydns-${TINYDNSIP}/root"
+chmod 6770    "/usr/local/etc/tinydns-${TINYDNSIP}/root"
 
-cat >/usr/local/etc/tinydns-${TINYDNSIP}/data<<EOF
+cat >/usr/local/etc/tinydns-${TINYDNSIP}/root/data<<EOF
 # a simple example
 .ez.com:216.215.214.213
 =ez.com:216.215.214.213
@@ -136,7 +136,7 @@ $(dnsqr ns . | awk '/answer:/ {print $5;}' | cut -b1 \
 EOF
 
 # create the db
-make -C "/usr/local/etc/tinydns-${TINYDNSIP}"
+make -C "/usr/local/etc/tinydns-${TINYDNSIP}/root"
 
 # start the service
 ln -sf /usr/local/etc/tinydns-${TINYDNSIP} $srv

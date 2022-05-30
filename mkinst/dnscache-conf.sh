@@ -37,7 +37,7 @@ group=nofiles
 [ "$(uname)" = "NetBSD" ] && { # for NetBSD...
 grep -qe "^${acct}:" /etc/passwd || useradd -d "" -g =uid -r 1..99 -s /sbin/nologin ${acct}
 grep -qe "^${log}:"  /etc/passwd || useradd -d "" -g =uid -r 1..99 -s /sbin/nologin ${log}
-} || \
+}
 [ "$(uname)" = "Linux" ] && { # for COS, RH, or Debian...
 grep -qe "^${group}:" /etc/group || groupadd   ${group}
 grep -qe "^${acct}:" /etc/passwd || useradd -g ${group} -d / -s /sbin/nologin $acct
