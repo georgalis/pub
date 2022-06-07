@@ -143,50 +143,54 @@ std_append () { # extend stdin list with arg1, without duplicating (space delimi
     } | tr -s ' ' | sed 's/ $//'
   } # std_append
 
-ckstat () # Unlimited use with this notice (c) 2017-2019 George Georgalis <george@galis.org>
-{ # 2156ca36 .     6147 5e1f9fbb .profile.local
-  # links_inode . 0x_size 0x_date filename of arg1 or stdin filelist
+ckstat () { # return sortable stat data for args (OR stdin file list)
+  # ckstat /etc/resolv.conf
+  # 0127e92c7 .       16 62798808   resolv.conf     /etc/resolv.conf
+  # links\inode . 0x_size 0x_date   basename        input
+  # (c) 2017-2022 George Georgalis <george@galis.org> unlimited use with this notice
   local f fs;
   [ "$1" ] && fs="$1" || fs="$(cat)";
-  shift;
+  shift || true;
   [ "$1" ] && $FUNCNAME $@;
   [ "$fs" = "-h" -o "$fs" = "--help" ] && {
-    chkwrn "Usage, for arg1 (or per line stdin)";
-    chkwrn "return: n-inode chksum size mdate filename"
-  } || { OS="$(uname)"
-    [ "$OS" = "Linux" ] && _stat () {                      stat -c %h\ %i\ %s\ %Y "$1" ;} || true
-    [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat () { stat -f %l\ %i\ %z\ %m "$1" ;} || true
-    echo "$fs" | while IFS= read f; do
-      [ -f "$f" ] && {
-        _stat "$f" | awk '{printf "% 2x%07x . % 8x %08x ",$1,$2,$3,$4}'
-        echo "${f##*/}" "$f" # basename and input filepath
-      } || chkerr "$FUNCNAME : not a regular file : $f";
-    done
-  }
-}
+    chkwrn "Return sortable stat data for args (OR stdin file list):";
+    chkwrn "links\inode . 0x_size 0x_mdate basename input"
+    } || { OS="$(uname)"
+      [ "$OS" = "Linux" ]                      && _stat () { stat -c %h\ %i\ %s\ %Y "$1" ;} || true
+      [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat () { stat -f %l\ %i\ %z\ %m "$1" ;} || true
+      echo "$fs" | while IFS= read f; do
+        [ -f "$f" ] && {
+          _stat "$f" | awk '{printf "%02x%07x . % 8x %08x",$1,$2,$3,$4}'
+          printf "\t%s\t%s\n" "${f##*/}" "$f" # tabs with basename and filepath input
+          } || chkerr "$FUNCNAME : not a regular file : $f";
+        done
+      }
+  } # ckstat ()
 
-ckstatsum () # Unlimited use with this notice (c) 2017-2019 George Georgalis <george@galis.org>
-{ # 2156ca36 b198a943     6147 5e1f9fbb .profile.local
-  # links_inode 0x_cksum 0x_size 0x_date filename of arg1 or stdin filelist
+ckstatsum () { # return sortable stat data for args (OR stdin file list)
+  # ckstatsum /etc/resolv.conf
+  # 0127e92c7 39bd42d3       16 62798808    resolv.conf     /etc/resolv.conf
+  # links\inode 0x_cksum 0x_size 0x_date    basename        input
+  # (c) 2017-2022 George Georgalis <george@galis.org> unlimited use with this notice
   local f fs;
   [ "$1" ] && fs="$1" || fs="$(cat)";
-  shift;
+  shift || true;
   [ "$1" ] && $FUNCNAME $@;
   [ "$fs" = "-h" -o "$fs" = "--help" ] && {
-    chkwrn "Usage, for arg1 (or per line stdin)";
-    chkwrn "return: n-inode chksum size mdate filename"
-  } || { OS="$(uname)"
-    [ "$OS" = "Linux" ] && _stat () {                      stat -c %h\ %i\ %s\ %Y "$1" ;} || true
-    [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat () { stat -f %l\ %i\ %z\ %m "$1" ;} || true
-    echo "$fs" | while IFS= read f; do
-      [ -f "$f" ] && {
-        { _stat "$f" ; cksum <"$f"
-            } | tr '\n' ' ' | awk '{printf "% 2x%07x %8x % 8x %08x ",$1,$2,$5,$3,$4}'
-        echo "${f##*/}" "$f" # basename and input filepath
-      } || chkerr "$FUNCNAME : not a regular file : $f";
-    done
-  }
-}
+    chkwrn "Return sortable stat data for args (OR stdin file list):";
+    chkwrn "links\inode 0x_cksum 0x_size 0x_mdate basename input"
+    } || { OS="$(uname)"
+      [ "$OS" = "Linux" ]                      && _stat () { stat -c %h\ %i\ %s\ %Y "$1" ;} || true
+      [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat () { stat -f %l\ %i\ %z\ %m "$1" ;} || true
+      echo "$fs" | while IFS= read f; do
+        [ -f "$f" ] && {
+          { _stat "$f" ; cksum <"$f"
+              } | tr '\n' ' ' | awk '{printf "%02x%07x %8x % 8x %08x",$1,$2,$5,$3,$4}'
+          printf "\t%s\t%s\n" "${f##*/}" "$f" # tabs with basename and filepath input
+          } || chkerr "$FUNCNAME : not a regular file : $f";
+        done
+      }
+  } # ckstatsum ()
 
 ascii_filter () { while IFS= read a ; do echo "$a" | strings -e s ; done ;}
 
