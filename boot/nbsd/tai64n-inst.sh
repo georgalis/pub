@@ -24,7 +24,7 @@ ftp http://cr.yp.to/daemontools/daemontools-0.76.tar.gz
 rm -rf daemontools-0.76         # purge any prior build
 mv admin/daemontools-0.76/ ./
 rm -rf admin
-cd daemontools-0.76             # the filtered surce
+cd daemontools-0.76             # the filtered source
 
 ######################
 # from daemontools-0.76/compile
