@@ -1,11 +1,9 @@
 #!/bin/sh
-# 
-# ./daemontools-tai-inst.sh
 #
-# LICENSE: <george@galis.org> wrote this file. As long as you retain
-# this notice, you can do anything with it -- George Georgalis
+# ...we only need tai64 tools from daemontools
 #
-# ...only need tai64 tools
+# (c) 2008-2022 George Georgalis <george@galis.org> unlimited use with this notice
+#
 
 # REQUIRE: comp
 # BEFORE:
@@ -23,10 +21,10 @@ ftp http://cr.yp.to/daemontools/daemontools-0.76.tar.gz
      cd /usr/local/src
      tar xzpf ../dist/daemontools-0.76.tar.gz
 
-rm -rf daemontools-0.76
+rm -rf daemontools-0.76         # purge any prior build
 mv admin/daemontools-0.76/ ./
 rm -rf admin
-cd daemontools-0.76
+cd daemontools-0.76             # the filtered surce
 
 ######################
 # from daemontools-0.76/compile
