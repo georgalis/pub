@@ -3,6 +3,7 @@
 # Sundry functions
 
 # more test
+# ps | grep -E "^[ ]*$$" | grep -q bash
 # echo "$SHELL"
 # echo "$BASH_VERSINFO"      "${BASH_VERSINFO[0]}" "${BASH_VERSINFO[1]}" "${BASH_VERSINFO[2]}"
 # echo "${BASH_VERSINFO[3]}" "${BASH_VERSINFO[4]}" "${BASH_VERSINFO[5]}"
@@ -165,7 +166,7 @@ _youtube_list () {
   [ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
   youtube-dl --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --yes-playlist \
    --audio-quality 0 --audio-format best --extract-audio --playlist-start 1 \
-   -o "$d/%(playlist_title)s-%(playlist_id)s/0%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+   -o "$d/%(playlist_title)s-%(playlist_id)s/00%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   } # _youtube_list 20220516
 
 _youtube_video_list () {
@@ -177,10 +178,10 @@ _youtube_video_list () {
   [ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
   youtube-dl --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --yes-playlist \
    --audio-quality 0 --audio-format best --playlist-start 1 \
-   -o "$d/%(playlist_title)s-%(playlist_id)s/0%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+   -o "$d/%(playlist_title)s-%(playlist_id)s/00%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --yes-playlist \
    --audio-quality 0 --audio-format best --extract-audio --playlist-start 1 \
-   -o "$d/%(playlist_title)s-%(playlist_id)s/0%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+   -o "$d/%(playlist_title)s-%(playlist_id)s/00%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   } # _youtube_video_list 20220516
 
 _youtube () {
@@ -193,7 +194,7 @@ _youtube () {
   #[ "$ua" ] && uac="--user-agent '$ua'" || uac=''
   youtube-dl --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --no-playlist \
    --audio-quality 0 --audio-format best --extract-audio \
-   -o "$d/0,%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+   -o "$d/00,%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   } # _youtube 20220516
 
 _youtube_video () {
@@ -205,10 +206,10 @@ _youtube_video () {
   [ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
   youtube-dl --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --no-playlist \
    --audio-quality 0 --audio-format best \
-   -o "$d/0,%(title)s-%(uploader_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+   -o "$d/00,%(title)s-%(uploader_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --no-playlist \
    --audio-quality 0 --audio-format best --extract-audio \
-   -o "$d/0,%(title)s-%(uploader_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+   -o "$d/00,%(title)s-%(uploader_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   } # _youtube_video 20220516
 
 _youtube_json2txt () {
@@ -614,8 +615,8 @@ formfilestats () { # accept dir(s) as args, report formfile time and pitch stats
             s/-c/ c=/
             s/-F/ F=y/
             # squash to tempo and pitch parameters
-          # s/[ ](ss|to|cmp|F|v|c|rev)=[^ ]*//g
-            s/[ ](ss|to|cmp|v|rev)=[^ ]*//g
+            s/[ ](ss|to|cmp|F|v|c|rev)=[^ ]*//g
+          # s/[ ](ss|to|cmp|v|rev)=[^ ]*//g
             /^$/d
             # fixup odd case
             s/^ p/ t=1 p/
