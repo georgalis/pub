@@ -1,10 +1,10 @@
 #!/bin/sh
 
-# Unlimited use with this notice. (C) George Georgalis <george@galis.org>
+# (C) 2009-2022 George Georgalis <george@galis.org> unlimited use with this notice 
 
 # http://smarden.org/socklog/configuration.html
 
-# REQUIRE: socklog-inst
+# REQUIRE: socklog-inst runit-conf
 # BEFORE:
 # PROVIDE: socklog-conf
 # KEYWORD: nbsd
@@ -22,20 +22,17 @@ socklog-conf klog nobody log
 socklog-conf inet nobody log
 socklog-conf unix nobody log
 
-# let's make the symlink least pids try and use it ;-)
 cat >/etc/socklog/unix/run <<EOF
 #!/bin/sh
 exec 2>&1
+# let's make the symlink least pids try and use it ;-)
 ln -sfh /dev/log /var/run/log
 exec chpst -Unobody socklog unix /dev/log
 EOF
 
-mkdir -p /etc/sv
-ln -s /etc/socklog/* /etc/sv
+ln -s /etc/socklog/* /service
 
 cd /var/log
 mkdir -p old
 mv maillog* authlog* cron* messages xferlog old/ || true
-
-# rm -rf /etc/sv /etc/socklog /var/log/socklog* /dev/log
 

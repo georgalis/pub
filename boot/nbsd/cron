@@ -11,7 +11,7 @@ set -e
 
 cat >>/var/cron/tabs/root<<'EOF-root-cron'
 PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/pkg/sbin:/usr/pkg/bin:/usr/X11R7/bin:/usr/local/sbin:/usr/local/bin:/usr/local/sub
-00 0	* * *	crontab -l > ~/crontab-$LOGNAME-`hostname`
+00 0	* * *	crontab -l > ~/crontab-$LOGNAME-$(hostname)
 #15 2	*/4 * *	for r in /usr/src /usr/pkgsrc ; do [ -d $r ] && cd $r && cvs -q upd -dP >/dev/null ; done
 #00 4	*/4 * *	pkg_chk -un | grep ' - ' | sed -e 's/^/cd \/usr\/pkgsrc\//' -e 's/ - / \&\& make clean update 		# /'
 # following item only needed on a single site host, eg local mirror

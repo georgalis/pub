@@ -15,6 +15,9 @@ chkerr () { [ "$*" ] && { stderr    ">>> $* <<<" ; return 1  ;} || true ;} #:> e
 [ -z "$TINYDNSIP" ] && [ -n "$1" ] && TINYDNSIP="$1"
 [ -z "$TINYDNSIP" ] && chkerr "Usage: $0 127.0.0.1"
 
+# $TINYDNSTAG may be provided or as arg2
+[ "$TINYDNSTAG" ] && SRV_NAME="${TINYDNSTAG}-tinydns-${TINYDNSIP}" || SRV_NAME="tinydns-${TINYDNSIP}"
+
 # Create and start an authoritative tinydns server
 # http://cr.yp.to/djbdns.html
 
@@ -45,17 +48,17 @@ test $(which -a tinydns-conf | wc -l) -eq 1 || chkerr "which -a tinydns-conf"
 
 # create service
 mkdir -p /usr/local/etc
-/usr/local/bin/tinydns-conf $acct $log "/usr/local/etc/tinydns-${TINYDNSIP}" "${TINYDNSIP}"
+/usr/local/bin/tinydns-conf $acct $log "/usr/local/etc/${SRV_NAME}" ${TINYDNSIP}
 
 # Create the authoritave data template.
 # The data file format is defined at
 # http://cr.yp.to/djbdns/tinydns-data.html
 
 # set sticky perms
-chown dns:dns "/usr/local/etc/tinydns-${TINYDNSIP}/root"
-chmod 6770    "/usr/local/etc/tinydns-${TINYDNSIP}/root"
+chown dns:dns "/usr/local/etc/${SRV_NAME}/root"
+chmod 6770    "/usr/local/etc/${SRV_NAME}/root"
 
-cat >/usr/local/etc/tinydns-${TINYDNSIP}/root/data<<EOF
+cat >/usr/local/etc/${SRV_NAME}/root/data<<EOF
 # a simple example
 .ez.com:216.215.214.213
 =ez.com:216.215.214.213
@@ -136,10 +139,10 @@ $(dnsqr ns . | awk '/answer:/ {print $5;}' | cut -b1 \
 EOF
 
 # create the db
-make -C "/usr/local/etc/tinydns-${TINYDNSIP}/root"
+make -C "/usr/local/etc/${SRV_NAME}/root"
 
 # start the service
-ln -sf /usr/local/etc/tinydns-${TINYDNSIP} $srv
+ln -sf /usr/local/etc/${SRV_NAME} $srv
 
 exit
 # end of tinydns 

@@ -1,8 +1,8 @@
 #!/bin/sh
 #
-# $Id: Logclear-inst.sh 471 2009-07-25 03:25:25Z root $
-#
 # clears errors in readproctitle
+#
+# (c) 2009-2022 George Georgalis <george@galis.org> unlimited use with this notice
 #
 # From: Rob Mayoff <mayoff () dqd ! com>
 # To: log@list.cr.yp.to
@@ -12,7 +12,7 @@
 # REQUIRE: runit-conf
 # BEFORE:
 # PROVIDE: Logclear
-# KEYWORD: cos7-boot
+# KEYWORD: ubt
 
 set -e
 service=/usr/local/etc/Logclear
@@ -30,6 +30,5 @@ yes '' | head -4000 | tr '\n' .
 EOF
 chmod +x $service/run
 
-mkdir -p /etc/sv
-ln -s $service /etc/sv/
+ln -s $service /service/
 

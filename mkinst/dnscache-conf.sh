@@ -15,6 +15,9 @@ chkerr () { [ "$*" ] && { stderr    ">>> $* <<<" ; return 1  ;} || true ;} #:> e
 [ -z "$DNSCACHEIP" ] && [ -n "$1" ] && DNSCACHEIP="$1"
 [ -z "$DNSCACHEIP" ] && chkerr "Usage: $0 127.0.0.1"
 
+# $DNSCACHETAG may be provided or as arg2
+[ "$DNSCACHETAG" ] && SRV_NAME="${DNSCACHETAG}-dnscache-${DNSCACHEIP}" || SRV_NAME="dnscache-${DNSCACHEIP}"
+
 umask 0022
 
 # Start up a dnscache to handle recursive queries.
@@ -48,7 +51,7 @@ test $(which -a dnscache-conf | wc -l) -eq 1 || chkerr "which -a dnscache-conf"
 
 # create service
 mkdir -p /usr/local/etc
-/usr/local/bin/dnscache-conf $acct $log "/usr/local/etc/dnscache-${DNSCACHEIP}" "${DNSCACHEIP}"
+/usr/local/bin/dnscache-conf $acct $log "/usr/local/etc/${SRV_NAME}" "${DNSCACHEIP}"
 
 # populate root servers
 /usr/local/bin/dnsqr ns . | awk '/answer:/ {print $5;}' | sort -r \
@@ -56,24 +59,24 @@ mkdir -p /usr/local/etc
         echo "/usr/local/bin/dnsqr a $ns ..." >&2
 		/usr/local/bin/dnsqr a $ns
 	done | awk '/answer:/ {print $5;}' \
-	>"/usr/local/etc/dnscache-${DNSCACHEIP}/root/servers/@"
-
-#for n in a b c d e f g h i j k l m ; do
-# echo `dnsip $n.root-servers.net` >>/usr/local/etc/dnscache/root/servers/@
-#done
+	>"/usr/local/etc/${SRV_NAME}/root/servers/@"
 
 # make way for djbdns-1.05.cache-save.patch.diff
-            mkdir -p "/usr/local/etc/dnscache-${DNSCACHEIP}/root/cache"
-chown ${acct}:${log} "/usr/local/etc/dnscache-${DNSCACHEIP}/root/cache"
+            mkdir -p "/usr/local/etc/${SRV_NAME}/root/cache"
+chown ${acct}:${log} "/usr/local/etc/${SRV_NAME}/root/cache"
 
 # set perms
-chown $acct "/usr/local/etc/dnscache-${DNSCACHEIP}"
-chmod 4770  "/usr/local/etc/dnscache-${DNSCACHEIP}"
+chown $acct "/usr/local/etc/${SRV_NAME}"
+chmod 4770  "/usr/local/etc/${SRV_NAME}"
 
 # enable non-routable nets
-touch /usr/local/etc/dnscache-${DNSCACHEIP}/root/ip/192.168
-touch /usr/local/etc/dnscache-${DNSCACHEIP}/root/ip/10
+touch /usr/local/etc/${SRV_NAME}/root/ip/127
+touch /usr/local/etc/${SRV_NAME}/root/ip/10
+touch /usr/local/etc/${SRV_NAME}/root/ip/192.168
+for a in $(seq 16 31) ; do
+  touch /usr/local/etc/${SRV_NAME}/root/ip/172.${a}
+  done
 
 # start the service
-ln -sf "/usr/local/etc/dnscache-${DNSCACHEIP}" $srv
+ln -sf "/usr/local/etc/${SRV_NAME}" $srv
 
