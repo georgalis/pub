@@ -17,7 +17,7 @@ validfn () { #:> hash comparison to validate shell functions
 		#:: env hashfn= to set the hashing function, "%08x %8x %s\n" cksum program
 		EOF
       return 1 ;}
-    [ "${SHELL##*/}" = "bash" ] || { echo "> > > ${0} : Not bash < < <" >&2 ; return 1 ;}
+    ps | grep -E "^[ ]*$$" | grep -q bash || { echo ">>> $0 : Not bash shell <<<" >&2 ; return 1 ;}
     local _hashfn
     [ "$hashfn" ] || { _hashfn () { declare -f "$1" | printf "%s %08x %08x\n" "$1" $(cksum) ;} && _hashfn="_hashfn" ;}
     [ "$_hashfn" ] || _hashfn="$hashfn" # for bugs... use stronger hash for nefarious env
