@@ -16,25 +16,84 @@
 # once a week, from cron, should be often enough to run.
 
 set -e
-countries="$@"
 
+countries="$@"
+tmpd=/var/tmp/nro
+dbd=/var/db/nro
+
+# common functions for shell verbose management....
+devnul () { return 0 ;}                                                    #:> drop args
+stderr () { [ "$*" ] && echo "$*" 1>&2 || true ;}                          #:> args to stderr, or noop if null
+chkstd () { [ "$*" ] && echo "$*"      || true ;}                          #:> args to stdout, or noop if null
+chkwrn () { [ "$*" ] && { stderr    "^^ $* ^^"   ; return $? ;} || true ;} #:> wrn stderr args return 0, noop if null
+chkerr () { [ "$*" ] && { stderr    ">>> $* <<<" ; return 1  ;} || true ;} #:> err stderr args return 1, noop if null
+logwrn () { [ "$*" ] && { logger -s "^^ $* ^^"   ; return $? ;} || true ;} #:> wrn stderr+log args return 0, noop if null
+logerr () { [ "$*" ] && { logger -s ">>> $* <<<" ; return 1  ;} || true ;} #:> err stderr+log args return 1, noop if null
+chkexit () { [ "$*" ] && { stderr    ">>> $* <<<" ; exit 1   ;} || true ;} #:> err stderr args exit 1, noop if null
+logexit () { [ "$*" ] && { logger -s ">>> $* <<<" ; exit 1   ;} || true ;} #:> err stderr+log args exit 1, noop if null
+siff () { local verb="${verb:=devnul}"
+    [ -e "$1" ] \
+        && { { ${verb} "<> ${2}: . ${1} <>" && . "${1}" ;} || { chkerr "fail $1" ; return 1 ;} ;} \
+        || chkwrn "${2}: siff: no file $1" ;} #:> source arg1 if exists, optional calling file arg2 for backtrace
+# for verbosity, these typically could be set to devnul, chkwrn, or possibly chkerr.
+#verb="${verb:=devnul}"
+#verb2="${verb2:=devnul}"
+#verb3="${verb3:=devnul}"
+
+which w3m >/dev/null 2>&1 || { chkwrn "$0 : no w3m in path" ; exit 1 ;}
+
+#  printf function for terminal verbose, otherwise quiet
 [ -t 1 ] && tprintf () { printf "$*" ;} || tprintf () { true ;}
 
-cd /var/tmp
-stats=nro-delegated-stats
+mkdir -p ${tmpd} ${dbd}
 
-# only download stats on new revision, retain old stats on download fail,
+tprintf "if needed, create a cc index, "
+[ -e "${dbd}/cc-index" ] \
+    || {
+        w3m -cols 200  https://www.iban.com/country-codes \
+        | awk '/Afghanistan/,/Zimbabwe/' \
+        | sed  -e 's/[ ]\{11\}[^ ]\{3\}[ ]*[^ ]\{3\}//' \
+            | while read a ; do # two steps per cc
+                # 1) write the country code
+                echo $a \
+                    | sed 's/.* \(..\)$/\1/' \
+                    | tr '\n' ' ' \
+                    | tr '[:upper:]' '[:lower:]'
+                # 2) finish the line with country name
+                echo $a | sed -E 's/[ ]*..$/ /'
+                done | sort >"${tmpd}/cc-index" \
+                    && mv "${tmpd}/cc-index" "${dbd}" \
+                    || { chkerr "$0 : failed to generate cc-index" ; exit 1 ;}
+        }
+tprintf "${dbd}/cc-index\n"
+
+[ -e "${dbd}/cc-index" ] || { chkerr "missing ${dbd}/cc-index" ; exit 1 ;}
+
+# cc sanity check
+[ "$#" -ge 1 ] || { chkerr "$0 : expecting cc as arg(s)" ; exit 1 ;}
+for a in $@ ; do
+    grep -q "^${a} " "${dbd}/cc-index" || { chkerr "$0 : $a : does not match ${dbd}/cc-index" ; exit 1 ;}
+    done
+
+# only download stats on new revision,
+# retain old stats on download fail,
 # rotate versions for diff study
 
-curl -s --head https://ftp.ripe.net/pub/stats/ripencc/nro-stats/latest/${stats} \
+tprintf "if needed, retrieve cc stats, "
+stats=nro-delegated-stats
+cd "${tmpd}"
+# get header then
+curl -s --head "https://ftp.ripe.net/pub/stats/ripencc/nro-stats/latest/${stats}" \
     | grep -E '(^Last-Modified|^Content-Length)' >${stats}-header~
 [ "$(cksum <${stats}-header~)" = "$(cksum <${stats}-header)" ] \
-    || {
-        [ -e "${stats}" ] && mv "${stats}" "${stats}-0"
+    || { # download stats
+        [ -e "${dbd}/${stats}" ] && mv "${dbd}/${stats}" "${dbd}/${stats}-0"
         curl -s --compressed --remote-name --remote-time \
             https://ftp.ripe.net/pub/stats/ripencc/nro-stats/latest/${stats} \
-            && {
-                mv ${stats}-header~ ${stats}-header
+            && { tprintf "download success, "
+                 mv ${stats} "${dbd}/${stats}"
+                 mv ${stats}-header~ ${stats}-header
+                [ -e "${dbd}/${stats}-0" ] && mv "${dbd}/${stats}-0" "${tmpd}"
                 [ -e "${stats}-8" ] && mv "${stats}-8" "${stats}-9"
                 [ -e "${stats}-7" ] && mv "${stats}-7" "${stats}-8"
                 [ -e "${stats}-6" ] && mv "${stats}-6" "${stats}-7"
@@ -44,45 +103,40 @@ curl -s --head https://ftp.ripe.net/pub/stats/ripencc/nro-stats/latest/${stats} 
                 [ -e "${stats}-2" ] && mv "${stats}-2" "${stats}-3"
                 [ -e "${stats}-1" ] && mv "${stats}-1" "${stats}-2"
                 [ -e "${stats}-0" ] && mv "${stats}-0" "${stats}-1"
-                } || mv "${stats}-0" "${stats}"
-        }
+                } \
+            || \
+                {
+                    tprintf "new stats download fail, retaining old, "
+                    [ -e "${dbd}/${stats}-0" ] && mv "${dbd}/${stats}-0" "${dbd}/${stats}"
+                }
+        } # download
+tprintf "${dbd}/${stats}\n"
+cd "$OLDPWD"
 
-# identify the parameters, cc table and program generating the file
-echo "# ${0} ${@}" >${stats}-cc~
-echo "# $(date)"  >>${stats}-cc~
-echo "# http://www.iana.org/cctld/cctld-whois.htm"                    >>${stats}-cc~
-echo "# https://www.iso.org/obp/ui/"                                  >>${stats}-cc~
-echo "# https://en.wikipedia.org/wiki/Country_code_top-level_domain"  >>${stats}-cc~
-echo "# https://www.iban.com/country-codes"                           >>${stats}-cc~
+tprintf "build the cc table header "
+# identify cc parameters
+echo "# ${0} ${@}" >"${tmpd}/cc~"
+echo "# $(date)"  >>"${tmpd}/cc~"
+echo "# http://www.iana.org/cctld/cctld-whois.htm"                    >>"${tmpd}/cc~"
+echo "# https://www.iso.org/obp/ui/"                                  >>"${tmpd}/cc~"
+echo "# https://en.wikipedia.org/wiki/Country_code_top-level_domain"  >>"${tmpd}/cc~"
+echo "# https://www.iban.com/country-codes"                           >>"${tmpd}/cc~"
 
-[ -e "${stats}-cc-index" ] \
-    || w3m -cols 200  https://www.iban.com/country-codes \
-        | awk '/Afghanistan/,/Zimbabwe/' \
-        | sed  -e 's/[ ]\{11\}[^ ]\{3\}[ ]*[^ ]\{3\}//' \
-            | while read a ; do
-                echo $a \
-                    | sed 's/.* \(..\)$/\1/' \
-                    | tr '\n' ' ' \
-                    | tr '[:upper:]' '[:lower:]'
-                echo $a | sed -E 's/[ ]*..$/ /'
-                done | sort >${stats}-cc-index
-
+# generate a countries used header, with the index
 echo "${countries}" | tr ' ' '\n' | sort -u | sed '/^$/d' \
   | while IFS= read cc ; do
-      grep "^${cc} " ${stats}-cc-index | sed -e 's/^/# /' >>${stats}-cc~
+      grep "^${cc} " "${dbd}/cc-index" | sed -e 's/^/# /' >>"${tmpd}/cc~"
       done
 
-# make a country code regex, must be non-null,
-# and export for availability after the pipeline
-ccre='^#'
+# make a country code regex
+ccre='^#' # never matches, but non-null
 countries="$(echo "${countries}" | tr ' ' '\n' | sort -u | tr '\n' ' ')"
 for cc in $countries ; do ccre="${ccre}|${cc}" ; done
 
-tprintf "Generating CIDR blocks from ${PWD}/${stats} " 
-
+tprintf "from ${dbd}/${stats}, generate cc ranges and CIDR blocks: "
 # generate output, tries to only match data lines
-grep -iE "[^\|]*\|($ccre)\|ipv4\|" $stats \
-	| awk -F \| '{ print $4 " " $5 " " $2 " " $1 }' \
+grep -iE "[^\|]*\|($ccre)\|ipv4\|" "${dbd}/${stats}" \
+	| awk -F \| '{ printf "%s %-24s \t%s %s\n",$4,$5,$2,$1 }' \
 		| sed -e '
 			s/ 4 /\/30 /
 			s/ 8 /\/29 /
@@ -113,12 +167,13 @@ grep -iE "[^\|]*\|($ccre)\|ipv4\|" $stats \
 			# s/ 134217728 /\/5 /
 			# s/ 268435456 /\/4 /
 			' \
-	| while read i; do
-		case $i in
-		*/*) # already in cidr format
-			echo $i >>${stats}-cc~
+	| while ifs= read i; do
+		case "$i" in # looks "mostly" cidr now, vs mostly range ~2004
+		*/*) # boundry already in cidr
+			echo "$i" >>"${tmpd}/cc~"
+            tprintf "c"
 		;;
- 		*) # generate octet - octet range
+ 		*) # generate octet - octet range from boundry
 			 # original address
 			 o=`echo $i | awk '{print $1 }'`
 			 # number of sequential addresses
@@ -143,15 +198,15 @@ grep -iE "[^\|]*\|($ccre)\|ipv4\|" $stats \
 			n2=$(( $o2 + $d2 ))
 			n1=$(( $o1 + $d1 ))
 			 # output start - end range with comment
-			printf %-44s "${o4}.${o3}.${o2}.${o1} - ${n4}.${n3}.${n2}.${n1} ${cc} ${r}" >>${stats}-cc~
-			printf "\n" >>${stats}-cc~
-			tprintf "."
+			printf "%-32s\t%s %s" "${o4}.${o3}.${o2}.${o1} - ${n4}.${n3}.${n2}.${n1}" "${cc}" "${r}" >>"${tmpd}/cc~"
+			printf "\n" >>"${tmpd}/cc~"
+			tprintf "R"
 		;;
 		esac
 	done
-cc_names=$(echo $countries | sed 's/ /-/g')
-mv ${stats}-cc~ ${stats}-cc=${cc_names}
-[ -t 1 ] && printf "\n$PWD/${stats}-cc=${cc_names}\n" || cat ${stats}-cc=${cc_names}
+cc_names=$(echo ${countries} | sed 's/ /-/g')
+mv ${tmpd}/cc~ "${dbd}/cc=${cc_names}"
+[ -t 1 ] && printf "\n${dbd}/cc=${cc_names}\n" || cat "${dbd}/cc=${cc_names}"
 exit
 
 # doc from various sources
