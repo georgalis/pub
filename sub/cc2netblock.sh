@@ -1,8 +1,6 @@
 #!/bin/sh
-# $Id: cc2netblock.sh 411 2008-07-06 04:01:37Z geo $
-#
-# LICENSE: <george@galis.org> wrote this file. As long as you retain this
-# notice, you can do anything with it or buy beer -- George Georgalis
+
+# (c) 2005-2022 George Georgalis <george@galis.org> unlimited use with this notice
 #
 # Update NIC delegations for country codes listed on command line, output CIDR
 # entries (when possible) otherwise "start - end range" entries. TLD country
@@ -19,68 +17,71 @@
 
 set -e
 countries="$@"
-PATH=/bin:/usr/bin
-
-#ftp://ftp.arin.net/pub/stats/arin/delegated-arin-latest
-#ftp://ftp.lacnic.net/pub/stats/lacnic/delegated-lacnic-latest
-#ftp://ftp.ripe.net/ripe/stats/delegated-ripencc-latest
-#http://ftp.apnic.net/stats/afrinic/delegated-afrinic-latest
-#http://ftp.apnic.net/stats/apnic/delegated-apnic-latest
-
-# apnic mirror and http protocol seem to work best
-latestnics="
-http://ftp.apnic.net/stats/iana/delegated-iana-latest
-http://ftp.apnic.net/stats/afrinic/delegated-afrinic-latest
-http://ftp.apnic.net/stats/lacnic/delegated-lacnic-latest
-http://ftp.apnic.net/stats/apnic/delegated-apnic-latest
-http://ftp.apnic.net/stats/ripe-ncc/delegated-ripencc-latest
-http://ftp.apnic.net/stats/arin/delegated-arin-latest
-"
 
 [ -t 1 ] && tprintf () { printf "$*" ;} || tprintf () { true ;}
 
-# backup NIC delegated files, make an assignments
-# file from latest NIC delegations, the database
-# location could be anywhere, tmp seems fine
-
 cd /var/tmp
-nics=nic-assignments
+stats=nro-delegated-stats
 
-# make the output files ready
-[ -e "$nics" ] \
-	&& mv "$nics" "$nics-`date '+%s'`"
-mv -f `mktemp ${0}.XXXX` ${nics}
-[ -e "${nics}-cc" ] \
-	&& mv "${nics}-cc" "${nics}-cc-`date '+%s'`"
-mv -f `mktemp ${0}.XXXX` ${nics}-cc
+# only download stats on new revision, retain old stats on download fail,
+# rotate versions for diff study
+
+curl -s --head https://ftp.ripe.net/pub/stats/ripencc/nro-stats/latest/${stats} \
+    | grep -E '(^Last-Modified|^Content-Length)' >${stats}-header~
+[ "$(cksum <${stats}-header~)" = "$(cksum <${stats}-header)" ] \
+    || {
+        [ -e "${stats}" ] && mv "${stats}" "${stats}-0"
+        curl -s --compressed --remote-name --remote-time \
+            https://ftp.ripe.net/pub/stats/ripencc/nro-stats/latest/${stats} \
+            && {
+                mv ${stats}-header~ ${stats}-header
+                [ -e "${stats}-8" ] && mv "${stats}-8" "${stats}-9"
+                [ -e "${stats}-7" ] && mv "${stats}-7" "${stats}-8"
+                [ -e "${stats}-6" ] && mv "${stats}-6" "${stats}-7"
+                [ -e "${stats}-5" ] && mv "${stats}-5" "${stats}-6"
+                [ -e "${stats}-4" ] && mv "${stats}-4" "${stats}-5"
+                [ -e "${stats}-3" ] && mv "${stats}-3" "${stats}-4"
+                [ -e "${stats}-2" ] && mv "${stats}-2" "${stats}-3"
+                [ -e "${stats}-1" ] && mv "${stats}-1" "${stats}-2"
+                [ -e "${stats}-0" ] && mv "${stats}-0" "${stats}-1"
+                } || mv "${stats}-0" "${stats}"
+        }
 
 # identify the parameters, cc table and program generating the file
-echo "# ${0} ${@}" >>${nics}-cc
-echo "# http://www.iana.org/cctld/cctld-whois.htm" >>${nics}-cc
-echo '# $GeorgalisG: script/cc2netblock.sh,v 1.7 2005/09/24 02:59:50 geo Exp $' >>${nics}-cc
+echo "# ${0} ${@}" >${stats}-cc~
+echo "# $(date)"  >>${stats}-cc~
+echo "# http://www.iana.org/cctld/cctld-whois.htm"                    >>${stats}-cc~
+echo "# https://www.iso.org/obp/ui/"                                  >>${stats}-cc~
+echo "# https://en.wikipedia.org/wiki/Country_code_top-level_domain"  >>${stats}-cc~
+echo "# https://www.iban.com/country-codes"                           >>${stats}-cc~
 
-# get latest delegated from all nics
-for n in $latestnics; do
-	f=`basename $n`
-	# XXX presume ftp will not allow a symlink attack # [ -e "$f" ] && mv "$f" "{$f}-`date '+%s'`"
-	ftp $n 
-	cat "$f" >>$nics
-done
+[ -e "${stats}-cc-index" ] \
+    || w3m -cols 200  https://www.iban.com/country-codes \
+        | awk '/Afghanistan/,/Zimbabwe/' \
+        | sed  -e 's/[ ]\{11\}[^ ]\{3\}[ ]*[^ ]\{3\}//' \
+            | while read a ; do
+                echo $a \
+                    | sed 's/.* \(..\)$/\1/' \
+                    | tr '\n' ' ' \
+                    | tr '[:upper:]' '[:lower:]'
+                echo $a | sed -E 's/[ ]*..$/ /'
+                done | sort >${stats}-cc-index
 
-# remove the $nics-* and delegated-* files not accessed in a while
-find ./ -maxdepth 1 -type f \
-	\( -atime +9 -a -mtime +9 \) \
-	-a \( -name $nics-\* -o \
-		-name delegated-\* \) \
-	-exec \rm -f \{\} \;
+echo "${countries}" | tr ' ' '\n' | sort -u | sed '/^$/d' \
+  | while IFS= read cc ; do
+      grep "^${cc} " ${stats}-cc-index | sed -e 's/^/# /' >>${stats}-cc~
+      done
 
-tprintf "Generating non-CDIR netblocks...\n" 
+# make a country code regex, must be non-null,
+# and export for availability after the pipeline
+ccre='^#'
+countries="$(echo "${countries}" | tr ' ' '\n' | sort -u | tr '\n' ' ')"
+for cc in $countries ; do ccre="${ccre}|${cc}" ; done
 
-ccex='^#' # must be non-null, make a country code expression
-for cc in $countries ; do ccex="${ccex}|${cc}" ; done
+tprintf "Generating CIDR blocks from ${PWD}/${stats} " 
 
 # generate output, tries to only match data lines
-grep -iE "[^\|]*\|($ccex)\|ipv4\|" $nics \
+grep -iE "[^\|]*\|($ccre)\|ipv4\|" $stats \
 	| awk -F \| '{ print $4 " " $5 " " $2 " " $1 }' \
 		| sed -e '
 			s/ 4 /\/30 /
@@ -115,7 +116,7 @@ grep -iE "[^\|]*\|($ccex)\|ipv4\|" $nics \
 	| while read i; do
 		case $i in
 		*/*) # already in cidr format
-			echo $i >>${nics}-cc
+			echo $i >>${stats}-cc~
 		;;
  		*) # generate octet - octet range
 			 # original address
@@ -142,13 +143,15 @@ grep -iE "[^\|]*\|($ccex)\|ipv4\|" $nics \
 			n2=$(( $o2 + $d2 ))
 			n1=$(( $o1 + $d1 ))
 			 # output start - end range with comment
-			printf %-44s "${o4}.${o3}.${o2}.${o1} - ${n4}.${n3}.${n2}.${n1} ${cc} ${r}" >>${nics}-cc
-			printf "\n" >>${nics}-cc
+			printf %-44s "${o4}.${o3}.${o2}.${o1} - ${n4}.${n3}.${n2}.${n1} ${cc} ${r}" >>${stats}-cc~
+			printf "\n" >>${stats}-cc~
 			tprintf "."
 		;;
 		esac
 	done
-[ -t 1 ] && printf "\n$PWD/${nics}-cc\n" || cat ${nics}-cc
+cc_names=$(echo $countries | sed 's/ /-/g')
+mv ${stats}-cc~ ${stats}-cc=${cc_names}
+[ -t 1 ] && printf "\n$PWD/${stats}-cc=${cc_names}\n" || cat ${stats}-cc=${cc_names}
 exit
 
 # doc from various sources
@@ -156,89 +159,287 @@ cat >/dev/null<<"NULL"
 
 The Autonomous System (AS) numbers are used by various routing protocols.
 AS numbers are allocated to the regional registries by the IANA.
+
 	AfriNIC		<hostmaster@afrinic.net>
 	APNIC		<helpdesk@apnic.net>
 	ARIN		<hostmaster@arin.net>
 	LACNIC		<hostmaster@lacnic.net>
 	RIPE-NCC	<ncc@ripe.net>
 
-http://ftp.apnic.net/stats/arin/CAVEATS
+https://www.nro.net/about/rirs/statistics/
+
+ AFRINIC Allocation Statistics ftp://ftp.afrinic.net/pub/stats/
+   APNIC Allocation Statistics ftp://ftp.apnic.net/public/stats/apnic/
+    ARIN Allocation Statistics ftp://ftp.arin.net/pub/stats/arin/
+  LACNIC Allocation Statistics ftp://ftp.lacnic.net/pub/stats/lacnic/delegated-lacnic-latest
+RIPE NCC Allocation Statistics ftp://ftp.ripe.net/pub/stats/ripencc/
 
 
-    After the defined file header, and excluding any space or
-    comments, each line in the file represents a single allocation
-    (or assignment) of a specific range of Internet number resources
-    (IPv4, IPv6 or ASN), made by the RIR identified in the record.
+The delegated-extended file contains a daily updated report of the distribution of Internet number resources:
 
-    In the case of IPv4 the records may represent non-CIDR ranges
-    or CIDR blocks, and therefore the record format represents a
-    beginning of range, and a count. This can be converted to
-    prefix/length using simple algorithms.
+    IPv4 address ranges
+    IPv6 address ranges
+    Autonomous System Numbers (ASNs) 
 
-    In the case of IPv6 the record format represents the prefix
-    and the count of /128 instances under that prefix.
+    https://ftp.ripe.net/pub/stats/ripencc/nro-stats/latest/nro-delegated-stats
 
-    Format:
+https://www.nro.net/ripe-ncc-to-publish-nro-extended-allocation-and-assignment-reports/
 
-         registry|cc|type|start|value|date|status[|extensions...]
+https://www.nro.net/wp-content/uploads/nro-extended-stats-readme5.txt
 
-    registry  = One value from the set of defined strings:
 
-                        {apnic,arin,iana,lacnic,ripencc};
+    STATISTICS FORMAT
+____________________________________________________________________
 
-    cc        = ISO 2-letter country code of the organization to which the
-                allocation or assignment was made, and the enumerated
-                variances of
 
-                        {AP,EU,UK}
 
-                These values are not defined in ISO 3166 but are widely used.
+1.1   File name
+------------------
 
-    type      = Type of Internet number resource represented in this record,
-                One value from the set of defined strings:
 
-                        {asn,ipv4,ipv6}
+Each file is named using the format:
 
-    start     = In the case of records of type 'ipv4' or 'ipv6'
-                this is the IPv4 or IPv6 'first address' of the range.
+    delegated-extended
 
-		In the case of an 16 bit AS number  the format is
-		the integer value in the range 0 to 65535, in the
-		case of a 32 bit ASN the value is in the range 0
-		to 4294967296. No distinction is drawn between 16
-		and 32 bit ASN values in the range 0 to 65535.
+1.2   File format
+-------------------
 
-    value     = In the case of IPv4 address the count of hosts for
-                this range. This count does not have to represent a
-                CIDR range.
+The file consists of: 
 
-                In the case of an IPv6 address the value will be
-                the CIDR prefix length from the 'first address'
-                value of <start>.
-                In the case of records of type 'asn' the number is
-                the count of AS from this start value.
+    - comments
+    - file header lines
+    - records
 
-    date      = Date on this allocation/assignment was made by the
-                RIR in the format YYYYMMDD;
+Header and record lines are structured as 'comma separated fields'
+(CSV). Leading and trailing blank text in fields not meaningful.
 
-                Where the allocation or assignment has been
-                transferred from another registry, this date
-                represents the date of first assignment or allocation
-                as received in from the original RIR.
+The vertical line character '|' (ASCII code 0x7c) is used as the
+CSV field separator.
 
-                It is noted that where records do not show a date of
-                first assignment, this can take the 00000000 value.
+After the header lines, records are not sorted.
 
-    status    = Type of allocation from the set:
 
-                        {allocated, assigned}
 
-                This is the allocation or assignment made by the
-                registry producing the file and not any sub-assignment
-                by other agencies. 
+1.2.1 Comments
+----------------
 
-   extensions = Any extra data on a line is undefined, but should conform
-                to use of the field separator used above.
 
+Comments are denoted by # at the beginning of a line. No
+line-embedded comments are permitted. Comments may occur at
+any place in the file.
+
+Example:
+
+    #optional comments.
+    #   any number of lines.
+
+    #another optional comment.
+
+Blank lines are permitted, and may occur at any place in the file.
+
+
+
+1.2.2 File header
+-------------------
+
+
+The file header consists of the version line and the summary
+lines for each type of record. 
+
+
+Version line
+------------
+
+Format:
+
+    version|registry|serial|records|startdate|enddate|UTCoffset
+
+Where:
+
+    version    format version number of this file, 
+               currently 2.3;
+
+    registry   as for records and filename (see below);
+
+    serial     serial number of this file (within the
+               creating RIR series);
+
+    records    number of records in file, excluding blank
+               lines, summary lines, the version line and 
+               comments;
+
+    startdate  start date of time period, in yyyymmdd 
+               format;
+
+    enddate    end date of period in yyyymmdd format;
+
+    UTCoffset  offset from UTC (+/- hours) of local RIR
+               producing file.
+
+
+
+Summary line
+------------
+
+The summary lines count the number of record lines of each type in 
+the file.
+
+Format:
+
+    registry|*|type|*|count|summary
+
+Where:
+
+    registry   as for records (see below);
+
+    *          an ASCII '*' (unused field, retained for
+               spreadsheet purposes);
+
+    type       as for records (defined below);
+
+    count      sum of the number of record lines of this 
+               type in the file.
+
+    summary    the ASCII string 'summary' (to distinguish 
+               the record line);
+
+
+Note that the count does not equate to the total amount of resources
+for each class of record. This is to be computed from the records
+themselves.
+
+
+
+1.2.3 Records
+---------------
+
+After the defined file header, and excluding any space or comments,
+each line in the file represents a single allocation (or assignment)
+of a specific range of Internet number resources (IPv4, IPv6 or
+ASN), made by the RIR identified in the record.
+
+IPv4  records may represent non-CIDR ranges or CIDR blocks, and 
+therefore the record format represents the beginning of range, and a
+count. This can be converted to prefix/length using simple algorithms.
+
+IPv6 records represent the prefix and the count of /128 instances 
+under that prefix.
+
+Format:
+
+    registry|cc|type|start|value|date|status|opaque-id[|extensions...]
+
+Where:
+
+    registry   The registry from which the data is taken.
+
+    cc         ISO 3166 2-letter code of the organisation to
+               which the allocation or assignment was made. 
+               May also include the following non-ISO 3166
+               code: 
+
+    type       Type of Internet number resource represented
+               in this record. One value from the set of 
+               defined strings:
+
+                   {asn,ipv4,ipv6}
+
+    start      In the case of records of type 'ipv4' or
+               'ipv6' this is the IPv4 or IPv6 'first
+               address' of the  range.
+
+               In the case of an 16 bit AS number, the
+               format is the integer value in the range:
+
+                   0 - 65535
+
+               In the case of a 32 bit ASN,  the value is
+               in the range:
+
+                   0 - 4294967296
+  
+               No distinction is drawn between 16 and 32
+               bit ASN values in the range 0 to 65535.
+
+    value      In the case of IPv4 address the count of
+               hosts for this range. This count does not 
+               have to represent a CIDR range.
+
+               In the case of an IPv6 address the value 
+               will be the CIDR prefix length from the 
+               'first address'  value of <start>.
+
+               In the case of records of type 'asn' the 
+               number is the count of AS from this start 
+               value.
+
+    date       Date on this allocation/assignment was made
+               by the RIR in the format:
+
+                   YYYYMMDD
+
+               Where the allocation or assignment has been
+               transferred from another registry, this date
+               represents the date of first assignment or
+               allocation as received in from the original
+               RIR.
+
+               It is noted that where records do not show a 
+               date of first assignment, this can take the 
+               0000/00/00 value.
+
+    status     Type of record from the set:
+
+                   {available, allocated, assigned, reserved}
+
+                   available    The resource has not been allocated
+                                or assigned to any entity.
+
+                   allocated    An allocation made by the registry 
+                                producing the file.
+
+                   assigned     An assignment made by the registry
+                                producing the file.
+
+                   reserved     The resource has not been allocated
+                                or assigned to any entity, and is
+                                not available for allocation or
+                                assignment.
+
+    opaque-id  This is an in-series identifier which uniquely
+               identifies a single organisation, an Internet
+               number resource holder.
+
+               All records in the file with the same opaque-id
+               are registered to the same resource holder.
+
+               The opaque-id is not guaranteed to be constant
+               between versions of the file.
+
+               If the records are collated by type, opaque-id and
+               date, records of the same type for the same opaque-id
+               for the same date can be held to be a single
+               assignment or allocation
+
+    extensions In future, this may include extra data that
+               is yet to be defined.
+
+
+
+1.3   Historical resources
+----------------------------
+
+
+Early Registration Transfers (ERX) and legacy records do not
+have any special tagging in the statistics reports. 
+
+
+____________________________________________________________________
+
+
+If you any questions or comments about these reports, please contact
+<exec-secretary@nro.net>
+
+____________________________________________________________________
 
 NULL
