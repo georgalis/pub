@@ -2,18 +2,27 @@
 
 # (c) 2005-2022 George Georgalis <george@galis.org> unlimited use with this notice
 #
-# Update NIC delegations for country codes listed on command line, output CIDR
-# entries (when possible) otherwise "start - end range" entries. TLD country
-# codes found at http://www.iana.org/cctld/cctld-whois.htm
+# Update network blocks delegations per RIR (Regional Internet Registries) and
+# country code delegations listed on command line, per NRO (Number Resource
+# Organization) data. Output CIDR networks, or "start - end range" network
+# blocks, according to the boundaries, with the cc code and country name as block
+# comments. The TLD country codes per IANA (Internet Assigned Numbers Authority)
+# are here http://www.iana.org/cctld/cctld-whois.htm but the ISO 3166 codes are
+# extracted from https://www.iban.com/country-codes to avoid confusion, see
+# /var/db/nro/cc-index after first run. That directory will contain the "last
+# block data per args" data, for each run of args combinations.
 #
-# Run from a terminal to see progress, and the output file location. When no
-# terminal is present (eg from cron), the same file is generated but only the cc
-# network blocks are sent to stdout.
+# Run from a terminal with each country code as an arg. Progress, and the output
+# file location is sent to stderr. When no terminal is present (eg run from cron),
+# the same file is generated, any errors are sent to stderr, on no error, the
+# network block data (and comments) is sent to stdout, for reading into fw tables.
 #
-# cc2netblock.sh kr cn
+# cc2netblock.sh ru kp cn
 #
-# determines the netblocks delegated ro Korea and China. Every third day, or
-# once a week, from cron, should be often enough to run.
+# determines the netblocks delegated to Russia, North Korea, and China.
+#
+# NRO delegation data is updated once daily. Upstream load is light, but there is
+# no need extract cc blocks more than once per week.
 
 set -e
 
@@ -43,7 +52,7 @@ siff () { local verb="${verb:=devnul}"
 which w3m >/dev/null 2>&1 || { chkwrn "$0 : no w3m in path" ; exit 1 ;}
 
 #  printf function for terminal verbose, otherwise quiet
-[ -t 1 ] && tprintf () { printf "$*" ;} || tprintf () { true ;}
+[ -t 1 ] && tprintf () { printf "$*" >&2 ;} || tprintf () { true ;}
 
 mkdir -p ${tmpd} ${dbd}
 
@@ -113,30 +122,36 @@ curl -s --head "https://ftp.ripe.net/pub/stats/ripencc/nro-stats/latest/${stats}
 tprintf "${dbd}/${stats}\n"
 cd "$OLDPWD"
 
-tprintf "build the cc table header "
-# identify cc parameters
-echo "# ${0} ${@}" >"${tmpd}/cc~"
-echo "# $(date)"  >>"${tmpd}/cc~"
-echo "# http://www.iana.org/cctld/cctld-whois.htm"                    >>"${tmpd}/cc~"
-echo "# https://www.iso.org/obp/ui/"                                  >>"${tmpd}/cc~"
-echo "# https://en.wikipedia.org/wiki/Country_code_top-level_domain"  >>"${tmpd}/cc~"
-echo "# https://www.iban.com/country-codes"                           >>"${tmpd}/cc~"
-
-# generate a countries used header, with the index
-echo "${countries}" | tr ' ' '\n' | sort -u | sed '/^$/d' \
-  | while IFS= read cc ; do
-      grep "^${cc} " "${dbd}/cc-index" | sed -e 's/^/# /' >>"${tmpd}/cc~"
-      done
-
 # make a country code regex
 ccre='^#' # never matches, but non-null
 countries="$(echo "${countries}" | tr ' ' '\n' | sort -u | tr '\n' ' ')"
 for cc in $countries ; do ccre="${ccre}|${cc}" ; done
+cc_names="$(echo ${countries} | sed 's/ /-/g')"
 
-tprintf "from ${dbd}/${stats}, generate cc ranges and CIDR blocks: "
+tprintf "build the cc table header "
+# report parameters
+echo "#"                         >"${tmpd}/cc~"
+echo "# ${0} ${@}"              >>"${tmpd}/cc~"
+echo "# $(date)"                >>"${tmpd}/cc~"
+echo "# ${dbd}/cc=${cc_names}"  >>"${tmpd}/cc~"
+echo "#"                        >>"${tmpd}/cc~"
+echo "# https://en.wikipedia.org/wiki/Country_code_top-level_domain"  >>"${tmpd}/cc~"
+echo "# https://www.iso.org/obp/ui/"                                  >>"${tmpd}/cc~"
+echo "# https://www.iana.org/cctld/cctld-whois.htm"                   >>"${tmpd}/cc~"
+echo "# https://www.iban.com/country-codes"                           >>"${tmpd}/cc~"
+echo "#"                        >>"${tmpd}/cc~"
+
+# generate a countries used header, with the index
+echo "${countries}" | tr ' ' '\n' | sort -u | sed '/^$/d' \
+  | while IFS= read cc ; do
+      grep "^${cc} " "${dbd}/cc-index" | sed -e 's/^/## /' >>"${tmpd}/cc~"
+      done
+echo "#" >>"${tmpd}/cc~"
+
+tprintf "generate cc ranges and CIDR blocks: "
 # generate output, tries to only match data lines
 grep -iE "[^\|]*\|($ccre)\|ipv4\|" "${dbd}/${stats}" \
-	| awk -F \| '{ printf "%s %-24s \t%s %s\n",$4,$5,$2,$1 }' \
+	| awk -F \| '{ printf "%s %s \t%s %s\n",$4,$5,$2,$1 }' \
 		| sed -e '
 			s/ 4 /\/30 /
 			s/ 8 /\/29 /
@@ -169,11 +184,11 @@ grep -iE "[^\|]*\|($ccre)\|ipv4\|" "${dbd}/${stats}" \
 			' \
 	| while ifs= read i; do
 		case "$i" in # looks "mostly" cidr now, vs mostly range ~2004
-		*/*) # boundry already in cidr
+		*/*) # boundary already in cidr
 			echo "$i" >>"${tmpd}/cc~"
             tprintf "c"
 		;;
- 		*) # generate octet - octet range from boundry
+ 		*) # generate octet - octet range from boundary
 			 # original address
 			 o=`echo $i | awk '{print $1 }'`
 			 # number of sequential addresses
@@ -198,19 +213,31 @@ grep -iE "[^\|]*\|($ccre)\|ipv4\|" "${dbd}/${stats}" \
 			n2=$(( $o2 + $d2 ))
 			n1=$(( $o1 + $d1 ))
 			 # output start - end range with comment
-			printf "%-32s\t%s %s" "${o4}.${o3}.${o2}.${o1} - ${n4}.${n3}.${n2}.${n1}" "${cc}" "${r}" >>"${tmpd}/cc~"
+			printf "%s\t%s %s" "${o4}.${o3}.${o2}.${o1} - ${n4}.${n3}.${n2}.${n1}" "${cc}" "${r}" >>"${tmpd}/cc~"
 			printf "\n" >>"${tmpd}/cc~"
 			tprintf "R"
 		;;
 		esac
 	done
-cc_names=$(echo ${countries} | sed 's/ /-/g')
-mv ${tmpd}/cc~ "${dbd}/cc=${cc_names}"
-[ -t 1 ] && printf "\n${dbd}/cc=${cc_names}\n" || cat "${dbd}/cc=${cc_names}"
+
+tprintf "\nsort the cc data, "
+awk -F"\t" '{printf "%-32s^%s\n",$1,$2}' "${tmpd}/cc~" \
+    | sort -T "$tmpd" -bd -n | sort -T "$tmpd" -bd -k2 -t"^" \
+    | sed -e 's/[ ]*^$//' -e 's/\^/# /' >"${tmpd}/cc"
+mv "${tmpd}/cc" "${dbd}/cc=${cc_names}"
+tprintf "${dbd}/cc=${cc_names}\n"
+[ -t 1 ] || cat "${dbd}/cc=${cc_names}"
 exit
 
 # doc from various sources
 cat >/dev/null<<"NULL"
+
+https://www.nro.net/about/
+
+The Number Resource Organization (NRO) was established in 2003 as a coordinating
+body for the world's Regional Internet Registries (RIRs). The RIRs manage the
+distribution of Internet number resources (IP address space and Autonomous
+System Numbers) within their respective regions.
 
 The Autonomous System (AS) numbers are used by various routing protocols.
 AS numbers are allocated to the regional registries by the IANA.
@@ -230,7 +257,8 @@ https://www.nro.net/about/rirs/statistics/
 RIPE NCC Allocation Statistics ftp://ftp.ripe.net/pub/stats/ripencc/
 
 
-The delegated-extended file contains a daily updated report of the distribution of Internet number resources:
+The delegated-extended file contains a daily updated report of the distribution
+of Internet number resources:
 
     IPv4 address ranges
     IPv6 address ranges

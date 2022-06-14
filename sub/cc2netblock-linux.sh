@@ -17,6 +17,11 @@
 # determines the netblocks delegated to Korea and China. Every third day, or
 # once a week, from cron, should be often enough to run.
 
+
+echo "This revision may work but is out of date." >&2
+echo "better to adapt nbsd version sub/cc2netblock.sh" >$2
+exit 1
+
 set -e
 countries="$@"
 
