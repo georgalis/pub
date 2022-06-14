@@ -1,15 +1,16 @@
 # georgalis @ Github 
 
 _The way I roll..._
-<code><pre>
+```
 git archive --prefix ./pub/ main | gzip -c | ssh remote "tar xzf -"
-
-</pre>or<pre>
+```
+or
+```
 h=srv r="$HOME/vcs/pub" t=$(cd /tmp && mktemp -d ./gitarch-XXXX)
 cd "${r}" && git archive --prefix ${PWD##*/}/ HEAD | tar -C "/tmp/${t}" -xzf - \
  && rsync -vrtcpz --chmod=Fa-w "/tmp/${t}/${PWD##*/}/" root@${h}:/usr/local/${PWD##*/}/ \
  && rm -rf "/tmp/${t}/"
-</pre></code>
+```
 
 ###### Major ./pub components
 [root](https://github.com/georgalis/pub/)
