@@ -10,6 +10,7 @@
 export EDITOR="vi"
 export PAGER='less --jump-target=3'
 export GPG_TTY=$(tty)
+export HOSTNAME="$(hostname)"
 export OS=$(uname)
 # /etc/redhat-release  /etc/centos-release  /etc/os-release
 
@@ -108,21 +109,19 @@ back () { cd "$OLDPWD" ;} # previous directory
 #cal () { cal -h $@ ;}
 
 # common functions for shell verbose management....
-devnul () { return 0 ;}                                                    #:> drop args
-stderr () { [ "$*" ] && echo "$*" 1>&2 || true ;}                          #:> args to stderr, or noop if null
-chkstd () { [ "$*" ] && echo "$*"      || true ;}                          #:> args to stdout, or noop if null
-chkwrn () { [ "$*" ] && { stderr    "^^ $* ^^"   ; return $? ;} || true ;} #:> wrn stderr args return 0, noop if null
-chkerr () { [ "$*" ] && { stderr    ">>> $* <<<" ; return 1  ;} || true ;} #:> err stderr args return 1, noop if null
-logwrn () { [ "$*" ] && { logger -s "^^ $* ^^"   ; return $? ;} || true ;} #:> wrn stderr+log args return 0, noop if null
-logerr () { [ "$*" ] && { logger -s ">>> $* <<<" ; return 1  ;} || true ;} #:> err stderr+log args return 1, noop if null
-chkexit () { [ "$*" ] && { stderr    ">>> $* <<<" ; exit 1   ;} || true ;} #:> err stderr args exit 1, noop if null
-logexit () { [ "$*" ] && { logger -s ">>> $* <<<" ; exit 1   ;} || true ;} #:> err stderr+log args exit 1, noop if null
-siff () { local verb="${verb:=devnul}"
-    [ -e "$1" ] \
-        && { { ${verb} "<> ${2}: . ${1} <>" && . "${1}" ;} || { chkerr "fail $1" ; return 1 ;} ;} \
-        || chkwrn "${2}: siff: no file $1" ;} #:> source arg1 if exists, optional calling file arg2 for backtrace
-
-# for verbosity, these typically could be set to devnul or chkwrn, possibly chkerr
+devnul () { return 0 ;}                                                     #:> drop args
+stderr () {  [ "$*" ] && echo "$*" 1>&2 || true ;}                          #:> args to stderr, or noop if null
+chkstd () {  [ "$*" ] && echo "$*"      || true ;}                          #:> args to stdout, or noop if null
+chkwrn () {  [ "$*" ] && { stderr    "^^ $* ^^"   ; return $? ;} || true ;} #:> wrn stderr args return 0, noop if null
+logwrn () {  [ "$*" ] && { logger -s "^^ $* ^^"   ; return $? ;} || true ;} #:> wrn stderr+log args return 0, noop if null
+chkerr () {  [ "$*" ] && { stderr    ">>> $* <<<" ; return 1  ;} || true ;} #:> err stderr args return 1, noop if null
+logerr () {  [ "$*" ] && { logger -s ">>> $* <<<" ; return 1  ;} || true ;} #:> err stderr+log args return 1, noop if null
+chkexit () { [ "$*" ] && { stderr    ">>> $* <<<" ; exit 1    ;} || true ;} #:> err stderr args exit 1, noop if null
+logexit () { [ "$*" ] && { logger -s ">>> $* <<<" ; exit 1    ;} || true ;} #:> err stderr+log args exit 1, noop if null
+siff () { local verb="${verb:-chkwrn}" ; test -e "$1" \
+        && { { . "${1}" && ${verb} "<> ${2}: . ${1} <>" ;} || { chkerr "siff: fail in '$1' from '$2'" ; return 1 ;} ;} \
+        || ${verb} "${2}: siff: no file $1" ;} #:> source arg1 if exists, on err recall args for backtrace
+# verbosity, typically set to devnul, chkwrn, or chkerr
 #verb="${verb:=devnul}"
 #verb2="${verb2:=devnul}"
 #verb3="${verb3:=devnul}"
@@ -133,15 +132,6 @@ path_append () { # append $1 if not already in path
 path_prepend () { # prepend $1 if not already in path
  echo $PATH | grep -E "(^$1:|^$1$)" 2>&1 >/dev/null \
   || export PATH="${1}:${PATH}" ;}
-
-std_append () { # extend stdin list with arg1, without duplicating (space deliminated)
-  # usage :  export bc_env=$( echo $bc_env | std_append data)
-  local stdin="$(tr -s '\n' ' ')"
-  { echo "$stdin" | grep -E "(^$1$|^$1 | $1 | $1$)" >/dev/null \
-    && echo "$stdin" \
-    || echo "$stdin $1"
-    } | tr -s ' ' | sed 's/ $//'
-  } # std_append
 
 ckstat () { # return sortable stat data for args (OR stdin file list)
   # ckstat /etc/resolv.conf
@@ -241,7 +231,6 @@ cattrunc () {
     } || cat
   }
 
-
 lock () { # lock to prevent concurent runs
  mkdir -p "$HOME/var/run"
  local name="$(basename "$0")"
@@ -253,7 +242,6 @@ unlock () { # remove lock and touch null file
  local LOCK="$HOME/var/run/${name}.pid"
  local NULL="$HOME/var/run/${name}.null"
  rm "$LOCK" ; touch "$NULL" ;}
-
 
 case "$OS" in
 Darwin|NetBSD)
@@ -285,8 +273,8 @@ case "$SHELL" in
     set -o pipefail  # exit pipeline on non-zero status (rightmost?)
  ;;
  *ksh)
-  export hostname="$(hostname)"
-  export PS1="\${?%0} \${USER}@\${hostname}:\${PWD} "
+  export HOSTNAME="$(hostname)"
+  export PS1="\${?%0} \${USER}@\${HOSTNAME}:\${PWD} "
   export HISTFILE="${HOME}/.ksh_history" HISTSIZE=4096
   set -o ignoreeof # disable ctrl-d exit
   set -o braceexpand
@@ -342,7 +330,7 @@ rm $key_in ;}
 
 # ssh socket key and agent managent
 printf "${_termrev}"
-printf "User ${USER}@${hostname}: "
+printf "User ${USER}@${HOSTNAME}: "
 [ "$SSH_AGENT_ENV" ] || {
     eval $(ssh-agent)
     ssh-add $(find $HOME/.ssh/ \( -name id_\* -o -name ${USER}\* \) -type f \! -name \*pub )

@@ -55,12 +55,10 @@ validfn () { #:> hash comparison to validate shell functions
 # EOF
 #
 # run validfn to check the operational env vs the generated hashes
-verb2="${verb2:-devnul}"
-while IFS= read fndata ; do
-$verb2 "validfn $fndata"
-       validfn $fndata && true || { echo "validfn error : $fndata" 1>&2 ; return 1 ;}
-done <<EOF
-# pub/skel/.profile 20220104
+while IFS= read a ; do
+        ${verb2:-chkwrn} "validfn $a"
+        validfn $a && true || { echo "validfn error : $a" 1>&2 ; return 1 ;}
+        done <<EOF
 devnul 216e1370 0000001d
 stderr 7ccc5704 00000037
 chkstd ee4aa465 00000032
@@ -68,7 +66,7 @@ chkwrn 18c46093 0000005e
 chkerr 57d3ff82 0000005f
 logwrn e5806086 00000061
 logerr ffddd972 00000062
-siff 1ff96e34 000000fc
+siff 0f3167d6 00000113
 EOF
 
 alias       gst='git status --short | sed "s/^\?/ \?/" | sort'
