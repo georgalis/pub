@@ -31,25 +31,12 @@ tmpd=/var/tmp/nro
 dbd=/var/db/nro
 
 # common functions for shell verbose management....
-devnul () { return 0 ;}                                                    #:> drop args
 stderr () { [ "$*" ] && echo "$*" 1>&2 || true ;}                          #:> args to stderr, or noop if null
-chkstd () { [ "$*" ] && echo "$*"      || true ;}                          #:> args to stdout, or noop if null
 chkwrn () { [ "$*" ] && { stderr    "^^ $* ^^"   ; return $? ;} || true ;} #:> wrn stderr args return 0, noop if null
-chkerr () { [ "$*" ] && { stderr    ">>> $* <<<" ; return 1  ;} || true ;} #:> err stderr args return 1, noop if null
-logwrn () { [ "$*" ] && { logger -s "^^ $* ^^"   ; return $? ;} || true ;} #:> wrn stderr+log args return 0, noop if null
-logerr () { [ "$*" ] && { logger -s ">>> $* <<<" ; return 1  ;} || true ;} #:> err stderr+log args return 1, noop if null
 chkexit () { [ "$*" ] && { stderr    ">>> $* <<<" ; exit 1   ;} || true ;} #:> err stderr args exit 1, noop if null
-logexit () { [ "$*" ] && { logger -s ">>> $* <<<" ; exit 1   ;} || true ;} #:> err stderr+log args exit 1, noop if null
-siff () { local verb="${verb:=devnul}"
-    [ -e "$1" ] \
-        && { { ${verb} "<> ${2}: . ${1} <>" && . "${1}" ;} || { chkerr "fail $1" ; return 1 ;} ;} \
-        || chkwrn "${2}: siff: no file $1" ;} #:> source arg1 if exists, optional calling file arg2 for backtrace
-# for verbosity, these typically could be set to devnul, chkwrn, or possibly chkerr.
-#verb="${verb:=devnul}"
-#verb2="${verb2:=devnul}"
-#verb3="${verb3:=devnul}"
 
-which w3m >/dev/null 2>&1 || { chkwrn "$0 : no w3m in path" ; exit 1 ;}
+which w3m >/dev/null 2>&1    || chkexit "$0 : no w3m in path"
+which ipcalc >/dev/null 2>&1 || chkexit "$0 : ipcalc not found in path"
 
 #  printf function for terminal verbose, otherwise quiet
 [ -t 1 ] && tprintf () { printf "$*" >&2 ;} || tprintf () { true ;}
@@ -72,16 +59,16 @@ tprintf "if needed, create a cc index, "
                 echo $a | sed -E 's/[ ]*..$/ /'
                 done | sort >"${tmpd}/cc-index" \
                     && mv "${tmpd}/cc-index" "${dbd}" \
-                    || { chkerr "$0 : failed to generate cc-index" ; exit 1 ;}
+                    || chkexit "$0 : failed to generate cc-index"
         }
 tprintf "${dbd}/cc-index\n"
 
-[ -e "${dbd}/cc-index" ] || { chkerr "missing ${dbd}/cc-index" ; exit 1 ;}
+[ -e "${dbd}/cc-index" ] || chkexit "missing ${dbd}/cc-index"
 
 # cc sanity check
-[ "$#" -ge 1 ] || { chkerr "$0 : expecting cc as arg(s)" ; exit 1 ;}
+[ "$#" -ge 1 ] || chkexit "$0 : expecting cc as arg(s)"
 for a in $@ ; do
-    grep -q "^${a} " "${dbd}/cc-index" || { chkerr "$0 : $a : does not match ${dbd}/cc-index" ; exit 1 ;}
+    grep -q "^${a} " "${dbd}/cc-index" || chkexit "$0 : $a : does not match ${dbd}/cc-index"
     done
 
 # only download stats on new revision,
@@ -186,7 +173,6 @@ grep -iE "[^\|]*\|($ccre)\|ipv4\|" "${dbd}/${stats}" \
 		case "$i" in # looks "mostly" cidr now, vs mostly range ~2004
 		*/*) # boundary already in cidr
 			echo "$i" >>"${tmpd}/cc~"
-            tprintf "c"
 		;;
  		*) # generate octet - octet range from boundary
 			 # original address
@@ -213,17 +199,31 @@ grep -iE "[^\|]*\|($ccre)\|ipv4\|" "${dbd}/${stats}" \
 			n2=$(( $o2 + $d2 ))
 			n1=$(( $o1 + $d1 ))
 			 # output start - end range with comment
-			printf "%s\t%s %s" "${o4}.${o3}.${o2}.${o1} - ${n4}.${n3}.${n2}.${n1}" "${cc}" "${r}" >>"${tmpd}/cc~"
-			printf "\n" >>"${tmpd}/cc~"
-			tprintf "R"
+			#printf "%s\t%s %s" "${o4}.${o3}.${o2}.${o1} - ${n4}.${n3}.${n2}.${n1}" "${cc}" "${r}" >>"${tmpd}/cc~"
+			#printf "\n" >>"${tmpd}/cc~"
+			 # use ipcalc to convert range into CIDR
+			ipcalc ${o4}.${o3}.${o2}.${o1} - ${n4}.${n3}.${n2}.${n1} | sed -e '/deaggregate/d' \
+				| awk -v cc="$cc" -v r="$r" '{printf "%s\t%s %s\n",$1,cc,r}' >>"${tmpd}/cc~"
 		;;
 		esac
 	done
 
+# it looks like there is overlap in some block assignments, eg the 192.124.175.0 block
+# is a range that ends in 192.124.192.0, which is the beginning of another deligation.
+# ripencc|CZ|ipv4|192.124.175.0|4352|19910923|assigned|7d53c81c-11e1-4ecf-984a-85c2dc00edb7|e-stats
+# ripencc|GB|ipv4|192.124.192.0|1792|19910923|assigned|0f2a35bd-8178-4c90-ac2a-c2f58c73a150|e-stats
+# the dates are notable beginning of the Internet, and the conflict is worked out in whois.
+# when converting deligated range to CIDR 646 networks identified with /32, ten don't have colisions,
+# 156.67.128.0 has three, and the rest have two. This is what colisions look like
+# ripencc|ZZ|ipv4|193.164.232.96|64|20220616|reserved|ripencc|e-stats
+# ripencc|CY|ipv4|193.164.232.160|32|20120914|assigned|22b3011d-b885-45e7-8d4a-35e370b5c6c9|e-stats
+# ripencc|FR|ipv4|193.164.232.192|32|20060309|assigned|50b6961d-c896-46b7-9c4e-35edc704bd90|e-stats
+# ripencc|ZZ|ipv4|193.164.232.224|32|20220616|reserved|ripencc|e-stats
+
 tprintf "\nsort the cc data, "
 awk -F"\t" '{printf "%-32s^%s\n",$1,$2}' "${tmpd}/cc~" \
-    | sort -T "$tmpd" -bd -n | sort -T "$tmpd" -bd -k2 -t"^" \
-    | sed -e 's/[ ]*^$//' -e 's/\^/# /' >"${tmpd}/cc"
+	| sort -T "$tmpd" -bd -n | sort -T "$tmpd" -bd -k2 -t"^" \
+	| sed -e 's/[ ]*^$//' -e 's/\^/# /' >"${tmpd}/cc"
 mv "${tmpd}/cc" "${dbd}/cc=${cc_names}"
 tprintf "${dbd}/cc=${cc_names}\n"
 [ -t 1 ] || cat "${dbd}/cc=${cc_names}"
