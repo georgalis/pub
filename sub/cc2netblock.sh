@@ -209,12 +209,12 @@ grep -iE "[^\|]*\|($ccre)\|ipv4\|" "${dbd}/${stats}" \
 	done
 
 # it looks like there is overlap in some block assignments, eg the 192.124.175.0 block
-# is a range that ends in 192.124.192.0, which is the beginning of another deligation.
+# is a range that ends in 192.124.192.0, which is the beginning of another delegation.
 # ripencc|CZ|ipv4|192.124.175.0|4352|19910923|assigned|7d53c81c-11e1-4ecf-984a-85c2dc00edb7|e-stats
 # ripencc|GB|ipv4|192.124.192.0|1792|19910923|assigned|0f2a35bd-8178-4c90-ac2a-c2f58c73a150|e-stats
 # the dates are notable beginning of the Internet, and the conflict is worked out in whois.
-# when converting deligated range to CIDR 646 networks identified with /32, ten don't have colisions,
-# 156.67.128.0 has three, and the rest have two. This is what colisions look like
+# when converting deligated range to CIDR 646 networks identified with /32, ten don't have collisions,
+# 156.67.128.0 has three, and the rest have two. This is what collisions look like
 # ripencc|ZZ|ipv4|193.164.232.96|64|20220616|reserved|ripencc|e-stats
 # ripencc|CY|ipv4|193.164.232.160|32|20120914|assigned|22b3011d-b885-45e7-8d4a-35e370b5c6c9|e-stats
 # ripencc|FR|ipv4|193.164.232.192|32|20060309|assigned|50b6961d-c896-46b7-9c4e-35edc704bd90|e-stats
