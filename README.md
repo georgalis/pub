@@ -14,13 +14,14 @@ cd "${r}" && git archive --prefix ${PWD##*/}/ HEAD | tar -C "/tmp/${t}" -xzf - \
 
 ###### Major ./pub components
 [root](https://github.com/georgalis/pub/)
-* [./boot](./boot) Bootstrap scripts for various OS
-* [./boot/nbsd/rc.sh](./boot/nbsd/rc.sh) invoke NetBSD bootstrap with CI/CD enhancements
-* [./boot/nbsd/tai64n-inst.sh](./boot/nbsd/tai64n-inst.sh) tai64n and tai64nlocal installer
 * [./know/music/5fb3-deja-muse.md](./know/music/5fb3-deja-muse.md) A 2020 Musical Playlist
 * [./know/music/660e-requeues.tab](./know/music/660e-requeues.tab) WIP 2020 Musical Playlist
-* [./know/Operations.pdf](know/Operations.pdf) Proceeding Operations brief graphical format
-* [./know/ProOps](./know/ProOps/README.md) Proceeding Operations Framework detail
+* [./know/Nevermind.pdf](./know/Nevermind.pdf) life management
+* [./know/Operations.pdf](know/Operations.pdf) Proceeding Operations, brief graphical format
+* [./know/ProOps](./know/ProOps/README.md) Proceeding Operations Framework, detail
+* [./boot](./boot) bootstrap scripts for various OS
+* [./boot/nbsd/rc.sh](./boot/nbsd/rc.sh) invoke NetBSD bootstrap with CI/CD enhancements
+* [./boot/nbsd/tai64n-inst.sh](./boot/nbsd/tai64n-inst.sh) tai64n and tai64nlocal installer
 * [./mkinst/skel-inst.sh](./mkinst/skel-inst.sh) backup and install skel files
 * [./skel](./skel) enhanced replacement default user env
 * [./src/gpw](./src/gpw) pronounceable password generator
@@ -32,7 +33,7 @@ cd "${r}" && git archive --prefix ${PWD##*/}/ HEAD | tar -C "/tmp/${t}" -xzf - \
 ###### Other repositories
 * [../felidae](https://github.com/georgalis/felidae) Felidae AI/ML image classifier
 
-## Public comments
+### Public comments
 
 * rmind/npf #113 [Solution](https://github.com/rmind/npf/issues/113#issuecomment-1157142538) Refer to range of IPs and use of wildcards
 
