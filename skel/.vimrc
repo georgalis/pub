@@ -1,10 +1,16 @@
 " .vimrc
 
-" Unlimited use with this notice. (C) 2017-2022 George Georgalis <george@galis.org>
+" (c) 2017-2018 George Georgalis <george@galis.org> unlimited use with this notice
 
-" %  jump to matching ([{}]), start/end of C-style comment, or preprocessor conditional
-" [{ [( ]} ]) code block jump
+"set fileencoding=utf8
+"set encoding=utf8
+"set termencoding=utf8
+" :e! ++enc=utf8
+"set timeout timeoutlen=3000 ttimeoutlen=100
+"set noesckeys
 " zm zr foldmethod=indent foldmethod=syntax foldlevel=20
+" %  jump to matching ([{}]), start/end of C-style comment, preprocessor conditional, code block
+" setlocal spell spelllang=en_us
 
 set nocompatible
 set modelines=0 " prior to 6.3.83, modelines could could execute arbitrary commands
@@ -14,10 +20,10 @@ set viminfo='80,\"200	" read/write a .viminfo file
 set history=350
 set suffixes=.bak,~,.swp,.o,.info,.aux,.log,.dvi,.bbl,.blg,.brf,.cb,.ind,.idx,.ilg,.inx,.out,.toc,.rpm,.z,.Z,.tar,.gz,.tgz,.zip,.bz2,.deb
 set showcmd		" Show (partial) command in status line.
-set showmatch		" Show matching brackets.
-set ignorecase		" Do case insensitive matching
-set smartcase		" Only ignorecase when no caps in search
-set incsearch		" Incremental search
+set showmatch	" Show matching brackets.
+set ignorecase	" Do case insensitive matching
+set smartcase	" Only ignorecase when no caps in search
+set incsearch	" Incremental search
 set ttyfast
 set hlsearch
 set sidescroll=20
@@ -27,7 +33,7 @@ set wrap	" so longlines are visible
 set nolbr   " better for copying
 "set lbr	" wrap on word, for text
 set expandtab
-set tabstop=4 " 4 characters sometimes better than 8
+set tabstop=4 " 4 characters better than 8
 "set shiftwidth=4
 "set backspace=2
 set backspace=indent,eol,start
@@ -36,7 +42,6 @@ set nobackup " Preserves multi links cf 'vip' 'vim in place'
 "set backupskip=/tmp/crontab*
 set ruler		" show the cursor position all the time
 set laststatus=2
-" printf '%x' $(date '+%s')
 set statusline=%<%f%h%m%r%=%{strftime(\"%D\ %l:%M:%S\ \%p,\ %a\ %b\ %d,\ %Y\")}\ %{&ff}\ %l,%c%V\ %P
 set statusline=%<%f%h%m%r%=%{strftime(\"%a\ %D\ %l:%M\ \%p,\")}\ %{&ff}\ %l,%c\ %P
 "set autowrite 		"Write the contents of the file, if it has been modified, on each :next, :rewind, :last, :first, :previous, :stop, :suspend, :tag, :!, :make, CTRL-] and CTRL-^ command; and when a :buffer, CTRL-O, CTRL-I, '{A-Z0-9}, or `{A-Z0-9} command takes one to another file.
@@ -44,22 +49,17 @@ set statusline=%<%f%h%m%r%=%{strftime(\"%a\ %D\ %l:%M\ \%p,\")}\ %{&ff}\ %l,%c\ 
 if has("autocmd")
   " When editing a file, always jump to the last known cursor position.
   " Don't do it when the position is invalid or when inside an event handler
-  " (happens when dropping a file on gvim).
+  " (happens when dropping a file into gvim).
   autocmd BufReadPost *
     \ if line("'\"") > 0 && line("'\"") <= line("$") |
     \   exe "normal g`\"" |
     \ endif
 endif " has("autocmd")
 
-"noremap <F8> :so `vimspell %`<CR>:!vimspell % -r<CR><CR>
 map <f2> {!}par 1600<CR>
 map <F3> {!}par 66<CR>
 map <F4> {!}par 52<CR>
 map <F5> :.!par 52<CR>
-map <F8> :r !date "+\%D \%r"<cr>$a 
-map <F9> :r! { date +\%Y\%m\%d_\%H\%M\%S_ && uuidgen ;} \| tr -d '\n' \| sed -e s/-.*// \| tr [A-Z] [a-z]	<CR>
-"idnow () { sh -c "{ date '+%Y%m%d_%H%M%S_' && uuidgen ;} | tr -d '\n' | sed -e s/-.*// | tr '[A-Z]' '[a-z]'" ;} # dump local id
-map <F10> :r! echo \| tai64n \| sed -e 's/^@[[:xdigit:]]\{8\}//' -e 's/[[:xdigit:]]\{8\} $//' <CR>
 
 if &t_Co > 1
    syntax enable
@@ -260,3 +260,17 @@ hi makeTarget	cterm=bold	ctermfg=3
 ""  q:               : commandline history Window
 ""  :<C-F>           : history Window
 ""  ----------------------------------------
+
+
+" Function to source only if file exists {
+function! SourceIfExists(file)
+  if filereadable(expand(a:file))
+    exe 'source' a:file
+  endif
+endfunction
+" }
+
+call SourceIfExists("~/.vim/colors.vim")
+call SourceIfExists("~/.vimrc.local")
+
+

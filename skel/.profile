@@ -19,7 +19,7 @@ ulimit -c 1 # one byte core files memorialize their creation
 
 case "$OS" in
 Darwin)
- [ "$TERM" = "xterm" ] && export TERM='xterm-color'
+#[ "$TERM" = "tmux-256color" ] && export TERM='xterm-new'
  export LSCOLORS='xefxcxdxbxegedabagacad' # invert directory color
  alias   l='ls -GFr'
  alias  lr='ls -GF'

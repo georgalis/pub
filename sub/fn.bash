@@ -119,23 +119,13 @@ agst () {
 agstlt () { lt $(agst ~ | awk '{print $2}' | while IFS= read a ; do find "$a" -type f ; done ) ;} # all repo changed/new files by mod time
 
 ## shell script fragments
-# main () { # enable local varables
-#
-#local u h b t s d bak n tf
-#u="$USER" # uid running the tests
-# filein="${1##*/}" # basename arg1
-# expr "$1" : ".*/" >/dev/null && pathin="${1%/*}" || pathin="." # dirname arg1
-# filepin="$(cd "${pathin}" ; pwd -P)/${filein}" # full filepath
-#h="$(cd $(dirname $0) && pwd -P)" # realpath of this script
-#b="$(basename $0 | sed 's/.[^.]*$//')" # this program name less (.sh) extension
-#t="$( { date '+%Y%m%d_%H%M%S_' && uuidgen ;} | sed -e 's/-.*//' | tr -d ' \n' )" # time based uniq id
-# find . \( -path ./skel -o -path ./mkinst -o -path ./.git \) \! -prune -o -type f
-# find -E . -regex '\./(skel|mkinst|\.git)$' -not -prune -o -type f
-#[ -n "$1" ] && { cd "$1" && s="$PWD" ;} || chkerr "Expecting dir as arg1" # set src dir
-#[ -d "$s" ] || chkerr "$s (arg1) is not a directory"
-#[ -n "$2" ] && cd "$2" && d="$(pwd -P)" || d="$HOME" # set dest dir
-#[ -d "$d" ] || chkerr "$d target (arg2) is not a directory"
-# bak="${d}/${b}-${t}" # backup dir
+# infile="${f##*/}"                                              # infile  == basename f
+# expr "$f" : ".*/" >/dev/null && inpath="${f%/*}" || inpath="." # inpath  ==  dirname f
+# infilep="$(cd "${inpath}" ; pwd -P)/${infile}"                 # infilep == realpath f
+# name="$(sed 's/.[^.]*$//' <<<"$infile")"                       # name    == infile w/o extension
+# t="$( { date '+%Y%m%d_%H%M%S_' && uuidgen ;} | sed -e 's/.*-//' | tr -d ' \n' | tr '[:upper:]' '[:lower:]' )" # time based uniq id
+# find -E /mnt \( -regex '/mnt(/local|/%|/bak)' -prune \) -o -type d
+# find -E /mnt \( -regex '/mnt(/local|/%|/bak)' -prune -type f \) -o -type f
 
 catfold () { #:> on terminal output, fold long lines on words
     [ -t 1 ] && {
