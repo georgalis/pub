@@ -19,7 +19,7 @@ siff () { local verb="${verb:-chkwrn}" ; test -e "$1" \
 #verb3="${verb3:=devnul}"
 
 ps | grep -E "^[ ]*$$" | grep -q bash   || chkexit "$0 : Not bash" 
-test -d "$link"                         || chkexit "$0 : not a directory link='$link'"
+test -d "$link/"                        || chkexit "$0 : not a directory link='$link'"
 
 f="$0"
 infile="${f##*/}"                                              # infile  == basename f
@@ -56,8 +56,8 @@ ckstatsum () { # return sortable stat data for args (OR stdin file list)
   } # ckstatsum ()
 
 chkwrn "${name}.list"
-find "$link" -maxdepth 1 -type f -name \*mp3 \
-    | sed -e "s=${link}/==" -e '/^0/d' \
+find "$link/" -maxdepth 1 -type f -name \*mp3 \
+    | sed -e "s=${link}[/]*==" -e '/^0/d' \
     | sort >"${name}.list"
 
 chkwrn ${name}.list.html
