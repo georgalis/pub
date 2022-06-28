@@ -116,11 +116,19 @@ chkwrn () {  [ "$*" ] && { stderr    "^^ $* ^^"   ; return $? ;} || true ;} #:> 
 logwrn () {  [ "$*" ] && { logger -s "^^ $* ^^"   ; return $? ;} || true ;} #:> wrn stderr+log args return 0, noop if null
 chkerr () {  [ "$*" ] && { stderr    ">>> $* <<<" ; return 1  ;} || true ;} #:> err stderr args return 1, noop if null
 logerr () {  [ "$*" ] && { logger -s ">>> $* <<<" ; return 1  ;} || true ;} #:> err stderr+log args return 1, noop if null
+chktrue () { [ "$*" ] && { stderr    "><> $* <><" ; return 0  ;} || return 1 ;} #:> err stderr args exit 1, noop if null
 chkexit () { [ "$*" ] && { stderr    ">>> $* <<<" ; exit 1    ;} || true ;} #:> err stderr args exit 1, noop if null
 logexit () { [ "$*" ] && { logger -s ">>> $* <<<" ; exit 1    ;} || true ;} #:> err stderr+log args exit 1, noop if null
-siff () { local verb="${verb:-chkwrn}" ; test -e "$1" \
-        && { { . "${1}" && ${verb} "<> ${2}: . ${1} <>" ;} || { chkerr "siff: fail in '$1' from '$2'" ; return 1 ;} ;} \
+siff () { local verb="${verb:-chktrue}" ; test -e "$1" \
+        && { { . "${1}" && ${verb} "${2}: . ${1}" ;} || { chkerr "siff: fail in '$1' from '$2'" ; return 1 ;} ;} \
         || ${verb} "${2}: siff: no file $1" ;} #:> source arg1 if exists, on err recall args for backtrace
+siffx () { local verb="${verb:-chktrue}" ; test -e "$1" \
+        && { { . "${1}" \
+          && { export -f $(grep '^[_[:alpha:]][_[:alnum:]]* () ' "$1" | sed 's/ () .*//' ) >/dev/null && devnul "  function export '^[^ ]* () '" ;} \
+          && { export    $(grep '^[_[:alpha:]][_[:alnum:]]*='    "$1" | sed 's/=.*//'    ) >/dev/null && devnul "       var export '^[:alpha:][_[:alnum:]]*='" ;} \
+          && ${verb} "${2}: . ${1} ; var func exports"
+          } || { chkerr "${FUNCNAME} : fail in '$1' from '$2'" ; return 1 ;} ;} \
+        || chkwrn "${2}: ${FUNCNAME} : no file $1 from '$2'" ;} #:> source arg1 if exists , on err recall args for backtrace
 # verbosity, typically set to devnul, chkwrn, or chkerr
 #verb="${verb:=devnul}"
 #verb2="${verb2:=devnul}"
@@ -342,5 +350,5 @@ printf "${_ntermrev}"
 #	&& { printf "Logout: " && kill $2 && echo $(hostname) $0 [$4] killed ssh-agent $2 \
 #		|| { echo $(hostname) ssh-agent already died? 2>/dev/stderr ; exit 1 ;} ;}
 
-siff "$HOME/.profile.local" "~/.profile"
+siff "$HOME/.profile.local" "~/.profile      "
 

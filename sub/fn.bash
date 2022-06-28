@@ -17,13 +17,13 @@ validfn () { #:> hash comparison to validate shell functions
 		#:: env hashfn= to set the hashing function, "%08x %8x %s\n" cksum program
 		EOF
       return 1 ;}
-    ps | grep -E "^[ ]*$$" | grep -q bash || { echo ">>> $0 : Not bash shell <<<" >&2 ; return 1 ;}
+    ps | grep "^[ ]*$$ " | grep -q bash 2>/dev/null || { echo ">>> $0 : Not bash shell (62af847c) <<<" >&2 ; return 1 ;}
     local _hashfn
     [ "$hashfn" ] || { _hashfn () { declare -f "$1" | printf "%s %08x %08x\n" "$1" $(cksum) ;} && _hashfn="_hashfn" ;}
     [ "$_hashfn" ] || _hashfn="$hashfn" # for bugs... use stronger hash for nefarious env
-    local fn="$1" ; fn="$(sed '/^[ ]*#/d' <<<"$fn")"
+    local fn="$(sed '/^[ ]*#/d' <<<"$1")"
     [ "$fn" ] || return 0 # drop comments
-    shift
+    shift || true
     local sum="$fn $*"
     local check="$( "$_hashfn" "$fn" )"
     [ "$*" ] || { echo "$check" ; return 0 ;} # provide hash data if none given to check
@@ -63,10 +63,11 @@ devnul 216e1370 0000001d
 stderr 7ccc5704 00000037
 chkstd ee4aa465 00000032
 chkwrn 18c46093 0000005e
-chkerr 57d3ff82 0000005f
 logwrn e5806086 00000061
+chkerr 57d3ff82 0000005f
 logerr ffddd972 00000062
-siff 0f3167d6 00000113
+chktrue 845489dd 00000064
+siff f376bdf0 0000010e
 EOF
 
 alias       gst='git status --short | sed "s/^\?/ \?/" | sort'
@@ -831,7 +832,7 @@ numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" 
     # Initilize base 32 sequence with 0 major for input files that have no sequence;
     # For name changes, without colisions, generate mv commands for evaluation or "| sh".
     local f fs p b a src dst;
-    [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
+    while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
     fs="$(sed 's/^\.\///' <<<"$fs" | while IFS= read f ; do [ -f "${f%%/*}" ] && echo "${f%%/*}" || true ; done)"
     for p in 0 1 2 3 4 5 6 7 8 9 a b c d e f g h j k m n p q r s t u v x y z ; do # iterate on each major base 32
@@ -872,7 +873,7 @@ numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" 
 numlistdst () { # distribute filenames across base 32 major (alnum lower sans 'ilow')
     # in the future accept distribution major range (start/stop for the distribution)
     local f fs fss
-    [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
+    while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
     fs="$(sed 's/^\.\///' <<<"$fs" | while IFS= read f ; do [ -f "${f%%/*}" ] && echo "${f%%/*}" || true ; done)"
     m=$(dc -e "8 k 31 $(awk 'END{print NR}' <<<"$fs") / p") # 0-31 * NR, for major, does not overflow major
@@ -904,8 +905,8 @@ mp3range () { # mp3 listing limiter
     #chkwrn for awk \"${start},${stop}\"
     shift 2 || shift || true # shift 2 fails if $# = 1, so "shift 2 without err signal" in all cases...
     #chkwrn "#$# @=$@"
-    [ $# -gt 0 ] && dirs="$1" ; shift
-    [ $# -gt 0 ] && while [ $# -gt 0 ] ; do dirs="$(printf "%s\n%s\n" "$dirs" "$1")" ; shift ; done
+    [ $# -gt 0 ] && { dirs="$1" ; shift ;}
+    while [ $# -gt 0 ] ; do dirs="$(printf "%s\n%s\n" "$dirs" "$1")" ; shift ; done
     [ "$dirs" ] || dirs="./"
     #$verb pwd=$PWD dirs=$dirs
     #echo "$dirs"     | sed '/^$/d' | while IFS= read a; do ${verb} "ead $a" ; done
@@ -919,8 +920,8 @@ mp3range () { # mp3 listing limiter
 
 playffr () { # use ffplayr to continiously repeat invocations of ffplay
     local fs
-    [ $# -gt 0 ] && fs="$1" ; shift
-    [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
+    [ $# -gt 0 ] && { fs="$1" ; shift ;}
+    while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
     while :; do playff <<<"$fs" || return 1 ; done
    #while :; do echo "$fs" | playff || return 1 ; done
@@ -928,8 +929,8 @@ playffr () { # use ffplayr to continiously repeat invocations of ffplay
 
 playff () { # use ffplay to play files (args OR stdin filename per line)
     local f fs
-    [ $# -gt 0 ] && fs="$1" ; shift
-    [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
+    [ $# -gt 0 ] && { fs="$1" ; shift ;}
+    while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
     echo "$fs" | while IFS= read f; do
         chkwrn "$f"
@@ -942,8 +943,8 @@ playff () { # use ffplay to play files (args OR stdin filename per line)
 
 probeff () { # use ffprobe to extract duration of files (args OR stdin filename per line)
     local f fs
-    [ $# -gt 0 ] && fs="$1" ; shift
-    [ $# -gt 0 ] && while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
+    [ $# -gt 0 ] && { fs="$1" ; shift ;}
+    while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
     echo "$fs" | while IFS= read f; do
         local inpath infile="${f##*/}" # basename
