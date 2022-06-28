@@ -51,7 +51,7 @@ main () { local b t s d bak n pathn
     done # backup and replace every diff from src skel
     find "$bak" -depth -type d -empty -exec rm -rf \{\} \;
     [ -d "$bak" ] && $verb "installed '$s' to '$d' backup '$bak'"
-    [ -d "$bak" ] || $verb "installed '$s' to '$d' no replace"
+    [ -d "$bak" ] || $verb "installed '$s' to '$d' (no replacements)"
     } # main
 
 main $@
