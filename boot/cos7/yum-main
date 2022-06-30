@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# REQUIRE: 
+# BEFORE: 
+# PROVIDE: yum-main
+# KEYWORD: cos7
+
+set -e
+
+yum -y install fping mtr ndjbdns net-tools nmap rsync telnet lua
+yum -y install bc gnupg2 lsof rcs tmux vim-enhanced yum-utils git
+
+yum -y install gnuplot rrdtool units aspell
+
+yum -y groupinstall development 
+yum -y install ShellCheck
+# npm nodejs
+

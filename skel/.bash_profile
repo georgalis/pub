@@ -1,13 +1,11 @@
 # ~/.bash_profile
 
-# Unlimited use with this notice (c) George Georgalis <george@galis.org>
+# (c) 2006-2022 George Georgalis <george@galis.org> unlimited use with this notice 
 
-# Get the aliases and functions
-if [ -f ~/.bashrc ]; then
-        . ~/.bashrc
-fi
+# source any legacy rc
+test -e ~/.bashrc && . ~/.bashrc || true
 
-# User specific environment and startup programs
+# source root env
+test -e ~/.profile  && . ~/.profile
 
-[ -e "$HOME/.profile" ] && . "$HOME/.profile"
-
+# no further env setup here.

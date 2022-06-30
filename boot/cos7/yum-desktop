@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# REQUIRE: yum-epel
+# BEFORE: 
+# PROVIDE: yum-desktop
+# KEYWORD: cos7
+
+set -e
+
+yum -y groupinstall Xfce 
+yum -y install xrdp xterm firefox
+

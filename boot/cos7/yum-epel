@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# REQUIRE: 
+# BEFORE: 
+# PROVIDE: yum-epel
+# KEYWORD: cos7
+
+set -e
+
+yum install epel-release -y
+

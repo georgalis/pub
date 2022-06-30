@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# REQUIRE: 
+# BEFORE: 
+# PROVIDE: yum-min
+# KEYWORD: cos7
+
+set -e
+
+yum -y install fping mtr ndjbdns net-tools nmap rsync telnet lua
+yum -y install bc gnupg2 lsof rcs tmux vim-enhanced yum-utils git
+
