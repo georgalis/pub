@@ -299,9 +299,9 @@ esac # $SHELL
 
 [ -x "$(which vim 2>/dev/null)" -a "$EDITOR" = "vi" ] \
     && {
-        alias crontab="env EDITOR=$(which vi) crontab"
-        alias vi="$(which vim)"
-        export EDITOR='vim'
+        alias alias crontab='env EDITOR="\vi" crontab'
+       #alias vi="$(which vim)"
+       #export EDITOR='vim'
     }
 
 import_pubkey () { # take a putty exported ssh key and make an authorized_keys line
