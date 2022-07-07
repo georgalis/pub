@@ -587,25 +587,25 @@ formfilestats () { # accept dir(s) as args, report formfile time and pitch stats
             # start with block from formfile
             s/.*\.${ext}//
             s/.mp3$//
+            s/-(ckb|hrn|cps|par)/ cmp=\1/
+            s/-(bhz|chz)/ f=\1/
+            s/-rev/ rev=y/
             s/-ss/ ss=/
             s/-to/ to=/
-            s/-rev/ rev=y/
-            s/-v/ v=/
-            s/-ln//
-            s/-lra/ lra=/
-            s/-off/ off=/
-            s/-i/ i=/
             s/-t/ t=/
             s/-p/ p=/
-            s/-(bhz|chz)/ f=\1/
-            s/-(kbd|hrn|cps)/ cmp=\1/
             s/-f/ f=/
+            s/-F/ F=y/
             s/-cf/ cf=y/
             s/-c/ c=/
-            s/-F/ F=y/
+            s/-v/ v=/
+            s/-ln//
+            s/-off/ off=/
+            s/-tp/ tp=/
+            s/-lra/ lra=/
+            s/-i/ i=/
             # squash to tempo and pitch parameters
-            s/[ ](ss|to|cmp|F|v|c|rev)=[^ ]*//g
-          # s/[ ](ss|to|cmp|v|rev)=[^ ]*//g
+            s/[ ](cmp|rev|ss|to|F|cf|c|v|off|tp|lra|i)=[^ ]*//g
             /^$/d
             # fixup odd case
             s/^ p/ t=1 p/

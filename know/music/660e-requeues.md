@@ -1,7 +1,11 @@
+## this playlist is not even pre-release
+listing and metrics are converging to
+a volume two release, more etudes,
+more jazz and aesthetic tuning...
 
 
 
-When shifting keys, the tonal quality rotates around a circular spectrum of temperment
+When shifting keys, the tonal quality rotates around a circular spectrum of temperament
 
 <pre>
 <tt>
@@ -9,9 +13,9 @@ C  - clear - doh strong or firm
 Cs - broken
 D  - pendulum - ray rousing or hopeful
 Ef - unsettling, piercing
-E  - pierce, penitrating - me stedy or calm
+E  - pierce, penetrating - me steady or calm
 F  - regal, balanced - fah desolate or awe-inspiring
-Fs - trymphant
+Fs - triumphant
 G  - spiral - soh, grand or bright
 Af - subtle, grounding
 A  - listen - lah sad or weeping
@@ -39,13 +43,13 @@ B   ti   Purple, Red violet
 </pre>
 
 
-Particularly with 17 century music, somber or meloncholy works may have a tempo so slow
-that the melody becomes disconected, these peices have been accelerated to t=0.92 (total
+Particularly with 17 century music, somber or melancholy works may have a tempo so slow
+that the melody becomes disconnected, these pieces have been accelerated to t=0.92 (total
 time is 92% of original), or faster, to add coherence. When the melody or expression becomes
-familiar, listening at the originally inicated tempo becomes more intellegable, by today's
-standards. This genera of music uses the very slow cadence as a rhetorical devise, imerseing
+familiar, listening at the originally indicated tempo becomes more intelligible, by today's
+standards. This genera of music uses the very slow cadence as a rhetorical devise, immersing
 the listener into an unnaturally slow pace, with intention of submitting to the melody, akin
-to the imutable hand of God, as it where, moving slowly like the heavens, creating humility
+to the immutable hand of God, as it where, moving slowly like the heavens, creating humility
 in the listener. This may require carefull listening, deliberate submission, to see the big
 picture. Today we expect faster, matter of fact messaging, we don't emotionally submit to a
 very slow somber melodic tempo, and miss the message. These works are presented in a faster
@@ -54,22 +58,22 @@ tempo to facilitate their appreciation in today's standards.
 107,Stan_Getz-Youre_Blase-Cool_^jw0Cg7hCwOc.m4a-ss1035-to1289-t0.9574-p0.0078-c3-F-ln-cps1-v5db.mp3
 805,Dave_Brubeck-Georgia_On_My_Mind_^WVLKN-Zp13E.opus-to399.11-t0.920-p0.01-c5-F-ln-cps1-v5db.mp3
 
-Similarlly, 
+Similarly, 
 Rondo
 Caprice
 
 chords that make notes
 <pre>
-t=4 ss=3:53:26 to=3:53:29 f2rb2mp3 _^G7sDg8_26N8.opus lower_resonents
+t=4 ss=3:53:26 to=3:53:29 f2rb2mp3 _^G7sDg8_26N8.opus lower_resonances
 t=10 ss=3:54:27.25 to=3:54:28.4  _^G7sDg8_26N8.opus higher_harmonics
 t=20 ss=4:57:23 to=4:57:25.5 _^G7sDg8_26N8.opus sustain_induced_bass
-t=0.95 ss=5:12:25.5 to=5:12:47 _^G7sDg8_26N8.opus prephotious_pattern
+t=0.95 ss=5:12:25.5 to=5:12:47 _^G7sDg8_26N8.opus propitious_pattern
 </pre>
 
 While the original tempos expected a more    
    hypnotic effect
-; to convey . experience tonality convayence   
-   the sadness of tonality we recognise these works are more operated   
+; to convey . experience tonality conveyance   
+   the sadness of tonality we recognize these works are more operated   
    the time of , often the original tries to achieve we miss the the    
    tempo Somber                                                         
 
@@ -101,8 +105,8 @@ might be tricky to reverse engineer, but I'm happy to help if you want to try th
 This Youtube track has a broken mastering, sounds as if the mic engineer and the recording
 engineer and the mastering engineer all had a different plan for the mid/side mic setup.
 On the stereo album release, channel b is the side, with digital max noise and the channel a
-middle benifits from stereo separation. Invoking the tools below conevrts left mid right
-side mode to left right stereo. A noticable improvement, a digtal peak to zero (or +-1) to
+middle benefits from stereo separation. Invoking the tools below converts left mid right
+side mode to left right stereo. A noticeable improvement, a digital peak to zero (or +-1) to
 remove more simbalance. The new master as is listenable and sounds pretty good!
 
 <code code=bash>
