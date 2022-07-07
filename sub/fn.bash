@@ -155,7 +155,7 @@ _youtube_list () {
   [ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
   youtube-dl --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --yes-playlist \
    --audio-quality 0 --audio-format best --extract-audio --playlist-start 1 \
-   -o "$d/%(playlist_title)s-%(playlist_id)s/00%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+   -o "$d/%(playlist_title)s-%(playlist_id)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   } # _youtube_list 20220516
 
 _youtube_video_list () {
@@ -167,10 +167,10 @@ _youtube_video_list () {
   [ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
   youtube-dl --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --yes-playlist \
    --audio-quality 0 --audio-format best --playlist-start 1 \
-   -o "$d/%(playlist_title)s-%(playlist_id)s/00%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+   -o "$d/%(playlist_title)s-%(playlist_id)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --yes-playlist \
    --audio-quality 0 --audio-format best --extract-audio --playlist-start 1 \
-   -o "$d/%(playlist_title)s-%(playlist_id)s/00%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+   -o "$d/%(playlist_title)s-%(playlist_id)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   } # _youtube_video_list 20220516
 
 _youtube () {

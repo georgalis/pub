@@ -258,7 +258,7 @@ Darwin|NetBSD)
   | tr '\ ' '\n' \
   | tr '[:upper:]' '[:lower:]' \
   | sort -ru \
-  | while read w; do echo "${#w}\t${w}" ; done \
+  | while read w; do echo "${#w} ${w}" ; done \
   | sort -rn \
   | awk '{print $2}' \
   | tr '\n' '\ '

@@ -13,6 +13,6 @@ yum -y install bc gnupg2 lsof rcs tmux vim-enhanced yum-utils git
 yum -y install gnuplot rrdtool units aspell
 
 yum -y groupinstall development 
-yum -y install ShellCheck
+yum -y install ShellCheck colordiff
 # npm nodejs
 
