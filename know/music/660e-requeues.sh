@@ -61,30 +61,49 @@ find "$link/" -maxdepth 1 -type f -name \*mp3 \
     | sort >"${name}.list"
 
 chkwrn ${name}.list.html
-echo '<ol>' >${name}.list.html
+echo '<nobr><ol>' >${name}.list.html
 cat ${name}.list \
     | sed -e '
         s,_^\([^.]*\)\.,_^<a href=http://youtu.be/\1>\1</a>.,
         s,^,<li>,
         s,$,</li>,
         ' >>${name}.list.html
-echo '</ol>' >>${name}.list.html
+echo '</ol></nobr>' >>${name}.list.html
+
+# chkwrn ${name}.tab
+# sed -e 's/_^/ _^/
+#         s/,/ /
+#         ' <${name}.list \
+#     | sort -f -k2 | column -t | sed -e 's/  / /' -e 's/  / /' >${name}.tab
+
+revargs () {
+    local a out
+    out="$1" ; shift || true
+    while test $# -gt 0 ; do out="$1 $out" ; shift || true ; done
+    echo "$out"
+    }
 
 chkwrn ${name}.tab
-sed -e 's/_^/ _^/
-        s/,/ /
-        ' <${name}.list \
-    | sort -f -k2 | column -t | sed -e 's/  / /' -e 's/  / /' >${name}.tab
+cat ${name}.list | while IFS= read a ; do
+    b="$(formfile "$a")"
+    {   revargs $(sed 's/.*f2rb2mp3//'  <<<"$b")
+        sed "s/f2rb2mp3 '.*//" <<<"$b"
+    } | tr '\n' ' '
+    echo
+    done \
+    | sed -e 's/,/%/' -e "s/ '_^/%_^/" -e "s/' /%/" \
+    | awk -F% '{printf "%5s %-79s %-19s %s\n",$1,$2,$3,$4}' \
+    | sort -f -k2 >${name}.tab
 
 chkwrn ${name}.tab.html
-echo '<ol>' >${name}.tab.html
-cat ${name}.tab \
-    | sed -e '
-        s,_^\([^.]*\)\.,_^<a href=http://youtu.be/\1>\1</a>.,
-        s,^,<li>,
-        s,$,</li>,
-        ' >>${name}.tab.html
-echo '</ol>' >>${name}.tab.html
+echo '<nobr><ol>' >${name}.tab.html
+cat ${name}.tab | sed '
+    s,^,<li>,
+    s,_^\([^.]*\)\.,<a href=http://youtu.be/\1>\1</a>.,
+    s,$,</li>,
+    ' >>${name}.tab.html
+echo '</ol></nobr>' >>${name}.tab.html
+exit
 
 chkwrn ${name}.stat.time
 formfilestats $link >${name}.stat.time
