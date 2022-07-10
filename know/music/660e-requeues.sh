@@ -1,25 +1,46 @@
 #!/usr/bin/env bash
 
-# common functions for shell verbose management....
-devnul () { return 0 ;}                                                     #:> drop args
-stderr () {  [ "$*" ] && echo "$*" 1>&2 || true ;}                          #:> args to stderr, or noop if null
-chkstd () {  [ "$*" ] && echo "$*"      || true ;}                          #:> args to stdout, or noop if null
-chkwrn () {  [ "$*" ] && { stderr    "^^ $* ^^"   ; return $? ;} || true ;} #:> wrn stderr args return 0, noop if null
-logwrn () {  [ "$*" ] && { logger -s "^^ $* ^^"   ; return $? ;} || true ;} #:> wrn stderr+log args return 0, noop if null
-chkerr () {  [ "$*" ] && { stderr    ">>> $* <<<" ; return 1  ;} || true ;} #:> err stderr args return 1, noop if null
-logerr () {  [ "$*" ] && { logger -s ">>> $* <<<" ; return 1  ;} || true ;} #:> err stderr+log args return 1, noop if null
-chkexit () { [ "$*" ] && { stderr    ">>> $* <<<" ; exit 1    ;} || true ;} #:> err stderr args exit 1, noop if null
-logexit () { [ "$*" ] && { logger -s ">>> $* <<<" ; exit 1    ;} || true ;} #:> err stderr+log args exit 1, noop if null
-siff () { local verb="${verb:-chkwrn}" ; test -e "$1" \
-        && { { . "${1}" && ${verb} "<> ${2}: . ${1} <>" ;} || { chkerr "siff: fail in '$1' from '$2'" ; return 1 ;} ;} \
-        || ${verb} "${2}: siff: no file $1" ;} #:> source arg1 if exists, on err recall args for backtrace
-# verbosity, typically set to devnul, chkwrn, or chkerr
-#verb="${verb:=devnul}"
-#verb2="${verb2:=devnul}"
-#verb3="${verb3:=devnul}"
+set -e 
+
+dep_help_skel () { echo '# ><> eval "$(curl https://github.com/georgalis/pub/blob/master/skel/.profile)" <><'
+    echo "export -f devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue chkexit logexit siff siffx" ;}
+dep_help_sub () { echo '# ><> eval "$(https://github.com/georgalis/pub/blob/master/sub/fn.bash)" <><'
+    echo "export -f ckstatsum ckstat revargs formfile formfilestats validfn" ;}
+
+test "$(declare -f chkexit 2>/dev/null)" || { echo "$0 : chkexit not defined" 1>&2 ; dep_help_skel ; exit ;}
+test "$(declare -f validfn 2>/dev/null)" || { echo "$0 : validfn not defined" 1>&2 ; dep_help_sub ; exit ;}
+while IFS= read a ; do
+    ${verb2:-chkwrn} "validfn $a"
+    validfn $a && true || { chkerr "$0 : validfn error : $a" ; dep_help_skel ; exit 1 ;}
+    done <<EOF
+devnul 216e1370 0000001d
+stderr 7ccc5704 00000037
+chkstd ee4aa465 00000032
+chkwrn 18c46093 0000005e
+logwrn e5806086 00000061
+chkerr 57d3ff82 0000005f
+logerr ffddd972 00000062
+chktrue 845489dd 00000064
+chkexit 8b52b10f 0000005e
+logexit e0f87299 00000061
+siff f376bdf0 0000010e
+siffx 6596996d 00000294
+EOF
+
+while IFS= read a ; do
+    ${verb2:-chkwrn} "validfn $a"
+    validfn $a && true || { chkerr "$0 : validfn error : $a" ; dep_help_sub ; exit 1 ;}
+    done <<EOF
+ckstat ea8f5074 00000379
+ckstatsum 94662c65 000003e1
+formfile ee69327f 00000a38
+formfilestats fdf4e379 00000498
+revargs 5db3f9bb 000000a7
+validfn a25e6c28 00000445
+EOF
 
 ps | grep -E "^[ ]*$$" | grep -q bash   || chkexit "$0 : Not bash" 
-test -d "$link/"                        || chkexit "$0 : not a directory link='$link'"
+test -d "$link"                         || chkexit "$0 : not a directory link='$link'"
 
 f="$0"
 infile="${f##*/}"                                              # infile  == basename f
@@ -29,36 +50,12 @@ name="$(sed 's/.[^.]*$//' <<<"$infile")" # infile less any dotted extension
 
 cd "$inpath"
 
-ckstatsum () { # return sortable stat data for args (OR stdin file list)
-  # ckstatsum /etc/resolv.conf
-  # 0127e92c7 39bd42d3       16 62798808    resolv.conf     /etc/resolv.conf
-  # links\inode 0x_cksum 0x_size 0x_date    basename        input
-  # (c) 2017-2022 George Georgalis <george@galis.org> unlimited use with this notice
-  local f fs;
-  [ "$1" ] && fs="$1" || fs="$(cat)";
-  shift || true;
-  [ "$1" ] && $FUNCNAME $@;
-  [ "$fs" = "-h" -o "$fs" = "--help" ] && {
-    chkwrn "Return sortable stat data for args (OR stdin file list):";
-    chkwrn "links\inode 0x_cksum 0x_size 0x_mdate basename input"
-    } || { OS="$(uname)"
-      [ "$OS" = "Linux" ]                      && _stat () { stat -c %h\ %i\ %s\ %Y "$1" ;} || true
-      [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat () { stat -f %l\ %i\ %z\ %m "$1" ;} || true
-      echo "$fs" | while IFS= read f; do
-        [ -f "$f" ] && {
-          { _stat "$f" ; cksum <"$f"
-              } | tr '\n' ' ' | awk '{printf "%02x%07x %8x % 8x %08x",$1,$2,$5,$3,$4}'
-        # printf "\t%s\t%s\n" "${f##*/}" "$f" # tabs with basename and filepath input
-          echo " ${f##*/}"
-          } || chkerr "$FUNCNAME : not a regular file : $f";
-        done
-      }
-  } # ckstatsum ()
-
 chkwrn "${name}.list"
 find "$link/" -maxdepth 1 -type f -name \*mp3 \
     | sed -e "s=${link}[/]*==" -e '/^0/d' \
-    | sort >"${name}.list"
+    | sort \
+    >"${name}.list"
+  # | head -n40 >"${name}.list"
 
 chkwrn ${name}.list.html
 echo '<nobr><ol>' >${name}.list.html
@@ -75,13 +72,6 @@ echo '</ol></nobr>' >>${name}.list.html
 #         s/,/ /
 #         ' <${name}.list \
 #     | sort -f -k2 | column -t | sed -e 's/  / /' -e 's/  / /' >${name}.tab
-
-revargs () {
-    local a out
-    out="$1" ; shift || true
-    while test $# -gt 0 ; do out="$1 $out" ; shift || true ; done
-    echo "$out"
-    }
 
 chkwrn ${name}.tab
 cat ${name}.list | while IFS= read a ; do
@@ -103,17 +93,19 @@ cat ${name}.tab | sed '
     s,$,</li>,
     ' >>${name}.tab.html
 echo '</ol></nobr>' >>${name}.tab.html
-exit
 
 chkwrn ${name}.stat.time
 formfilestats $link >${name}.stat.time
 chkwrn ${name}.stat.pitch
 sort -n -t '=' -k 3 ${name}.stat.time >${name}.stat.pitch
 
-exit 0
-
 chkwrn ${name}.sum
-ls $link/*mp3 | sed -e '/\/0/d' | while read a ; do ckstatsum $a ; done >${name}.sum
+ls $link/*mp3 | sed -e '/\/0/d' \
+    | while read a ;do 
+        ckstat    $a | awk -v f="${a##*/}" '{printf "%9s %s % 8s %s %s\n",$1,$2,$3,$4,f}'
+        done >${name}.sum
+      # don't calculate all the cksums, prior to final
+      # ckstatsum $a | awk -V f="${a##*/}" '{printf "%9s %s % 8s %s %s\n",$1,$2,$3,$4,f}'
 
 chkwrn ${name}.sum.html
 echo '<pre><ol>' >${name}.sum.html
@@ -124,3 +116,5 @@ cat ${name}.sum \
         s,$,</li>,
         ' >>${name}.sum.html
 echo '</ol></pre>' >>${name}.sum.html
+
+exit 0

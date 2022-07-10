@@ -55,9 +55,15 @@ validfn () { #:> hash comparison to validate shell functions
 # EOF
 #
 # run validfn to check the operational env vs the generated hashes
+dep_help () {
+    echo '# ><> eval "$(curl https://github.com/georgalis/pub/blob/master/skel/.profile)" <><'
+    echo "export -f devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue chkexit logexit siff siffx"
+    }
+test "$(declare -f chkexit 2>/dev/null)" || { echo "$0 : chkexit not defined" 1>&2 ; dep_help ; exit ;}
+test "$(declare -f validfn 2>/dev/null)" || { echo "$0 : validfn not defined" 1>&2 ; dep_help ; exit ;}
 while IFS= read a ; do
         ${verb2:-chkwrn} "validfn $a"
-        validfn $a && true || { echo "validfn error : $a" 1>&2 ; return 1 ;}
+        validfn $a && true || { echo "validfn error : $a" 1>&2 ; dep_help ; return 1 ;}
         done <<EOF
 devnul 216e1370 0000001d
 stderr 7ccc5704 00000037
@@ -127,6 +133,15 @@ agstlt () { lt $(agst ~ | awk '{print $2}' | while IFS= read a ; do find "$a" -t
 # t="$( { date '+%Y%m%d_%H%M%S_' && uuidgen ;} | sed -e 's/.*-//' | tr -d ' \n' | tr '[:upper:]' '[:lower:]' )" # time based uniq id
 # find -E /mnt \( -regex '/mnt(/local|/%|/bak)' -prune \) -o -type d
 # find -E /mnt \( -regex '/mnt(/local|/%|/bak)' -prune -type f \) -o -type f
+
+
+revargs () {
+    local a out
+    out="$1" ; shift || true
+    while test $# -gt 0 ; do out="$1 $out" ; shift || true ; done
+    echo "$out"
+    }
+
 
 catfold () { #:> on terminal output, fold long lines on words
     [ -t 1 ] && {
@@ -913,7 +928,9 @@ mp3range () { # mp3 listing limiter
     echo "$dirs" | sed '/^$/d' | while IFS= read a; do
         ( [ -d "$a" ] && {
             cd "$a"
-            ls *.mp3 | awk ${start},${stop} | sed "s=^=$PWD/="
+          # add conditional if dirs -gt 1 print PWD with file, eventually sort on file not filepath
+          # ls *.mp3 | awk ${start},${stop} | sed "s=^=$PWD/="
+            ls *.mp3 | awk ${start},${stop}
             } || chkwrn "not a dir with mp3 files : '$a'" ) # subshell to preserve $OLDPWD after cd
         done
     } # mp3range 20220516

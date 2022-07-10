@@ -299,7 +299,7 @@ esac # $SHELL
 
 [ -x "$(which vim 2>/dev/null)" -a "$EDITOR" = "vi" ] \
     && {
-        alias alias crontab='env EDITOR="\vi" crontab'
+        alias crontab='env EDITOR="\vi" crontab'
        #alias vi="$(which vim)"
        #export EDITOR='vim'
     }
