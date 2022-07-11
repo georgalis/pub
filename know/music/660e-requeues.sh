@@ -2,13 +2,13 @@
 
 set -e 
 
-dep_help_skel () { echo '# ><> eval "$(curl https://github.com/georgalis/pub/blob/master/skel/.profile)" <><'
-    echo "export -f devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue chkexit logexit siff siffx" ;}
-dep_help_sub () { echo '# ><> eval "$(https://github.com/georgalis/pub/blob/master/sub/fn.bash)" <><'
-    echo "export -f ckstatsum ckstat revargs formfile formfilestats validfn" ;}
+dep_help_skel () { echo '# ><> eval "$(curl -fsSL https://github.com/georgalis/pub/blob/master/skel/.profile)" <><' 1>&2
+    echo 'export -f devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue chkexit logexit siff siffx' 1>&2 ;}
+dep_help_sub () { echo '# ><> eval "$(curl -fsSL https://github.com/georgalis/pub/blob/master/sub/fn.bash)" <><' 1>&2
+    echo 'export -f ckstatsum ckstat revargs formfile formfilestats validfn' 1>&2 ;}
 
-test "$(declare -f chkexit 2>/dev/null)" || { echo "$0 : chkexit not defined" 1>&2 ; dep_help_skel ; exit ;}
-test "$(declare -f validfn 2>/dev/null)" || { echo "$0 : validfn not defined" 1>&2 ; dep_help_sub ; exit ;}
+test "$(declare -f chkexit 2>/dev/null)" || { echo "$0 : chkexit not defined" 1>&2 ; dep_help_skel ; exit 1 ;}
+test "$(declare -f validfn 2>/dev/null)" || { echo "$0 : validfn not defined" 1>&2 ; dep_help_sub ; exit 1 ;}
 while IFS= read a ; do
     ${verb2:-chkwrn} "validfn $a"
     validfn $a && true || { chkerr "$0 : validfn error : $a" ; dep_help_skel ; exit 1 ;}
@@ -50,14 +50,14 @@ name="$(sed 's/.[^.]*$//' <<<"$infile")" # infile less any dotted extension
 
 cd "$inpath"
 
-chkwrn "${name}.list"
+chktrue "${name}.list"
 find "$link/" -maxdepth 1 -type f -name \*mp3 \
     | sed -e "s=${link}[/]*==" -e '/^0/d' \
     | sort \
     >"${name}.list"
   # | head -n40 >"${name}.list"
 
-chkwrn ${name}.list.html
+chktrue ${name}.list.html
 echo '<nobr><ol>' >${name}.list.html
 cat ${name}.list \
     | sed -e '
@@ -67,13 +67,7 @@ cat ${name}.list \
         ' >>${name}.list.html
 echo '</ol></nobr>' >>${name}.list.html
 
-# chkwrn ${name}.tab
-# sed -e 's/_^/ _^/
-#         s/,/ /
-#         ' <${name}.list \
-#     | sort -f -k2 | column -t | sed -e 's/  / /' -e 's/  / /' >${name}.tab
-
-chkwrn ${name}.tab
+chktrue ${name}.tab
 cat ${name}.list | while IFS= read a ; do
     b="$(formfile "$a")"
     {   revargs $(sed 's/.*f2rb2mp3//'  <<<"$b")
@@ -85,7 +79,7 @@ cat ${name}.list | while IFS= read a ; do
     | awk -F% '{printf "%5s %-79s %-19s %s\n",$1,$2,$3,$4}' \
     | sort -f -k2 >${name}.tab
 
-chkwrn ${name}.tab.html
+chktrue ${name}.tab.html
 echo '<nobr><ol>' >${name}.tab.html
 cat ${name}.tab | sed '
     s,^,<li>,
@@ -94,12 +88,12 @@ cat ${name}.tab | sed '
     ' >>${name}.tab.html
 echo '</ol></nobr>' >>${name}.tab.html
 
-chkwrn ${name}.stat.time
+chktrue ${name}.stat.time
 formfilestats $link >${name}.stat.time
-chkwrn ${name}.stat.pitch
+chktrue ${name}.stat.pitch
 sort -n -t '=' -k 3 ${name}.stat.time >${name}.stat.pitch
 
-chkwrn ${name}.sum
+chktrue ${name}.sum
 ls $link/*mp3 | sed -e '/\/0/d' \
     | while read a ;do 
         ckstat    $a | awk -v f="${a##*/}" '{printf "%9s %s % 8s %s %s\n",$1,$2,$3,$4,f}'
@@ -107,7 +101,9 @@ ls $link/*mp3 | sed -e '/\/0/d' \
       # don't calculate all the cksums, prior to final
       # ckstatsum $a | awk -V f="${a##*/}" '{printf "%9s %s % 8s %s %s\n",$1,$2,$3,$4,f}'
 
-chkwrn ${name}.sum.html
+exit 0
+
+chktrue ${name}.sum.html
 echo '<pre><ol>' >${name}.sum.html
 cat ${name}.sum \
     | sed -e '
@@ -117,4 +113,3 @@ cat ${name}.sum \
         ' >>${name}.sum.html
 echo '</ol></pre>' >>${name}.sum.html
 
-exit 0
