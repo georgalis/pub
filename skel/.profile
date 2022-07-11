@@ -134,6 +134,64 @@ siffx () { local verb="${verb:-chktrue}" ; test -e "$1" \
 #verb2="${verb2:=devnul}"
 #verb3="${verb3:=devnul}"
 
+validfn () { #:> validate function, compare unit hash vs operation env hash
+    [ "$1" ] || {
+      cat 1>&2 <<-'EOF'
+		#:: $FUNCNAME {function}        ; returns {function-name} {hash}
+		#:: $FUNCNAME {function} {hash} ; return no error, if hash match
+		#:: the former is intended to provide data for the latter
+		#:: env hashfn= to set the hashing function, "%08x %8x %s\n" cksum program
+		EOF
+      return 1 ;}
+    ps | grep "^[ ]*$$ " | grep -q bash 2>/dev/null || { echo ">>> $0 : Not bash shell (62af847c) <<<" >&2 ; return 1 ;}
+    local _hashfn
+    [ "$hashfn" ] || { _hashfn () { declare -f "$1" | printf "%s %08x %08x\n" "$1" $(cksum) ;} && _hashfn="_hashfn" ;}
+    [ "$_hashfn" ] || _hashfn="$hashfn" # for bugs... use stronger hash for nefarious env
+    local fn="$(sed '/^[ ]*#/d' <<<"$1")"
+    [ "$fn" ] || return 0 # drop comments
+    shift || true
+    local sum="$fn $*"
+    local check="$( "$_hashfn" "$fn" )"
+    [ "$*" ] || { echo "$check" ; return 0 ;} # provide hash data if none given to check
+    [ "$sum" = "$check" ] || { # report hash data discrepancies on failed check
+    cat 1>&2 <<-EOF
+		>>>---
+		$FUNCNAME error :
+		 unit:'$sum'
+		  env:'$check'
+		<<<---
+		EOF
+    return 1 ;}
+    } # validfn
+#
+# Now that validfn is defined, run the framework on expected functions...
+#
+# eg first, generate hashses of known functions...
+#   for f in devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue chkexit logexit siff siffx validfn ; do validfn $f ; done
+#
+# then run validfn on that data to report if the functions have ever change
+# print help if hash unit does not match hash from env
+dep_help_skel () { echo '# ><> eval "$(curl -fsSL https://github.com/georgalis/pub/blob/master/skel/.profile)" <><' 1>&2
+    echo 'export -f devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue chkexit logexit siff siffx validfn' 1>&2 ;}
+test "$(declare -f validfn 2>/dev/null)" || { echo "$0 : validfn not defined" 1>&2 ; dep_help_sub ; return 1 ;}
+while IFS= read a ; do
+        validfn $a && true || { echo "validfn error : $a" 1>&2 ; dep_help ; return 1 ;}
+        done <<EOF
+devnul 216e1370 0000001d
+stderr 7ccc5704 00000037
+chkstd ee4aa465 00000032
+chkwrn 18c46093 0000005e
+logwrn e5806086 00000061
+chkerr 57d3ff82 0000005f
+logerr ffddd972 00000062
+chktrue 845489dd 00000064
+chkexit 8b52b10f 0000005e
+logexit e0f87299 00000061
+siff f376bdf0 0000010e
+siffx 6596996d 00000294
+validfn a25e6c28 00000445
+EOF
+
 path_append () { # append $1 if not already in path
  echo $PATH | grep -E "(:$1$|^$1$|^$1:|:$1:)" 2>&1 >/dev/null \
   || export PATH="${PATH}:${1}" ;}

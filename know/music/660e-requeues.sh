@@ -3,15 +3,13 @@
 set -e 
 
 dep_help_skel () { echo '# ><> eval "$(curl -fsSL https://github.com/georgalis/pub/blob/master/skel/.profile)" <><' 1>&2
-    echo 'export -f devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue chkexit logexit siff siffx' 1>&2 ;}
+    echo 'export -f devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue chkexit logexit siff siffx validfn' 1>&2 ;}
 dep_help_sub () { echo '# ><> eval "$(curl -fsSL https://github.com/georgalis/pub/blob/master/sub/fn.bash)" <><' 1>&2
-    echo 'export -f ckstatsum ckstat revargs formfile formfilestats validfn' 1>&2 ;}
+    echo 'export -f ckstatsum ckstat revargs formfile formfilestats' 1>&2 ;}
 
-test "$(declare -f chkexit 2>/dev/null)" || { echo "$0 : chkexit not defined" 1>&2 ; dep_help_skel ; exit 1 ;}
-test "$(declare -f validfn 2>/dev/null)" || { echo "$0 : validfn not defined" 1>&2 ; dep_help_sub ; exit 1 ;}
+test "$(declare -f validfn 2>/dev/null)" || { echo "$0 : validfn not defined" 1>&2 ; dep_help_skel ; exit 1 ;}
 while IFS= read a ; do
-    ${verb2:-chkwrn} "validfn $a"
-    validfn $a && true || { chkerr "$0 : validfn error : $a" ; dep_help_skel ; exit 1 ;}
+    validfn $a && true || { echo "$0 : validfn error : $a" 1>&2 ; dep_help_skel ; exit 1 ;}
     done <<EOF
 devnul 216e1370 0000001d
 stderr 7ccc5704 00000037
@@ -25,18 +23,17 @@ chkexit 8b52b10f 0000005e
 logexit e0f87299 00000061
 siff f376bdf0 0000010e
 siffx 6596996d 00000294
+validfn a25e6c28 00000445
 EOF
 
 while IFS= read a ; do
-    ${verb2:-chkwrn} "validfn $a"
-    validfn $a && true || { chkerr "$0 : validfn error : $a" ; dep_help_sub ; exit 1 ;}
+    validfn $a && true || { echo "$0 : validfn error : $a" 1>&2 ; dep_help_sub ; exit 1 ;}
     done <<EOF
 ckstat ea8f5074 00000379
 ckstatsum 94662c65 000003e1
 formfile ee69327f 00000a38
 formfilestats fdf4e379 00000498
 revargs 5db3f9bb 000000a7
-validfn a25e6c28 00000445
 EOF
 
 ps | grep -E "^[ ]*$$" | grep -q bash   || chkexit "$0 : Not bash" 
