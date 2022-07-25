@@ -31,7 +31,7 @@ while IFS= read a ; do
     done <<EOF
 ckstat ea8f5074 00000379
 ckstatsum 94662c65 000003e1
-formfile ee69327f 00000a38
+formfile 63bac740 00000e64
 formfilestats fdf4e379 00000498
 revargs 5db3f9bb 000000a7
 EOF
