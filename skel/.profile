@@ -124,6 +124,13 @@ siff () { local verb="${verb:-chktrue}" ; test -e "$1" \
         || ${verb} "${2}: siff: no file $1" ;} #:> source arg1 if exists, on err recall args for backtrace
 siffx () { local verb="${verb:-chktrue}" ; test -e "$1" \
         && { { . "${1}" \
+          && { export -f $(grep '^[_[:alpha:]][_[:alnum:]]* () ' "$1" | sed 's/ () .*//' ) >/dev/null && $verb "func export : $1" ;} \
+          && { export    $(grep '^[_[:alpha:]][_[:alnum:]]*='    "$1" | sed 's/=.*//'    ) >/dev/null && $verb " var export : $1" ;} \
+          && devnul "${2}: . ${1} ; var func exports"
+          } || { chkerr "${FUNCNAME} : fail in '$1' from '$2'" ; return 1 ;} ;} \
+        || chkwrn "${2}: ${FUNCNAME} : no file $1 from '$2'" ;} #:> source arg1 if exists , on err recall args for backtrace
+siffx () { local verb="${verb:-chktrue}" ; test -e "$1" \
+        && { { . "${1}" \
           && { export -f $(grep '^[_[:alpha:]][_[:alnum:]]* () ' "$1" | sed 's/ () .*//' ) >/dev/null && devnul "  function export '^[^ ]* () '" ;} \
           && { export    $(grep '^[_[:alpha:]][_[:alnum:]]*='    "$1" | sed 's/=.*//'    ) >/dev/null && devnul "       var export '^[:alpha:][_[:alnum:]]*='" ;} \
           && ${verb} "${2}: . ${1} ; var func exports"
@@ -163,7 +170,7 @@ validfn () { #:> validate function, compare unit hash vs operation env hash
 		EOF
     return 1 ;}
     } # validfn
-#
+
 # Now that validfn is defined, run the framework on expected functions...
 #
 # eg first, generate hashses of known functions...
@@ -175,7 +182,7 @@ dep_help_skel () { echo '# ><> eval "$(curl -fsSL https://github.com/georgalis/p
     echo 'export -f devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue chkexit logexit siff siffx validfn' 1>&2 ;}
 test "$(declare -f validfn 2>/dev/null)" || { echo "$0 : validfn not defined" 1>&2 ; dep_help_sub ; return 1 ;}
 while IFS= read a ; do
-        validfn $a && true || { echo "validfn error : $a" 1>&2 ; dep_help ; return 1 ;}
+        validfn $a && true || { echo "validfn error : $a" 1>&2 ; dep_help_skel ; return 1 ;}
         done <<EOF
 devnul 216e1370 0000001d
 stderr 7ccc5704 00000037
@@ -309,21 +316,6 @@ unlock () { # remove lock and touch null file
  local NULL="$HOME/var/run/${name}.null"
  rm "$LOCK" ; touch "$NULL" ;}
 
-case "$OS" in
-Darwin|NetBSD)
- kwds () { # convert stdin to unique words sorted on legnth then alpha to stdout, linux untested
-  tr -c '[:alpha:]' ' ' \
-  | tr '\ ' '\n' \
-  | tr '[:upper:]' '[:lower:]' \
-  | sort -ru \
-  | while read w; do echo "${#w} ${w}" ; done \
-  | sort -rn \
-  | awk '{print $2}' \
-  | tr '\n' '\ '
-  echo
- } # kwds
-esac
-
 uptime
 
 # per $SHELL env
@@ -408,5 +400,5 @@ printf "${_ntermrev}"
 #	&& { printf "Logout: " && kill $2 && echo $(hostname) $0 [$4] killed ssh-agent $2 \
 #		|| { echo $(hostname) ssh-agent already died? 2>/dev/stderr ; exit 1 ;} ;}
 
-siff "$HOME/.profile.local" "~/.profile      "
+siff "$HOME/.profile.local" "~/.profile"
 

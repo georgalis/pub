@@ -74,6 +74,20 @@ revargs () {
     echo "$out"
     }
 
+kwds () { # convert stdin to unique words (at least arg1 chars) sorted on legnth, to stdout
+  local c="$1"
+  [ "$c" ] || c=1
+  [ "$c" -ge 0 ] || c=0
+  tr -c '[:alpha:]' ' ' \
+  | tr '\ ' '\n' \
+  | tr '[:upper:]' '[:lower:]' \
+  | sort -ru \
+  | while read w; do [ "${#w}" -ge "$c" ] && echo "${#w} ${w}" ; done \
+  | sort -rn \
+  | awk '{print $2}' \
+  | tr '\n' '\ '
+  echo
+ } # kwds
 
 catfold () { #:> on terminal output, fold long lines on words
     [ -t 1 ] && {
@@ -100,7 +114,8 @@ _youtube_list () {
   [ "$d" ]  || read -p "directory : " d
   [ -d "$d" ] || d="$(pwd -P)"
   [ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
-  youtube-dl --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --yes-playlist \
+  [ "$ytdl" ] || ytdl="youtube-dl"
+  "$ytdl" --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --yes-playlist \
    --audio-quality 0 --audio-format best --extract-audio --playlist-start 1 \
    -o "$d/%(playlist_title)s-%(playlist_id)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   } # _youtube_list 20220516
@@ -128,7 +143,8 @@ _youtube () {
   [ -d "$d" ] || d="$(pwd -P)"
   [ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
   #[ "$ua" ] && uac="--user-agent '$ua'" || uac=''
-  youtube-dl --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --no-playlist \
+  [ "$ytdl" ] || ytdl="youtube-dl"
+  $ytdl --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --no-playlist \
    --audio-quality 0 --audio-format best --extract-audio \
    -o "$d/00,%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   } # _youtube 20220516
@@ -213,6 +229,8 @@ chkerr 57d3ff82 0000005f
 hms2sec e7a0bc8b 000001d6
 prependf ac39e52a 000001b2
 EOF
+  which rubberband-r3 >/dev/null 2>&1 && [ "$c" = "r3" ] && [ -z "$rb" ] && { rb=rubberband-r3 ;}
+  which rubberband-r3 >/dev/null 2>&1 && [ -z "$c" ] && [ -z "$rb" ] && { rb=rubberband-r3 c=r3 ;}
   [ -x "$(which "$rb")"  ] || { chkerr "$FUNCNAME : env rb not set to rubberband executable" ; return 1 ;}
   [ -x "$(which ffmpeg)" ] || { chkerr "$FUNCNAME : ffmpeg not in path" ; return 1 ;}
   [ -x "$(which sox)"    ] || { chkerr "$FUNCNAME : sox not in path" ; return 1 ;}
@@ -242,7 +260,7 @@ EOF
     #          --detector-soft  Use soft transient detector
     #          --centre-focus   Preserve focus of centre material in stereo
     #                           (at a cost in width and individual channel quality)
-    echo "# crisp:  0=mushy 1=piano 2=smooth 3=MULTITIMBRAL 4=two-sources 5=standard 6=percussive "
+#   echo "# crisp:  0=mushy 1=piano 2=smooth 3=MULTITIMBRAL 4=two-sources 5=standard 6=percussive "
     echo "# Formant y/''  CenterFocus y/'' vol 0db/'' frequency (bhz|chz|N)/'' reverse y/''"
     echo "# cmp= $(declare -f $FUNCNAME | sed -e '/compand/!d' -e '/sed/d' -e 's/=.*//' -e 's/local//' | tr -s ' \n' '|')"
     declare -f $FUNCNAME | sed -e '/compand/!d' -e '/sed/d' | while IFS= read a ; do ${verb2} "$a" ; done
@@ -270,14 +288,14 @@ EOF
   [ "$f" = "bhz" ] && { fhzc="-f 0.98181818181818" ; fhzn="-bhz" ;} || true # baroque 432 hz tuning, from classical 440
   [ "$f" = "chz" ] && { fhzc="-f 1.01851851851851" ; fhzn="-chz" ;} || true # classical 440 hz tuning, from baroque 432
   local cmpn='' cmpc=''
-  local ckb0="compand 0.2,0.9  -70,-70,-60,-55,-50,-45,-35,-35,-20,-25,0,-12 6 -70 0.2"
-  local ckb2="compand 0.2,0.9  -70,-99,-50,-60,-50,-45,-30,-30,-20,-25,0,-13 6 -70 0.2"
-  local ckb3="compand 0.2,0.8  -60,-99,-50,-56,-38,-32,-23,-18,0,-4         -2 -60 0.2"
-  local hrn3="compand 0.08,0.3 -74,-80,-50,-46,-18,-18,-0,-6                -1 -68 0"
-  local cps1="compand 0.07,0.25 -70,-84,-50,-45,-32,-33,-0,-21               3 -71 0.07"
-  local par2="compand 0.09,0.25 -100,-116,-88,-97,-80,-80,-63,-72,-54,-60,-23,-48,0,-36   24 -95 0.08"
-  local parc="compand 0.09,0.25 -97,-106,-85,-89,-73,-73,-57,-61,-40,-49,-21,-37,0,-25    12 -95 0.08"
-  [ "$cmp" = "hrn" -o "$cmp" = "hrn1"] && cmpn="hrn3" cmpc="$hrn3"
+  local ckb0="compand 0.2,0.9  -70,-70,-60,-55,-50,-45,-35,-35,-20,-25,0,-12 6 -70 0.2" # piano analog master
+  local ckb2="compand 0.2,0.9  -70,-99,-50,-60,-50,-45,-30,-30,-20,-25,0,-13 6 -70 0.2" # piano digital master
+  local ckb3="compand 0.2,0.8  -60,-99,-50,-56,-38,-32,-23,-18,0,-4         -2 -60 0.2" # piano old analog master
+  local hrn3="compand 0.08,0.3 -74,-80,-50,-46,-18,-18,-0,-6                -1 -68 0"   # peaky horn
+  local cps1="compand 0.07,0.25 -70,-84,-50,-45,-32,-33,-0,-21               3 -71 0.07" # high compress
+  local parc="compand 0.09,0.25 -97,-106,-85,-89,-73,-73,-57,-61,-40,-49,-21,-37,0,-25    12 -95 0.08" # parabolic standard
+  local par2="compand 0.09,0.25 -100,-116,-88,-97,-80,-80,-63,-72,-54,-60,-23,-48,0,-36   24 -95 0.08" # paraboloc extra
+  [ "$cmp" = "hrn" -o "$cmp" = "hrn1" ] && cmpn="hrn3" cmpc="$hrn3"
   [ "$cmp" = "cps" ]  && cmpn="cps1" cmpc="$cps1"
   [ "$cmp" = "ckb" ]  && cmpn="$cmp" cmpc="$ckb0"
   [ "$cmp" = "ckb2" ] && cmpn="$cmp" cmpc="$ckb2"
@@ -361,8 +379,10 @@ EOF
   local Fc='' Fn=''
   local cfc='' cfn=''
   local cc='' cn=''
-  [ "$c" ] && { expr "$c" : '^[0123456]$' >/dev/null || { chkerr "$FUNCNAME parm invalid : c=$c" ; return 1 ;} ;}
-  [ "$c" ] && cc="--crisp $c" cn="-c${c}" || true
+  # as per the evolution of rubberband features...
+  [ "$c" = "r3" ] && cc='-finer' cn='-r3'
+  [ "$c" -a -z "$cc" ] && { expr "$c" : '^[0123456]$' >/dev/null || { chkerr "$FUNCNAME parm invalid : c=$c" ; return 1 ;} ;}
+  [ "$c" -a -z "$cc" ] && { cc="--crisp $c" cn="-c${c}" ;} || true
   expr "$t" : '^-' >/dev/null && { chkerr "$FUNCNAME parm invalid : t=$t" ; return 1 ;} || true
   expr "$p" : '^-[[:digit:]]*$' >/dev/null && p="${p}.0" || true # fixup negative intergers, least test fail... -bash: [: -3: unary operator expected
   expr "$f" : '^-[[:digit:]]*$' >/dev/null && f="${f}.0" || true # fixup negative intergers, least test fail
@@ -445,7 +465,9 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
 # ln /Users/geo/dot4/5/a/8/d/b/^/5f8b-muser/001-Leclair_Op9-2_Flute_Sonata-E-Min^fJwnsyEtkK0.opus-t0.87-p1-c3-F-ss4795-to5790-v1db.mp3 /Users/geo/dot4/5/a/8/d/b/57a_1d24af8c_/_master
 # verb=chkwrn t=0.87 p=1 c=3 F=y ss=4795 to=5790 v=1db f2rb2mp3 /Users/geo/dot4/5/a/8/d/b/57a_1d24af8c_/_master/Jean-Marie_Leclair_Complete_Flute_Sonatas_^fJwnsyEtkK0.opus 001
 #
-    local a f fs;
+    local a f fs args sortargs parm;
+        local path ; expr "$a" : ".*/" >/dev/null && path="${a%/*}" || path="." # dirname $a
+        local files="$(find $(find "$path" . .. -name \@) -maxdepth 1 -type f -name \*${hash}\* 2>/dev/null )"
     [ "$1" ] && fs="$1" || fs="$(cat)";
     shift;
     [ "$1" ] && $FUNCNAME $@;
@@ -456,10 +478,13 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
     } || { # process the filelist $fs
       echo "$fs" | while IFS= read a ; do
         a="${a##*/}" # basename
+        local title="${a%%_^*}"
         local ext="$(sed -e 's/_^[^.]*.//' -e 's/-.*//' <<<"_^${a##*_^}")" # expect ^ to proceed hash, followed by a dot mime, plus parm (.ext[-parm]*)
         local hash="$(sed "s/\.${ext}.*//" <<<"${a##*_^}")"      # hash from between "^ .ext"
+        local path ; expr "$a" : ".*/" >/dev/null && path="${a%/*}" || path="." # dirname $a
+        local files="$(find $(find "$path" . .. -name \@) -maxdepth 1 -type f -name \*${hash}\* 2>/dev/null )"
         # decode f2rb2mp3 arguments
-        local args="$(sed -E -e "
+        args="$(sed -E -e "
             s/.*\.${ext}//
             s/.mp3$//
             s/-(ckb|hrn|cps|par)/ cmp=\1/
@@ -467,6 +492,7 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
             s/-rev/ rev=y/
             s/-ss/ ss=/
             s/-to/ to=/
+            s/-r3/ c=r3/
             s/-t/ t=/
             s/-p/ p=/
             s/-f/ f=/
@@ -479,32 +505,42 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
             s/-tp/ tp=/
             s/-lra/ lra=/
             s/-i/ i=/
-            " <<<"_^${a##*_^}")"
-    #   local   seq="$(echo "${a%%^*}"  | sed -e 's/[^-]*-.*//')"
-        local title="${a%%_^*}"
-    #   local  dirs=$(find "$link/@" "$links/@" "@" -maxdepth 0 -type d 2>/dev/null)
-        local path ; expr "$a" : ".*/" >/dev/null && path="${a%/*}" || path="." # dirname $a
-        local files="$(find $(find "$path" . .. -name \@) -maxdepth 1 -type f -name \*${hash}\* 2>/dev/null )"
+            " <<<"_^${a##*_^}" \
+            | tr ' ' '\n')"
+        sortargs=
+        for parm in ss= to= t= p= f= c= F= CF= off= tp= lra= i= cmp= v= ; do
+            sortargs="$sortargs $(grep "^$parm" <<<"$args")"
+            done
+        args="$(sed -e 's/^ [ ]*//g' -e 's/  [ ]*/ /g' -e 's/ [ ]*$//' <<<${sortargs})"
         local orig=
         [ "$files" ] && orig="$(awk 'NR==1' <<<"${files}")"
-        [ "$orig" ] || orig="'_^${hash}.${ext}'"
-        # ss= to= t= p= f= c= F= CF= off= tp= lra= i= cmp= v=
-        expr "$args" : ".* v="    >/dev/null && true || args="$args v=$v"
-        expr "$args" : ".* cmp="  >/dev/null && true || args="$args cmp=$cmp"
-        expr "$args" : ".* F="    >/dev/null && true || args="$args F=$F"
-        expr "$args" : ".* c="    >/dev/null && true || args="$args c=$c"
-        expr "$args" : ".* f="    >/dev/null && true || args="$args f=$f"
-        expr "$args" : ".* p="    >/dev/null && true || args="$args p=$p"
-        expr "$args" : ".* t="    >/dev/null && true || args="$args t=$t"
-        expr "$args" : ".* to="   >/dev/null && true || args="$args to=$to"
-        expr "$args" : ".* ss="   >/dev/null && true || { [ "$ss" ] && args="$args ss=$ss" || args="$args ss=0" ;}
-        args="$(tr ' ' '\n' <<<"$args")"
-        local sortargs=
-        for a in ss= to= t= p= f= c= F= CF= off= tp= lra= i= cmp= v= ; do
-            sortargs="$sortargs $(grep "^$a" <<<"$args")"
+        [ "$orig" ] || orig="'@/_^${hash}.${ext}'"
+      # if parm is parsed from filename set that (args)
+      # if parm is in env set that (args2)
+      # else leave unset, multiple shown, last setting wins
+        local args2
+        [ "$ss"  ] && { args2="$args2 ss=$ss" ;}
+        [ "$to"  ] && { args2="$args2 to=$to" ;}
+        [ "$t"   ] && { args2="$args2 t=$t" ;}
+        [ "$p"   ] && { args2="$args2 p=$p" ;}
+        [ "$f"   ] && { args2="$args2 f=$f" ;}
+        [ "$c"   ] && { args2="$args2 c=$c" ;}
+        [ "$F"   ] && { args2="$args2 F=$F" ;}
+        [ "$CF"  ] && { args2="$args2 CF=$CF" ;}
+        [ "$off" ] && { args2="$args2 off=$off" ;}
+        [ "$tp"  ] && { args2="$args2 tp=$tp" ;}
+        [ "$lra" ] && { args2="$args2 lra=$lra" ;}
+        [ "$i"   ] && { args2="$args2 i=$i" ;}
+        [ "$cmp" ] && { args2="$args2 cmp=$cmp" ;}
+        [ "$v"   ] && { args2="$args2 v=$v" ;}
+        args2="$(tr ' ' '\n' <<<"$args2")"
+        sortargs=
+        for parm in ss= to= t= p= f= c= F= CF= off= tp= lra= i= cmp= v= ; do
+            sortargs="$sortargs $(grep "^$parm" <<<"$args2")"
             done
-        # sortargs="$args $(grep -Ev '(^ss=|^to=|^t=|^p=|^f=|^c=|^F=|^CF=|^off=|^tp=|^lra=|^i=|^cmp=|^v=)' <<<"$sortargs")"
-        args=$(sed -e 's/^[ ]*//' -e 's/[ ]*/ /' -e 's/[ ]*$//' <<<$sortargs)
+        grep 'ss=' <<<"$sortargs" >/dev/null || sortargs="ss=0 $sortargs"
+        args2="$(sed -e 's/^ [ ]*//g' -e 's/ [ ]*/ /g' -e 's/ [ ]*$//' <<<${sortargs})"
+        [ "$args2" ] && printf "%s  " "$args2"
         echo $args f2rb2mp3 $orig $title
         done
     } # { # process the filelist $fs
