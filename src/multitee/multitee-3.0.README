@@ -1,0 +1,47 @@
+Path: wupost!zaphod.mps.ohio-state.edu!casbah.acns.nwu.edu!raven.alaska.edu!decwrl!usenet.coe.montana.edu!caen!sol.ctr.columbia.edu!spool.mu.edu!think.com!yale.edu!cmcl2!kramden.acf.nyu.edu!brnstnd
+From: brnstnd@kramden.acf.nyu.edu (Dan Bernstein)
+Newsgroups: alt.sources
+Subject: multitee 3.0: send multiple inputs to multiple outputs (part 1/1)
+Message-ID: <17818.Oct2101.14.2691@kramden.acf.nyu.edu>
+Date: 21 Oct 91 01:14:26 GMT
+Article-I.D.: kramden.17818.Oct2101.14.2691
+Followup-To: alt.sources.d
+Organization: IR
+Lines: 3208
+
+Archive-name: multitee3.0/part01
+
+Here's a much improved version of my multitee program for BSD systems. A
+typical multitee example (in combination with my client-server package)
+is this one-line implementation of mconnect:
+
+  #!/bin/sh
+  tcpclient -- "${1-`hostname`}" smtp multitee 0:7 6:1e0
+
+As another example, the package includes a clone of tee written in terms
+of multitee. You also get various useful libraries, including my
+sigsched library for (portable) non-preemptive multitasking. All of this
+is public domain so feel free to include pieces in your own packages.
+
+No Makefile here---just do
+
+  cc -o multitee multitee.c sigdfl.c sigsched.c ralloc.c getopt.c fmt.c scan.c
+  cc -o tee tee.c getopt.c ralloc.c fmt.c
+
+and you're set. If you have an ancient machine (e.g., Ultrix 2.*) and
+sigsched fails to compile, try changing config/fdsettrouble.h.
+
+---Dan
+
+#! /bin/sh
+# This is a shell archive.  Remove anything before this line, then unpack
+# it by saving it into a file and typing "sh file".  To overwrite existing
+# files, type "sh file -c".  You can also feed this as standard input via
+# unshar, or by typing "sh <file", e.g..  If this archive is complete, you
+# will see the following message at the end:
+#		"End of shell archive."
+# Contents:  config config/fdsettrouble.h fmt.c fmt.h getopt.c getopt.h
+#   multitee.c ralloc.c ralloc.h scan.c scan.h sigdfl.c sigdfl.h
+#   sigsched.c sigsched.h sod.h tee.c multitee.1 tee.1 sigsched.3
+#   sigdfl.3
+# Wrapped by brnstnd@kramden on Sun Oct 20 20:29:58 1991

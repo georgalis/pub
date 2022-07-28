@@ -1,0 +1,65 @@
+.TH tee 1
+.SH NAME
+tee \- record input in files
+.SH SYNTAX
+tee
+[ \fB\-ai\fI ] [ \fIfilename ] ...
+.SH DESCRIPTION
+.B tee
+copies its input to its output (without buffering),
+with records in zero or more files.
+Each
+.I filename
+argument specifies a record file.
+Any
+.I filename
+which does not exist is created.
+
+.B tee
+has two flags:
+.TP 12
+\fB\-a\fI
+Append to each
+.I filename
+instead of truncating it.
+.TP
+\fB\-i\fI
+Ignore the SIGINT signal.
+.PP
+This version of
+.B tee
+uses
+.B multitee
+to perform all input and output.
+Any use of
+.B tee
+from the shell
+can be written in terms of
+.B multitee.
+.SH "EXIT VALUE"
+0 normally.
+1 for usage messages.
+3 if
+.B tee
+runs out of memory.
+4 if
+.B multitee
+cannot be executed.
+.SH DIAGNOSTICS
+.TP
+.I fatal: out of memory
+.B tee
+has run out of memory.
+.TP
+.I warning: cannot open file
+Self-explanatory.
+.B tee
+will continue processing other files in this case.
+.SH BUGS
+None known.
+.SH VERSION
+tee version 1.0, 7/22/91.
+.SH AUTHOR
+Placed into the public domain by Daniel J. Bernstein.
+.SH "SEE ALSO"
+multitee(1)
