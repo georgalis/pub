@@ -13,6 +13,10 @@ Documentation in multitee.1.
 XXX: should use optprogname
 */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
 #include <signal.h>
 #include "sigsched.h"
 #include "sigdfl.h"
@@ -21,7 +25,6 @@ XXX: should use optprogname
 #include "scan.h"
 #include "fmt.h"
 #include "sod.h"
-#include <errno.h>
 extern int errno;
 
 #ifndef EWOULDBLOCK

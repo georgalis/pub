@@ -10,6 +10,8 @@ Documentation in tee.1.
 XXX: should use optprogname for program name
 */
 
+#include <unistd.h>
+#include <stdlib.h>
 #include <stdio.h> /* for fprintf(stderr,...) */
 #include <signal.h> /* for SIGINT */
 #include <sys/file.h>

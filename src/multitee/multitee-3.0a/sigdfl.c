@@ -13,6 +13,7 @@ ENOTTY. You are, however, faced with an incomplete, nearly prehistoric
 signal interface. Have fun.
 */
 
+#include <unistd.h>
 #include <signal.h>
 #include "sigdfl.h"
 

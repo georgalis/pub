@@ -40,6 +40,7 @@ It's because your shared libraries aren't good enough.
 
 #include "ralloc.h"
 #include "sod.h"
+#include <unistd.h>
 extern char *malloc(); /*XXXX*/
 extern void free();
 
