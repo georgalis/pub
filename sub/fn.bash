@@ -806,7 +806,7 @@ numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" 
     local f fs p b a src dst;
     while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
-    fs="$(sed 's/^\.\///' <<<"$fs" | while IFS= read f ; do [ -f "${f%%/*}" ] && echo "${f%%/*}" || true ; done)"
+    fs="$(sed -e 's/^\.\///' <<<"$fs" | while IFS= read f ; do [ -f "${f%%/*}" ] && echo "${f%%/*}" || true ; done)"
     for p in 0 1 2 3 4 5 6 7 8 9 a b c d e f g h j k m n p q r s t u v x y z ; do # iterate on each major base 32
         b="$p"
         [ "$numlistbump" -gt 0 ] 2>/dev/null \
@@ -814,17 +814,20 @@ numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" 
                b="$(tr '0123456789abcdefghjkmnpqrstuvxyz' '123456789abcdefghjkmnpqrstuvxyz0' <<<$b)"
                done
              } || true
-        { grep "^$p[0123456789abcdefghjkmnpqrstuvxyz]*," <<<"$fs" || true ;} \
+        # drop meta files from rename, but touch a meta file if there are file matches, even in dry run, could use fd to avoid f loop?
+        { grep "^$p[0123456789abcdefghjkmnpqrstuvxyz]*,." <<<"$fs" && touch "${p}," || true ;} \
             | while IFS= read f ; do printf "%s\n" "$f" ; done \
             | awk '{printf "%s %d %s\n",$0,NR,$0}' \
-            | sed -e '/^ /d' -e 's/^[0123456789abcdefghjkmnpqrstuvxyz]*,//' \
+            | sed -e '/^ /d' -e 's/^[0123456789abcdefghjkmnpqrstuvxyz]*,//' -e '/^$/d' \
             | while IFS= read a ; do set $a
                 printf "%s %s%s%02s,%s\n" "$3" "$numlist" "$b" "$(base 32 $2)" "$1"
+              # printf "%s %s%s%02s,%s\n" "$3" "$numlist" "$b" "$(base 32 $(( $2 - 1 )) )" "$1"
                 done \
             | while IFS= read a ; do set $a # {orig} {numlist}{p}{seq},{name}
                 src="$1"
+                # prepend "0," if not a comma file
                 grep -q "^[0123456789abcdefghjkmnpqrstuvxyz]*," <<<"$src" && dst="$2" || dst="0,$2"
-                [ "$src" = "$dst" ] || [ -e "$dst" ] || echo "mv \"$src\" \"$dst\""
+                [ "$src" = "$dst" ] || [ -e "$dst" ] || echo "mv '$src' '$dst'"
                 done
         done # p
     # and give all files that had no sequence a "0" major (no bump) and sequence
@@ -836,10 +839,11 @@ numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" 
             printf "%s %s%s%02s,%s\n" "$3" "$numlist" "0" "$(base 32 $2)" "$1"
             done \
         | while IFS= read a ; do set $a # {orig} {numlist}0{seq},{name}
-            dst="$2";
-            [ "$1" = "$dst" ] || [ -e "$dst" ] && chkwrn "$FUNCNAME collision : $dst" || echo "mv \"$1\" \"$dst\"";
+            dst="$2"
+            # when we add a dry-run switch we can remove the echo...
+            [ "$1" = "$dst" ] || { [ -e "$dst" ] && chkwrn "$FUNCNAME collision : $dst" || echo "mv '$1' '$dst'" ;}
             done
-    } # numlist
+    } # numlist 20220803
 
 # 07/26/21
 numlistdst () { # distribute filenames across base 32 major (alnum lower sans 'ilow')
@@ -866,9 +870,13 @@ mp3range () { # mp3 listing limiter
     # to regex arg2 stop (or null) end
     # from within each remaining args
     # or current dir if no remaining args.
-    local start="$1" stop="$2" dirs= a=
-    #local verb="chkwrn"
-    #$verb for expr "${stop}" : "${start}"
+    #
+    # file fullpath of two directories, sorted by filename...
+    # mp3range 2 3  ../ . | ckstat | sort -k5 | awk '{print $6}'
+    #
+    local start="$1" stop="$2" dirs= a= opwd="$PWD" prefix=
+    local verb="${verb:=devnul}"
+    $verb for expr "${stop}" : "${start}"
     [ "$stop" ] && { expr "${stop}" : "${start}" >/dev/null \
             && chkwrn "$FUNCNAME : unintended consequences : $start $stop"
         stop="/^${stop}/" ;} \
@@ -877,20 +885,21 @@ mp3range () { # mp3 listing limiter
     #chkwrn for awk \"${start},${stop}\"
     shift 2 || shift || true # shift 2 fails if $# = 1, so "shift 2 without err signal" in all cases...
     #chkwrn "#$# @=$@"
-    [ $# -gt 0 ] && { dirs="$1" ; shift ;}
+    [ $# -gt 0 ] && { dirs="$1" ; shift || true ;}
     while [ $# -gt 0 ] ; do dirs="$(printf "%s\n%s\n" "$dirs" "$1")" ; shift ; done
-    [ "$dirs" ] || dirs="./"
+    [ "$dirs" ] || dirs="$PWD"
     #$verb pwd=$PWD dirs=$dirs
     #echo "$dirs"     | sed '/^$/d' | while IFS= read a; do ${verb} "ead $a" ; done
-    echo "$dirs" | sed '/^$/d' | while IFS= read a; do
+    echo "$dirs" | sed -e '/^$/d' | while IFS= read a; do
+        # subshell to preserve $OLDPWD on break
         ( [ -d "$a" ] && {
             cd "$a"
-          # add conditional if dirs -gt 1 print PWD with file, eventually sort on file not filepath
-          # ls *.mp3 | awk ${start},${stop} | sed "s=^=$PWD/="
-            ls *.mp3 | awk ${start},${stop}
-            } || chkwrn "not a dir with mp3 files : '$a'" ) # subshell to preserve $OLDPWD after cd
+            [ "$a" = "$opwd" ] && prefix=" " || prefix="$PWD/"
+            # drop and warn about filenames with '%' in them??
+            ls | awk ${start},${stop} | sed -e '/.mp3$/!d' -e "s%^%$prefix%"
+            } || chkwrn "not a dir with mp3 files : '$a'" ) # subshell for $OLDPWD
         done
-    } # mp3range 20220516
+    } # mp3range 20220803
 
 playffr () { # use ffplayr to continiously repeat invocations of ffplay
     local fs
