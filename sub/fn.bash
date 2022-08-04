@@ -49,14 +49,16 @@ alias  grst='git reset HEAD'
 # https://git-scm.com/book/en/v2/Git-Basics-Undoing-Things
 #
 # all git statuses
-agst () {
+gsta () {
   local start=$@
   [ "$start" ] || start='.'
   find $start -name .git -type d | sort | while IFS= read a ; do
   ( cd "${a%/*}" ; git status --short ) | awk -v a="${a%/*}" '{printf "%-3s%s%s\n",$1,a"/./",$2,$3}'
   done ;}
-agstlt () { lt $(agst ~ | awk '{print $2}' | while IFS= read a ; do find "$a" -type f ; done ) ;} # all repo changed/new files by mod time
-
+gstat () { # uncommited changes by mod time from git repo found at pwd or args sans del
+  local start=$@ fpath
+  gsta $@ | sed 's/^...//' | while IFS= read a ; do ckstat "$a" ; done | sort -k4 | awk -F "\t" '{print $3}'
+  }
 ## shell script fragments
 # infile="${f##*/}"                                              # infile  == basename f
 # expr "$f" : ".*/" >/dev/null && inpath="${f%/*}" || inpath="." # inpath  ==  dirname f
