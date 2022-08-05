@@ -8,8 +8,7 @@
 # echo "$BASH_VERSINFO"      "${BASH_VERSINFO[0]}" "${BASH_VERSINFO[1]}" "${BASH_VERSINFO[2]}"
 # echo "${BASH_VERSINFO[3]}" "${BASH_VERSINFO[4]}" "${BASH_VERSINFO[5]}"
 
-alias       gst='git status --short | sed "s/^\?/ \?/" | sort'
-alias   gstatus='git status --short' # less functionality but allows path as arg1 (&c)
+alias   gstatus='git status --short'
 alias   gls='git ls-files'
 alias   gdf='git diff --name-only'
 alias gdiff='git diff --minimal -U0'
@@ -26,6 +25,7 @@ alias  gref='git reflog'
 alias  grst='git reset HEAD'
 # restore files #  git checkout -- {opt-file-spec}
 # undo add      #  git reset       {opt-file-spec}
+#
 #=======================================================
 # https://git-scm.com/book/en/v2/Git-Tools-Reset-Demystified
 # Commit hash, at least four characters and unambiguous beginning
@@ -48,17 +48,21 @@ alias  grst='git reset HEAD'
 # https://git-scm.com/docs/giteveryday
 # https://git-scm.com/book/en/v2/Git-Basics-Undoing-Things
 #
-# all git statuses
-gsta () {
+# git status # generic command
+# gstatus    # alias for git short form status of $@
+gst () { # short form status of $@ (current repo), sorted
+  git status --short $@ | awk '{s=$1; $1=""; sub(/[ ]* /,//,$2); printf "%-2s%s\n",s,$0}' | sort ;}
+gsta () { # git short form status of all repos below $@ (or current repo), sorted
   local start=$@
   [ "$start" ] || start='.'
-  find $start -name .git -type d | sort | while IFS= read a ; do
-  ( cd "${a%/*}" ; git status --short ) | awk -v a="${a%/*}" '{printf "%-3s%s%s\n",$1,a"/./",$2,$3}'
-  done ;}
-gstat () { # uncommited changes by mod time from git repo found at pwd or args sans del
-  local start=$@ fpath
-  gsta $@ | sed 's/^...//' | while IFS= read a ; do ckstat "$a" ; done | sort -k4 | awk -F "\t" '{print $3}'
-  }
+  find $start -name .git -type d | while IFS= read a ; do
+   ( cd "${a%/*}" ; gst ) | awk  -v a="${a%/*}/./" '{printf "%-2s",$1; $1=""; $2=a$2; printf "%s\n",$0}'
+   done | sort ;}
+gstat () { # find uncommited changes to all repos below $@ (or current repo), sorted by time
+  # reports files with <space> in name as irregular... ("read a" doesn't evaluate quotes incerted by git)
+  gsta $@ | sed 's/^...//' | while IFS= read a ; do ckstat "$a" ; done \
+    | sort -k4 | awk -F "\t" '{print $3}' ;}
+
 ## shell script fragments
 # infile="${f##*/}"                                              # infile  == basename f
 # expr "$f" : ".*/" >/dev/null && inpath="${f%/*}" || inpath="." # inpath  ==  dirname f
@@ -67,7 +71,6 @@ gstat () { # uncommited changes by mod time from git repo found at pwd or args s
 # t="$( { date '+%Y%m%d_%H%M%S_' && uuidgen ;} | sed -e 's/.*-//' | tr -d ' \n' | tr '[:upper:]' '[:lower:]' )" # time based uniq id
 # find -E /mnt \( -regex '/mnt(/local|/%|/bak)' -prune \) -o -type d
 # find -E /mnt \( -regex '/mnt(/local|/%|/bak)' -prune -type f \) -o -type f
-
 
 revargs () {
     local a out
@@ -129,10 +132,11 @@ _youtube_video_list () {
   [ "$d" ]  || read -p "root directory : " d
   [ -d "$d" ] || d="$(pwd -P)"
   [ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
-  youtube-dl --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --yes-playlist \
+  [ "$ytdl" ] || ytdl="youtube-dl"
+  "$ytdl" --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --yes-playlist \
    --audio-quality 0 --audio-format best --playlist-start 1 \
    -o "$d/%(playlist_title)s-%(playlist_id)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
-  youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --yes-playlist \
+  "$ytdl" --write-info-json --restrict-filenames --abort-on-error --write-sub --yes-playlist \
    --audio-quality 0 --audio-format best --extract-audio --playlist-start 1 \
    -o "$d/%(playlist_title)s-%(playlist_id)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   } # _youtube_video_list 20220516
@@ -158,10 +162,11 @@ _youtube_video () {
   [ "$d" ]  || read -p "directory : " d
   [ -d "$d" ] || d="$(pwd -P)"
   [ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
-  youtube-dl --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --no-playlist \
+  [ "$ytdl" ] || ytdl="youtube-dl"
+  "$ytdl" --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --no-playlist \
    --audio-quality 0 --audio-format best \
    -o "$d/00,%(title)s-%(uploader_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
-  youtube-dl --write-info-json --restrict-filenames --abort-on-error --write-sub --no-playlist \
+  "$ytdl" --write-info-json --restrict-filenames --abort-on-error --write-sub --no-playlist \
    --audio-quality 0 --audio-format best --extract-audio \
    -o "$d/00,%(title)s-%(uploader_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   } # _youtube_video 20220516
