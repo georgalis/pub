@@ -387,7 +387,7 @@ EOF
   local cfc='' cfn=''
   local cc='' cn=''
   # as per the evolution of rubberband features...
-  [ "$c" = "r3" ] && cc='-finer' cn='-r3'
+  [ "$c" = "r3" ] && cc='--fine' cn='-r3'
   [ "$c" -a -z "$cc" ] && { expr "$c" : '^[0123456]$' >/dev/null || { chkerr "$FUNCNAME parm invalid : c=$c" ; return 1 ;} ;}
   [ "$c" -a -z "$cc" ] && { cc="--crisp $c" cn="-c${c}" ;} || true
   expr "$t" : '^-' >/dev/null && { chkerr "$FUNCNAME parm invalid : t=$t" ; return 1 ;} || true
