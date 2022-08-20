@@ -33,8 +33,8 @@ cd "${r}" && git archive --prefix ${PWD##*/}/ HEAD | tar -C "/tmp/${t}" -xzf - \
 * [./sub/prequeue](sub/prequeue) in transaction, smtp filter
 
 ###### Other repositories
-* [../felidae](../felidae) Felidae AI/ML image classifier
-* [PR rust translation](../colab-61cc/pull/1) of [nm2rgb.py](../colab-61cc/tree/tint/tint)
+* [../../felidae](../../felidae) Felidae AI/ML image classifier
+* [PR rust translation](../../colab-61cc/pull/1) of [nm2rgb.py](../../colab-61cc/tree/tint/tint)
 
 ### Public comments
 
