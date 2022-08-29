@@ -64,6 +64,7 @@ gstat () { # find uncommited changes to all repos below $@ (or current repo), so
     | sort -k4 | awk -F "\t" '{print $3}' ;}
 
 ## shell script fragments
+# local infile inpath infilep
 # infile="${f##*/}"                                              # infile  == basename f
 # expr "$f" : ".*/" >/dev/null && inpath="${f%/*}" || inpath="." # inpath  ==  dirname f
 # infilep="$(cd "${inpath}" ; pwd -P)/${infile}"                 # infilep == realpath f
@@ -137,7 +138,7 @@ _youtube_video_list () {
    --audio-quality 0 --audio-format best --playlist-start 1 \
    -o "$d/%(playlist_title)s-%(playlist_id)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   "$ytdl" --write-info-json --restrict-filenames --abort-on-error --write-sub --yes-playlist \
-   --audio-quality 0 --audio-format best --extract-audio --playlist-start 1 \
+   --audio-quality 0 --audio-format best --extract-audio --keep-video --playlist-start 1 \
    -o "$d/%(playlist_title)s-%(playlist_id)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   } # _youtube_video_list 20220516
 
@@ -167,7 +168,7 @@ _youtube_video () {
    --audio-quality 0 --audio-format best \
    -o "$d/00,%(title)s-%(uploader_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   "$ytdl" --write-info-json --restrict-filenames --abort-on-error --write-sub --no-playlist \
-   --audio-quality 0 --audio-format best --extract-audio \
+   --audio-quality 0 --audio-format best --extract-audio --keep-video \
    -o "$d/00,%(title)s-%(uploader_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   } # _youtube_video 20220516
 
@@ -945,4 +946,45 @@ probeff () { # use ffprobe to extract duration of files (args OR stdin filename 
             [ "$d" ] && echo "$d $infilep" || true
         }
         done
+    }
+
+rotatefile () { #P> keep at least n backups, and delete files older than m seconds
+    local a= use="$FUNCNAME {file}"'
+        Keep at least {rotatefile_keep} files
+        remove backups older than {rotatefile_secs}
+        and move file {arg1} to {arg1}-{0x mtime}
+        default 18 days = 60 seconds per minute * 60 per hour * 24
+        rotatefile_secs="$((18 * 60 * 60 * 24 ))" rotatefile_keep="7"'
+    declare -f chkerr >/dev/null 2>&1  || { echo "$FUNCNAME : chkerr unavailable (630bacd0)" 1>&2 ; return 1 ;}
+    declare -f validfn >/dev/null 2>&1 || { echo "$FUNCNAME : validfn unavailable (630c4002)" 1>&2 ; return 1 ;}
+    validfn ckstat ea8f5074 00000379   || { chkerr "$FUNCNAME : unexpected ckstat (630bab5c)" ; return 1 ;}
+    which tai64n >/dev/null            || { chkerr "$FUNCNAME : tai64n not in path (630bb522)" ; return 1 ;}
+    xs () { echo | tai64n | sed -e 's/^@4[0]*//' -e 's/.\{9\}$//' ;}
+    term_pleft () { local str= char='-'
+        { [ $# -gt 0 ] && echo "$*" || cat ;} \
+          | while IFS= read str; do [ -t 1 ] && {
+                local cols="$(( $(tput cols) - ${#str} - 4 ))";
+                printf "%s" "$char$char $str "
+                printf "%*s\n" "$cols" '' | tr ' ' "$char";
+                } || true
+            done ;}
+    local f="$1"
+    test "$f" || { chkerr "$FUNCNAME : no file (arg1) (630c469e)" ; $FUNCNAME --help ; return 1 ;}
+    test "$f" = "-?" -o "$f" = "-h" -o "$f" = "--help" && { sed 's/^[    ]*//' <<<"$use" | term_pleft ; return 0 ;}
+    test -f "$f" || { chkerr "$FUNCNAME : not a file '$f' (630b96a3)" ; $FUNCNAME --help ; return 1 ;}
+    test "$rotatefile_secs" || local rotatefile_secs="$((18 * 60 * 60 * 24 ))"
+    test "$rotatefile_keep" || local rotatefile_keep="7"
+    test "$rotatefile_secs" -ge 0 || { chkerr "$FUNCNAME : {rotatefile_secs} not an interger '$rotatefile_secs' (630b9a9f)" ; return 1 ;}
+    test "$rotatefile_keep" -ge 0 || { chkerr "$FUNCNAME : {rotatefile_keep} not an interger '$rotatefile_keep' (630b9ac3)" ; return 1 ;}
+    local infile inpath infilep
+    infile="${f##*/}"                                              # infile  == basename f
+    expr "$f" : ".*/" >/dev/null && inpath="${f%/*}" || inpath="." # inpath  ==  dirname f
+    infilep="$(cd "${inpath}" ; pwd -P)/${infile}"                 # infilep == realpath f
+    local xs="$(xs)"
+    find "$inpath" -mindepth 1 -maxdepth 1 -type f -name "${infile}-*" -regex ".*/${infile}-[[:xdigit:]]\{8\}$" \
+        | sort | sed -n -e :a -e "\$q;N;2,${rotatefile_keep}ba" -e 'P;D' \
+        | while IFS= read f ; do
+            expr "$(( 0x$xs - 0x$(ckstat "$f" | awk '{print $4}') ))" '>' "$rotatefile_secs" >/dev/null && rm -f "$f" || true
+            done
+    mv "$f" "${f}-$(ckstat "$f" | awk '{print $4}')"
     }
