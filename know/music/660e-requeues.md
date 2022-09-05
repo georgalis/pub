@@ -3,6 +3,8 @@ listing and metrics are converging to
 a volume two release, more etudes,
 more jazz and aesthetic tuning...
 
+documentaries are often slowed doen a little bit to give a contemplative look, lion king 2019 narrative 1:01:05
+anthropomorphic look 
 
 
 When shifting keys, the tonal quality rotates around a circular spectrum of temperament
