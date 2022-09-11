@@ -902,7 +902,7 @@ mp3range () { # mp3 listing limiter
         # subshell to preserve $OLDPWD on break
         ( [ -d "$a" ] && {
             cd "$a"
-            [ "$a" = "$opwd" ] && prefix=" " || prefix="$PWD/"
+            [ "$a" = "$opwd" ] && prefix="" || prefix="$PWD/"
             # drop and warn about filenames with '%' in them??
             ls | awk ${start},${stop} | sed -e '/.mp3$/!d' -e "s%^%$prefix%"
             } || chkwrn "not a dir with mp3 files : '$a'" ) # subshell for $OLDPWD
