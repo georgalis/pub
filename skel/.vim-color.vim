@@ -2,25 +2,25 @@
 
 " (c) 2017-2022 George Georgalis <george@galis.org> unlimited use with this notice
 
-" sourced from ~/.vimrc with:
-"
-"  function! SourceIfExists(file)
-"    if filereadable(expand(a:file))
-"      exe 'source' a:file
-"      endif
-"    endfunction
-"
-"  call SourceIfExists("~/.vim-color.vim")
-
 if &t_Co > 1
    syntax enable
 endif
+
 " use POSIX for shell highlighting
 let g:is_posix= 1
 
 set background=dark
 
-" See ~/.Xdefaults
+" https://stackoverflow.com/questions/9464844/how-to-get-group-name-of-highlighting-under-cursor-in-vim/58244921#58244921
+function! SynStack ()
+    for i1 in synstack(line("."), col("."))
+        let i2 = synIDtrans(i1)
+        let n1 = synIDattr(i1, "name")
+        let n2 = synIDattr(i2, "name")
+        echo n1 "->" n2
+    endfor
+endfunction
+map gm :call SynStack()<CR>
 
 hi  Comment         cterm=none       ctermfg=DarkCyan
 hi  Constant        cterm=underline  ctermfg=15
@@ -36,6 +36,8 @@ hi  makeImplicit    cterm=none       ctermfg=2
 hi  makeIdent       cterm=none       ctermfg=5
 hi  makeTarget      cterm=bold       ctermfg=3
 hi  vim9Comment     cterm=bold       ctermfg=red
+
+" See ~/.Xdefaults
 
 "1 red
 "2 green
@@ -60,9 +62,6 @@ hi  vim9Comment     cterm=bold       ctermfg=red
 "		bold,underline
 "		reverse
 "
-"  0 Black	1 DarkBlue	2 DarkGreen	3 DarkCyan	4 DarkRed	5 DarkMagenta	6 Brown		7 Grey
-"  8 DarkGrey	9 Blue		10 Green	11 Cyan		12 Red		13 LightMagenta	14 Yellow	15 White
-
 "" some redefs of the default color syntax, good for dark
 "" but makes very difficult with light background...
 ""set background=light
@@ -118,7 +117,6 @@ hi  vim9Comment     cterm=bold       ctermfg=red
 ""hi NonText ctermfg=yellow
 ""hi TabLineSel   ctermfg=yellow
 "
-"
 """ Syntax group
 ""hi  Comment     gui=NONE            guifg=#c0c0d0  guibg=NONE
 ""hi  Error       gui=BOLD            guifg=#ffffff  guibg=#ff0088  cterm=none  ctermfg=white  ctermbg=DarkBlue
@@ -159,13 +157,14 @@ hi  vim9Comment     cterm=bold       ctermfg=red
 ""Yellow
 ""White
 "
-"" White =LightGray =LightGrey  Gray =Grey  Black =DarkGray =DarkGrey
-"" Blue =DarkBlue  LightBlue
-"" Green DarkGreen =LightGreen
-"" Cyan DarkCyan =LightCyan
-"" Red =DarkRed LightRed
-"" DarkMagenta LightMagenta
-"" Yellow Brown =Darkyellow
+"" Black  =DarkGray  =DarkGrey
+""  White        =LightGray    =LightGrey
+""  Blue         =DarkBlue     LightBlue
+""  Green        DarkGreen     =LightGreen
+""  Cyan         DarkCyan      =LightCyan
+""  Red          =DarkRed      LightRed
+""  DarkMagenta  LightMagenta
+""  Yellow       Brown         =Darkyellow
 ""
 "" 00=none 01=bold 04=underscore 05=blinYk 07=reverse 08=concealed
 ""
@@ -174,17 +173,30 @@ hi  vim9Comment     cterm=bold       ctermfg=red
 "" lightgray lightgreen lightgrey lightmagenta lightred magenta red white
 "" yellow
 ""
-""0=Black =DarkGray =DarkGrey
-""1=Red =DarkRed LightRed
-""2=Green DarkGreen =LightGreen
-""3=Yellow Brown =Darkyellow
-""4=Blue =DarkBlue  LightBlue
-""5=LightMagenta DarkMagenta
-""6=Cyan DarkCyan =LightCyan
-""7=White =LightGray =LightGrey  Gray =Grey
-"
-"" The color terminal (cterm) palette  (and bash escape codes)
-"" The forground Colors (background colors begin with 4 verses 3)
+""0=Black         =DarkGray     =DarkGrey
+""1=Red           =DarkRed      =LightRed
+""2=Green         =DarkGreen    =LightGreen
+""3=Yellow        =Brown 
+""4=Blue          =DarkBlue     =LightBlue
+""5=LightMagenta  =DarkMagenta
+""6=Cyan          =DarkCyan     =LightCyan
+""7=White         =LightGray    =LightGrey
+
+"" 0  Black        8   DarkGrey
+"" 1  DarkBlue     9   Blue
+"" 2  DarkGreen    10  Green
+"" 3  DarkCyan     11  Cyan
+"" 4  DarkRed      12  Red
+"" 5  DarkMagenta  13  LightMagenta
+"" 6  Brown        14  Yellow
+"" 7  Grey         15  White
+
+"  0 Black	1 DarkBlue	2 DarkGreen	3 DarkCyan	4 DarkRed	5 DarkMagenta	6 Brown		7 Grey
+"  8 DarkGrey	9 Blue		10 Green	11 Cyan		12 Red		13 LightMagenta	14 Yellow	15 White
+" cterm=none,bold,underline,reverse
+
+"" The color terminal (cterm) palette (and bash escape codes)
+"" (background colors begin with 4 verses 3)
 "" Black       0;30     Dark Gray     1;30
 "" Red         0;31     Light Red     1;31
 "" Green       0;32     Light Green   1;32
@@ -195,15 +207,6 @@ hi  vim9Comment     cterm=bold       ctermfg=red
 "" Light Gray  0;37     White         1;37
 "" Attribute codes:
 "" 00=none 01=bold 04=underscore 05=blink 07=reverse 08=concealed
-"
-
-"function! HighlightSearch()
-"  if &hls
-"    return 'H'
-"  else
-"    return ''
-"  endif
-"endfunction
 
 " see xterm-true-color
 " let &t_8f = "^[[38;2;%lu;%lu;%lum"
@@ -211,82 +214,96 @@ hi  vim9Comment     cterm=bold       ctermfg=red
 " let &t_8f = "\<Esc>[38:2:%lu:%lu:%lum"
 " let &t_8b = "\<Esc>[48:2:%lu:%lu:%lum"
 
-" shell colors
-" echo gray
+" gray
 " for c in {232..256} ; do
 "     printf "\x1b[38;5;${c}m" ; printf "%4d" "${c}"
 "     done
-" echo
-" echo 4 bit
+"
+" 4 bit color
 " for c in {0..15} ; do
 "     printf "\x1b[38;5;${c}m" ; printf "%3d" "${c}"
 "     test "$c" -lt "16" && { test "$(( ( c ) % 8 ))" -ne "7" && printf "" || printf "\n" ;}
 "     done
-" echo more
-" for c in {16..231} ; do printf "\x1b[38;5;${c}m" ; printf "%4d" "${c}" ; test "$(( ( c - 15 ) % 36 ))" -ne "0" && printf "" || printf "\n" ;  done
-" echo rainbow 4 bit
 " for c in 0 1 9 3 11 15 14 10 2 6 12 4 8 ; do printf "\x1b[38;5;${c}m" ; printf "%3d" "${c}" ; done ; echo
+
+" 255 colors
+" for c in {16..231} ; do printf "\x1b[48;5;${c}m" ; printf "%4d" "${c}" ; test "$(( ( c - 15 ) % 36 ))" -ne "0" && printf "" || printf "\n" ;  done
+" 
 " for c in 1 196  130 202 209 220 226 156 49 27 57 ;  do printf "\x1b[38;5;${c}m" ; printf "%4d" "${c}" ; done ; echo
 " for c in 139 198 94 222 112 34 123 141 91 ;  do printf "\x1b[48;5;${c}m" ; printf "%4d" "${c}" ; done ; echo
-" endif
+" for c in 0 94 166  167 208 214 112 34  ;  do printf "\x1b[48;5;${c}m" ; printf "%4d\x1b[38;5;7m\x1b[48;5;0m" "${c}" ; done ; echo
+
+" for c in 0 1 9 3 11 15 14 10 2 6 12 4 8 ; do printf "\x1b[48;5;${c}m" ; printf "%3d" "${c}" ; done ; echo ; for c in {16..231} ; do printf "\x1b[48;5;${c}m" ; printf "%4d" "${c}" ; test "$(( ( c - 15 ) % 36 ))" -ne "0" && printf "" || printf "\n" ;  done ; for c in 1 196 208 221 11 123 32 20 91  0 94 166  167 208 214 112 34  ;  do printf "\x1b[48;5;${c}m" ; printf "%4d\x1b[38;5;7m\x1b[48;5;0m" "${c}" ; done ; echo
+
+"hi  User10  guibg=#D0B0D5  guifg=#ffffff
 
 "set termguicolors
 
-"  0 Black	1 DarkBlue	2 DarkGreen	3 DarkCyan	4 DarkRed	5 DarkMagenta	6 Brown		7 Grey
-"  8 DarkGrey	9 Blue		10 Green	11 Cyan		12 Red		13 LightMagenta	14 Yellow	15 White
-" cterm=none,bold,underline,reverse
+"hi  User1   ctermbg=196    ctermfg=15     cterm=none  guibg=#D0B1AF  guifg=#110001
+"hi  User2   ctermbg=198    ctermfg=1      cterm=none  guibg=#F3B3B0  guifg=#110001
+"hi  User3  ctermbg=209  ctermfg=7   cterm=bold  guibg=#F9D8B4  guifg=#110001
+""hi  User4   ctermbg=124    ctermfg=0      cterm=none  guibg=#FEFDB9  guifg=#110001
+""hi  User4   ctermbg=141    ctermfg=1      cterm=none  guibg=#B6D6FB  guifg=#110001
+""hi  User4   ctermbg=222    ctermfg=1      cterm=none  guibg=#FEFDB9  guifg=#110001
+"hi  User4  ctermbg=91   ctermfg=1   cterm=none  guibg=#AFAFF9  guifg=#110001
+"hi  User5   ctermbg=112    ctermfg=1      cterm=none  guibg=#DEFBB7  guifg=#110001
+""hi  User6   ctermbg=107    ctermfg=6      cterm=none  guibg=#BEFBB6  guifg=#110001
+"hi  User6   ctermbg=34     ctermfg=1      cterm=none  guibg=#BEFBB6  guifg=#110001
+"hi  User7   ctermbg=123    ctermfg=1      cterm=none  guibg=#BFFCFF  guifg=#110001
+"hi  User8  ctermbg=23   ctermfg=15  cterm=none  guibg=#B6D6FB  guifg=#110001
+"hi  User9  ctermbg=19   ctermfg=15  cterm=none  guibg=#AFAFF9  guifg=#110001
+"set statusline=
+"set statusline+=%1*1\ %2*2\ %3*3\ %4*4\ %5*5\ %6*6\ %7*7\ %8*8\ %9*9\ 
+"set statusline+=%8*%n                                  " buffer number
+"set statusline+=%9*\ %<%F\                             " left, File+path
+"set statusline+=%1*%{(&bomb?\",\ BOM\ \":\"\")}        " BOM status (Byte Order Mark, for utf-8, or the little/big endian variants)
+"set statusline+=%4*\ %{&ff}\                           " FileFormat (dos/unix..)
+"set statusline+=%2*\ %M%R%Y\                           " Modified? Readonly? Help?
+"set statusline+=%3*\ %{''.(&fenc!=''?&fenc:&enc).''}\  " FileType Encoding
+"set statusline+=%7*\ %{&spelllang}\                    " spell language
+"set statusline+=%7*\ %=\                               " begin right
+"set statusline+=%5*\ %v,%l\ %P/%L\                     " column,line line-percent/line-total
 
-"hi   User1   ctermbg=139    ctermfg=1    cterm=none  guibg=#D0B1AF  guifg=#110001
-"hi   User2   ctermbg=198    ctermfg=1    cterm=none  guibg=#F3B3B0  guifg=#110001
-"hi   User3   ctermbg=94     ctermfg=1    cterm=none  guibg=#F9D8B4  guifg=#110001
-"hi   User4   ctermbg=222    ctermfg=1    cterm=none  guibg=#FEFDB9  guifg=#110001
-"hi   User5   ctermbg=112    ctermfg=1    cterm=none  guibg=#DEFBB7  guifg=#110001
-"hi   User6   ctermbg=34    ctermfg=1    cterm=none  guibg=#BEFBB6  guifg=#110001
-"hi   User7   ctermbg=123    ctermfg=1    cterm=none  guibg=#BFFCFF  guifg=#110001
-"hi   User8   ctermbg=141    ctermfg=1    cterm=none  guibg=#B6D6FB  guifg=#110001
-"hi   User9   ctermbg=91    ctermfg=1    cterm=none  guibg=#AFAFF9  guifg=#110001
+" hi  User1  ctermbg=139  ctermfg=1   cterm=none  guibg=#D0B1AF  guifg=#110001
+" hi  User2  ctermbg=202  ctermfg=7   cterm=bold  guibg=#F3B3B0  guifg=#110001
+" hi  User3  ctermbg=209  ctermfg=7   cterm=bold  guibg=#F9D8B4  guifg=#110001
+" hi  User4  ctermbg=57   ctermfg=1   cterm=none  guibg=#AFAFF9  guifg=#110001
+" hi  User5  ctermbg=226  ctermfg=0   cterm=bold  guibg=#DEFBB7  guifg=#110001
+" hi  User6  ctermbg=94   ctermfg=1   cterm=none  guibg=#F9D8B4  guifg=#110001
+" hi  User7  ctermbg=215  ctermfg=15  cterm=bold  guibg=#BFFCFF  guifg=#110001
+" hi  User8  ctermbg=23   ctermfg=15  cterm=none  guibg=#B6D6FB  guifg=#110001
+" hi  User9  ctermbg=19   ctermfg=15  cterm=none  guibg=#AFAFF9  guifg=#110001
+" set statusline=
+" "set statusline+=%1*1\ %2*2\ %3*3\ %4*4\ %5*5\ %6*6\ %7*7\ %8*8\ %9*9\ 
+" set statusline+=%8*%n                                  " buffer number
+" set statusline+=%9*\ %<%F\                             " left, File+path
+" set statusline+=%6*%{(&bomb?\",\ BOM\ \":\"\")}        " BOM status (Byte Order Mark, for utf-8, or the little/big endian variants)
+" set statusline+=%5*\ %M%R%Y\                           " Modified? Readonly? Help?
+" set statusline+=%7*\ %{&ff}\                           " FileFormat (dos/unix..)
+" set statusline+=%2*\ %{''.(&fenc!=''?&fenc:&enc).''}\  " FileType Encoding
+" set statusline+=%6*\ %{&spelllang}\                    " spell language
+" set statusline+=%6*\ %=\                               " begin right
+" set statusline+=%4*\ %v,%l\ %P/%L\                     " column,line line-percent/line-total
 
-
-hi   User1   ctermbg=196    ctermfg=15     cterm=none  guibg=#D0B1AF  guifg=#110001
-hi   User2   ctermbg=202    ctermfg=7      cterm=bold  guibg=#F3B3B0  guifg=#110001
-hi   User3   ctermbg=209    ctermfg=7      cterm=bold  guibg=#F9D8B4  guifg=#110001
-hi   User4   ctermbg=124    ctermfg=0      cterm=none  guibg=#FEFDB9  guifg=#110001
-hi   User5   ctermbg=226    ctermfg=0      cterm=bold  guibg=#DEFBB7  guifg=#110001
-hi   User6   ctermbg=107    ctermfg=6      cterm=none  guibg=#BEFBB6  guifg=#110001
-hi   User7   ctermbg=215    ctermfg=15     cterm=bold  guibg=#BFFCFF  guifg=#110001
-hi   User8   ctermbg=23     ctermfg=15     cterm=none  guibg=#B6D6FB  guifg=#110001
-hi   User9   ctermbg=19     ctermfg=15     cterm=none  guibg=#AFAFF9  guifg=#110001
-"hi  User10  guibg=#D0B0D5  guifg=#ffffff
-
-
-" https://stackoverflow.com/questions/9464844/how-to-get-group-name-of-highlighting-under-cursor-in-vim/37040415#37040415
-function! SynGroup()
-    let l:s = synID(line('.'), col('.'), 1)
-    echo synIDattr(l:s, 'name') . ' -> ' . synIDattr(synIDtrans(l:s), 'name')
-endfun
-"map gm :call SynGroup()<CR>
-
-" https://stackoverflow.com/questions/9464844/how-to-get-group-name-of-highlighting-under-cursor-in-vim/58244921#58244921
-function! SynStack ()
-    for i1 in synstack(line("."), col("."))
-        let i2 = synIDtrans(i1)
-        let n1 = synIDattr(i1, "name")
-        let n2 = synIDattr(i2, "name")
-        echo n1 "->" n2
-    endfor
-endfunction
-map gm :call SynStack()<CR>
+hi User1 ctermbg=1    cterm=bold
+hi User2 ctermbg=196 cterm=bold
+hi User3 ctermbg=208 cterm=bold
+hi User4 ctermbg=221 cterm=bold
+hi User5 ctermbg=11 cterm=bold
+hi User6 ctermbg=123 cterm=bold
+hi User7 ctermbg=32 cterm=bold
+hi User8 ctermbg=20 cterm=none
+hi User9 ctermbg=91 cterm=none
 
 set statusline=
 "set statusline+=%1*1\ %2*2\ %3*3\ %4*4\ %5*5\ %6*6\ %7*7\ %8*8\ %9*9\ 
-set statusline+=%8*%n                                  " buffer number
-set statusline+=%9*\ %<%F\                             " left, File+path
+set statusline+=%9*%n                                  " buffer number
+set statusline+=%6*\ %<%F\                             " left, File+path
 set statusline+=%1*%{(&bomb?\",\ BOM\ \":\"\")}        " BOM status (Byte Order Mark, for utf-8, or the little/big endian variants)
-set statusline+=%4*\ %{&ff}\                           " FileFormat (dos/unix..)
-set statusline+=%2*\ %M%R%Y\                           " Modified? Readonly? Help?
-set statusline+=%3*\ %{''.(&fenc!=''?&fenc:&enc).''}\  " FileType Encoding
-set statusline+=%7*\ %{&spelllang}\                    " spell language
-set statusline+=%7*\ %=\                               " begin right
-set statusline+=%5*\ %v,%l\ %P/%L\                     " column,line line-percent/line-total
-"set statusline+=%5*\ %{HighlightSearch()}\            " Highlight on
+set statusline+=%7*\ %M%R%Y\                           " Modified? Readonly? Help?
+set statusline+=%3*\ %{&ff}\                           " FileFormat (dos/unix..)
+set statusline+=%4*\ %{''.(&fenc!=''?&fenc:&enc).''}\  " FileType Encoding
+set statusline+=%5*\ %{&spelllang}\                    " spell language
+set statusline+=%5*\ %=\                               " begin right
+set statusline+=%8*\ %v,%l\ %P/%L\                     " column,line line-percent/line-total
 
