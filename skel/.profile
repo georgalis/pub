@@ -400,5 +400,14 @@ printf "${_ntermrev}"
 #	&& { printf "Logout: " && kill $2 && echo $(hostname) $0 [$4] killed ssh-agent $2 \
 #		|| { echo $(hostname) ssh-agent already died? 2>/dev/stderr ; exit 1 ;} ;}
 
-siff "$HOME/.profile.local" "~/.profile"
+
+
+siffx "$HOME/.profile.local" "~/.profile"
+
+{  export -f $(grep '^[_[:alpha:]][_[:alnum:]]* () ' ~/.profile | sed 's/ () .*//' )
+   export    $(grep '^[_[:alpha:]][_[:alnum:]]*='    ~/.profile | sed 's/=.*//'    )
+} && chktrue "~/.profile: . $HOME/.profile ; var func exports" \
+  || chkerr  "~/.profile: fail in export $HOME/.profile"
+
+chktrue "~/.profile"
 
