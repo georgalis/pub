@@ -448,52 +448,42 @@ EOF
     ) # f2rb2mp3
 
 formfile () { # create a f2rb2mp3 command to render the file, given the input filename
-  # filter ^.*
-  #   file type      ext="$(echo "^${a##*^}" | sed -e 's/[^.]*.//' \
-  #                                                -e 's/-.*//' )"
-  #   id "^id"    id="$(echo "^${a##*^}" | sed "s/\.${ext}.*//" )"
-  #   transform     args="$(echo "^${a##*^}" | sed -e "s/.*\.${ext}//" \
-  #                                                -e "s/.mp3$//" \
-  #                                                -e 's/-\([[:alpha:]]*\)/ \1=/g' \
-  #                                                -e 's/= /=y /g' \
-  #                                                -e 's/^/ verb=chkwrn/' )"
-  # filter .*^
-  #   filter maskfix      mfix="$(echo "${a%%^*}" | sed 's/-.*//' )"
-  #   filter identity identity="$(echo "${a%%^*}" | sed -e 's/[^-]*-//' -e 's/-.*//' )"
-  #   filter subjecti      sub="$(echo "${a%%^*}" | sed "s/.*${idnetity}-//" )"
-  #
-# use case:
-#
-# for a given rendered file
-#     001-Leclair_Op9-2_Flute_Sonata-E-Min^fJwnsyEtkK0.opus-t0.87-p1-c3-F-ss4795-to5790-v1db.mp3
-#
-# decompose into rendering command line for parameters
-#     formfile 001-Leclair_Op9-2_Flute_Sonata-E-Min^fJwnsyEtkK0.opus-t0.87-p1-c3-F-ss4795-to5790-v1db.mp3
-#
-# # 001-Leclair_Op9-2_Flute_Sonata-E-Min^fJwnsyEtkK0.opus-t0.87-p1-c3-F-ss4795-to5790-v1db.mp3
-# ln /Users/geo/dot4/5/a/8/d/b/^/5f8b-muser/001-Leclair_Op9-2_Flute_Sonata-E-Min^fJwnsyEtkK0.opus-t0.87-p1-c3-F-ss4795-to5790-v1db.mp3 /Users/geo/dot4/5/a/8/d/b/57a_1d24af8c_/_master
-# verb=chkwrn t=0.87 p=1 c=3 F=y ss=4795 to=5790 v=1db f2rb2mp3 /Users/geo/dot4/5/a/8/d/b/57a_1d24af8c_/_master/Jean-Marie_Leclair_Complete_Flute_Sonatas_^fJwnsyEtkK0.opus 001
-#
-    local a f fs parm;
-    fs="$1"
-    shift || true
-    while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift || true ; done
-    [ "$fs" ] || fs="$(cat)"
-    [ "$fs" = "-h" -o "$fs" = "--help" ] \
-      && {
+    # use case:
+    #
+    # for a given rendered file
+    #     001-Leclair_Op9-2_Flute_Sonata-E-Min^fJwnsyEtkK0.opus-t0.87-p1-c3-F-ss4795-to5790-v1db.mp3
+    #
+    # decompose into rendering command line for parameters
+    #
+    #   p=2 formfile 001-Leclair_Op9-2_Flute_Sonata-E-Min_^fJwnsyEtkK0.opus-t0.87-p1-c3-F-ss4795-to5790-v1db.mp3
+    #
+    #   ss=4795 to=5790 t=0.87 p=1 c=3 F=y v=1db '' p=2 c=r3 cmp=parc v=4db f2rb2mp3 '@/_^fJwnsyEtkK0.opus' 001-Leclair_Op9-2_Flute_Sonata-E-Min
+    #
+    # first group of parameters are taken from the filename
+    # the parameters between '' and f2rb2mp3 are from the shell env
+    # duplicate param settings, the last parameter provided to f2rb2mp3 wins
+    # if a source file is not found, the expected path is provided
+    #
+    [ "$1" = "-h" -o "$1" = "--help" ] && {
         chkwrn "Usage, for args (or per line stdin) decompose"
         chkwrn "each filename into a rendering command."
-    } || { # process the filelist $fs
-#{     echo "$fs" | while IFS= read a ; do ${verb2} "$a" ; done ;}
-      echo "$fs" | while IFS= read a ; do
-        a="${a##*/}" # basename
-        local title="${a%%_^*}"
-        local ext="$(sed -e 's/_^[^.]*.//' -e 's/-.*//' <<<"_^${a##*_^}")" # expect ^ to proceed id, followed by a dot mime, plus parm (.ext[-parm]*)
-        local id="$(sed "s/\.${ext}.*//" <<<"${a##*_^}")"      # id from between "^ .ext"
-        local path ; expr "$a" : ".*/" >/dev/null && path="${a%/*}" || path="." # dirname $a
-        local files="$(find $(find "$path" . .. -name \@) -maxdepth 1 -type f -name \*${id}\* 2>/dev/null )"
+        return 0 ;} || true
+    local fs="$1" ; shift || true
+    while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift || true ; done
+    [ "$fs" ] || fs="$(cat)"
+    local orig='' args='' sortargs='' parm=''
+    echo "$fs" | while IFS= read _fpath ; do # filepath list
+        local _fname="${_fpath##*/}" # basename
+        $verb2 "${_fname}"
+        local title="${_fname%%_^*}"
+        local ext="$(sed -e 's/_^[^.]*.//' -e 's/-.*//' <<<"_^${_fname##*_^}")" # expect _^ to proceed id, followed by a dot ext, plus parm (.ext[-parm]*)
+        local id="$(sed "s/\.${ext}.*//" <<<"${_fname##*_^}")"                  # id between "_^" and ".{ext}"
+        local path ; expr "$_f" : ".*/" >/dev/null && path="${_f%/*}" || path="." # dirname input file
+        local origfiles="$(find $(find "$path" . .. -name \@) -maxdepth 1 -type f -name \*${id}\* 2>/dev/null )" # search nearby @ directories
+        [ "$origfiles" ] && orig="$(awk 'NR==1' <<<"${files}")" # first inode found is usually the best choice
+        [ "$orig" ] || orig="'@/_^${id}.${ext}'" # not found, set expected path in quote, as reference
         # decode f2rb2mp3 arguments
-        local args="$(sed -E -e "
+        args="$(sed -E -e "
             s/.*\.${ext}//
             s/.mp3$//
             s/-(ckb|hrn|cps|par)/ cmp=\1/
@@ -514,52 +504,45 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
             s/-tp/ tp=/
             s/-lra/ lra=/
             s/-i/ i=/
-            " <<<"_^${a##*_^}" \
-            | tr ' ' '\n')"
-{     echo "$args" | while IFS= read a ; do ${verb2} "$a" ; done ;}
-        local sortargs=
+            " <<<"_^${_fname##*_^}" | tr ' ' '\n')"
+        local sortargs=''
         for parm in ss= to= t= p= f= c= F= CF= off= tp= lra= i= cmp= v= ; do
             sortargs="$sortargs $(grep "^$parm" <<<"$args")"
             done
-        sortargs="$sortargs ''"
-#       args="$(sed -e 's/^ [ ]*//g' -e 's/  [ ]*/ /g' -e 's/ [ ]*$//' <<<${sortargs})"
-        local orig=
-        [ "$files" ] && orig="$(awk 'NR==1' <<<"${files}")"
-        [ "$orig" ] || orig="'@/_^${id}.${ext}'"
-      # if parm is parsed from filename set that (args)
-      # if parm is in env set that (args2)
-      # else leave unset, multiple shown, last setting wins
-        local args2
-        [ "$ss"  ] && { grep "ss=$ss"   >/dev/null <<<"$sortargs" || args2="$args2 ss=$ss"   ;}
-        [ "$to"  ] && { grep "to=$to"   >/dev/null <<<"$sortargs" || args2="$args2 to=$to"   ;}
-        [ "$t"   ] && { grep "t=$t"     >/dev/null <<<"$sortargs" || args2="$args2 t=$t"     ;}
-        [ "$p"   ] && { grep "p=$p"     >/dev/null <<<"$sortargs" || args2="$args2 p=$p"     ;}
-        [ "$f"   ] && { grep "f=$f"     >/dev/null <<<"$sortargs" || args2="$args2 f=$f"     ;}
-        [ "$c"   ] && { grep "c=$c"     >/dev/null <<<"$sortargs" || args2="$args2 c=$c"     ;}
-        [ "$F"   ] && { grep "F=$F"     >/dev/null <<<"$sortargs" || args2="$args2 F=$F"     ;}
-        [ "$CF"  ] && { grep "CF=$CF"   >/dev/null <<<"$sortargs" || args2="$args2 CF=$CF"   ;}
-        [ "$off" ] && { grep "off=$off" >/dev/null <<<"$sortargs" || args2="$args2 off=$off" ;}
-        [ "$tp"  ] && { grep "tp=$tp"   >/dev/null <<<"$sortargs" || args2="$args2 tp=$tp"   ;}
-        [ "$lra" ] && { grep "lra=$lra" >/dev/null <<<"$sortargs" || args2="$args2 lra=$lra" ;}
-        [ "$i"   ] && { grep "i=$i"     >/dev/null <<<"$sortargs" || args2="$args2 i=$i"     ;}
-        [ "$cmp" ] && { grep "cmp=$cmp" >/dev/null <<<"$sortargs" || args2="$args2 cmp=$cmp" ;}
-        [ "$v"   ] && { grep "v=$v"     >/dev/null <<<"$sortargs" || args2="$args2 v=$v"     ;}
-        args2="$(tr ' ' '\n' <<<"$args2")"
+        sortargs="$(tr ' ' '\n' <<<"$sortargs" | uniq )" # one arg per line
+        # filename parsing phase complete
+        # for output
+        # print parm from filename
+        # also print known parm from env if it is different than filename parm
+        # result parsed and env parameters printed if different, last (env) parm wins
+        args=''
+#       [ "$ss"  ] && { grep "ss=$ss"   >/dev/null <<<"$sortargs" || args="ss=$ss"         ;}
+        [ "$to"  ] && { grep "to=$to"   >/dev/null <<<"$sortargs" || args="$args to=$to"   ;}
+        [ "$t"   ] && { grep "t=$t"     >/dev/null <<<"$sortargs" || args="$args t=$t"     ;}
+        [ "$p"   ] && { grep "p=$p"     >/dev/null <<<"$sortargs" || args="$args p=$p"     ;}
+        [ "$f"   ] && { grep "f=$f"     >/dev/null <<<"$sortargs" || args="$args f=$f"     ;}
+        [ "$c"   ] && { grep "c=$c"     >/dev/null <<<"$sortargs" || args="$args c=$c"     ;}
+        [ "$F"   ] && { grep "F=$F"     >/dev/null <<<"$sortargs" || args="$args F=$F"     ;}
+        [ "$CF"  ] && { grep "CF=$CF"   >/dev/null <<<"$sortargs" || args="$args CF=$CF"   ;}
+        [ "$off" ] && { grep "off=$off" >/dev/null <<<"$sortargs" || args="$args off=$off" ;}
+        [ "$tp"  ] && { grep "tp=$tp"   >/dev/null <<<"$sortargs" || args="$args tp=$tp"   ;}
+        [ "$lra" ] && { grep "lra=$lra" >/dev/null <<<"$sortargs" || args="$args lra=$lra" ;}
+        [ "$i"   ] && { grep "i=$i"     >/dev/null <<<"$sortargs" || args="$args i=$i"     ;}
+        [ "$cmp" ] && { grep "cmp=$cmp" >/dev/null <<<"$sortargs" || args="$args cmp=$cmp" ;}
+        [ "$v"   ] && { grep "v=$v"     >/dev/null <<<"$sortargs" || args="$args v=$v"     ;}
+        # expr "$v" : ".* v=$v " >/dev/null # ...
+        args="$(tr ' ' '\n' <<<"$args")"
         for parm in ss= to= t= p= f= c= F= CF= off= tp= lra= i= cmp= v= ; do
-            sortargs="$sortargs $(grep "^$parm" <<<"$args2")"
+            sortargs="$sortargs $(grep "^$parm" <<<"$args")"
             done
         grep 'ss=' <<<"$sortargs" >/dev/null || sortargs="ss=0 $sortargs"
-        args2="$(sed -e 's/^ [ ]*//g' -e 's/ [ ]*/ /g' -e 's/ [ ]*$//' <<<${sortargs})"
-        [ "$args2" ] && printf "%s " "$args2"
-#       echo $args f2rb2mp3 $orig $title
+        args="$(sed -e 's/^ [ ]*//g' -e 's/ [ ]*/ /g' -e 's/ [ ]*$//' <<<${sortargs})"
+        [ "$args" ] && printf "%s " "$args"
         echo f2rb2mp3 $orig $title
-        done
-    } # { # process the filelist $fs
-# export _f=0,artist_^30Ug3e46sss.info.json ; jq --compact-output 'del(.formats)' $_f | yq -P  >${_f}.txt
-# :e! ++enc=utf8
-} # formfile () { # create a f2rb2mp3 command to render the file, given the input filename
+        done # a (filelist)
+    } # formfile
 
-formfilestats () { # accept dir(s) as args, report formfile time and pitch stats from @ dir/*mp3
+formfilestats () { # accept dir(s) as args, report unique formfile time and pitch stats from @ dir/*mp3
   local dir a b
   for dir in $@ ; do
     [ -d "$dir" ] && {
@@ -628,7 +611,6 @@ verb2=chkwrn
     | grep -vE '(.vtt$|.json$)' | ckstat | sort -k4 | head -n1 \
     | awk -v m="$dir/$hash" '{print "ln",$5,m}'
  }
-
 
 
 # The lack tone functions generate a drone intended to add asthetic to a noisy environment.
@@ -833,7 +815,6 @@ numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" 
             | sed -e '/^ /d' -e 's/^[0123456789abcdefghjkmnpqrstuvxyz]*,//' -e '/^$/d' \
             | while IFS= read a ; do set $a
                 printf "%s %s%s%02s,%s\n" "$3" "$numlist" "$b" "$(base 32 $2)" "$1"
-              # printf "%s %s%s%02s,%s\n" "$3" "$numlist" "$b" "$(base 32 $(( $2 - 1 )) )" "$1"
                 done \
             | while IFS= read a ; do set $a # {orig} {numlist}{p}{seq},{name}
                 src="$1"
