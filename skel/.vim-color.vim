@@ -22,21 +22,25 @@ function! SynStack ()
 endfunction
 map gm :call SynStack()<CR>
 
-hi  Comment         cterm=none       ctermfg=DarkCyan
-hi  Constant        cterm=underline  ctermfg=15
-hi  PreProc         cterm=none       ctermfg=6
-hi  Statement       cterm=none       ctermfg=3
-hi  Identifier      cterm=bold       ctermfg=8
-hi  Special         cterm=none       ctermfg=5
-hi  shDeref         cterm=none       ctermfg=7
-hi  shCmdSubRegion  cterm=none       ctermfg=1
-hi  makeCommands    cterm=none       ctermfg=7
-hi  makeComment     cterm=none       ctermfg=6
-hi  makeImplicit    cterm=none       ctermfg=2
-hi  makeIdent       cterm=none       ctermfg=5
-hi  makeTarget      cterm=bold       ctermfg=3
-hi  vim9Comment     cterm=bold       ctermfg=red
-
+hi  Comment         cterm=none       ctermfg=DarkCyan  term=none
+hi  Constant        cterm=underline  ctermfg=15        term=underline
+hi  Identifier      cterm=none       ctermfg=69        term=none
+hi  PreProc         cterm=none       ctermfg=6         term=none
+hi  Search          cterm=reverse    ctermfg=24        term=reverse
+hi  Special         cterm=none       ctermfg=5         term=none
+hi  Statement       cterm=none       ctermfg=3         term=none
+hi  makeCommands    cterm=none       ctermfg=7         term=none
+hi  makeComment     cterm=none       ctermfg=6         term=none
+hi  makeIdent       cterm=none       ctermfg=5         term=none
+hi  makeImplicit    cterm=none       ctermfg=2         term=none
+hi  makeTarget      cterm=bold       ctermfg=3         term=bold
+hi  shCmdSubRegion  cterm=none       ctermfg=1         term=none
+hi  shCmdSubRegion  cterm=none       ctermfg=197       term=none
+hi  shCommandSub    cterm=none       ctermfg=90        term=none
+hi  shDeref         cterm=none       ctermfg=130       term=none
+hi  shFunctionOne   cterm=none       ctermfg=182       term=none
+hi  vim9Comment     cterm=bold       ctermfg=red       term=bold
+hi  shOption        cterm=none       ctermfg=22        term=none
 " See ~/.Xdefaults
 
 "1 red
