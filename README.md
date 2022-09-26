@@ -38,6 +38,8 @@ cd "${r}" && git archive --prefix ${PWD##*/}/ HEAD | tar -C "/tmp/${t}" -xzf - \
 
 ### Public comments
 
+* [\_mbsetupuser uses /bin/bash](https://discussions.apple.com/thread/254233125) --- Macs ship with a 2007 version of bash, supported or not?
+
 * Github Copilot docs update? Not today... [Issue #19579](https://github.com/community/community/discussions/19579) [PR #18833](https://github.com/github/docs/pull/18833)
 
 * [https://github.com/tmux/tmux/issues/3220](tmux/tmux #3220) Add a comand line option to disable acl checking... nope!
