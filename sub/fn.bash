@@ -540,7 +540,7 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
         [ "$args" ] && printf "%s " "$args"
         echo f2rb2mp3 $orig $title
         done # a (filelist)
-    } # formfile
+    } # formfile 632ca5bb 20220922
 
 formfilestats () { # accept dir(s) as args, report unique formfile time and pitch stats from @ dir/*mp3
   local dir a b
@@ -801,22 +801,23 @@ numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" 
     while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
     fs="$(sed -e 's/^\.\///' <<<"$fs" | while IFS= read f ; do [ -f "${f%%/*}" ] && echo "${f%%/*}" || true ; done)"
-    for p in 0 1 2 3 4 5 6 7 8 9 a b c d e f g h j k m n p q r s t u v x y z ; do # iterate on each major base 32
-        b="$p"
+    # 0 1 2 3 4 5 6 7 8 9 a b c d e f g h j k m n p q r s t u v x y z 
+    for p in {0 31} ; do # iterate on each major base 32
+        b="$(base 32 $p)"
         [ "$numlistbump" -gt 0 ] 2>/dev/null \
           && { for a in $(seq 1 $numlistbump ) ; do # bump the major sequence by $numlistbump if set
                b="$(tr '0123456789abcdefghjkmnpqrstuvxyz' '123456789abcdefghjkmnpqrstuvxyz0' <<<$b)"
                done
              } || true
         # drop meta files from rename, but touch a meta file if there are file matches, even in dry run, could use fd to avoid f loop?
-        { grep "^$p[0123456789abcdefghjkmnpqrstuvxyz]*,." <<<"$fs" && touch "${p}," || true ;} \
+        { grep "^$b[0123456789abcdefghjkmnpqrstuvxyz]*,." <<<"$fs" && touch "${b}," || true ;} \
             | while IFS= read f ; do printf "%s\n" "$f" ; done \
             | awk '{printf "%s %d %s\n",$0,NR,$0}' \
             | sed -e '/^ /d' -e 's/^[0123456789abcdefghjkmnpqrstuvxyz]*,//' -e '/^$/d' \
             | while IFS= read a ; do set $a
                 printf "%s %s%s%02s,%s\n" "$3" "$numlist" "$b" "$(base 32 $2)" "$1"
                 done \
-            | while IFS= read a ; do set $a # {orig} {numlist}{p}{seq},{name}
+            | while IFS= read a ; do set $a # {orig} {numlist}{b}{seq},{name}
                 src="$1"
                 # prepend "0," if not a comma file
                 grep -q "^[0123456789abcdefghjkmnpqrstuvxyz]*," <<<"$src" && dst="$2" || dst="0,$2"
@@ -836,7 +837,7 @@ numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" 
             # when we add a dry-run switch we can remove the echo...
             [ "$1" = "$dst" ] || { [ -e "$dst" ] && chkwrn "$FUNCNAME collision : $dst" || echo "mv '$1' '$dst'" ;}
             done
-    } # numlist 20220803
+    } # numlist 632ca5d3 20220922
 
 # 07/26/21
 numlistdst () { # distribute filenames across base 32 major (alnum lower sans 'ilow')

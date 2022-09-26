@@ -196,7 +196,7 @@ chkexit 8b52b10f 0000005e
 logexit e0f87299 00000061
 siff f376bdf0 0000010e
 siffx 6596996d 00000294
-validfn a25e6c28 00000445
+validfn 75f606c4 00000442
 EOF
 
 path_append () { # append $1 if not already in path
