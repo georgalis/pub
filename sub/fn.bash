@@ -23,9 +23,9 @@ alias  grst='git reset'
 alias  glog='git log'
 alias  gref='git reflog'
 alias  grst='git reset HEAD'
-# restore files #  git checkout -- {opt-file-spec}
-# undo add      #  git reset       {opt-file-spec}
-#
+# restore files  #  git checkout -- {opt-file-spec}
+# undo add       #  git reset       {opt-file-spec}
+# search commits #  git log -G'{regex}' --full-history --all
 #=======================================================
 # https://git-scm.com/book/en/v2/Git-Tools-Reset-Demystified
 # Commit hash, at least four characters and unambiguous beginning
@@ -217,6 +217,7 @@ prependf () {
   local basefn="$(basename "$basefp")"
   ( cd $(dirname "$basefp") && mv -f "$basefn" "${title}${basefn}" )
   } # prependf
+# 20200204
 f2rb2mp3 () ( # subshell function "file to rubberband to mp3", transcoding/tuning function
   # subshell sets pipefail and ensures PWD on err
     set -o errexit   # Exit on command non-zero status
@@ -447,6 +448,7 @@ EOF
     # -ss 32:05 -to 39:58.5
     ) # f2rb2mp3
 
+# 20201216
 formfile () { # create a f2rb2mp3 command to render the file, given the input filename
     # use case:
     #
@@ -474,13 +476,14 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
     local orig='' args='' sortargs='' parm=''
     echo "$fs" | while IFS= read _fpath ; do # filepath list
         local _fname="${_fpath##*/}" # basename
-        $verb2 "${_fname}"
+        echo "# ${_fname}"
+        local ext='' id='' orig=''
         local title="${_fname%%_^*}"
         local ext="$(sed -e 's/_^[^.]*.//' -e 's/-.*//' <<<"_^${_fname##*_^}")" # expect _^ to proceed id, followed by a dot ext, plus parm (.ext[-parm]*)
         local id="$(sed "s/\.${ext}.*//" <<<"${_fname##*_^}")"                  # id between "_^" and ".{ext}"
         local path ; expr "$_f" : ".*/" >/dev/null && path="${_f%/*}" || path="." # dirname input file
         local origfiles="$(find $(find "$path" . .. -name \@) -maxdepth 1 -type f -name \*${id}\* 2>/dev/null )" # search nearby @ directories
-        [ "$origfiles" ] && orig="$(awk 'NR==1' <<<"${files}")" # first inode found is usually the best choice
+        [ "$origfiles" ] && orig="$(awk 'NR==1' <<<"${origfiles}")" # first inode found is usually the best choice
         [ "$orig" ] || orig="'@/_^${id}.${ext}'" # not found, set expected path in quote, as reference
         # decode f2rb2mp3 arguments
         args="$(sed -E -e "
@@ -509,13 +512,13 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
         for parm in ss= to= t= p= f= c= F= CF= off= tp= lra= i= cmp= v= ; do
             sortargs="$sortargs $(grep "^$parm" <<<"$args")"
             done
-        sortargs="$(tr ' ' '\n' <<<"$sortargs" | uniq )" # one arg per line
+        sortargs="$(tr ' ' '\n' <<<"$sortargs" | sed '/^$/d')" # one arg per line
         # filename parsing phase complete
         # for output
         # print parm from filename
         # also print known parm from env if it is different than filename parm
         # result parsed and env parameters printed if different, last (env) parm wins
-        args=''
+        args='%'
 #       [ "$ss"  ] && { grep "ss=$ss"   >/dev/null <<<"$sortargs" || args="ss=$ss"         ;}
         [ "$to"  ] && { grep "to=$to"   >/dev/null <<<"$sortargs" || args="$args to=$to"   ;}
         [ "$t"   ] && { grep "t=$t"     >/dev/null <<<"$sortargs" || args="$args t=$t"     ;}
@@ -531,16 +534,20 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
         [ "$cmp" ] && { grep "cmp=$cmp" >/dev/null <<<"$sortargs" || args="$args cmp=$cmp" ;}
         [ "$v"   ] && { grep "v=$v"     >/dev/null <<<"$sortargs" || args="$args v=$v"     ;}
         # expr "$v" : ".* v=$v " >/dev/null # ...
-        args="$(tr ' ' '\n' <<<"$args")"
-        for parm in ss= to= t= p= f= c= F= CF= off= tp= lra= i= cmp= v= ; do
+        args="$(tr ' ' '\n' <<<"$args" | sed '/^$/d' )"
+        for parm in % ss= to= t= p= f= c= F= CF= off= tp= lra= i= cmp= v= ; do
             sortargs="$sortargs $(grep "^$parm" <<<"$args")"
             done
         grep 'ss=' <<<"$sortargs" >/dev/null || sortargs="ss=0 $sortargs"
-        args="$(sed -e 's/^ [ ]*//g' -e 's/ [ ]*/ /g' -e 's/ [ ]*$//' <<<${sortargs})"
-        [ "$args" ] && printf "%s " "$args"
-        echo f2rb2mp3 $orig $title
+        sortargs=$(tr '\n' ' ' <<<${sortargs} \
+            | sed -e '
+                s/^ [ ]*//g
+                s/ [ ]*/ /g
+                s/ [ ]*$//
+                s/ % /   /' ) # <<< with no quotes removes the \n
+        echo "$sortargs f2rb2mp3 $orig $title"
         done # a (filelist)
-    } # formfile 632ca5bb 20220922
+    } # formfile 633524ed 20220928
 
 formfilestats () { # accept dir(s) as args, report unique formfile time and pitch stats from @ dir/*mp3
   local dir a b
