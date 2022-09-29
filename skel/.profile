@@ -7,6 +7,23 @@
 # for interactive sessions only
 /usr/bin/tty -s || return
 
+# if running /bin/bash on a mac with homebrew bash available, switch
+ps | grep "^[ ]*$$ " | grep -q bash 2>/dev/null \
+  && { test -x /opt/homebrew/bin/bash \
+        && { expr "$(/opt/homebrew/bin/bash --version)" \
+            : "GNU bash, version ${BASH_VERSINFO[0]}\.${BASH_VERSINFO[1]}\.${BASH_VERSINFO[2]}" >/dev/null \
+            || { # set SHELL and exec homebrew bash
+                export SHELL="/opt/homebrew/bin/bash"
+                exec env -i TERM="$TERM" COLORTERM="$COLORTERM" \
+                SHELL="$SHELL" HOME="$HOME" LOGNAME="$LOGNAME" USER="$USER" \
+                SSH_AGENT_PID="$SSH_AGENT_PID" SSH_AUTH_SOCK="$SSH_AUTH_SOCK" \
+                SSH_AGENT_ENV="$SSH_AGENT_ENV" \
+                "${SHELL}" -l
+               } # BASH_VERSINFO doesn't match homebrew version
+          } || return 1 # exec homebrew bash failed
+     } || true # homebrew not available
+
+
 export EDITOR="vi"
 export PAGER='less --jump-target=3'
 export GPG_TTY=$(tty)
