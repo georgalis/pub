@@ -51,7 +51,8 @@ alias  grst='git reset HEAD'
 # git status # generic command
 # gstatus    # alias for git short form status of $@
 gst () { # short form status of $@ (current repo), sorted
-  git status --short $@ | awk '{s=$1; $1=""; sub(/[ ]* /,//,$2); printf "%-2s%s\n",s,$0}' | sort ;}
+  git status --short $@ | sed -e 's/^ /_/' -e 's/^\(.\) /\1_/' | sort ;}
+ #git status --short $@ | awk '{s=$1; $1=""; sub(/[ ]* /,//,$2); printf "%-2s%s\n",s,$0}' | sort ;}
 gsta () { # git short form status of all repos below $@ (or current repo), sorted
   local start=$@
   [ "$start" ] || start='.'
