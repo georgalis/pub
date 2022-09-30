@@ -240,7 +240,7 @@ ckstat () { # return sortable stat data for args (OR stdin file list)
       [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat () { stat -f %l\ %i\ %z\ %m "$1" ;} || true
       echo "$fs" | while IFS= read f; do
         [ -f "$f" ] && {
-          _stat "$f" | awk '{printf "%02x%07x . % 8x %08x",$1,$2,$3,$4}'
+          _stat "$f" | awk '{printf "%x%08x . % 8x %08x",$1,$2,$3,$4}'
           printf "\t%s\t%s\n" "${f##*/}" "$f" # tabs with basename and filepath input
           } || chkerr "$FUNCNAME : not a regular file : $f";
         done
@@ -265,7 +265,7 @@ ckstatsum () { # return sortable stat data for args (OR stdin file list)
       echo "$fs" | while IFS= read f; do
         [ -f "$f" ] && {
           { _stat "$f" ; cksum <"$f"
-              } | tr '\n' ' ' | awk '{printf "%02x%07x %8x % 8x %08x",$1,$2,$5,$3,$4}'
+              } | tr '\n' ' ' | awk '{printf "%x%08x %08x % 8x %08x",$1,$2,$5,$3,$4}'
           printf "\t%s\t%s\n" "${f##*/}" "$f" # tabs with basename and filepath input
           } || chkerr "$FUNCNAME : not a regular file : $f";
         done
