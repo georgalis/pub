@@ -809,7 +809,7 @@ numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" 
     [ "$fs" ] || fs="$(cat)"
     fs="$(sed -e 's/^\.\///' <<<"$fs" | while IFS= read f ; do [ -f "${f%%/*}" ] && echo "${f%%/*}" || true ; done)"
     # 0 1 2 3 4 5 6 7 8 9 a b c d e f g h j k m n p q r s t u v x y z 
-    for p in {0 31} ; do # iterate on each major base 32
+    for p in {0..31} ; do # iterate on each major base 32
         b="$(base 32 $p)"
         [ "$numlistbump" -gt 0 ] 2>/dev/null \
           && { for a in $(seq 1 $numlistbump ) ; do # bump the major sequence by $numlistbump if set
