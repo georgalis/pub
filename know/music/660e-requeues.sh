@@ -23,7 +23,7 @@ chkexit 8b52b10f 0000005e
 logexit e0f87299 00000061
 siff f376bdf0 0000010e
 siffx 6596996d 00000294
-validfn a25e6c28 00000445
+validfn 75f606c4 00000442
 EOF
 
 while IFS= read a ; do
@@ -31,8 +31,8 @@ while IFS= read a ; do
     done <<EOF
 ckstat ea8f5074 00000379
 ckstatsum 94662c65 000003e1
-formfile 63bac740 00000e64
-formfilestats fdf4e379 00000498
+formfile c18e925a 00000eca
+formfilestats b4d551f2 000004b1
 revargs 5db3f9bb 000000a7
 EOF
 

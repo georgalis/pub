@@ -6,6 +6,9 @@ more jazz and aesthetic tuning...
 documentaries are often slowed doen a little bit to give a contemplative look, lion king 2019 narrative 1:01:05
 anthropomorphic look 
 
+{seq},{composer}-{catalog-title}-{record-movement}-{year}-{performer-year}-{label}-{note} 
+\_^{youtube-id}-{start-stop-position}-{tempo-pitch-parameters}-{level-compression-parameters}.mp3
+
 
 When shifting keys, the tonal quality rotates around a circular spectrum of temperament
 
