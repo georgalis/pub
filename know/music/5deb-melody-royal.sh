@@ -29,8 +29,8 @@ EOF
 while IFS= read a ; do
     validfn $a && true || { echo "$0 : validfn error : $a" 1>&2 ; dep_help_sub ; exit 1 ;}
     done <<EOF
-ckstat e2aa165c 00000377
-ckstatsum 63b30fc1 000003e0
+ckstat cf2d2b8d 000003ab
+ckstatsum 0d078cff 00000401
 formfile c179f567 00000f48
 formfilestats b4d551f2 000004b1
 revargs 5db3f9bb 000000a7
