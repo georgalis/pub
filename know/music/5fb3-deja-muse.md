@@ -18,15 +18,19 @@ Almost all of the Beethoven quartets are represented, in their natural tempo and
 
 Most filenames follow a general format, to indicate the sequence, artist, work, original source media and any audio transformations:
 
-    {sequence}-{artist}-{title}_^{youtube-id}-{time}-{pitch}-{parameters}.mp3
+<pre>
+    {sequence},{composer}-{Op-title}-{performer-year}_^{youtube-id}-{position}-{time}-{pitch}-{volume}.mp3
+</pre>
 
-CLI tools are available to convert these filenames, into parameters and commands that transform the original files, for fine tuning. A HUGE THANK YOU to the authors of the free software that made these tools possible: VLC media player, Sonic Visualizer, sox, ffmpeg and rubberband. Also, YouTube for making the scores available.
+CLI tools are available to convert these filenames, into parameters and commands that transform the original files, for fine tuning. A HUGE THANK YOU to the authors of the free software that made these tools possible: ffmpeg, rubberband, sox, Sonic Visualizer, and VLC media player. Also, IMSLP and YouTube for making the scores and media available.
 
-* https://www.videolan.org/
+* https://ffmpeg.org/
+* https://breakfastquay.com/rubberband/
+* https://sox.sourceforge.net/
 * https://www.sonicvisualiser.org/
-* http://sox.sourceforge.net/
-* http://ffmpeg.org/
-* https://breakfastquay.com/
+* https://www.sonicvisualiser.org/sonic-lineup/
+* https://www.videolan.org/
+* https://imslp.org/
 * https://youtu.be/4V3x-sBnfKQ?t=2677
 
 ### Highlights
@@ -47,8 +51,10 @@ Most of the pre-baroque selections are a variation of Folias de Espana, because 
 Fun fact, Chopin's Funeral March has a strikingly similar melody, when played in reverse! Irae Dies is its plague era predecessor (March of Death), but it is more effervescent when played backwards, both are presented in reverse, for your entertainment.
 
 Enjoy!
-
 -George
+
+Release 20210228 Sun 28 Feb 2021
+Revised 20221010 Mon 10 Oct 2022 pre-revision
 
 #### Jazz
 ```

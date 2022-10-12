@@ -587,7 +587,9 @@ formfilestats () { # accept dir(s) as args, report unique formfile time and pitc
             / t=1 p=0$/d
           " <<<"^${a##*^}" \
           | awk '{printf "%- 11s %- 11s %s %s %s\n",$1,$2,$3,$4,$5}'
+        spin2
         done # b in "$dir"/*mp3
+        spin2 0
         } || true # $dir
        done | sort -n -t '=' -k 2 | uniq -c # sort result and count uniq
   } #
@@ -982,3 +984,24 @@ rotatefile () { #P> keep at least n backups, and delete files older than m secon
             done
     mv "$f" "${f}-$(ckstat "$f" | awk '{print $4}')"
     }
+
+spin1 () { # '.oO@Oo+~:"`   '
+    [ "$1" = "0" ] && printf "\010" && return 0
+    [ "$1" ]     && local _spin1="$1"              && local _spin1_len="${#_spin1}"
+    [ "$_spin1" ] || local _spin1='_./-|-\+/-|-\ ' && local _spin1_len="${#_spin1}"
+    [ "$_spin1_n" ] || _spin1_n=1
+    local _spin1_p=$(( _spin1_n % _spin1_len ))
+    printf "\010%s" "${_spin1:_spin1_p:1}"
+    _spin1_n=$((++_spin1_n))
+    }
+
+spin2 () { # '.oO@Oo+~:"`   '
+    [ "$1" = "0" ] && printf "\010" 1>&2 && return 0
+    [ "$1" ]     && local _spin2="$1"              && local _spin2_len="${#_spin2}"
+    [ "$_spin2" ] || local _spin2='_./-|-\+/-|-\ ' && local _spin2_len="${#_spin2}"
+    [ "$_spin2_n" ] || _spin2_n=1
+    local _spin2_p=$(( _spin2_n % _spin2_len ))
+    printf "\010%s" "${_spin2:_spin2_p:1}" 1>&2
+    _spin2_n=$((++_spin2_n))
+    }
+
