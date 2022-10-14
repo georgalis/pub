@@ -5,7 +5,7 @@
 set -e
 
 dep_help_skel () { echo '# ><> eval "$(curl -fsSL https://github.com/georgalis/pub/blob/master/skel/.profile)" <><' 1>&2
-    echo 'export -f devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue chkexit logexit siff siffx validfn' 1>&2 ;}
+    echo 'export -f devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue chkexit logexit validfn' 1>&2 ;}
 dep_help_sub () { echo '# ><> eval "$(curl -fsSL https://github.com/georgalis/pub/blob/master/sub/fn.bash)" <><' 1>&2
     echo 'export -f ckstatsum ckstat revargs formfile formfilestats' 1>&2 ;}
 
@@ -23,9 +23,7 @@ logerr ffddd972 00000062
 chktrue 845489dd 00000064
 chkexit 8b52b10f 0000005e
 logexit e0f87299 00000061
-siff f376bdf0 0000010e
-siffx 6596996d 00000294
-validfn 75f606c4 00000442
+validfn c268584c 00000441
 EOF
 
 while IFS= read a ; do
@@ -33,8 +31,8 @@ while IFS= read a ; do
     done <<EOF
 ckstat cf2d2b8d 000003ab
 ckstatsum 0d078cff 00000401
-formfile c179f567 00000f48
-formfilestats b4d551f2 000004b1
+formfile 54d31987 00000f43
+formfilestats fa92ede0 000004dc
 revargs 5db3f9bb 000000a7
 spin2 1263edf2 00000180
 EOF
@@ -66,6 +64,7 @@ gen_index () {
             " \
         | sort \
         >"${name}.list"
+    touch -r "$links/$name/" "${name}.list"
 
     chktrue ${name}.list.html
     echo '<nobr><ol>' >${name}.list.html
@@ -76,16 +75,17 @@ gen_index () {
             s,$,</li>,
             ' >>${name}.list.html
     echo '</ol></nobr>' >>${name}.list.html
+    touch -r "${name}.list" ${name}.list.html
 
     chktrue ${name}.tab
     cat ${name}.list | while IFS= read a ; do
         b="$(formfile "$a" | sed '/^#/d')"
-        revargs $(sed -e 's/   .*_^/ _^/' -e "s/'//" <<<"$b") \
-            | sed 's/,/ /' \
-            | awk '{printf "% 3s %-80s %-18s",$1,$2,$3 ; $1="";$2="";$3="" ; print }'
+        sed -e 's/   .*_^/ _^/' -e "s/'//" -e 's/^\(.*\)\( _^.*\)/\2 \1/' -e 's/^\(.*\),\([^ ]*\)/\2 \1 /' <<<"$b" \
+            | awk '{printf "%-85s %-18s",$1,$2;$1="";$2="";$3="";print}'
         spin2
-        done | sort -f -k2 >${name}.tab
+        done | sort -f >${name}.tab
     spin2 0
+    touch -r "${name}.list" ${name}.tab
 
     chktrue ${name}.tab.html
     echo '<nobr><ol>' >${name}.tab.html
@@ -95,19 +95,23 @@ gen_index () {
         s,$,</li>,
         ' >>${name}.tab.html
     echo '</ol></nobr>' >>${name}.tab.html
+    touch -r "${name}.list" ${name}.tab.html
 
     chktrue ${name}.stat.time
     formfilestats $links/$name >${name}.stat.time
+    touch -r "${name}.list" ${name}.stat.time
     chktrue ${name}.stat.pitch
     sort -n -t '=' -k 3 ${name}.stat.time >${name}.stat.pitch
+    touch -r "${name}.list" ${name}.stat.pitch
 
     chktrue ${name}.ckstat
     cat ${name}.list | while IFS= read a ; do
       # ckstat    $links/$name/$a | awk -v f="${a##*/}" '{printf ". . % 8s %s %s\n",$3,$4,f}'
-        ckstatsum $links/$name/$a | awk -v f="${a##*/}" '{printf ". . % 8s %s %s\n",$3,$4,f}'
+        ckstatsum $links/$name/$a | awk -v f="${a##*,}" '{printf ". . % 8s %s %s\n",$3,$4,f}'
         spin2
-        done >${name}.ckstat
+        done | sort -f -k5 >${name}.ckstat
     spin2 0
+    touch -r "${name}.list" ${name}.ckstat
 
     chktrue ${name}.ckstat.html
     echo '<pre><ol>' >${name}.ckstat.html
@@ -118,11 +122,13 @@ gen_index () {
             s,$,</li>,
             ' >>${name}.ckstat.html
     echo '</ol></pre>' >>${name}.ckstat.html
+    touch -r "${name}.list" ${name}.ckstat.html
+
     } # gen_index
 
 check_do_index () { # bypass unchanged
     [ -d "$links/$name/" ] || { chkerr "$0 : not a directory '$links/$name/'" ; return 1 ;}
-    [ -e "${name}.list" ] && [ "${name}.list" -nt "$links/$name/" ] && { chktrue "Skipping $name" ; return 0 ;}
+    [ -e "${name}.list" ] && [ "${name}.list" -nt "$links/$name/" ] && { chktrue "No change, skipping $name" ; return 0 ;}
     gen_index
     } # check_do_index
 
@@ -136,11 +142,8 @@ volumes="
 6344-Ithica
 "
 
-[ "$1" ] && volumes="$1"
-
 cd "$inpath"
-for name in $volumes ; do
-    check_do_index
-    done # name in $volumes
 
-exit 0
+[ "$*" ] && { for name in $* ; do [ -d "$links/$name/" ] && gen_index ; done ; exit $? ;} \
+         || { for name in $volumes ; do check_do_index ; done ; exit $? ;}
+

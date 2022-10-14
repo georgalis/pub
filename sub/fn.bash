@@ -481,7 +481,8 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
         echo "# ${_fname}"
         local ext='' id='' orig=''
         local title="${_fname%%_^*}"
-        local ext="$(sed -e 's/_^[^.]*.//' -e 's/-.*//' <<<"_^${_fname##*_^}")" # expect _^ to proceed id, followed by a dot ext, plus parm (.ext[-parm]*)
+        local ext="$(sed -e 's/_^[^.]*.//' -e 's/\..*//' -e 's/-.*//' <<<"_^${_fname##*_^}")" # expect _^ to proceed id, followed by dot orig ext,
+            # parm and transcoded extension, do the right thing on no parm or no transcoded extension (_^id.ext[-parm][.ext]$)
         local id="$(sed "s/\.${ext}.*//" <<<"${_fname##*_^}")"                  # id between "_^" and ".{ext}"
         local path ; expr "$_f" : ".*/" >/dev/null && path="${_f%/*}" || path="." # dirname input file
         local origfiles="$(find $(find "$path" . .. -name \@) -maxdepth 1 -type f -name \*${id}\* 2>/dev/null )" # search nearby @ directories
