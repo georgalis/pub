@@ -397,6 +397,7 @@ EOF
   expr "$t" : '^-' >/dev/null && { chkerr "$FUNCNAME parm invalid : t=$t" ; return 1 ;} || true
   expr "$p" : '^-[[:digit:]]*$' >/dev/null && p="${p}.0" || true # fixup negative intergers, least test fail... -bash: [: -3: unary operator expected
   expr "$f" : '^-[[:digit:]]*$' >/dev/null && f="${f}.0" || true # fixup negative intergers, least test fail
+  # [ "" -o "-3" -o "" ] yeilds error on native mac bash https://discussions.apple.com/thread/254233125
   [ "$t" -o "$p" -o "$f" ] && { # rb parm
     [ "$F" = "y" ]  &&  Fc='--formant'       Fn='-F'  || Fc=''   Fn=''
     [ "$cf" = "y" ] && cfc='--centre-focus' cfn='-cf' || cfc='' cfn=''
@@ -1004,4 +1005,26 @@ spin2 () { # '.oO@Oo+~:"`   '
     printf "\010%s" "${_spin2:_spin2_p:1}" 1>&2
     _spin2_n=$((++_spin2_n))
     }
+
+# 20221013 6348728e
+base () { # convert {decimal} arg2 to {base} arg1
+    # digs = string.digits + string.ascii_letters
+    # digs = "0123456789abcdefghijklmnpqrstuvwxyz"
+    # shift out characters "ilow" for visual acuity
+    #      "0123456789abcdefghijklnpqrstuvwxyz"
+  # local digs=$(echo {0..9} {a..z} | tr -d ' ilow\n')
+    local digs="0123456789abcdefghjkmnpqrstuvxyz"
+    local sign='' out='' p='' base="$1" x="$2"
+    [ "$base" -a "$x" ] || { chkerr "$FUNCNAME : must provide output {base} arg1, and input {decimal} arg2 : arg1='$1' arg2='$2'" ; return 1 ;}
+    [[ "$base" =~ ^-?[0-9]+$ ]] || { chkerr "$FUNCNAME : arg1 (output base) must be an integer : arg1='$1'" ; return 1 ;}
+    [[ "$x"    =~ ^-?[0-9]+$ ]] || { chkerr "$FUNCNAME : arg2 (decimal input) must be an integer : arg2='$2'" ; return 1 ;}
+    [ $x -lt 0 ] && sign='-' || { [ $x = 0 ] && { echo 0 ; return 0 ;} ;}
+    x=$(( x * "${sign}1" ))
+    while [ $x -gt 0 ] ; do
+        p=$((x % base))
+        out="${digs:p:1}$out"
+        x=$((x / base))
+        done
+    echo "${sign}${out}"
+    } # base 20221013 6348728e
 

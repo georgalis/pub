@@ -137,20 +137,13 @@ chktrue () { [ "$*" ] && { stderr    "><> $* <><" ; return 0  ;} || return 1 ;} 
 chkexit () { [ "$*" ] && { stderr    ">>> $* <<<" ; exit 1    ;} || true ;} #:> err stderr args exit 1, noop if null
 logexit () { [ "$*" ] && { logger -s ">>> $* <<<" ; exit 1    ;} || true ;} #:> err stderr+log args exit 1, noop if null
 siff () { local verb="${verb:-chktrue}" ; test -e "$1" \
-        && { { . "${1}" && ${verb} "${2}: . ${1}" ;} || { chkerr "siff: fail in '$1' from '$2'" ; return 1 ;} ;} \
+        && { { . "${1}" && ${verb} "${2}: . ${1}" ;} || { chkerr "$FUNCNAME: fail in '$1' from '$2'" ; return 1 ;} ;} \
         || ${verb} "${2}: siff: no file $1" ;} #:> source arg1 if exists, on err recall args for backtrace
-siffx () { local verb="${verb:-chktrue}" ; test -e "$1" \
-        && { { . "${1}" \
-          && { export -f $(grep '^[_[:alpha:]][_[:alnum:]]* () ' "$1" | sed 's/ () .*//' ) >/dev/null && $verb "func export : $1" ;} \
-          && { export    $(grep '^[_[:alpha:]][_[:alnum:]]*='    "$1" | sed 's/=.*//'    ) >/dev/null && $verb " var export : $1" ;} \
-          && devnul "${2}: . ${1} ; var func exports"
-          } || { chkerr "${FUNCNAME} : fail in '$1' from '$2'" ; return 1 ;} ;} \
-        || chkwrn "${2}: ${FUNCNAME} : no file $1 from '$2'" ;} #:> source arg1 if exists , on err recall args for backtrace
 siffx () { local verb="${verb:-chktrue}" ; test -e "$1" \
         && { { . "${1}" \
           && { export -f $(grep '^[_[:alpha:]][_[:alnum:]]* () ' "$1" | sed 's/ () .*//' ) >/dev/null && devnul "  function export '^[^ ]* () '" ;} \
           && { export    $(grep '^[_[:alpha:]][_[:alnum:]]*='    "$1" | sed 's/=.*//'    ) >/dev/null && devnul "       var export '^[:alpha:][_[:alnum:]]*='" ;} \
-          && ${verb} "${2}: . ${1} ; var func exports"
+          && ${verb} "${2}: . ${1}"
           } || { chkerr "${FUNCNAME} : fail in '$1' from '$2'" ; return 1 ;} ;} \
         || chkwrn "${2}: ${FUNCNAME} : no file $1 from '$2'" ;} #:> source arg1 if exists , on err recall args for backtrace
 # verbosity, typically set to devnul, chkwrn, or chkerr
@@ -195,11 +188,11 @@ validfn () { #:> validate function, compare unit hash vs operation env hash
 #
 # then run validfn on that data to report if the functions have ever change
 # print help if hash unit does not match hash from env
-dep_help_skel () { echo '# ><> eval "$(curl -fsSL https://github.com/georgalis/pub/blob/master/skel/.profile)" <><' 1>&2
+_help_skel () { echo '# ><> eval "$(curl -fsSL https://github.com/georgalis/pub/blob/master/skel/.profile)" <><' 1>&2
     echo 'export -f devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue chkexit logexit siff siffx validfn' 1>&2 ;}
-test "$(declare -f validfn 2>/dev/null)" || { echo "$0 : validfn not defined" 1>&2 ; dep_help_sub ; return 1 ;}
+test "$(declare -f validfn 2>/dev/null)" || { echo "$0 : validfn not defined" 1>&2 ; _help_sub ; return 1 ;}
 while IFS= read a ; do
-        validfn $a && true || { echo "validfn error : $a" 1>&2 ; dep_help_skel ; return 1 ;}
+        validfn $a && true || { echo "validfn error : $a" 1>&2 ; _help_skel ; return 1 ;}
         done <<EOF
 devnul 216e1370 0000001d
 stderr 7ccc5704 00000037
@@ -211,9 +204,9 @@ logerr ffddd972 00000062
 chktrue 845489dd 00000064
 chkexit 8b52b10f 0000005e
 logexit e0f87299 00000061
-siff f376bdf0 0000010e
-siffx 6596996d 00000294
-validfn 75f606c4 00000442
+siff 32bbcc06 00000113
+siffx c8f57dbb 00000279
+validfn c268584c 00000441
 EOF
 
 path_append () { # append $1 if not already in path
