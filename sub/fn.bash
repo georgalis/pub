@@ -809,16 +809,17 @@ numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" 
     # Prepend output filenames with the "$numlist" string;
     # Initilize base 32 sequence with 0 major for input files that have no sequence;
     # For name changes, without colisions, generate mv commands for evaluation or "| sh".
-    local f fs p b a src dst;
+    local f fs p c b a src dst;
     while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
     fs="$(sed -e 's/^\.\///' <<<"$fs" | while IFS= read f ; do [ -f "${f%%/*}" ] && echo "${f%%/*}" || true ; done)"
     # 0 1 2 3 4 5 6 7 8 9 a b c d e f g h j k m n p q r s t u v x y z 
     for p in {0..31} ; do # iterate on each major base 32
         b="$(base 32 $p)"
+        c="$b"
         [ "$numlistbump" -gt 0 ] 2>/dev/null \
-          && { for a in $(seq 1 $numlistbump ) ; do # bump the major sequence by $numlistbump if set
-               b="$(tr '0123456789abcdefghjkmnpqrstuvxyz' '123456789abcdefghjkmnpqrstuvxyz0' <<<$b)"
+          && { for a in {1..$numlistbump} ; do # bump the major sequence by $numlistbump if set
+               c="$(tr "0123456789abcdefghjkmnpqrstuvxyz" "123456789abcdefghjkmnpqrstuvxyz0" <<<$b)"
                done
              } || true
         # drop meta files from rename, but touch a meta file if there are file matches, even in dry run, could use fd to avoid f loop?
@@ -826,10 +827,10 @@ numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" 
             | while IFS= read f ; do printf "%s\n" "$f" ; done \
             | awk '{printf "%s %d %s\n",$0,NR,$0}' \
             | sed -e '/^ /d' -e 's/^[0123456789abcdefghjkmnpqrstuvxyz]*,//' -e '/^$/d' \
-            | while IFS= read a ; do set $a
-                printf "%s %s%s%02s,%s\n" "$3" "$numlist" "$b" "$(base 32 $2)" "$1"
+            | while IFS= read a ; do set $a # {f} {NR} {seq,f}
+                printf "%s %s%s%02s,%s\n" "$3" "$numlist" "$c" "$(base 32 $2)" "$1"
                 done \
-            | while IFS= read a ; do set $a # {orig} {numlist}{b}{seq},{name}
+            | while IFS= read a ; do set $a # {orig} {numlist}{c}{seq},{name}
                 src="$1"
                 # prepend "0," if not a comma file
                 grep -q "^[0123456789abcdefghjkmnpqrstuvxyz]*," <<<"$src" && dst="$2" || dst="0,$2"
@@ -837,10 +838,9 @@ numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" 
                 done
         done # p
     # and give all files that had no sequence a "0" major (no bump) and sequence
-    { grep -v "^[0123456789abcdefghjkmnpqrstuvxyz]*," <<<"$fs" || true ;} \
+    { sed -e "/^[0123456789abcdefghjkmnpqrstuvxyz]*,/d" -e '/^$/d' <<<"$fs" || true ;} \
     | while IFS= read f; do printf "%s\n" "$f" ; done \
         | awk '{printf "%s %d %s\n",$0,NR,$0}' \
-        | sed -e '/^ /d' \
         | while IFS= read a ; do set $a
             printf "%s %s%s%02s,%s\n" "$3" "$numlist" "0" "$(base 32 $2)" "$1"
             done \
