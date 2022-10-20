@@ -218,53 +218,48 @@ path_prepend () { # prepend $1 if not already in path
 
 ckstat () { # return sortable stat data for args (OR stdin file list)
   # ckstat /etc/resolv.conf
-  # 01033cb35f .       16 6305e87b /etc/resolv.conf
-  # links\inode . 0x_size  0x_date input
+  # 033cb35f01 .       16 6305e87b /etc/resolv.conf
+  # inode\links . 0x_size  0x_date input
   # (c) 2017-2022 George Georgalis <george@galis.org> unlimited use with this notice
   [ "$1" = "-h" -o "$1" = "--help" ] && {
-    chkwrn "Return sortable stat data for args (OR stdin file list):";
-    chkwrn "links-inode . 0x-size 0x-mdate input"
+    chkwrn 'Return sortable stat data for args (OR stdin file list):'
+    chkwrn 'inode\links . 0x-size 0x-mdate input'
     return 0 ;} || true
   local f fs
   [ $# -gt 0 ] && { fs="$1" ; shift || true ;}
   while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift || true ; done
   [ "$fs" ] || fs="$(cat)"
-  local OS="$(uname)"
-  [ "$OS" = "Linux" ]                      && _stat () { stat -c %h\ %i\ %s\ %Y "$1" ;} || true
-  [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat () { stat -f %l\ %i\ %z\ %m "$1" ;} || true
+  [ "$OS" ] || local OS="$(uname)"
+  [ "$OS" = "Linux" ]                      && _stat () { stat -c %i\ %h\ %s\ %Y "$1" ;} || true
+  [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat () { stat -f %i\ %l\ %z\ %m "$1" ;} || true
   echo "$fs" | while IFS= read f; do
     [ -f "$f" ] && {
-      _stat "$f" | awk '{printf "%02x%08x . % 8x %08x",$1,$2,$3,$4}'
-  #   printf "\t%s\t%s\n" "${f##*/}" "$f" # tabs with basename and filepath input
-      printf " %s\n" "$f"                  # filepath input
-      } || chkerr "$FUNCNAME : not a regular file : $f";
-    done
+      _stat "$f" | awk -v f="$f" '{printf "%08x%02x . % 8x %08x %s\n",$1,$2,$3,$4,f}'
+      } || chkerr "$FUNCNAME : not a regular file : $f"
+    done # f
   } # ckstat ()
 
 ckstatsum () { # return sortable stat data for args (OR stdin file list)
   # ckstatsum /etc/resolv.conf
-  # 01033cb35f 1b233022       16 6305e87b /etc/resolv.conf
-  # links\inode 0x_cksum 0x_size 0x_date  input
+  # 033cb35f01 b35a88ac       16 6305e87b /etc/resolv.conf
+  # inode\links 0x_cksum  0x_size 0x_date input
   # (c) 2017-2022 George Georgalis <george@galis.org> unlimited use with this notice
   [ "$1" = "-h" -o "$1" = "--help" ] && {
-    chkwrn "Return sortable stat data for args (OR stdin file list):";
-    chkwrn "links-inode . 0x-size 0x-mdate input"
+    chkwrn 'Return sortable stat data for args (OR stdin file list):'
+    chkwrn 'inode\links . 0x-size 0x-mdate input'
     return 0 ;} || true
   local f fs
   [ $# -gt 0 ] && { fs="$1" ; shift || true ;}
   while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift || true ; done
   [ "$fs" ] || fs="$(cat)"
-  local OS="$(uname)"
-  [ "$OS" = "Linux" ]                      && _stat () { stat -c %h\ %i\ %s\ %Y "$1" ;} || true
-  [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat () { stat -f %l\ %i\ %z\ %m "$1" ;} || true
+  [ "$OS" ] || local OS="$(uname)"
+  [ "$OS" = "Linux" ]                      && _stat () { stat -c %i\ %h\ %s\ %Y "$1" ;} || true
+  [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat () { stat -f %i\ %l\ %z\ %m "$1" ;} || true
   echo "$fs" | while IFS= read f; do
     [ -f "$f" ] && {
-      { _stat "$f" ; cksum <"$f"
-          } | tr '\n' ' ' | awk '{printf "%02x%08x %08x % 8x %08x",$1,$2,$5,$3,$4}'
-  #   printf "\t%s\t%s\n" "${f##*/}" "$f" # tabs with basename and filepath input
-      printf " %s\n" "$f"                  # filepath input
-      } || chkerr "$FUNCNAME : not a regular file : $f";
-    done
+      { _stat "$f" ; cksum <"$f" ;} | tr '\n' ' ' | awk -v f="$f" '{printf "%08x%02x %08x % 8x %08x %s\n",$1,$2,$5,$3,$4,f}'
+      } || chkerr "$FUNCNAME : not a regular file : $f"
+    done # f
   } # ckstatsum ()
 
 ascii_filter () { while IFS= read a ; do echo "$a" | strings -e s ; done ;}
