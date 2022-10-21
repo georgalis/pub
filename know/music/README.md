@@ -45,7 +45,7 @@ various volumes are made, from time to time.
 1. The third volume is [5deb-melody-royal](https://github.com/georgalis/pub/blob/master/know/music/5deb-melody-royal.list), it is a condensed presentation of the fourth volume.
 1. The fourth volume is [5d50-kindle-class](https://github.com/georgalis/pub/blob/master/know/music/5d50-kindle-class.list), and marks the beginning of the effort to identify collections suitable for non-intrusive, edifying, continuous listening at background volumes.
 1. A fifth volume [6344-Ithica](https://github.com/georgalis/pub/blob/master/know/music/6344-Ithica.list), was divinely inspired. It is simply a collection of three CDs purchased in 1994 to memorialize a supernatural sign, rain, directing this musical curation. More on that later.
-1. Volume six [6350-forte-flute](6350-forte-flute.list) is a practice challenge of etudes. Many performances are retuned.
+1. Volume six [6350-forte-flute](6350-forte-flute.md) is a practice challenge of etudes. Many performances are retuned.
 
 Only the first volume,
 [5fb3-deja-muse](https://github.com/georgalis/pub/blob/master/know/music/5fb3-deja-muse.md)
@@ -59,7 +59,7 @@ last in the queue for release is volume four;
 content is complete for the fifth volume, 
 [6344-Ithica](https://github.com/georgalis/pub/blob/master/know/music/6344-Ithica.list),
 a formal release is pending curation, however.
-[6350-forte-flute](6350-forte-flute.list) is available, without curation.
+[6350-forte-flute](6350-forte-flute.md) is available, without curation.
 
 Tools to download the original recordings and manage the releases are presented as bash shell
 functions in [fn.bash](https://github.com/georgalis/pub/blob/master/sub/fn.bash), a breakdown of
