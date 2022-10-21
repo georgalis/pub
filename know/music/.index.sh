@@ -29,9 +29,9 @@ EOF
 while IFS= read a ; do
     validfn $a && true || { echo "$0 : validfn error : $a" 1>&2 ; dep_help_sub ; exit 1 ;}
     done <<EOF
-ckstat cf2d2b8d 000003ab
-ckstatsum 0d078cff 00000401
-formfile 54d31987 00000f43
+ckstat 466ad7a4 000003a8
+ckstatsum 728f2e3f 000003fe
+formfile 68be3ca9 00000f51
 formfilestats fa92ede0 000004dc
 revargs 5db3f9bb 000000a7
 spin2 1263edf2 00000180
@@ -54,6 +54,8 @@ expr "$f" : ".*/" >/dev/null && inpath="${f%/*}" || inpath="." # inpath  ==  dir
 infilep="$(cd "${inpath}" ; pwd -P)/${infile}"                 # infilep == realpath f
 
 gen_index () {
+    mkdir -p html
+
     chktrue "${name}.list"
     # all mp3 in sequence except beginning with 0 or y
     find "$links/$name/" -maxdepth 1 -type f -name \*mp3 \
@@ -66,17 +68,6 @@ gen_index () {
         >"${name}.list"
     touch -r "$links/$name/" "${name}.list"
 
-    chktrue ${name}.list.html
-    echo '<nobr><ol>' >${name}.list.html
-    cat ${name}.list \
-        | sed -e '
-            s,_^\([^.]*\)\.,_^<a href=http://youtu.be/\1>\1</a>.,
-            s,^,<li>,
-            s,$,</li>,
-            ' >>${name}.list.html
-    echo '</ol></nobr>' >>${name}.list.html
-    touch -r "${name}.list" ${name}.list.html
-
     chktrue ${name}.tab
     cat ${name}.list | while IFS= read a ; do
         b="$(formfile "$a" | sed '/^#/d')"
@@ -87,42 +78,63 @@ gen_index () {
     spin2 0
     touch -r "${name}.list" ${name}.tab
 
-    chktrue ${name}.tab.html
-    echo '<nobr><ol>' >${name}.tab.html
-    cat ${name}.tab | sed '
-        s,^,<li>,
-        s,_^\([^.]*\)\.,<a href=http://youtu.be/\1>\1</a>.,
-        s,$,</li>,
-        ' >>${name}.tab.html
-    echo '</ol></nobr>' >>${name}.tab.html
-    touch -r "${name}.list" ${name}.tab.html
-
     chktrue ${name}.stat.time
     formfilestats $links/$name >${name}.stat.time
     touch -r "${name}.list" ${name}.stat.time
     chktrue ${name}.stat.pitch
     sort -n -t '=' -k 3 ${name}.stat.time >${name}.stat.pitch
     touch -r "${name}.list" ${name}.stat.pitch
+    find . -name ${name}.stat.time  -empty -exec rm \{\} \;
+    find . -name ${name}.stat.pitch -empty -exec rm \{\} \;
 
     chktrue ${name}.ckstat
     cat ${name}.list | while IFS= read a ; do
-      # ckstat    $links/$name/$a | awk -v f="${a##*/}" '{printf ". . % 8s %s %s\n",$3,$4,f}'
-        ckstatsum $links/$name/$a | awk -v f="${a##*,}" '{printf ". . % 8s %s %s\n",$3,$4,f}'
+      # ckstat    $links/$name/$a | awk -v f="${a##*,}" '{printf ". % 8s % 8s %s %s\n",$3,$4,f}'
+        ckstatsum $links/$name/$a | awk -v f="${a##*,}" '{printf ". % 8s % 8s %s %s\n",$2,$3,$4,f}'
         spin2
-        done | sort -f -k5 >${name}.ckstat
+        done >${name}.ckstat
     spin2 0
     touch -r "${name}.list" ${name}.ckstat
 
-    chktrue ${name}.ckstat.html
-    echo '<pre><ol>' >${name}.ckstat.html
+    chktrue "$links/0/kind/$name"
+    rm -rf   "$links/0/kind/$name"
+    mkdir -p "$links/0/kind/$name"
+    ln "$links/$name/"*mp3 "$links/0/kind/$name"
+    touch -r "$links/$name" "$links/0/kind/$name"
+
+    mkdir -p html
+
+    chktrue html/${name}.list.html
+    echo '<nobr><ol>' >html/${name}.list.html
+    cat ${name}.list \
+        | sed -e '
+            s,_^\([^.]*\)\.,_^<a href=http://youtu.be/\1>\1</a>.,
+            s,^,<li>,
+            s,$,</li>,
+            ' >>html/${name}.list.html
+    echo '</ol></nobr>' >>html/${name}.list.html
+    touch -r "${name}.list" html/${name}.list.html
+
+    chktrue html/${name}.tab.html
+    echo '<nobr><ol>' >html/${name}.tab.html
+    cat ${name}.tab | sed '
+        s,^,<li>,
+        s,_^\([^.]*\)\.,<a href=http://youtu.be/\1>\1</a>.,
+        s,$,</li>,
+        ' >>html/${name}.tab.html
+    echo '</ol></nobr>' >>html/${name}.tab.html
+    touch -r "${name}.list" html/${name}.tab.html
+
+    chktrue html/${name}.ckstat.html
+    echo '<pre><ol>' >html/${name}.ckstat.html
     cat ${name}.ckstat \
         | sed -e '
             s,_^\([^.]*\)\.,_^<a href=http://youtu.be/\1>\1</a>.,
             s,^,<li>,
             s,$,</li>,
-            ' >>${name}.ckstat.html
-    echo '</ol></pre>' >>${name}.ckstat.html
-    touch -r "${name}.list" ${name}.ckstat.html
+            ' >>html/${name}.ckstat.html
+    echo '</ol></pre>' >>html/${name}.ckstat.html
+    touch -r "${name}.list" html/${name}.ckstat.html
 
     } # gen_index
 
@@ -140,6 +152,7 @@ volumes="
 5deb-melody-royal
 5d50-kindle-class
 6344-Ithica
+6350-forte-flute
 "
 
 cd "$inpath"

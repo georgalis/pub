@@ -955,7 +955,7 @@ rotatefile () { #P> keep at least n backups, and delete files older than m secon
         rotatefile_secs="$((18 * 60 * 60 * 24 ))" rotatefile_keep="7"'
     declare -f chkerr >/dev/null 2>&1  || { echo "$FUNCNAME : chkerr unavailable (630bacd0)" 1>&2 ; return 1 ;}
     declare -f validfn >/dev/null 2>&1 || { echo "$FUNCNAME : validfn unavailable (630c4002)" 1>&2 ; return 1 ;}
-    validfn ckstat ea8f5074 00000379   || { chkerr "$FUNCNAME : unexpected ckstat (630bab5c)" ; return 1 ;}
+    validfn ckstat 466ad7a4 000003a8   || { chkerr "$FUNCNAME : unexpected ckstat (630bab5c)" ; return 1 ;}
     which tai64n >/dev/null            || { chkerr "$FUNCNAME : tai64n not in path (630bb522)" ; return 1 ;}
     xs () { echo | tai64n | sed -e 's/^@4[0]*//' -e 's/.\{9\}$//' ;}
     term_pleft () { local str= char='-'

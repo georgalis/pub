@@ -1,8 +1,7 @@
-## A 2020 Musical Playlist
-### 2020-music/5fb3-deja-muse
+## A 2020 Musical Playlist, 5fb3-deja-muse
 
-#### 357 tracks, for 365 days of continuous music
-#### (in 227 minutes, 3 days and 19 hours)
+#### continuous music for 365 days a year
+#### 91 hours (almost 4 days), in 356 tracks
 
 The arrangement is a composition of important music selections, with study and accessibility alterations. They were chosen according to musical significance and their repeated listening aesthetic. A comprehensive annotation is pending (6 months to a year). For now, Wikipedia and YouTube is the best place to find original biography and source. Let me know what you find or if you have any questions.
 
@@ -19,7 +18,7 @@ Almost all of the Beethoven quartets are represented, in their natural tempo and
 Most filenames follow a general format, to indicate the sequence, artist, work, original source media and any audio transformations:
 
 <pre>
-    {sequence},{composer}-{Op-title}-{performer-year}_^{youtube-id}-{position}-{time}-{pitch}-{volume}.mp3
+    {sequence},{composer}-{Op-title-year}-{performer-year}_^{youtube-id}-{position}-{time}-{pitch}-{volume}.mp3
 </pre>
 
 CLI tools are available to convert these filenames, into parameters and commands that transform the original files, for fine tuning. A HUGE THANK YOU to the authors of the free software that made these tools possible: ffmpeg, rubberband, sox, Sonic Visualizer, and VLC media player. Also, IMSLP and YouTube for making the scores and media available.
@@ -54,7 +53,7 @@ Enjoy!
 -George
 
 Release 20210228 Sun 28 Feb 2021
-Revised 20221010 Mon 10 Oct 2022 pre-revision
+Revised 20221021 Fri 21 Oct 2022 pre-revision
 
 #### Jazz
 ```
