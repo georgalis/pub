@@ -302,10 +302,11 @@ EOF
   local ckb0="compand 0.2,0.9  -70,-70,-60,-55,-50,-45,-35,-35,-20,-25,0,-12 6 -70 0.2" # piano analog master
   local ckb2="compand 0.2,0.9  -70,-99,-50,-60,-50,-45,-30,-30,-20,-25,0,-13 6 -70 0.2" # piano digital master
   local ckb3="compand 0.2,0.8  -60,-99,-50,-56,-38,-32,-23,-18,0,-4         -2 -60 0.2" # piano old analog master
-  local hrn3="compand 0.08,0.3 -74,-80,-50,-46,-18,-18,-0,-6                -1 -68 0"   # peaky horn
+  local hrn3="compand 0.08,0.3 -74,-80,-50,-46,-18,-18,-0,-6                -1 -68 0"    # peaky horn
   local cps1="compand 0.07,0.25 -70,-84,-50,-45,-32,-33,-0,-21               3 -71 0.07" # high compress
-  local parc="compand 0.09,0.25 -97,-106,-85,-89,-73,-73,-57,-61,-40,-49,-21,-37,0,-25    11 -95 0.08" # parabolic standard
-  local par2="compand 0.09,0.25 -100,-116,-88,-97,-80,-80,-63,-72,-54,-60,-23,-48,0,-36   23 -95 0.08" # paraboloc extra
+  local parc="compand 0.09,0.25 -97,-106,-85,-89,-73,-73,-57,-61,-40,-49,-21,-37,0,-25         11 -95 0.08" # parabolic standard
+  local par2="compand 0.09,0.25 -100,-116,-88,-97,-80,-80,-63,-72,-54,-60,-23,-48,0,-36        23 -95 0.08" # parabolic extra
+  local par4="compand 0.13,0.16 -72,-97,-68,-84,-64,-73,-56,-65,-55,-61,-32,-57,-17,-53,0,-49  36 -99 0.12"  # parabolic squared
   [ "$cmp" = "hrn" -o "$cmp" = "hrn1" ] && cmpn="hrn3" cmpc="$hrn3"
   [ "$cmp" = "cps" ]  && cmpn="cps1" cmpc="$cps1"
   [ "$cmp" = "ckb" ]  && cmpn="$cmp" cmpc="$ckb0"
@@ -313,8 +314,9 @@ EOF
   [ "$cmp" = "ckb3" ] && cmpn="$cmp" cmpc="$ckb3"
   [ "$cmp" = "hrn3" ] && cmpn="$cmp" cmpc="$hrn3"
   [ "$cmp" = "cps1" ] && cmpn="$cmp" cmpc="$cps1"
-  [ "$cmp" = "par2" ] && cmpn="$cmp" cmpc="$par2"
   [ "$cmp" = "parc" ] && cmpn="$cmp" cmpc="$parc"
+  [ "$cmp" = "par2" ] && cmpn="$cmp" cmpc="$par2"
+  [ "$cmp" = "par4" ] && cmpn="$cmp" cmpc="$par4"
   local vn='' vc=''
   $verb2 "cmpn='$cmpn'"
   $verb2 "cmpc='$cmpc'"
@@ -404,10 +406,10 @@ EOF
     local out="${infile}${secn}${tn}${pn}${fhzn}${cn}${Fn}${cfn}${lnn}"
       [ -e "${inpath}/tmp/${out}.wav" ] || { # master sans volume
         $verb "${inpath}/tmp/${out}.wav"
-        $verb2 $rb -q $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav~"
-             { $rb -q $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav~" 2>&1 \
+        $verb2 $rb --ignore-clipping-no $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav~"
+             { $rb                      $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav~" 2>&1 \
                  | while IFS= read a ; do ${verb} "$a" ; done ;} || { chkerr \
-               $rb -q $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav~" ; return 1 ;}
+               $rb                      $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav~" ; return 1 ;}
         mv "${inpath}/tmp/${out}.wav~" "${inpath}/tmp/${out}.wav"
         } # final master, sans sox volume
       # apply volume and make an mp3 --- hopefully the input is not clipped already!
