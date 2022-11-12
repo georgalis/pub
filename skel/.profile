@@ -233,9 +233,10 @@ ckstat () { # return sortable stat data for args (OR stdin file list)
   [ "$OS" = "Linux" ]                      && _stat () { stat -c %i\ %h\ %s\ %Y "$1" ;} || true
   [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat () { stat -f %i\ %l\ %z\ %m "$1" ;} || true
   echo "$fs" | while IFS= read f; do
-    [ -f "$f" ] && {
-      _stat "$f" | awk -v f="$f" '{printf "%08x%02x . % 8x %08x %s\n",$1,$2,$3,$4,f}'
-      } || chkerr "$FUNCNAME : not a regular file : $f"
+    [ -e "$f" ] && {
+      _stat "$f" | awk '{printf "%07x %02x . % 6x %08x ",$1,$2,$3,$4}'
+      ls -dF "$f"
+      } || chkerr "$FUNCNAME : does not exist '$f'"
     done # f
   } # ckstat ()
 
@@ -257,7 +258,8 @@ ckstatsum () { # return sortable stat data for args (OR stdin file list)
   [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat () { stat -f %i\ %l\ %z\ %m "$1" ;} || true
   echo "$fs" | while IFS= read f; do
     [ -f "$f" ] && {
-      { _stat "$f" ; cksum <"$f" ;} | tr '\n' ' ' | awk -v f="$f" '{printf "%08x%02x %08x % 8x %08x %s\n",$1,$2,$5,$3,$4,f}'
+      { _stat "$f" ; cksum <"$f" ;} | tr '\n' ' ' | awk -v f="$f" '{printf "%07x %02x %08x % 8x %08x\n",$1,$2,$5,$3,$4}'
+      ls -dF "$f"
       } || chkerr "$FUNCNAME : not a regular file : $f"
     done # f
   } # ckstatsum ()
@@ -303,13 +305,6 @@ symview () { # report directories and symlinks below args or stdin if $# is 0
         find "$i" -exec stat -f "%N %Y" \{\} \; 2>/dev/null | sort -u | awk '{printf "%s\t%s\n", $2, $1}'
         done
     } # symview
-
-cattrunc () {
-    [ -t 1 ] && {
-        local cols="$(tput cols)";
-        awk -v cols="$((cols-1))" 'length > cols{$0=substr($0,0,cols)"_"}1'
-    } || cat
-  }
 
 lock () { # lock to prevent concurent runs
  mkdir -p "$HOME/var/run"
