@@ -335,6 +335,8 @@ EOF
   [ "$to" ] && { tsec=$(hms2sec ${to}) ;}
   [ -z "$ss" -a "$to" ] && secc="-to $tsec"           secn="-to$tsec"
   [    "$ss" -a "$to" ] && secc="-ss $ssec -to $tsec" secn="-ss${ssec}-to${tsec}"
+  $verb "$(hms2sec $(ffprobe -hide_banner -loglevel info "$infilep" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //') ) input gross seconds"
+  $verb "$(awk '{ print $2 - $1 }' <<<"${ssec} ${tsec}") input request seconds"
   $verb "${inpath}/tmp/${infile}${secn}.meas"
   [ -f "${inpath}/tmp/${infile}${secn}.meas" ] || { # measure
     # XXX check ss -lt to etc
@@ -360,7 +362,7 @@ EOF
   [ "$lra" ] && lran="-lra$lra"
   [ "$tp"  ] &&  tpn="-tp$tp"
   [ "$i"   ] &&   in="-i$i"
-  $verb "$(hms2sec $(ffprobe -hide_banner  -loglevel info  "${inpath}/tmp/${infile}${secn}.flac" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //') )"
+  $verb2 "$(hms2sec $(ffprobe -hide_banner  -loglevel info  "${inpath}/tmp/${infile}${secn}.flac" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //') ) input actual seconds"
   [ "${offn}${lran}${tpn}${in}" ] && lnn="-ln${lran}${tpn}${in}${offn}" || lnn="-ln"
   $verb "${inpath}/tmp/${infile}${secn}${lnn}.flac"
   $verb "${inpath}/tmp/${infile}${secn}${lnn}.meas"
@@ -413,7 +415,7 @@ EOF
         mv "${inpath}/tmp/${out}.wav~" "${inpath}/tmp/${out}.wav"
         } # final master, sans sox volume
       # apply volume and make an mp3 --- hopefully the input is not clipped already!
-      $verb "$(hms2sec $(ffprobe -hide_banner  -loglevel info  "${inpath}/tmp/${out}.wav" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //') )"
+      $verb2 "$(hms2sec $(ffprobe -hide_banner  -loglevel info  "${inpath}/tmp/${out}.wav" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //') ) output wav seconds"
       $verb "${inpath}/tmp/${out}${vn}.mp3"
                     # not seeing sox format specifier for ".mp3~" type files...
       $verb2         sox "${inpath}/tmp/${out}.wav" "${inpath}/tmp/${out}${vn}.tmp.mp3" $vc
@@ -421,8 +423,8 @@ EOF
                  | while IFS= read a ; do ${verb} "$a" ; done ;} || { chkerr \
                     "sox '${inpath}/tmp/${out}.wav' '${inpath}/tmp/${out}${vn}.tmp.mp3' $vc" ; return 1 ;}
       mv -f "${inpath}/tmp/${out}${vn}.tmp.mp3" "${inpath}/tmp/${out}${vn}.mp3"
-    } || { # no rb input parms (only time, volume or neither)
-        $verb "$(hms2sec $(ffprobe -hide_banner  -loglevel info  "${inpath}/tmp/${out}.wav" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //') )"
+    } || { # no rb input parms (only seconds start/stop, volume, or neither)
+        # verb2 same as above "output flac seconds" "${inpath}/tmp/${out}.flac"
         $verb "${inpath}/tmp/${out}${vn}.mp3"
         $verb2         sox "${inpath}/tmp/${out}.flac" "${inpath}/tmp/${out}${vn}.tmp.mp3" $vc
                  {     sox "${inpath}/tmp/${out}.flac" "${inpath}/tmp/${out}${vn}.tmp.mp3" $vc 2>&1 \
@@ -439,10 +441,11 @@ EOF
              prependf "${inpath}/tmp/${out}${vn}.mp3" "$prependt" \
                  && mv -f "${inpath}/tmp/${prependt}${out}${vn}.mp3" "./loss/" \
                  && rm -f "${inpath}/tmp/$null" \
+    && $verb "$(hms2sec $(ffprobe -hide_banner -loglevel info "./loss/${prependt}${out}${vn}.mp3" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //') ) output mp3 seconds" \
     && echo "./loss/${prependt}${out}${vn}.mp3"
 # extract audio from video
 # for a in *Caprices_For_FLUTE*webm ; do ext=$(ffprobe -hide_banner  -loglevel info $a 2>&1 | sed -e '/Audio/!d' -e 's/.*Audio: //' -e 's/,.*//'); name=$(sed "s/[^.]*$/$ext/" <<<$a) ; ffmpeg -i $a -q:a 0 -map a -acodec copy $name ; done
-
+#
 # convert 5.1 channels to 2
 # https://superuser.com/questions/852400/properly-downmix-5-1-to-stereo-using-ffmpeg
 #ffmpeg -i Mozart-K622-Clarinet-Concerto-A-Maj-Kam-Honeck-2006.m4a \
