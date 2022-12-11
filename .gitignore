@@ -1,4 +1,5 @@
 tmp
+old
 *~
-pub/src/multitee/multitee-3.0a/multitee
-pub/src/multitee/multitee-3.0a/tee
+src/multitee/multitee-3.0a/multitee
+src/multitee/multitee-3.0a/tee
