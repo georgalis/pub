@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 # render potential index changes to each declared volume, or default set
+# if first arg is sync, also sync vol(s) to /Volumes/CURATE/kind/ if avail
 
 set -e
 
