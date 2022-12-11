@@ -12,7 +12,8 @@ cd "${r}" && git archive --prefix ${PWD##*/}/ HEAD | tar -C "/tmp/${t}" -xzf - \
  && rm -rf "/tmp/${t}/"
 ```
 
-###### Major ./pub components
+###### Shortcuts to major ./pub components
+
 [root](https://github.com/georgalis/pub/)
 * [./know/music/](./know/music/) Musical Playlists
 * [./know/music/5fb3-deja-muse.md](./know/music/5fb3-deja-muse.md) A 2020 Musical Playlist
