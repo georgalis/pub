@@ -432,17 +432,12 @@ EOF
                       "sox '${inpath}/tmp/${out}.flac' '${inpath}/tmp/${out}${vn}.tmp.mp3' $vc" ; return 1 ;}
         mv -f "${inpath}/tmp/${out}${vn}.tmp.mp3" "${inpath}/tmp/${out}${vn}.mp3"
          }
-   find "${inpath}" ./loss -type f -newer "${inpath}/tmp/$null" \
-       -regex ".*${infile}.*\.ln\.meas" -o \
-       -name "\*${out}${vn}.mp3" \
-        | xargs ls -rth
     # prepend output filename
     $verb "./loss/${prependt}${out}${vn}.mp3"
-             prependf "${inpath}/tmp/${out}${vn}.mp3" "$prependt" \
-                 && mv -f "${inpath}/tmp/${prependt}${out}${vn}.mp3" "./loss/" \
-                 && rm -f "${inpath}/tmp/$null" \
-    && $verb "$(hms2sec $(ffprobe -hide_banner -loglevel info "./loss/${prependt}${out}${vn}.mp3" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //') ) output mp3 seconds" \
-    && echo "./loss/${prependt}${out}${vn}.mp3"
+    mv "${inpath}/tmp/${out}${vn}.mp3" "./loss/${prependt}${out}${vn}.mp3" \
+      && rm -f "${inpath}/tmp/$null" \
+      && $verb "$(hms2sec $(ffprobe -hide_banner -loglevel info "./loss/${prependt}${out}${vn}.mp3" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //') ) output mp3 seconds" \
+      && echo "./loss/${prependt}${out}${vn}.mp3"
 # extract audio from video
 # for a in *Caprices_For_FLUTE*webm ; do ext=$(ffprobe -hide_banner  -loglevel info $a 2>&1 | sed -e '/Audio/!d' -e 's/.*Audio: //' -e 's/,.*//'); name=$(sed "s/[^.]*$/$ext/" <<<$a) ; ffmpeg -i $a -q:a 0 -map a -acodec copy $name ; done
 #
@@ -930,7 +925,8 @@ playff () { # use ffplay to play files (args OR stdin filename per line)
         chkwrn "$f"
         [ -f "$f" ] && {
         hms2sec $(ffprobe -hide_banner  -loglevel info  "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')
-        ffplay -hide_banner -stats -autoexit -loglevel info -top 52 -x 1088 -y 280 "$f" || return 1
+       #ffplay -hide_banner -stats -autoexit -loglevel info -top 52 -x 1088 -y 280 "$f" || return 1
+        ffplay -hide_banner -stats -autoexit -loglevel info -nodisp "$f" || return 1
         } || chkwrn "$0 : not a file : '$f'"
         done
     } # playff

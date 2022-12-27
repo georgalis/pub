@@ -234,7 +234,7 @@ ckstat () { # return sortable stat data for args (OR stdin file list)
   [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat () { stat -f %i\ %l\ %z\ %m "$1" ;} || true
   echo "$fs" | while IFS= read f; do
     [ -e "$f" ] && {
-      _stat "$f" | awk '{printf "%07x %02x . % 6x %08x ",$1,$2,$3,$4}'
+      _stat "$f" | awk '{printf "%07x %02x . % 8x %08x ",$1,$2,$3,$4}'
       ls -dF "$f"
       } || chkerr "$FUNCNAME : does not exist '$f'"
     done # f
