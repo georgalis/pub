@@ -234,8 +234,8 @@ f2rb2mp3 () ( # subshell function "file to rubberband to mp3", transcoding/tunin
 # pub/skel/.profile 20220105
 devnul 216e1370 0000001d
 stderr 7ccc5704 00000037
-chkwrn 18c46093 0000005e
-chkerr 57d3ff82 0000005f
+chkwrn 2683d3d3 0000005c
+chkerr 4f18299d 0000005b
 # pub/sub/fn.bash 20220105
 hms2sec e7a0bc8b 000001d6
 prependf ac39e52a 000001b2
@@ -813,7 +813,7 @@ numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" 
     while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
     fs="$(sed -e 's/^\.\///' <<<"$fs" | while IFS= read f ; do [ -f "${f%%/*}" ] && echo "${f%%/*}" || true ; done)"
-    # 0 1 2 3 4 5 6 7 8 9 a b c d e f g h j k m n p q r s t u v x y z 
+    # 0 1 2 3 4 5 6 7 8 9 a b c d e f g h j k m n p q r s t u v x y z
     for p in {0..31} ; do # iterate on each major base 32
         b="$(base 32 $p)"
         c="$b"
@@ -1015,9 +1015,18 @@ base () { # convert {decimal} arg2 to {base} arg1
     # shift out characters "ilow" for visual acuity
     #      "0123456789abcdefghijklnpqrstuvwxyz"
   # local digs=$(echo {0..9} {a..z} | tr -d ' ilow\n')
-    local digs="0123456789abcdefghjkmnpqrstuvxyz"
+    expr "$1" : "-[-]*h" >/dev/null && { # support --help and -h
+        chktrue "$FUNCNAME : convert {decimal} arg2 to {base} arg1"
+        chktrue "base and input are intergers, base <= 32   "
+        chktrue 'base32 = "0123456789abcdefghjkmnpqrstuvxyz"'
+        chktrue '(sans "ilow")'
+        return 2 ;}
+    local digs="0123456789abcdefghjkmnpqrstuvxyz" sans="ilow"
     local sign='' out='' p='' base="$1" x="$2"
-    [ "$base" -a "$x" ] || { chkerr "$FUNCNAME : must provide output {base} arg1, and input {decimal} arg2 : arg1='$1' arg2='$2'" ; return 1 ;}
+    [ "$#" -gt 2 ] && { $FUNCNAME --help ; return 1 ;}
+    [ "$base" -a "$x" ] || {
+        $FUNCNAME --help
+        chkerr "$FUNCNAME : must provide output {base} arg1, and input {decimal} arg2 : arg1='$1' arg2='$2'" ; return 1 ;}
     [[ "$base" =~ ^-?[0-9]+$ ]] || { chkerr "$FUNCNAME : arg1 (output base) must be an integer : arg1='$1'" ; return 1 ;}
     [[ "$x"    =~ ^-?[0-9]+$ ]] || { chkerr "$FUNCNAME : arg2 (decimal input) must be an integer : arg2='$2'" ; return 1 ;}
     [ $x -lt 0 ] && sign='-' || { [ $x = 0 ] && { echo 0 ; return 0 ;} ;}
