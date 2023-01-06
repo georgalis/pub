@@ -122,20 +122,21 @@ alias   cp='cp -ip'  # always
 alias   mv='mv -i'   # why not
 alias   rm='rm -i'   # sure
 alias    d='diff -U 0'
+b () { cd "$OLDPWD" ;} # previous directory
 back () { cd "$OLDPWD" ;} # previous directory
 #cal () { cal -h $@ ;}
 
 # common functions for shell verbose management....
-devnul () { return 0 ;}                                                     #:> drop args
-stderr () {  [ "$*" ] && echo "$*" 1>&2 || true ;}                          #:> args to stderr, or noop if null
-chkstd () {  [ "$*" ] && echo "$*"      || true ;}                          #:> args to stdout, or noop if null
-chkwrn () {  [ "$*" ] && { stderr    "^^ $* ^^"   ; return $? ;} || true ;} #:> wrn stderr args return 0, noop if null
-logwrn () {  [ "$*" ] && { logger -s "^^ $* ^^"   ; return $? ;} || true ;} #:> wrn stderr+log args return 0, noop if null
-chkerr () {  [ "$*" ] && { stderr    ">>> $* <<<" ; return 1  ;} || true ;} #:> err stderr args return 1, noop if null
-logerr () {  [ "$*" ] && { logger -s ">>> $* <<<" ; return 1  ;} || true ;} #:> err stderr+log args return 1, noop if null
-chktrue () { [ "$*" ] && { stderr    "><> $* <><" ; return 0  ;} || return 1 ;} #:> err stderr args exit 1, noop if null
-chkexit () { [ "$*" ] && { stderr    ">>> $* <<<" ; exit 1    ;} || true ;} #:> err stderr args exit 1, noop if null
-logexit () { [ "$*" ] && { logger -s ">>> $* <<<" ; exit 1    ;} || true ;} #:> err stderr+log args exit 1, noop if null
+devnul () { return 0 ;}                                                 #:> drop args
+stderr () {  [ "$*" ] && echo "$*" 1>&2 || true ;}                      #:> args to stderr, or noop if null
+chkstd () {  [ "$*" ] && echo "$*"      || true ;}                      #:> args to stdout, or noop if null
+chkwrn () {  [ "$*" ] && { stderr    "^^^ $*" ; return $? ;} || true ;} #:> wrn stderr args return 0, noop if null
+logwrn () {  [ "$*" ] && { logger -s "^^^ $*" ; return $? ;} || true ;} #:> wrn stderr+log args return 0, noop if null
+chkerr () {  [ "$*" ] && { stderr    ">>> $*" ; return 1  ;} || true ;} #:> err stderr args return 1, noop if null
+logerr () {  [ "$*" ] && { logger -s ">>> $*" ; return 1  ;} || true ;} #:> err stderr+log args return 1, noop if null
+chktrue () { [ "$*" ] && { stderr    "><> $*" ; return 0  ;} || return 1 ;} #:> err stderr args exit 1, noop if null
+chkexit () { [ "$*" ] && { stderr    ">>> $*" ; exit 1    ;} || true ;} #:> err stderr args exit 1, noop if null
+logexit () { [ "$*" ] && { logger -s ">>> $*" ; exit 1    ;} || true ;} #:> err stderr+log args exit 1, noop if null
 siff () { local verb="${verb:-chktrue}" ; test -e "$1" \
         && { { . "${1}" && ${verb} "${2}: . ${1}" ;} || { chkerr "$FUNCNAME: fail in '$1' from '$2'" ; return 1 ;} ;} \
         || ${verb} "${2}: siff: no file $1" ;} #:> source arg1 if exists, on err recall args for backtrace
@@ -143,7 +144,8 @@ siffx () { local verb="${verb:-chktrue}" ; test -e "$1" \
         && { { . "${1}" \
           && { export -f $(grep '^[_[:alpha:]][_[:alnum:]]* () ' "$1" | sed 's/ () .*//' ) >/dev/null && devnul "  function export '^[^ ]* () '" ;} \
           && { export    $(grep '^[_[:alpha:]][_[:alnum:]]*='    "$1" | sed 's/=.*//'    ) >/dev/null && devnul "       var export '^[:alpha:][_[:alnum:]]*='" ;} \
-          && ${verb} "${2}: . ${1}"
+          && ${verb} "${2}: siffx ${1}"
+        # && ${verb} "${2}: . ${1} # w/ exports"
           } || { chkerr "${FUNCNAME} : fail in '$1' from '$2'" ; return 1 ;} ;} \
         || chkwrn "${2}: ${FUNCNAME} : no file $1 from '$2'" ;} #:> source arg1 if exists , on err recall args for backtrace
 # verbosity, typically set to devnul, chkwrn, or chkerr
@@ -197,15 +199,15 @@ while IFS= read a ; do
 devnul 216e1370 0000001d
 stderr 7ccc5704 00000037
 chkstd ee4aa465 00000032
-chkwrn 18c46093 0000005e
-logwrn e5806086 00000061
-chkerr 57d3ff82 0000005f
-logerr ffddd972 00000062
-chktrue 845489dd 00000064
-chkexit 8b52b10f 0000005e
-logexit e0f87299 00000061
+chkwrn 2683d3d3 0000005c
+logwrn f279f00e 0000005f
+chkerr 4f18299d 0000005b
+logerr 2db98372 0000005e
+chktrue f37189b7 00000060
+chkexit e6d9b430 0000005a
+logexit 235b98c9 0000005d
 siff 32bbcc06 00000113
-siffx c8f57dbb 00000279
+siffx 5e8b9246 0000027d
 validfn c268584c 00000441
 EOF
 
@@ -403,13 +405,13 @@ printf "${_ntermrev}"
 #		|| { echo $(hostname) ssh-agent already died? 2>/dev/stderr ; exit 1 ;} ;}
 
 
+siffx "$HOME/.profile.local" "~/.profile (63b8877f)"
 
-siffx "$HOME/.profile.local" "~/.profile"
-
+# now just do the export part of siffx... least loop on source
 {  export -f $(grep '^[_[:alpha:]][_[:alnum:]]* () ' ~/.profile | sed 's/ () .*//' )
    export    $(grep '^[_[:alpha:]][_[:alnum:]]*='    ~/.profile | sed 's/=.*//'    )
-} && chktrue "~/.profile: . $HOME/.profile ; var func exports" \
+} && ${verb:-chktrue} "~/.profile: . # w/ exports" \
   || chkerr  "~/.profile: fail in export $HOME/.profile"
 
-chktrue "~/.profile"
+#chktrue "~/.profile"
 
