@@ -63,8 +63,7 @@ hi  shOption        cterm=none       ctermfg=22        term=none
 "	guibg		background color in the GUI
 "
 "		cterm=none		ctermbg=	ctermfg=	gui=		guifg=		guibg=
-"		bold,underline
-"		reverse
+"		none,bold,underline,reverse
 "
 "" some redefs of the default color syntax, good for dark
 "" but makes very difficult with light background...
@@ -195,12 +194,9 @@ hi  shOption        cterm=none       ctermfg=22        term=none
 "" 6  Brown        14  Yellow
 "" 7  Grey         15  White
 
-"  0 Black	1 DarkBlue	2 DarkGreen	3 DarkCyan	4 DarkRed	5 DarkMagenta	6 Brown		7 Grey
-"  8 DarkGrey	9 Blue		10 Green	11 Cyan		12 Red		13 LightMagenta	14 Yellow	15 White
-" cterm=none,bold,underline,reverse
-
 "" The color terminal (cterm) palette (and bash escape codes)
-"" (background colors begin with 4 verses 3)
+"" 
+"" (background colors begin with 40 verses 30)
 "" Black       0;30     Dark Gray     1;30
 "" Red         0;31     Light Red     1;31
 "" Green       0;32     Light Green   1;32
@@ -209,8 +205,8 @@ hi  shOption        cterm=none       ctermfg=22        term=none
 "" Purple      0;35     Light Purple  1;35
 "" Cyan        0;36     Light Cyan    1;36
 "" Light Gray  0;37     White         1;37
-"" Attribute codes:
-"" 00=none 01=bold 04=underscore 05=blink 07=reverse 08=concealed
+""
+"" Attribute codes: 00=none 01=bold 04=underscore 05=blink 07=reverse 08=concealed
 
 " see xterm-true-color
 " let &t_8f = "^[[38;2;%lu;%lu;%lum"
@@ -224,11 +220,13 @@ hi  shOption        cterm=none       ctermfg=22        term=none
 "     done
 "
 " 4 bit color
+" 0 Black     1 DarkBlue   2 DarkGreen   3 DarkCyan   4 DarkRed   5 DarkMagenta    6 Brown    7 Grey
+" 8 DarkGrey  9 Blue      10 Green      11 Cyan      12 Red      13 LightMagenta  14 Yellow  15 White
 " for c in {0..15} ; do
 "     printf "\x1b[38;5;${c}m" ; printf "%3d" "${c}"
 "     test "$c" -lt "16" && { test "$(( ( c ) % 8 ))" -ne "7" && printf "" || printf "\n" ;}
 "     done
-" for c in 0 1 9 3 11 15 14 10 2 6 12 4 8 ; do printf "\x1b[38;5;${c}m" ; printf "%3d" "${c}" ; done ; echo
+" for c in {0..15} ; do  printf "\x1b[38;5;${c}m" ; printf "%3d" "${c}" ; test "$c" -lt "16" && { test "$(( ( c ) % 8 ))" -ne "7" && printf "" || printf "\n" ;} ; done
 
 " 255 colors
 " for c in {16..231} ; do printf "\x1b[48;5;${c}m" ; printf "%4d" "${c}" ; test "$(( ( c - 15 ) % 36 ))" -ne "0" && printf "" || printf "\n" ;  done
@@ -238,8 +236,6 @@ hi  shOption        cterm=none       ctermfg=22        term=none
 " for c in 0 94 166  167 208 214 112 34  ;  do printf "\x1b[48;5;${c}m" ; printf "%4d\x1b[38;5;7m\x1b[48;5;0m" "${c}" ; done ; echo
 
 " for c in 0 1 9 3 11 15 14 10 2 6 12 4 8 ; do printf "\x1b[48;5;${c}m" ; printf "%3d" "${c}" ; done ; echo ; for c in {16..231} ; do printf "\x1b[48;5;${c}m" ; printf "%4d" "${c}" ; test "$(( ( c - 15 ) % 36 ))" -ne "0" && printf "" || printf "\n" ;  done ; for c in 1 196 208 221 11 123 32 20 91  0 94 166  167 208 214 112 34  ;  do printf "\x1b[48;5;${c}m" ; printf "%4d\x1b[38;5;7m\x1b[48;5;0m" "${c}" ; done ; echo
-
-"hi  User10  guibg=#D0B0D5  guifg=#ffffff
 
 "set termguicolors
 
@@ -256,17 +252,6 @@ hi  shOption        cterm=none       ctermfg=22        term=none
 "hi  User7   ctermbg=123    ctermfg=1      cterm=none  guibg=#BFFCFF  guifg=#110001
 "hi  User8  ctermbg=23   ctermfg=15  cterm=none  guibg=#B6D6FB  guifg=#110001
 "hi  User9  ctermbg=19   ctermfg=15  cterm=none  guibg=#AFAFF9  guifg=#110001
-"set statusline=
-"set statusline+=%1*1\ %2*2\ %3*3\ %4*4\ %5*5\ %6*6\ %7*7\ %8*8\ %9*9\ 
-"set statusline+=%8*%n                                  " buffer number
-"set statusline+=%9*\ %<%F\                             " left, File+path
-"set statusline+=%1*%{(&bomb?\",\ BOM\ \":\"\")}        " BOM status (Byte Order Mark, for utf-8, or the little/big endian variants)
-"set statusline+=%4*\ %{&ff}\                           " FileFormat (dos/unix..)
-"set statusline+=%2*\ %M%R%Y\                           " Modified? Readonly? Help?
-"set statusline+=%3*\ %{''.(&fenc!=''?&fenc:&enc).''}\  " FileType Encoding
-"set statusline+=%7*\ %{&spelllang}\                    " spell language
-"set statusline+=%7*\ %=\                               " begin right
-"set statusline+=%5*\ %v,%l\ %P/%L\                     " column,line line-percent/line-total
 
 " hi  User1  ctermbg=139  ctermfg=1   cterm=none  guibg=#D0B1AF  guifg=#110001
 " hi  User2  ctermbg=202  ctermfg=7   cterm=bold  guibg=#F3B3B0  guifg=#110001
@@ -277,27 +262,17 @@ hi  shOption        cterm=none       ctermfg=22        term=none
 " hi  User7  ctermbg=215  ctermfg=15  cterm=bold  guibg=#BFFCFF  guifg=#110001
 " hi  User8  ctermbg=23   ctermfg=15  cterm=none  guibg=#B6D6FB  guifg=#110001
 " hi  User9  ctermbg=19   ctermfg=15  cterm=none  guibg=#AFAFF9  guifg=#110001
-" set statusline=
-" "set statusline+=%1*1\ %2*2\ %3*3\ %4*4\ %5*5\ %6*6\ %7*7\ %8*8\ %9*9\ 
-" set statusline+=%8*%n                                  " buffer number
-" set statusline+=%9*\ %<%F\                             " left, File+path
-" set statusline+=%6*%{(&bomb?\",\ BOM\ \":\"\")}        " BOM status (Byte Order Mark, for utf-8, or the little/big endian variants)
-" set statusline+=%5*\ %M%R%Y\                           " Modified? Readonly? Help?
-" set statusline+=%7*\ %{&ff}\                           " FileFormat (dos/unix..)
-" set statusline+=%2*\ %{''.(&fenc!=''?&fenc:&enc).''}\  " FileType Encoding
-" set statusline+=%6*\ %{&spelllang}\                    " spell language
-" set statusline+=%6*\ %=\                               " begin right
-" set statusline+=%4*\ %v,%l\ %P/%L\                     " column,line line-percent/line-total
 
-hi User1 ctermbg=1    cterm=bold
+" cterm: none,bold,underline,reverse
+hi User1 ctermbg=1   cterm=bold
 hi User2 ctermbg=196 cterm=bold
 hi User3 ctermbg=208 cterm=bold
 hi User4 ctermbg=221 cterm=bold
-hi User5 ctermbg=11 cterm=bold
+hi User5 ctermbg=11  cterm=bold
 hi User6 ctermbg=123 cterm=bold
-hi User7 ctermbg=32 cterm=bold
-hi User8 ctermbg=20 cterm=none
-hi User9 ctermbg=91 cterm=none
+hi User7 ctermbg=32  cterm=bold
+hi User8 ctermbg=20  cterm=bold ctermfg=15
+hi User9 ctermfg=91  cterm=bold
 
 set statusline=
 "set statusline+=%1*1\ %2*2\ %3*3\ %4*4\ %5*5\ %6*6\ %7*7\ %8*8\ %9*9\ 
@@ -308,6 +283,5 @@ set statusline+=%7*\ %M%R%Y\                           " Modified? Readonly? Hel
 set statusline+=%3*\ %{&ff}\                           " FileFormat (dos/unix..)
 set statusline+=%4*\ %{''.(&fenc!=''?&fenc:&enc).''}\  " FileType Encoding
 set statusline+=%5*\ %{&spelllang}\                    " spell language
-set statusline+=%5*\ %=\                               " begin right
+set statusline+=%5*\ %=%o,0x%B\                        " begin right, with (under cursor) 'file byte, hex value'
 set statusline+=%8*\ %v,%l\ %P/%L\                     " column,line line-percent/line-total
-
