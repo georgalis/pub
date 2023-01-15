@@ -62,7 +62,7 @@ gsta () { # git short form status of all repos below $@ (or current repo), sorte
 gstat () { # find uncommited changes to all repos below $@ (or current repo), sorted by time
   # reports files with <space> in name as irregular... ("read a" doesn't evaluate quotes incerted by git)
   gsta $@ | sed 's/^...//' | while IFS= read a ; do ckstat "$a" ; done \
-    | sort -k4 | awk -F "\t" '{print $3}' ;}
+    | sort -k5 | awk -F "\t" '{print $3}' ;}
 
 ## shell script fragments
 # local infile inpath infilep
@@ -484,8 +484,8 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
         local ext="$(sed -e 's/_^[^.]*.//' -e 's/\..*//' -e 's/-.*//' <<<"_^${_fname##*_^}")" # expect _^ to proceed id, followed by dot orig ext,
             # parm and transcoded extension, do the right thing on no parm or no transcoded extension (_^id.ext[-parm][.ext]$)
         local id="$(sed "s/\.${ext}.*//" <<<"${_fname##*_^}")"                  # id between "_^" and ".{ext}"
-        local path ; expr "$_f" : ".*/" >/dev/null && path="${_f%/*}" || path="." # dirname input file
-        local origfiles="$(find $(find "$path" . .. -name \@) -maxdepth 1 -type f -name \*${id}\* 2>/dev/null )" # search nearby @ directories
+        local path ; expr "$_fpath" : ".*/" >/dev/null && path="${_f%/*}" || path="." # dirname input file
+        local origfiles="$(find $(find "$path" "$path/.." -name \@) -maxdepth 1 -type f -name \*${id}\* 2>/dev/null )" # search nearby @ directories
         [ "$origfiles" ] && orig="$(awk 'NR==1' <<<"${origfiles}")" # first inode found is usually the best choice
         [ "$orig" ] || orig="'@/_^${id}.${ext}'" # not found, set expected path in quote, as reference
         # decode f2rb2mp3 arguments
@@ -620,7 +620,7 @@ verb2=chkwrn
   [ "$1" ] && local hash="$1" || { chkerr "$FUNCNAME : no hash" ; return 1 ;}
   [ "$2" ] || local dir="$links/_ln" && local dir="$2"
   dot4find "$hash" \
-    | grep -vE '(.vtt$|.json$)' | ckstat | sort -k4 | head -n1 \
+    | grep -vE '(.vtt$|.json$)' | ckstat | sort -k5 | head -n1 \
     | awk -v m="$dir/$hash" '{print "ln",$5,m}'
  }
 
@@ -877,8 +877,8 @@ mp3range () { # mp3 listing limiter
     # from within each remaining args
     # or current dir if no remaining args.
     #
-    # file fullpath of two directories, sorted by filename...
-    # mp3range 2 3  ../ . | ckstat | sort -k5 | awk '{print $6}'
+    # file fullpath of two directories, sorted by filepath...
+    # mp3range 2 3  ../ . | ckstat | sort -k6 | awk '{print $6}'
     #
     local start="$1" stop="$2" dirs= a= opwd="$PWD" prefix=
     local verb="${verb:=devnul}"
@@ -956,7 +956,7 @@ rotatefile () { #P> keep at least n backups, and delete files older than m secon
         rotatefile_secs="$((18 * 60 * 60 * 24 ))" rotatefile_keep="7"'
     declare -f chkerr >/dev/null 2>&1  || { echo "$FUNCNAME : chkerr unavailable (630bacd0)" 1>&2 ; return 1 ;}
     declare -f validfn >/dev/null 2>&1 || { echo "$FUNCNAME : validfn unavailable (630c4002)" 1>&2 ; return 1 ;}
-    validfn ckstat 466ad7a4 000003a8   || { chkerr "$FUNCNAME : unexpected ckstat (630bab5c)" ; return 1 ;}
+    validfn ckstat 4fe96539 000003ae   || { chkerr "$FUNCNAME : unexpected ckstat (630bab5c)" ; return 1 ;}
     which tai64n >/dev/null            || { chkerr "$FUNCNAME : tai64n not in path (630bb522)" ; return 1 ;}
     xs () { echo | tai64n | sed -e 's/^@4[0]*//' -e 's/.\{9\}$//' ;}
     term_pleft () { local str= char='-'
@@ -983,9 +983,9 @@ rotatefile () { #P> keep at least n backups, and delete files older than m secon
     find "$inpath" -mindepth 1 -maxdepth 1 -type f -name "${infile}-*" -regex ".*/${infile}-[[:xdigit:]]\{8\}$" \
         | sort | sed -n -e :a -e "\$q;N;2,${rotatefile_keep}ba" -e 'P;D' \
         | while IFS= read f ; do
-            expr "$(( 0x$xs - 0x$(ckstat "$f" | awk '{print $4}') ))" '>' "$rotatefile_secs" >/dev/null && rm -f "$f" || true
+            expr "$(( 0x$xs - 0x$(ckstat "$f" | awk '{print $5}') ))" '>' "$rotatefile_secs" >/dev/null && rm -f "$f" || true
             done
-    mv "$f" "${f}-$(ckstat "$f" | awk '{print $4}')"
+    mv "$f" "${f}-$(ckstat "$f" | awk '{print $5}')"
     }
 
 spin1 () { # '.oO@Oo+~:"`   '
