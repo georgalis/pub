@@ -236,7 +236,7 @@ ckstat () { # return sortable stat data for args (OR stdin file list)
   [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat () { stat -f %i\ %l\ %z\ %m "$1" ;} || true
   echo "$fs" | while IFS= read f; do
     [ -e "$f" ] && {
-      _stat "$f" | awk '{printf "%07x %02x . % 8x %08x ",$1,$2,$3,$4}'
+      _stat "$f" | awk '{printf "%07x %02x . % 8x %08x\t",$1,$2,$3,$4}'
       ls -dF "$f"
       } || chkerr "$FUNCNAME : does not exist '$f'"
     done # f
@@ -259,8 +259,8 @@ ckstatsum () { # return sortable stat data for args (OR stdin file list)
   [ "$OS" = "Linux" ]                      && _stat () { stat -c %i\ %h\ %s\ %Y "$1" ;} || true
   [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat () { stat -f %i\ %l\ %z\ %m "$1" ;} || true
   echo "$fs" | while IFS= read f; do
-    [ -f "$f" ] && {
-      { _stat "$f" ; cksum <"$f" ;} | tr '\n' ' ' | awk -v f="$f" '{printf "%07x %02x %08x % 8x %08x\n",$1,$2,$5,$3,$4}'
+    [ -e "$f" ] && {
+      { _stat "$f" ; cksum <"$f" ;} | tr '\n' ' ' | awk '{printf "%07x %02x %08x % 8x %08x\t",$1,$2,$5,$3,$4}'
       ls -dF "$f"
       } || chkerr "$FUNCNAME : not a regular file : $f"
     done # f
