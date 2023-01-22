@@ -54,10 +54,11 @@ verb2="devnul"
 verb2="chkwrn"
 
 gen_index () { # in pwd, for "$links/$name/"
+    $verb $FUNCNAME  ; $verb2 "$links/$name" "$wdp/$name"
     [ -d "$links/$name" ] && mkdir -p "$wdp/$name" || { chkerr "$FUNCNAME : create \$wdp/\$name from $wdp/$name" ; exit 1 ;}
     t="$(mkdir -p "$wdp/%" && cd "$wdp/%" && mktemp -d "index-XXXX")"
 
-    $verb "$wdp/$name/" ; $verb2 tmp "$wdp/%/$t/${name}.list"
+    $verb "${name}.list" ; $verb2 tmp "$wdp/%/$t/${name}.list"
     # all mp3 in sequence except beginning with 0 or y
     find "$links/$name/" -maxdepth 1 -type f -name \*mp3 \
         | sed -e "
@@ -65,8 +66,7 @@ gen_index () { # in pwd, for "$links/$name/"
             /^y/d
             /^0/d
             " \
-        | sort \
-        >"$wdp/%/$t/${name}.list"
+        | sort >"$wdp/%/$t/${name}.list"
     touch -r "$links/$name/" "$wdp/%/$t/${name}.list"
     mv "$wdp/%/$t/${name}.list" "$wdp"
 
@@ -115,8 +115,8 @@ gen_index () { # in pwd, for "$links/$name/"
 check_do_index () { # gen_index iff diff
     [ -d "$links/$name/" ] || { chkerr "$0 : not a directory '$links/$name/'" ; return 1 ;}
     # if listing time is different than dir time, gen_index
-    [ -e "$wdp/$name/${name}.list" ] && expr "$(ckstat "$wdp/$name/${name}.list" | awk '{print $5}' )" '=' "$(ckstat "$links/$name/" | awk '{print $5}' )" >/dev/null \
-        && { chktrue "No change, skipping $name" ; return 0 ;} || true # ie return if no change or continue to gen_index
+    [ -e "$wdp/${name}.list" ] && expr "$(ckstat "$wdp/${name}.list" | awk '{print $5}' )" '=' "$(ckstat "$links/$name/" | awk '{print $5}' )" >/dev/null \
+        && { $verb "No change, skipping $name" ; return 0 ;} || true # ie return if no change or continue to gen_index
     gen_index
     } # check_do_index
 
