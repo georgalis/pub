@@ -475,7 +475,7 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
     local fs="$1" ; shift || true
     while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift || true ; done
     [ "$fs" ] || fs="$(cat)"
-    local orig='' args='' sortargs='' parm=''
+    local orig='' args='' sortargs='' parm='' origfiles=''
     echo "$fs" | while IFS= read _fpath ; do # filepath list
         local _fname="${_fpath##*/}" # basename
         echo "# ${_fname}"
@@ -484,10 +484,12 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
         local ext="$(sed -e 's/_^[^.]*.//' -e 's/\..*//' -e 's/-.*//' <<<"_^${_fname##*_^}")" # expect _^ to proceed id, followed by dot orig ext,
             # parm and transcoded extension, do the right thing on no parm or no transcoded extension (_^id.ext[-parm][.ext]$)
         local id="$(sed "s/\.${ext}.*//" <<<"${_fname##*_^}")"                  # id between "_^" and ".{ext}"
-        local path ; expr "$_fpath" : ".*/" >/dev/null && path="${_f%/*}" || path="." # dirname input file
-        local origfiles="$(find $(find "$path" "$path/.." -name \@) -maxdepth 1 -type f -name \*${id}\* 2>/dev/null )" # search nearby @ directories
-        [ "$origfiles" ] && orig="$(awk 'NR==1' <<<"${origfiles}")" # first inode found is usually the best choice
-        [ "$orig" ] || orig="'@/_^${id}.${ext}'" # not found, set expected path in quote, as reference
+        local path ; expr "$_fpath" : ".*/" >/dev/null && path="${_fpath%/*}" || path="." # dirname input file
+                            origfiles="$(find $(find "$path"    -name \@) -maxdepth 1 -type f -name \*${id}\* 2>/dev/null | head -n1 )" # search @ directories
+        [ "$origfiles" ] || origfiles="$(find $(find "$path/.." -name \@) -maxdepth 3 -type f -name \*${id}\* 2>/dev/null | head -n1 )" # search more @ directories
+      # local origfiles="$(find $(find "$path" "$path/.." -name \@) -maxdepth 1 -type f -name \*${id}\* 2>/dev/null )" # search nearby @ directories
+        # first inode found is usually the best choice OR set expected path in quote, as reference
+        [ "$origfiles" ] && orig="$(awk 'NR==1' <<<"${origfiles}")" || orig="'@/_^${id}.${ext}'"
         # decode f2rb2mp3 arguments
         args="$(sed -E -e "
             s/.*\.${ext}//
@@ -908,12 +910,17 @@ mp3range () { # mp3 listing limiter
     } # mp3range 20220803
 
 playffr () { # use ffplayr to continiously repeat invocations of ffplay
-    local fs
+    local f fs
     [ $# -gt 0 ] && { fs="$1" ; shift ;}
     while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
-    while :; do playff <<<"$fs" || return 1 ; done
-   #while :; do echo "$fs" | playff || return 1 ; done
+    echo "$fs" | while IFS= read f; do
+        chktrue "$f"
+        [ -f "$f" ] && {
+          chktrue $(hms2sec $(ffprobe -hide_banner -loglevel info "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //'))
+          ffplay -hide_banner -stats -autoexit -loglevel error -nodisp "$f" || return 1
+          } || chkwrn "$0 : not a file : '$f'"
+        done
     }
 
 playff () { # use ffplay to play files (args OR stdin filename per line)
@@ -922,11 +929,10 @@ playff () { # use ffplay to play files (args OR stdin filename per line)
     while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
     echo "$fs" | while IFS= read f; do
-        chkwrn "$f"
+       chktrue "$f"
         [ -f "$f" ] && {
-        hms2sec $(ffprobe -hide_banner  -loglevel info  "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')
-       #ffplay -hide_banner -stats -autoexit -loglevel info -top 52 -x 1088 -y 280 "$f" || return 1
-        ffplay -hide_banner -stats -autoexit -loglevel info -nodisp "$f" || return 1
+       chktrue $(hms2sec $(ffprobe -hide_banner  -loglevel warning "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //'))
+        ffplay -hide_banner -stats -autoexit -loglevel info -top 52 -x 1088 -y 280 "$f" || return 1
         } || chkwrn "$0 : not a file : '$f'"
         done
     } # playff
