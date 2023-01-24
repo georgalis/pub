@@ -3,7 +3,7 @@
 Welcome!
 
 In 2020 much effort was taken to organize a playlist of the most important music
-([5fb3-deja-muse](https://github.com/georgalis/pub/blob/master/know/music/5fb3-deja-muse.md)),
+([5fb3-deja-muse](https://github.com/georgalis/pub/blob/master/know/music/5fb3-deja-muse.md#a-2020-musical-playlist-5fb3-deja-muse)),
 timeless music, for all times. Following that, subsequent volumes would represent compositions and
 performances, supplementing the former. How many works, from what generas? How many volumes? These
 are tough questions, the answer is an amalgamation of careful study, practice, discovery, tools
