@@ -5,13 +5,13 @@ verb=chktrue
 verb2=chkwrn
 verb2=devnul
 
-[ "$*" ] || exit 0
-
-mount | grep -q /Volumes/CURATE || { chkerr "$0 $FUNCNAME : no /Volumes/CURATE for exclude" ; exit 1 ;}
 
 cd "$(dirname $0)"
 listd="$(pwd -P)"
 mkdir -p "%"
+
+[ "$*" ] || { chkwrn "Available class files:" $(ls class-*.txt | sed -e 's/^class-//' -e 's/\.txt$//') ; exit 0 ;}
+mount | grep -q /Volumes/CURATE || { chkerr "$0 $FUNCNAME : no /Volumes/CURATE for exclude" ; exit 1 ;}
 
 r="$(date "+%Y%m%d %H:%M %a %e %b" | tai64n | sed -e 's/^@4[0]*//' -e 's/........ / /')" # eg "63d2e37a 20230126 12:32 Thu 26 Jan"
 b="$( echo $* | tr ' ' '\n' | sort -u | sed '/^$/d' | tr '\n' ',' )"                     # eg "arg1,arg2,arg3,"

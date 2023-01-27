@@ -1,4 +1,4 @@
-### Music Curating
+### Music Curation
 
 Welcome!
 

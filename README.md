@@ -15,8 +15,8 @@ cd "${r}" && git archive --prefix ${PWD##*/}/ HEAD | tar -C "/tmp/${t}" -xzf - \
 ###### Shortcuts to major ./pub components
 
 [root](https://github.com/georgalis/pub/)
-* [./know/](./know#edification) corporeal resources
-* [./know/music/](./know/music#readme) Musical Playlists
+* [./know/](./know/README.md#edification) corporeal resources
+* [./know/music/](.//know/music/README.md#music-curation) Musical Playlists
 * [./know/music/5fb3-deja-muse.md](./know/music/5fb3-deja-muse.md#5fb3-deja-muse) A 2020 Musical Playlist
 * [./know/Nevermind.pdf](./know/Nevermind.pdf) life management
 * [./know/Operations.pdf](./know/Operations.pdf) Proceeding Operations, brief graphical format
