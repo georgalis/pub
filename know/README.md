@@ -3,7 +3,7 @@
 ## Knowledge, Aesthetic, and Development
 
 * <b>[Nevermind](Nevermind.pdf)</b> life management
-* <b>[Music](./music/#README.md)</b> for corporeal life
+* <b>[Music Curation](./music/README.md#music-curation)</b> for corporeal life
 
 ### Quality, Operations, Control, and Improvement
 

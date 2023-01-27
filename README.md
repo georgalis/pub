@@ -20,7 +20,7 @@ cd "${r}" && git archive --prefix ${PWD##*/}/ HEAD | tar -C "/tmp/${t}" -xzf - \
 * [./know/music/5fb3-deja-muse.md](./know/music/5fb3-deja-muse.md#5fb3-deja-muse) A 2020 Musical Playlist
 * [./know/Nevermind.pdf](./know/Nevermind.pdf) life management
 * [./know/Operations.pdf](./know/Operations.pdf) Proceeding Operations, brief graphical format
-* [./know/ProOps](./know/ProOps/README.md) Proceeding Operations Framework, text detail
+* [./know/ProOps](./know/ProOps/README.md#proceeding-operations-framework) Proceeding Operations Framework, text detail
 * [./boot](./boot) bootstrap scripts for various OS
 * [./boot/nbsd/rc.sh](./boot/nbsd/rc.sh) invoke NetBSD bootstrap with CI/CD enhancements
 * [./boot/nbsd/tai64n-inst.sh](./boot/nbsd/tai64n-inst.sh) tai64n and tai64nlocal installer
