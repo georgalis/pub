@@ -1,6 +1,7 @@
-# Knowledge, Aesthetic, and Development
+# Edification
 
-## Edification
+## Knowledge, Aesthetic, and Development
+
 * <b>[Nevermind](Nevermind.pdf)</b> life management
 * <b>[Music](./music/#README.md)</b> for corporeal life
 

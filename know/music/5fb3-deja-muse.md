@@ -1,6 +1,6 @@
-## A 2020 Musical Playlist, 5fb3-deja-muse
-
-#### continuous music for 365 days a year
+# 5fb3-deja-muse
+## A 2020 Musical Playlist
+### continuous music for 365 days a year
 #### 91 hours (almost 4 days), in 356 tracks
 
 The arrangement is a composition of important music selections, with study and accessibility alterations. They were chosen according to musical significance and their repeated listening aesthetic. A comprehensive annotation is pending (6 months to a year). For now, Wikipedia and YouTube is the best place to find original biography and source. Let me know what you find or if you have any questions.
