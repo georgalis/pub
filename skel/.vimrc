@@ -58,10 +58,10 @@ if has("autocmd")
     \ endif
 endif " has("autocmd")
 
-map <f2> {!}par 1600<CR>
+map <f1> {!}par 1600<CR>
+map <F2> {!}par 52<CR>
 map <F3> {!}par 66<CR>
-map <F4> {!}par 52<CR>
-map <F5> :.!par 52<CR>
+map <F4> {!}par 94<CR>
 
 ""  http://www.rayninfo.co.uk/vimtips.html/
 ""  ----------------------------------------

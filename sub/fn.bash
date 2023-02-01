@@ -486,7 +486,7 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
         local id="$(sed "s/\.${ext}.*//" <<<"${_fname##*_^}")"                  # id between "_^" and ".{ext}"
         local path ; expr "$_fpath" : ".*/" >/dev/null && path="${_fpath%/*}" || path="." # dirname input file
                             origfiles="$(find $(find "$path"    -name \@) -maxdepth 1 -type f -name \*${id}\* 2>/dev/null | head -n1 )" # search @ directories
-        [ "$origfiles" ] || origfiles="$(find $(find "$path/.." -name \@) -maxdepth 3 -type f -name \*${id}\* 2>/dev/null | head -n1 )" # search more @ directories
+        [ "$origfiles" ] || origfiles="$(find $(find "$path/.." -name \@) -maxdepth 1 -type f -name \*${id}\* 2>/dev/null | head -n1 )" # search more @ directories
       # local origfiles="$(find $(find "$path" "$path/.." -name \@) -maxdepth 1 -type f -name \*${id}\* 2>/dev/null )" # search nearby @ directories
         # first inode found is usually the best choice OR set expected path in quote, as reference
         [ "$origfiles" ] && orig="$(awk 'NR==1' <<<"${origfiles}")" || orig="'@/_^${id}.${ext}'"
