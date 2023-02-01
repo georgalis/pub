@@ -32,7 +32,7 @@ while IFS= read a ; do
     done <<EOF
 ckstat 0414a904 000003af
 ckstatsum 528c373f 00000409
-formfile 8caaa025 00000fda
+formfile 22029e47 00000fda
 formfilestats fa92ede0 000004dc
 revargs 5db3f9bb 000000a7
 spin2 1263edf2 00000180
@@ -51,8 +51,8 @@ wdp="$(cd "${inpath}" ; pwd -P)"
 infilep="$(cd "${inpath}" ; pwd -P)/${infile}"                 # infilep == realpath f
 mkdir -p "$wdp/%"
 verb="chktrue"
-verb2="chkwrn"
 verb2="devnul"
+verb2="chkwrn"
 
 gen_index () { # in pwd, for "$links/$name/"
     $verb $FUNCNAME $name ; $verb2 "$links/$name" "$wdp/$name"
@@ -93,8 +93,8 @@ gen_index () { # in pwd, for "$links/$name/"
 
     $verb ${name}.ckstat ; $verb2 tmp "$wdp/%/$t/${name}.ckstat"
     cat "$wdp/${name}.list" | while IFS= read a ; do
-      # ckstat    $links/$name/$a | awk -v f="${a##*,}" '{printf ". . % 8s % 8s %s %s\n",$3,$4,$5,f}'
-        ckstatsum $links/$name/$a | awk -v f="${a##*,}" '{printf ". . % 8s % 8s %s %s\n",$3,$4,$5,f}'
+        ckstat    $links/$name/$a | awk -v f="${a##*,}" '{printf ". . % 8s % 8s %s %s\n",$3,$4,$5,f}'
+      # ckstatsum $links/$name/$a | awk -v f="${a##*,}" '{printf ". . % 8s % 8s %s %s\n",$3,$4,$5,f}'
         spin2
         done >"$wdp/%/$t/${name}.ckstat~"
     spin2 0
@@ -113,13 +113,14 @@ gen_index () { # in pwd, for "$links/$name/"
     rm -rf "$wdp/%/$t/"
     } # gen_index
 
-check_do_index () { # gen_index iff diff
+check_gen_index () { # gen_index iff diff
     [ -d "$links/$name/" ] || { chkerr "$0 $FUNCNAME : not a directory '$links/$name/'" ; exit 1 ;}
     # if listing time is different than dir time, gen_index
     [ -e "$wdp/${name}.list" ] \
         && expr "$(ckstat "$wdp/${name}.list" | awk '{print $5}' )" '=' "$(ckstat "$links/$name/" | awk '{print $5}' )" >/dev/null \
-        && { $verb "No change, skipping $name" ; return 0 ;} || gen_index # ie return if no change or continue to gen_index
-    } # check_do_index
+        && { $verb "No change, skipping $name" ; return 0 ;} # ie return if no change or continue
+    gen_index 
+    } # check_gen_index
 
 kind_curate_rsync () { # rsync $links/0/kind/$name/
     $verb2 $FUNCNAME  ; $verb2 "$links/0/kind/$name/ /Volumes/CURATE/kind/$name/"
@@ -129,17 +130,9 @@ kind_curate_rsync () { # rsync $links/0/kind/$name/
     # Fixup OSX Ventura rsync problem (sets timestamp to transfer time vs orig file time, to ms-dos filesystems)
     # https://discussions.apple.com/thread/254383328
     # https://github.com/WayneD/rsync/issues/412
-    # touch after to avoid need to create directories for recursive
-         # mkdir -p $(dirname "/Volumes/CURATE/kind/${name}/$a"
- #  cd "$links/0/kind/$name/" \
- #    && {
-     #  rsync -aP --delete --delete-excluded --modify-window=1 --include='*mp3' --exclude='*' ./ "/Volumes/CURATE/kind/$name/" \
-        rsync -aP --delete                   --modify-window=1                                    $links/0/kind/${name}* "/Volumes/CURATE/kind/" \
-            | grep -vE '((^sending|^sent|^total) |^$)' || true
+    rsync -aP --delete --modify-window=1 $links/0/kind/${name}* "/Volumes/CURATE/kind/" \
+        | grep -vE '((^sending|^sent|^total) |^$)' || true
         cd $links/0/kind/ && find . -type f -path "./${name}*" -exec touch -r \{\} "/Volumes/CURATE/kind/"\{\} \;
-     #  find . -type f -maxdepth 1 -name \*\.mp3 -exec touch -r \{\} "/Volumes/CURATE/kind/${name}/"\{\} \;
-     #  $verb2 touch $links/0/kind/$name/ "/Volumes/CURATE/kind/$name/"
-     #  touch -r $links/0/kind/$name/ "/Volumes/CURATE/kind/$name/"
     } # kind_curate_rsync
 
 doc2html2kind () { # include a doc file with volume (and make html if it is md)
@@ -148,14 +141,13 @@ doc2html2kind () { # include a doc file with volume (and make html if it is md)
     [ -f "$HOME/sub/markdown.awk" ] || { chkerr "$0 $FUNCNAME : no markdown.awk" ; exit 1 ;}
     [ "${doc##*.}" = "md"   ] && { doco="${doc}.html"
         awk -f $HOME/sub/markdown.awk <"$wdp/$doc" >"$wdp/%/$doco";}
-    [ "${doc##*.}" = "list" ] && { doco="${doc}.txt"
-        sed -e 's/$/\r/'              <"$wdp/$doc" >"$wdp/%/$doco";}
-    touch -r "$wdp/$doc" "$wdp/%/$doco"
+    sed -e 's/$/\r/' "$wdp/${name}.list" >"$wdp/%/${name}.list.txt"
+#   [ "${doc##*.}" = "list" ] && { doco="${doc}.txt"
+#       sed -e 's/$/\r/'              <"$wdp/$doc" >"$wdp/%/$doco";}
+    touch -r "$wdp/$doc" "$wdp/%/$doco" "$wdp/%/${name}.list.txt"
     $verb2 doco "$wdp/%/$doco" "$links/0/kind/"
-    rsync -av   "$wdp/%/$doco" "$links/0/kind/" \
+    rsync -av   "$wdp/%/$doco" "$wdp/%/${name}.list.txt" "$links/0/kind/" \
             | grep -vE '((^sending|^sent|^total) |^$)' || true
-#   touch -r "$wdp/$doc" "/Volumes/CURATE/kind/$doco"
-#   [ -d "$links/$name/" -a -d "$links/0/kind/$name/" ] && kind_curate_rsync
     } # doc2html2kind
 
 readme2html2kind () {
@@ -199,18 +191,18 @@ awk '!/^$/' <<<"$volumes" | awk '{print " ",NR,$0}'
 
 # if the first arg is sync, note that for after gen_index
 _sync=n
-[ "$1" = "sync" ] && { _sync=y ; shift ;} || true
-[ "$1" = "all"  ] && { shift ; set $vols ;} || true
+[ "$1" = "sync" ] && { _sync=y ; shift ;} || true # sync args vols (from $links/0/kind) to curate (sd media)
+[ "$1" = "all"  ] && { shift ; set $vols ;} || true # shorthand for all vols as args (and gen_index without check)
 
-# Render the readme
+# always render the readme
 readme2html2kind
 
-# always gen_index for args, OR iff no args, as needed from vols
+# always gen_index for args, OR iff no args, check and gen_index as needed
 [ "$*" ] && { for name in $*    ; do gen_index      ; done ;} \
-         || { for name in $vols ; do check_do_index ; done ;}
+         || { for name in $vols ; do check_gen_index ; done ;}
 
-# if first arg was sync,
-[ "$_sync" = "y" ] && { # kind_curate_rsync remaining args, OR all volumess if null
+# if first arg was sync, kind_curate_rsync remaining args, OR all volumes if null
+[ "$_sync" = "y" ] && {
     [ "$*" ] \
         && { # gen html and rsync to /Volumes/CURATE/kind/ @ arg
             $verb curate $*
@@ -221,6 +213,6 @@ readme2html2kind
             kindreadme2curate
             for name in $vols ; do doc2html2kind ; kind_curate_rsync ; done ;}
         }
-$verb2 "eol"
+$verb2 "eof"
 exit 0
 
