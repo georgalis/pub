@@ -51,8 +51,8 @@ wdp="$(cd "${inpath}" ; pwd -P)"
 infilep="$(cd "${inpath}" ; pwd -P)/${infile}"                 # infilep == realpath f
 mkdir -p "$wdp/%"
 verb="chktrue"
-verb2="devnul"
 verb2="chkwrn"
+verb2="devnul"
 
 gen_index () { # in pwd, for "$links/$name/"
     $verb $FUNCNAME $name ; $verb2 "$links/$name" "$wdp/$name"

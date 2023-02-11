@@ -42,7 +42,7 @@ for a in $@ ; do
 cd /Volumes/CURATE/kind \
     && {
     find . -name \*mp3~ | sort | sed -e 's/$/\r/' >"release_exclude.txt"
-    find . -name \*mp3~ -exec rm \{\} \;
+#   find . -name \*mp3~ -exec rm \{\} \;
     chktrue "/Volumes/CURATE/kind/release_exclude.txt"
     sed -e 's/$/\r/' "$listd/%/$t" >"${n}.txt"
     chktrue "/Volumes/CURATE/kind/${n}.txt"
