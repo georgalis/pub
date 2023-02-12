@@ -182,6 +182,7 @@ volumes="
 6344-Ithica       https://github.com/georgalis/pub/blob/master/know/music/6344-Ithica.list
 6350-forte-flute  https://github.com/georgalis/pub/blob/master/know/music/6350-forte-flute.list
 63aa-bee-piano    https://github.com/georgalis/pub/blob/master/know/music/63aa-bee-piano.list
+63e8-jazzmore     https://github.com/georgalis/pub/blob/master/know/music/63e8-jazzmore.list
 "
 
 vols="$(awk '!/^$/ {print $1}' <<<"$volumes")"
