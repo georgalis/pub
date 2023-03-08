@@ -178,7 +178,7 @@ _youtube_json2txt () {
   [ -f "${1}" ]     || { chkerr "$FUNCNAME : not a file : ${1}" ; return 1 ;}
   [ -f "${1}.txt" ] && { chkerr "$FUNCNAME : ${1}.txt exists" ; return 1 ;}
   jq --compact-output 'del(.formats, .thumbnail, .thumbnails, .downloader_options, .http_headers)' "$1" \
-    | yq -P >"${1}.txt"
+    | yq --yaml-output >"${1}.txt"
   echo "${1}.txt"
   } # _youtube_json2txt 20220516
 
