@@ -2,9 +2,10 @@
 
 " (c) 2017-2022 George Georgalis <george@galis.org> unlimited use with this notice
 
-"set fileencoding=utf8
-"set encoding=utf8
-"set termencoding=utf8
+" I know not using ascii is going to hurt, but binary txt files already hurts
+set fileencoding=utf8
+set encoding=utf8
+set termencoding=utf8
 " :e! ++enc=utf8
 " :e! ++enc=ascii
 "set timeout timeoutlen=3000 ttimeoutlen=100
