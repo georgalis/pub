@@ -40,8 +40,8 @@ EOF
 
 [ -e $HOME/sub/markdown.awk ] || { echo "$0 : markdown.awk not found" 1>&2 ; dep_help_sub ; exit 1 ;}
 
-ps | grep -E "^[ ]*$$" | grep -q bash   || chkexit "$0 : Not bash"
-test -d "$links"                       || chkexit "$0 : not a directory links='$links'"
+ps | grep -E "^[ ]*$$" | grep -q bash || chkexit "$0 : Not bash"
+test -d "$links"                      || chkexit "$0 : not a directory links='$links'"
 export links # we will need it in sub-shells and pipelines
 
 f="$0"
@@ -57,7 +57,7 @@ verb2="devnul"
 gen_index () { # in pwd, for "$links/$name/"
     $verb $FUNCNAME $name ; $verb2 "$links/$name" "$wdp/$name"
     [ -d "$links/$name" ] && mkdir -p "$wdp/$name" || { chkerr "$FUNCNAME : create \$wdp/\$name from $wdp/$name" ; exit 1 ;}
-    t="$(cd "$wdp/%" && mktemp -d "index-XXXX")"
+    t="$(cd "$wdp/%" && mktemp -d "${infile}-XXXXX")"
 
     $verb "${name}.list" ; $verb2 tmp "$wdp/%/$t/${name}.list"
     # all mp3 in sequence except beginning with 0 or y
@@ -169,6 +169,47 @@ kindreadme2curate () {
     } # kindreadme2curate
 
 # main
+
+# disable mac spolight on usb drives
+# [ "$(which mdutil 2>/dev/null)" ] \
+#     && { # unspotlight
+#         $verb disabling Spolight on removable media
+#         for a in '/Volumes/CURATE' '/Volumes/NO NAME' ; do
+#           mount | grep " on $a " >/dev/null && mdutil -i off "$a"
+#              # mdutil -X "$a" # removing index data requires root
+#           done # mac mounted (CURATE|NO NAME) volumes
+#        } # is a mac
+mount | grep /Volumes/CURATE >/dev/null \
+    && {
+       test -f /Volumes/CURATE/.metadata_never_index || touch $_
+       test -e /Volumes/CURATE/.Spotlight-V100 -o -e /Volumes/CURATE/.fseventsd \
+         && chkwrn "remove spolight index: sudo mdutil -X /Volumes/CURATE/"
+       }
+
+# if arg1 is cache, only sync the cache and exit
+[ "$1" = 'cache' ] \
+    && {
+       test -d  "$links/0/6400-cache/" || { chkerr "$0 $FUNCNAME : no local $links/0/6400-cache/" ; exit 1 ;}
+       test -f "$links/0/6400-cache/.metadata_never_index" \
+        || {
+            touch -r "$links/0/6400-cache/" "$links/0/6400-cache/.metadata_never_index"
+            touch -r "$links/0/6400-cache/.metadata_never_index" "$links/0/6400-cache/"
+           }
+       find "$links/0/6400-cache/" -type f -name \*mp3 \
+        | sed -e "s=^${links}/0/6400-cache[/]*==" \
+        | sort >"$wdp/%/6400-cache.list"
+       sed -e 's/$/\r/' "$wdp/%/6400-cache.list" >"$wdp/%/6400-cache.list.txt"
+       touch -r "$links/0/6400-cache/" "$wdp/%/6400-cache.list"
+       touch -r "$links/0/6400-cache/" "$wdp/%/6400-cache.list.txt"
+       mv "$wdp/%/6400-cache.list" "$wdp"
+       mount | grep -q /Volumes/CURATE       || { chkerr "$0 $FUNCNAME : no /Volumes/CURATE for cache" ; exit 1 ;}
+       test -e /Volumes/CURATE/.metadata_never_index || touch $_
+       set -x
+       rsync -av --delete --modify-window=1 $links/0/6400-cache/ "/Volumes/CURATE/6400-cache/"
+       mv -f "$wdp/%/6400-cache.list.txt" "/Volumes/CURATE/"
+       #  | grep -vE '((^sending|^sent|^total) |^$)'
+       exit $?
+       }
 
 $verb $0 $*
 $verb "$wdp"
