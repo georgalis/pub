@@ -30,8 +30,8 @@ EOF
 while IFS= read a ; do
     validfn $a && true || { echo "$0 : validfn error : $a" 1>&2 ; dep_help_sub ; exit 1 ;}
     done <<EOF
-ckstat 0414a904 000003af
-ckstatsum 528c373f 00000409
+ckstat 36acea2a 000003b2
+ckstatsum 9b617c6f 0000040c
 formfile 22029e47 00000fda
 formfilestats fa92ede0 000004dc
 revargs 5db3f9bb 000000a7
@@ -224,6 +224,7 @@ volumes="
 6350-forte-flute  https://github.com/georgalis/pub/blob/master/know/music/6350-forte-flute.list
 63aa-bee-piano    https://github.com/georgalis/pub/blob/master/know/music/63aa-bee-piano.list
 63e8-jazzmore     https://github.com/georgalis/pub/blob/master/know/music/63e8-jazzmore.list
+640e-bside1970    https://github.com/georgalis/pub/blob/master/know/music/640e-bside1970.list
 "
 
 vols="$(awk '!/^$/ {print $1}' <<<"$volumes")"
