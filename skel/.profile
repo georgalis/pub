@@ -220,9 +220,9 @@ path_prepend () { # prepend $1 if not already in path
 
 ckstat () { # return sortable stat data for args (OR stdin file list)
   # ckstat /etc/resolv.conf
-  # 033cb35f01 .       16 6305e87b /etc/resolv.conf
-  # inode\links . 0x_size  0x_date input
-  # (c) 2017-2022 George Georgalis <george@galis.org> unlimited use with this notice
+  # 033cb35f 01 .      16 6305e87b /etc/resolv.conf
+  # inode links . 0x_size  0x_date input
+  # (c) 2017-2023 George Georgalis <george@galis.org> unlimited use with this notice
   [ "$1" = "-h" -o "$1" = "--help" ] && {
     chkwrn 'Return sortable stat data for args (OR stdin file list):'
     chkwrn 'inode\links . 0x-size 0x-mdate input'
@@ -236,8 +236,13 @@ ckstat () { # return sortable stat data for args (OR stdin file list)
   [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat () { stat -f %i\ %l\ %z\ %m "$1" ;} || true
   echo "$fs" | while IFS= read f; do
     [ -e "$f" ] && {
-      _stat "$f" | awk '{printf "%07x %02x . % 8x %08x\t",$1,$2,$3,$4}'
+      # \0 will produce \200, which does not terminate a string but behaves as a null
+      # per terminfo.5, so just use \200 to separate filnames with regex unfriendly char
+      _stat "$f" | awk '{printf "%07x %02x . % 8x %08x \200",$1,$2,$3,$4}'
       ls -dF "$f"
+      # two ways to filter the names from the preceeding char
+      # awk '{sub(/^[^\200]*\200/,"") ; print}' # filename follows the first \200
+      # sed 's/^[ -~]*[^ -~]//' # first non-ascii match is \200, filename follows
       } || chkerr "$FUNCNAME : does not exist '$f'"
     done # f
   } # ckstat ()
@@ -260,8 +265,13 @@ ckstatsum () { # return sortable stat data for args (OR stdin file list)
   [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat () { stat -f %i\ %l\ %z\ %m "$1" ;} || true
   echo "$fs" | while IFS= read f; do
     [ -e "$f" ] && {
-      { _stat "$f" ; cksum <"$f" ;} | tr '\n' ' ' | awk '{printf "%07x %02x %08x % 8x %08x\t",$1,$2,$5,$3,$4}'
+      # \0 will produce \200, which does not terminate a string but behaves as a null
+      # per terminfo.5, so just use \200 to separate filnames with regex unfriendly char
+      { _stat "$f" ; cksum <"$f" ;} | tr '\n' ' ' | awk '{printf "%07x %02x %08x % 8x %08x \200",$1,$2,$5,$3,$4}'
       ls -dF "$f"
+      # two ways to filter the names from the preceeding char
+      # awk '{sub(/^[^\200]*\200/,"") ; print}' # filename follows the first \200
+      # sed 's/^[ -~]*[^ -~]//' # first non-ascii match is \200, filename follows
       } || chkerr "$FUNCNAME : not a regular file : $f"
     done # f
   } # ckstatsum ()
