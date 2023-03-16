@@ -931,7 +931,7 @@ playff () { # use ffplay to play files (args OR stdin filename per line)
     echo "$fs" | while IFS= read f; do
        chktrue "$f"
         [ -f "$f" ] && {
-       chktrue $(hms2sec $(ffprobe -hide_banner  -loglevel warning "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //'))
+       chktrue $(hms2sec $(ffprobe -hide_banner  -loglevel info "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //'))
         ffplay -hide_banner -stats -autoexit -loglevel info -top 52 -x 1088 -y 280 "$f" || return 1
         } || chkwrn "$0 : not a file : '$f'"
         done
