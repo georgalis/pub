@@ -180,20 +180,22 @@ _youtube_video () {
 _youtube_json2txt () { # fixup youtube .info.json to yaml txt and sort files
   [ -f "${1}" ]     || { chkerr "$FUNCNAME : not a file : ${1}" ; return 1 ;}
   [ -f "${1}.txt" ] && { chkerr "$FUNCNAME : exists ${1}.txt" ; return 1 ;}
-  local inpath='' _fout="_^$(jq --ascii-output --raw-output '(.id, .acodec)' "$1" | tr '\n' '.' | sed 's/\.$//')"
+  local inpath='' _fout="_^$(jq --ascii-output --raw-output '(.id, .acodec)' "$1" \
+    | tr -d '"' | tr '\n' '.' | sed 's/\.$//')"
   expr "$1" : ".*/" >/dev/null && inpath="${1%/*}" || inpath="."
   echo "ss= ; export _f=@/$_fout" | tr -d '"' >"${1}.txt"
   { jq --ascii-output --raw-output '(.fulltitle, .duration_string)' "$1" \
-        | tr -d '"' ; printf '\n%s\n\n' "" ;} | sed -e 's,\\u0332,,g' -e 's,\\u2013,-,' >>"${1}.txt"
-  { set -x
-    mkdir -p "$inpath/@/meta" "$inpath/orig"
-    ln "$inpath/"*"$_fout" "$inpath/@/$_fout" && mv "$inpath/"*"$_fout" "$inpath/orig" \
-      && mv "$inpath/"*"${_fout%%.*}.info.json" "$inpath/"*"${fout%%.*}.webp" "$inpath/@/meta"
-    set +x ;}
+        | tr -d '"' ; printf '\n\n\n' "" ;} | sed -e 's,\\u0332,,g' -e 's,\\u2013,-,' >>"${1}.txt"
   jq --compact-output 'del(.formats, .thumbnail, .thumbnails, .downloader_options, .http_headers,
         .webpage_url_basename, .author_thumbnail, .playable_in_embed, .live_status, .automatic_captions,
         .extractor, .is_live, .was_live )' "$1" \
     | yq --yaml-output | tr -cd '[ -~]\n' >>"${1}.txt"
+  mkdir -p "$inpath/@/meta" "$inpath/orig"
+# { set -x
+    ln "$inpath"/*${_fout} "$inpath"/@/${_fout} \
+      && mv "$inpath"/*${_fout} "$inpath/orig" \
+      && mv "$1" "$inpath"/*${_fout%%.*}.webp "$inpath"'/@/meta'
+#   set +x ;}
   echo "${1}.txt"
   } # _youtube_json2txt 20220516
 
@@ -203,6 +205,8 @@ _youtube_comment_unflatten () { # convert comment text from _youtube_json2txt to
         s/^[ ]*//
         s/\\$//
         s/\\ / /g
+        s/\\"/"/g
+        s/\\t/	/g
         s/\\r//g
         $s/"$//' | tr -d '\n' | awk '{gsub(/\\n/,"\n")}1'
     } # _youtube_comment_unflatten 20230323
