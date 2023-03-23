@@ -148,14 +148,17 @@ _youtube () {
   local id="$1" d="$2"
   [ "$id" ] || read -p "youtube id: " id
   [ "$id" ] || { chkerr "no id?" ; return 1 ;}
-  [ "$d" ]  || read -p "directory : " d
+  [ "$d" ]  || read -p "directory: " d
   [ -d "$d" ] || d="$(pwd -P)"
-  [ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
+  [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d'" ; return 1 ;}
   #[ "$ua" ] && uac="--user-agent '$ua'" || uac=''
   [ "$ytdl" ] || ytdl="youtube-dl"
+  local t=$(mkdir -p "$HOME/%/ytdl" && cd "$HOME/%/ytdl" && mktemp ytdl-XXXX)
   $ytdl --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --no-playlist \
-   --audio-quality 0 --audio-format best --extract-audio \
-   -o "$d/00,%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+   --audio-quality 0 --audio-format best --extract-audio --write-comments \
+   -o "$d/00,%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id | tee "$HOME/%/ytdl/$t"
+  _youtube_json2txt $(sed -e '/as JSON to/!d' -e 's/.*to: //' <"$HOME/%/ytdl/$t")
+  rm -f "$HOME/%/ytdl/$t"
   } # _youtube 20220516
 
 _youtube_video () {
@@ -174,13 +177,35 @@ _youtube_video () {
    -o "$d/00,%(title)s-%(uploader_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   } # _youtube_video 20220516
 
-_youtube_json2txt () {
+_youtube_json2txt () { # fixup youtube .info.json to yaml txt and sort files
   [ -f "${1}" ]     || { chkerr "$FUNCNAME : not a file : ${1}" ; return 1 ;}
-  [ -f "${1}.txt" ] && { chkerr "$FUNCNAME : ${1}.txt exists" ; return 1 ;}
-  jq --compact-output 'del(.formats, .thumbnail, .thumbnails, .downloader_options, .http_headers)' "$1" \
-    | yq --yaml-output >"${1}.txt"
+  [ -f "${1}.txt" ] && { chkerr "$FUNCNAME : exists ${1}.txt" ; return 1 ;}
+  local inpath='' _fout="_^$(jq --ascii-output --raw-output '(.id, .acodec)' "$1" | tr '\n' '.' | sed 's/\.$//')"
+  expr "$1" : ".*/" >/dev/null && inpath="${1%/*}" || inpath="."
+  echo "ss= ; export _f=@/$_fout" | tr -d '"' >"${1}.txt"
+  { jq --ascii-output --raw-output '(.fulltitle, .duration_string)' "$1" \
+        | tr -d '"' ; printf '\n%s\n\n' "" ;} | sed -e 's,\\u0332,,g' -e 's,\\u2013,-,' >>"${1}.txt"
+  { set -x
+    mkdir -p "$inpath/@/meta" "$inpath/orig"
+    ln "$inpath/"*"$_fout" "$inpath/@/$_fout" && mv "$inpath/"*"$_fout" "$inpath/orig" \
+      && mv "$inpath/"*"${_fout%%.*}.info.json" "$inpath/"*"${fout%%.*}.webp" "$inpath/@/meta"
+    set +x ;}
+  jq --compact-output 'del(.formats, .thumbnail, .thumbnails, .downloader_options, .http_headers,
+        .webpage_url_basename, .author_thumbnail, .playable_in_embed, .live_status, .automatic_captions,
+        .extractor, .is_live, .was_live )' "$1" \
+    | yq --yaml-output | tr -cd '[ -~]\n' >>"${1}.txt"
   echo "${1}.txt"
   } # _youtube_json2txt 20220516
+
+_youtube_comment_unflatten () { # convert comment text from _youtube_json2txt to ascii formatted
+    sed -e '
+        s/^[ ]*text: "//
+        s/^[ ]*//
+        s/\\$//
+        s/\\ / /g
+        s/\\r//g
+        $s/"$//' | tr -d '\n' | awk '{gsub(/\\n/,"\n")}1'
+    } # _youtube_comment_unflatten 20230323
 
 span2ssto () { # start (arg1) span (arg2) and remaining args to f2rb2mp3
     # used to calculate ss= to= f2rb2mp3 parameters, given track legnths
