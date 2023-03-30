@@ -99,17 +99,17 @@ esac # "$OS"
  alias  lS='colorls -AFGTlrS'
  } || true # echo "no colorls"
 
-# terminfo
-[ -z "${OS#Linux}" ] &&  { _ntermrev='rmso' ; _ntermul='rmul'
-                            _termrev='smso' ;  _termul='smul' ;}
-[ -z "${OS#NetBSD}" ] && { _ntermrev='se'   ; _ntermul='ue'
-                            _termrev='so'   ;  _termul='us' ;}
-[ -z "${OS#Darwin}" ] && { _ntermrev='se'   ; _ntermul='ue'
-                            _termrev='so'   ;  _termul='us' ;}
-# create ESC strings to turn on/off underline and stand-out
-_ntermrev="$(tput "$_ntermrev")" ; _ntermul="$(tput "$_ntermul")"
- _termrev="$(tput  "$_termrev")"  ; _termul="$(tput  "$_termul")"
-export _ntermrev _termrev _ntermul _termul
+# # terminfo
+# [ -z "${OS#Linux}" ] &&  { _ntermrev='rmso' ; _ntermul='rmul'
+#                             _termrev='smso' ;  _termul='smul' ;}
+# [ -z "${OS#NetBSD}" ] && { _ntermrev='se'   ; _ntermul='ue'
+#                             _termrev='so'   ;  _termul='us' ;}
+# [ -z "${OS#Darwin}" ] && { _ntermrev='se'   ; _ntermul='ue'
+#                             _termrev='so'   ;  _termul='us' ;}
+# # create ESC strings to turn on/off underline and stand-out
+# _ntermrev="$(tput "$_ntermrev")" ; _ntermul="$(tput "$_ntermul")"
+#  _termrev="$(tput  "$_termrev")"  ; _termul="$(tput  "$_termul")"
+# export _ntermrev _termrev _ntermul _termul
 
 alias    g='grep'   # grep for the extended regex
 alias    v='grep -v'  # grep -v for the extended regex
@@ -361,13 +361,6 @@ case "$SHELL" in
 #	}
 esac # $SHELL
 
-[ -x "$(which vim 2>/dev/null)" -a "$EDITOR" = "vi" ] \
-    && {
-        alias crontab='env EDITOR="\vi" crontab'
-       #alias vi="$(which vim)"
-       #export EDITOR='vim'
-    }
-
 import_pubkey () { # take a putty exported ssh key and make an authorized_keys line
 local key_in="$(mktemp /tmp/pubkey-XXXXXX)"
 [ -e "$1" ] && cat "$1" >"$key_in" || cat /dev/stdin >"$key_in"
@@ -401,14 +394,14 @@ rm $key_in ;}
 
 
 # ssh socket key and agent managent
-printf "${_termrev}"
+tput rev ; tput dim
 printf "User ${USER}@${HOSTNAME}: "
 [ "$SSH_AGENT_ENV" ] || {
     eval $(ssh-agent)
     ssh-add $(find $HOME/.ssh/ \( -name id_\* -o -name ${USER}\* \) -type f \! -name \*pub )
     export SSH_AGENT_ENV="SSH_AGENT_PID $SSH_AGENT_PID SHELL_PID $$" ;}
 ssh-add -l | cut -d\  -f 3- # show keys in SSH_AUTH_SOCK
-printf "${_ntermrev}"
+tput sgr0
 ## shell logout trap, eg ~/.bash_logout ~/.ksh_logout
 #[ -n "$SSH_AGENT_ENV" ] && set $SSH_AGENT_ENV && [ "$$" = "$4" ] \
 #	&& { printf "Logout: " && kill $2 && echo $(hostname) $0 [$4] killed ssh-agent $2 \
@@ -419,9 +412,8 @@ siffx "$HOME/.profile.local" "~/.profile (63b8877f)"
 
 # now just do the export part of siffx... least loop on source
 {  export -f $(grep '^[_[:alpha:]][_[:alnum:]]* () ' ~/.profile | sed 's/ () .*//' )
-   export    $(grep '^[_[:alpha:]][_[:alnum:]]*='    ~/.profile | sed 's/=.*//'    )
+# disable as few env are set this way for export, and no match will show exported env...
+#   export    $(grep '^[_[:alpha:]][_[:alnum:]]*='    ~/.profile | sed 's/=.*//'    )
 } && ${verb:-chktrue} "~/.profile: . # w/ exports" \
   || chkerr  "~/.profile: fail in export $HOME/.profile"
-
-#chktrue "~/.profile"
 
