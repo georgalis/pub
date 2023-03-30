@@ -71,9 +71,22 @@ gstat () { # find uncommited changes to all repos below $@ (or current repo), so
 # infilep="$(cd "${inpath}" ; pwd -P)/${infile}"                 # infilep == realpath f
 # name="$(sed 's/.[^.]*$//' <<<"$infile")"                       # name    == infile w/o extension
 # expr "$0" : ".*/" >/dev/null && cd "${0%/*}"                   # cd dirname $0
-# t="$( { date '+%Y%m%d_%H%M%S_' && uuidgen ;} | sed -e 's/.*-//' | tr -d ' \n' | tr '[:upper:]' '[:lower:]' )" # time based uniq id
-# find -E /mnt \( -regex '/mnt(/local|/%|/bak)' -prune \) -o -type d
+# find -E /mnt \( -regex '/mnt(/local|/%|/bak)' -prune         \) -o -type d
 # find -E /mnt \( -regex '/mnt(/local|/%|/bak)' -prune -type f \) -o -type f
+
+tss () ( # timestamp highres and pass through args
+    local a="$*"
+    set $(echo | tai64n | sed -e 's/^\(@4[0]*\)\([[:xdigit:]]\{8\}\)\([[:xdigit:]]\{8\}\)\(.*\)/\1\2\3\4 \2 \3/')
+    { echo $2 $3 ; tai64nlocal <<<$1 | sed -e 's/-//g' -e 's/://' -e 's/[:]/ /g' -e 's/.\{4\}$//'
+      date -j -r $((0x$2)) "+%a %e %b %Z" ;} | tr '\n' ' '
+      echo "$a" ) # 641e2b67 38efff14 20230324 1559 41.95525 Fri 24 Mar PDT
+
+ts () ( # timestamp lowres and pass through args
+    local a="$*"
+    set $(echo | tai64n | sed -e 's/^\(@4[0]*\)\([[:xdigit:]]\{8\}\)\([[:xdigit:]]\{8\}\)\(.*\)/\1\2\3\4 \2/')
+    { echo $2    ; tai64nlocal <<<$1 | sed -e 's/-//g' -e 's/://' -e 's/[:]/ /g' -e 's/ ..\..*$//'
+      date -j -r $((0x$2)) "+%a %e %b %Z" ;} | tr '\n' ' '
+      echo "$a" ) # 641e2d3a 20230324 1607 Fri 24 Mar PDT
 
 revargs () {
     local a out
@@ -354,7 +367,6 @@ EOF
   null="$(mktemp "${inpath}/tmp/nulltime-XXXXX")"
   null="${null##*/}" # basename
   [ "$cmpn" ] && vn="-$cmpn" vc="$cmpc" || true # sox compand is basically a volume adjustment...
-# [ "$cmpn" -a -z "$v" ] && local v=0db || true # set an unset volume (v) param, if we have compand w/o volume
   [ "$v" ] && { vn="${vn}-v${v}" vc="${vc} vol ${v} dither" ;} || true # set vol name (vn) and vol command (vc) if needed
   [ "$rev" = "y" ] && vn="${vn}-rev" vc="$vc reverse"
   local secc='' secn='' ssec='' tsec=''
@@ -950,19 +962,23 @@ playffr () { # use ffplayr to continiously repeat invocations of ffplay
           ffplay -hide_banner -stats -autoexit -loglevel error -nodisp "$f" || return 1
           } || chkwrn "$0 : not a file : '$f'"
         done
-    }
+    } # playffr
 
 playff () { # use ffplay to play files (args OR stdin filename per line)
-    local f fs
+    local f='' fs='' v=''
     [ $# -gt 0 ] && { fs="$1" ; shift ;}
+    [ "$fs" = '-volume' ] && { v="$1" ; shift ; fs="$1" ; shift ;}
+    [ "$v" ] && v="-volume $v"
     while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
     echo "$fs" | while IFS= read f; do
-       chktrue "$f"
-        [ -f "$f" ] && {
-       chktrue $(hms2sec $(ffprobe -hide_banner  -loglevel info "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //'))
-        ffplay -hide_banner -stats -autoexit -loglevel info -top 52 -x 1088 -y 280 "$f" || return 1
-        } || chkwrn "$0 : not a file : '$f'"
+       [ -f "$f" ] && {
+        tput bold
+         chktrue "$f"
+         chktrue -seconds $(hms2sec $(ffprobe -hide_banner  -loglevel info "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')) $v
+        tput sgr0
+         ffplay -hide_banner -stats -autoexit -loglevel info -top 52 -x 1088 -y 280 $v "$f" || return 1
+         } || chkwrn "$0 : not a file : '$f'"
         done
     } # playff
 
@@ -980,7 +996,7 @@ probeff () { # use ffprobe to extract duration of files (args OR stdin filename 
             [ "$d" ] && echo "$d $infilep" || true
         }
         done
-    }
+    } # probeff
 
 rotatefile () { #P> keep at least n backups, and delete files older than m seconds
     local a= use="$FUNCNAME {file}"'
