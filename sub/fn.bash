@@ -132,29 +132,34 @@ _youtube_list () {
   local id="$1" d="$2"
   [ "$id" ] || read -p "youtube id: " id
   [ "$id" ] || { chkerr "no id?" ; return 1 ;}
-  [ "$d" ]  || read -p "directory : " d
+  [ "$d" ]  || read -p "directory: " d
   [ -d "$d" ] || d="$(pwd -P)"
-  [ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
+  [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d'" ; return 1 ;}
   [ "$ytdl" ] || ytdl="youtube-dl"
-  "$ytdl" --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --yes-playlist \
-   --audio-quality 0 --audio-format best --extract-audio --playlist-start 1 \
-   -o "$d/%(playlist_title)s-%(playlist_id)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+  "$ytdl" --abort-on-error --yes-playlist \
+   --write-info-json --write-comments --write-sub --write-thumbnail \
+   --restrict-filenames --audio-quality 0 --audio-format best --extract-audio \
+   --playlist-start 1 \
+   -o "$d/%(playlist_title)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   } # _youtube_list 20220516
 
 _youtube_video_list () {
   local id="$1" d="$2"
   [ "$id" ] || read -p "youtube id: " id
   [ "$id" ] || { chkerr "no id?" ; return 1 ;}
-  [ "$d" ]  || read -p "root directory : " d
+  [ "$d" ]  || read -p "directory: " d
   [ -d "$d" ] || d="$(pwd -P)"
-  [ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
+  [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d'" ; return 1 ;}
   [ "$ytdl" ] || ytdl="youtube-dl"
-  "$ytdl" --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --yes-playlist \
-   --audio-quality 0 --audio-format best --playlist-start 1 \
-   -o "$d/%(playlist_title)s-%(playlist_id)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
-  "$ytdl" --write-info-json --restrict-filenames --abort-on-error --write-sub --yes-playlist \
-   --audio-quality 0 --audio-format best --extract-audio --keep-video --playlist-start 1 \
-   -o "$d/%(playlist_title)s-%(playlist_id)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+  "$ytdl" --abort-on-error --yes-playlist \
+   --write-info-json --write-comments --write-sub --write-thumbnail \
+   --restrict-filenames --audio-quality 0 --audio-format best \
+   --playlist-start 1 \
+   -o "$d/%(playlist_title)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+  "$ytdl" --abort-on-error --yes-playlist \
+   --restrict-filenames --audio-quality 0 --audio-format best --extract-audio --keep-video \
+   --playlist-start 1 \
+   -o "$d/%(playlist_title)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   } # _youtube_video_list 20220516
 
 _youtube () {
@@ -167,8 +172,9 @@ _youtube () {
   #[ "$ua" ] && uac="--user-agent '$ua'" || uac=''
   [ "$ytdl" ] || ytdl="youtube-dl"
   local t=$(mkdir -p "$HOME/%/ytdl" && cd "$HOME/%/ytdl" && mktemp ytdl-XXXX)
-  $ytdl --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --no-playlist \
-   --audio-quality 0 --audio-format best --extract-audio --write-comments \
+  $ytdl --write-info-json --write-comments --write-sub --write-thumbnail \
+   --restrict-filenames --audio-quality 0 --audio-format best --extract-audio \
+   --abort-on-error --no-playlist \
    -o "$d/00,%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id | tee "$HOME/%/ytdl/$t"
   _youtube_json2txt $(sed -e '/as JSON to/!d' -e 's/.*to: //' <"$HOME/%/ytdl/$t")
   rm -f "$HOME/%/ytdl/$t"
@@ -178,16 +184,18 @@ _youtube_video () {
   local id="$1" d="$2"
   [ "$id" ] || read -p "youtube id: " id
   [ "$id" ] || { chkerr "no id?" ; return 1 ;}
-  [ "$d" ]  || read -p "directory : " d
+  [ "$d" ]  || read -p "directory: " d
   [ -d "$d" ] || d="$(pwd -P)"
-  [ -d "$d" ] || mkdir -p "$d" || { chkerr "invalid dir" ; return 1 ;}
+  [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d'" ; return 1 ;}
   [ "$ytdl" ] || ytdl="youtube-dl"
-  "$ytdl" --write-info-json --write-thumbnail --restrict-filenames --abort-on-error --write-sub --no-playlist \
-   --audio-quality 0 --audio-format best \
-   -o "$d/00,%(title)s-%(uploader_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
-  "$ytdl" --write-info-json --restrict-filenames --abort-on-error --write-sub --no-playlist \
-   --audio-quality 0 --audio-format best --extract-audio --keep-video \
-   -o "$d/00,%(title)s-%(uploader_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+  "$ytdl" --write-info-json --write-comments --write-sub --write-thumbnail \
+   --restrict-filenames --audio-quality 0 --audio-format best \
+   --abort-on-error --no-playlist \
+   -o "$d/00,%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+  "$ytdl" \
+   --restrict-filenames --audio-quality 0 --audio-format best --extract-audio --keep-video \
+   --abort-on-error --no-playlist \
+   -o "$d/00,%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   } # _youtube_video 20220516
 
 _youtube_json2txt () { # fixup youtube .info.json to yaml txt and sort files
