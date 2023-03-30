@@ -74,19 +74,19 @@ gstat () { # find uncommited changes to all repos below $@ (or current repo), so
 # find -E /mnt \( -regex '/mnt(/local|/%|/bak)' -prune         \) -o -type d
 # find -E /mnt \( -regex '/mnt(/local|/%|/bak)' -prune -type f \) -o -type f
 
-tss () ( # timestamp highres and pass through args
+tss () { # timestamp highres and pass through args
     local a="$*"
     set $(echo | tai64n | sed -e 's/^\(@4[0]*\)\([[:xdigit:]]\{8\}\)\([[:xdigit:]]\{8\}\)\(.*\)/\1\2\3\4 \2 \3/')
     { echo $2 $3 ; tai64nlocal <<<$1 | sed -e 's/-//g' -e 's/://' -e 's/[:]/ /g' -e 's/.\{4\}$//'
       date -j -r $((0x$2)) "+%a %e %b %Z" ;} | tr '\n' ' '
-      echo "$a" ) # 641e2b67 38efff14 20230324 1559 41.95525 Fri 24 Mar PDT
+      echo "$a" ;} # 641e2b67 38efff14 20230324 1559 41.95525 Fri 24 Mar PDT
 
-ts () ( # timestamp lowres and pass through args
+ts () { # timestamp lowres and pass through args
     local a="$*"
     set $(echo | tai64n | sed -e 's/^\(@4[0]*\)\([[:xdigit:]]\{8\}\)\([[:xdigit:]]\{8\}\)\(.*\)/\1\2\3\4 \2/')
     { echo $2    ; tai64nlocal <<<$1 | sed -e 's/-//g' -e 's/://' -e 's/[:]/ /g' -e 's/ ..\..*$//'
       date -j -r $((0x$2)) "+%a %e %b %Z" ;} | tr '\n' ' '
-      echo "$a" ) # 641e2d3a 20230324 1607 Fri 24 Mar PDT
+      echo "$a" ;} # 641e2d3a 20230324 1607 Fri 24 Mar PDT
 
 revargs () {
     local a out
