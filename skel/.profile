@@ -317,7 +317,7 @@ printf "User ${USER}@${HOSTNAME}: "
     export SSH_AGENT_ENV="SSH_AGENT_PID $SSH_AGENT_PID SHELL_PID $$" ;}
 for a in id_rsa id_ecdsa id_ecdsa_sk id_ed25519 id_ed25519_sk id_dsa ; do
   test -e "$HOME/.ssh/$a" -a -e "$HOME/.ssh/${a}.pub" \
-    && { ssh-add -T "$HOME/.ssh/${a}.pub" 2>/dev/null || ssh-add "$HOME/.ssh/$a" ;}
+    && { ssh-add -T "$HOME/.ssh/${a}.pub" 2>/dev/null || ssh-add -q "$HOME/.ssh/$a" ;}
   done
 tput bold
 echo $(ssh-add -l | awk '{$1="";$2=""; print}' | sed 's/$/,/')
