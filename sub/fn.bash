@@ -1,12 +1,118 @@
 #!/usr/env bash
 
-# Sundry functions
+# (C) 2004-2023 George Georgalis unlimited use with this notice
+#
+# Sundry functions, and commensurate alias, env.
+#
+# For bash compatible shells
+#
+# https://github.com/georgalis/pub/blob/master/sub/fn.bash
 
-# more test
-# ps | grep -E "^[ ]*$$" | grep -q bash
-# echo "$SHELL"
-# echo "$BASH_VERSINFO"      "${BASH_VERSINFO[0]}" "${BASH_VERSINFO[1]}" "${BASH_VERSINFO[2]}"
-# echo "${BASH_VERSINFO[3]}" "${BASH_VERSINFO[4]}" "${BASH_VERSINFO[5]}"
+_help_skel() {
+  cat 1>&2 <<'eof'
+>>>---
+  eval "$(curl -fsSL --insecure \
+    https://raw.githubusercontent.com/georgalis/pub/master/skel/.profile)"
+  export -f devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue \
+    chkexit logexit siffx validfn
+---<<<
+eof
+  }
+
+# one confusion at a time, fn.bash from ~/.profile.local, eg
+# siffx "$HOME/sub/fn.bash" || { return 1 ; exit 2 ;}
+declare -f chktrue >/dev/null || { _help_skel ; return 2 ; exit 3 ;}
+
+[ "${SHELL##*/}" = "bash" ] && { # alias, to restore login env, iff no active jobs.
+    alias _env='tput sgr0 ; chkerr "$(jobs -l)" \
+        && exec env -i TERM="$TERM" COLORTERM="$COLORTERM" \
+            HOME="$HOME" LOGNAME="$LOGNAME" USER="$USER" \
+            SSH_AGENT_PID="$SSH_AGENT_PID" SSH_AUTH_SOCK="$SSH_AUTH_SOCK" \
+            SSH_AGENT_ENV="$SSH_AGENT_ENV" \
+            verb="$verb" verb1="$verb1" verb2="$verb2" \
+            '"${SHELL} -l"
+    alias _env_noverb='tput sgr0 ; chkerr "$(jobs -l)" \
+        && exec env -i TERM="$TERM" COLORTERM="$COLORTERM" \
+            SHELL="$SHELL" HOME="$HOME" LOGNAME="$LOGNAME" USER="$USER" \
+            SSH_AGENT_PID="$SSH_AGENT_PID" SSH_AUTH_SOCK="$SSH_AUTH_SOCK" \
+            SSH_AGENT_ENV="$SSH_AGENT_ENV" \
+            '"${SHELL} -l"
+    }
+
+export bash_path="$(which bash)"
+# if running bash, and bash_path is different, switch, iff no active jobs.
+ps | grep "^[ ]*$$ " | grep -q bash 2>/dev/null \
+  && { test -x $bash_path \
+        && { expr "$("$bash_path" --version)" \
+            : "GNU bash, version ${BASH_VERSINFO[0]}\.${BASH_VERSINFO[1]}\.${BASH_VERSINFO[2]}(${BASH_VERSINFO[3]})-${BASH_VERSINFO[4]} (${BASH_VERSINFO[5]})" >/dev/null \
+            || { tput sgr0 ; chkerr "$(jobs -l)" \
+                  && exec env -i TERM="$TERM" COLORTERM="$COLORTERM" \
+                    HOME="$HOME" LOGNAME="$LOGNAME" USER="$USER" \
+                    SSH_AGENT_PID="$SSH_AGENT_PID" SSH_AUTH_SOCK="$SSH_AUTH_SOCK" \
+                    SSH_AGENT_ENV="$SSH_AGENT_ENV" \
+                    verb="$verb" verb1="$verb1" verb2="$verb2" \
+                    "$bash_path" -l ;} # replace, BASH_VERSINFO doesn't match
+          } && { echo "<>< $bash_path" ;} || return 1 # exec failed...
+     } || true # not bash, OR bash_path unavailable OR same version
+
+# earlier and we would normally see it twice...
+uptime
+chktrue $1
+
+validfn () { #:> validate function, compare unit hash vs operation env hash
+    [ "$1" ] || {
+      cat 1>&2 <<-EOF
+		#:: $FUNCNAME {function}        ; returns {function-name} {hash}
+		#:: $FUNCNAME {function} {hash} ; return no error, if hash match
+		#:: the former is intended to provide data for the latter
+		#:: env hashfn= to set the hashing function, "%08x %8x %s\n" cksum program
+		EOF
+      return 1 ;}
+    ps | grep "^[ ]*$$ " | grep -q bash 2>/dev/null || { echo ">>> $0 : Not bash shell (62af847c) <<<" >&2 ; return 1 ;}
+    local _hashfn
+    [ "$hashfn" ] || { _hashfn () { declare -f "$1" | printf "%s %08x %08x\n" "$1" $(cksum) ;} && _hashfn="_hashfn" ;}
+    [ "$_hashfn" ] || _hashfn="$hashfn" # for bugs... use stronger hash for nefarious env
+    local fn="$(sed '/^[ ]*#/d' <<<"$1")"
+    [ "$fn" ] || return 0 # drop comments
+    shift || true
+    local sum="$fn $*"
+    local check="$( "$_hashfn" "$fn" )"
+    [ "$*" ] || { echo "$check" ; return 0 ;} # provide hash data if none given to check
+    [ "$sum" = "$check" ] || { # report hash data discrepancies on failed check
+    cat 1>&2 <<-EOF
+		>>>---
+		$FUNCNAME error :
+		 unit:'$sum'
+		  env:'$check'
+		<<<---
+		EOF
+    return 1 ;}
+    } # validfn
+
+# Now that validfn is defined, run the framework on expected functions...
+#
+# eg first, generate hashses of known functions...
+#   for f in devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue chkexit logexit siffx validfn ; do validfn $f ; done
+#
+# then run validfn on that data to report if the functions have ever change
+# print help if hash unit does not match hash from env --insecure
+test "$(declare -f validfn 2>/dev/null)" || { echo "$0 : validfn not defined" 1>&2 ; _help_sub ; return 1 ;}
+while IFS= read a ; do
+        validfn $a && true || { echo "validfn error : $a" 1>&2 ; _help_skel ; break 1 ;}
+        done <<EOF
+devnul 216e1370 0000001d
+stderr 7ccc5704 00000037
+chkstd ee4aa465 00000032
+chkwrn 2683d3d3 0000005c
+logwrn f279f00e 0000005f
+chkerr 4f18299d 0000005b
+logerr 2db98372 0000005e
+chktrue 28662120 00000060
+chkexit e6d9b430 0000005a
+logexit 235b98c9 0000005d
+validfn 9b374f93 0000043f
+siffx d0a50c12 000002f3
+EOF
 
 alias   gstatus='git status --short'
 alias   gls='git ls-files'

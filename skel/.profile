@@ -1,28 +1,13 @@
 # ~/.profile
 
-# (C) 2004-2022 George Georgalis unlimited use with this notice
-
-# For Bourne-compatible shells (bash,ksh,zsh,sh)
+# (C) 2004-2023 George Georgalis unlimited use with this notice
+#
+# For Bourne-compatible shells (bash,ksh,sh)
+#
+# https://raw.githubusercontent.com/georgalis/pub/master/skel/.profile
 
 # for interactive sessions only
 /usr/bin/tty -s || return
-
-export bash_path=/opt/pkg-2022Q4/bin/bash
-# if running /bin/bash on a mac newer bash available, switch
-ps | grep "^[ ]*$$ " | grep -q bash 2>/dev/null \
-  && { test -x $bash_path \
-        && { expr "$($bash_path --version)" \
-            : "GNU bash, version ${BASH_VERSINFO[0]}\.${BASH_VERSINFO[1]}\.${BASH_VERSINFO[2]}" >/dev/null \
-            || { # set SHELL and exec pkgsrc bash
-                export SHELL="$bash_path"
-                exec env -i TERM="$TERM" COLORTERM="$COLORTERM" \
-                SHELL="$SHELL" HOME="$HOME" LOGNAME="$LOGNAME" USER="$USER" \
-                SSH_AGENT_PID="$SSH_AGENT_PID" SSH_AUTH_SOCK="$SSH_AUTH_SOCK" \
-                SSH_AGENT_ENV="$SSH_AGENT_ENV" \
-                "${SHELL}" -l
-               } # BASH_VERSINFO doesn't match newer version
-          } || return 1 # exec failed...
-     } || true # not bash, OR newer bash not available
 
 export EDITOR="vi"
 export PAGER='less --jump-target=3'
@@ -99,18 +84,6 @@ esac # "$OS"
  alias  lS='colorls -AFGTlrS'
  } || true # echo "no colorls"
 
-# # terminfo
-# [ -z "${OS#Linux}" ] &&  { _ntermrev='rmso' ; _ntermul='rmul'
-#                             _termrev='smso' ;  _termul='smul' ;}
-# [ -z "${OS#NetBSD}" ] && { _ntermrev='se'   ; _ntermul='ue'
-#                             _termrev='so'   ;  _termul='us' ;}
-# [ -z "${OS#Darwin}" ] && { _ntermrev='se'   ; _ntermul='ue'
-#                             _termrev='so'   ;  _termul='us' ;}
-# # create ESC strings to turn on/off underline and stand-out
-# _ntermrev="$(tput "$_ntermrev")" ; _ntermul="$(tput "$_ntermul")"
-#  _termrev="$(tput  "$_termrev")"  ; _termul="$(tput  "$_termul")"
-# export _ntermrev _termrev _ntermul _termul
-
 alias    g='grep'   # grep for the extended regex
 alias    v='grep -v'  # grep -v for the extended regex
 alias    h='fc -l'     # list commands previously entered in shell.
@@ -122,103 +95,56 @@ alias   cp='cp -ip'  # always
 alias   mv='mv -i'   # why not
 alias   rm='rm -i'   # sure
 alias    d='diff -U 0'
-b () { cd "$OLDPWD" ;} # previous directory
-back () { cd "$OLDPWD" ;} # previous directory
-#cal () { cal -h $@ ;}
+b() { cd "$OLDPWD" ;} # previous directory
+back() { cd "$OLDPWD" ;} # previous directory
+#cal() { cal -h $@ ;}
 
 # common functions for shell verbose management....
-devnul () { return 0 ;}                                                 #:> drop args
-stderr () {  [ "$*" ] && echo "$*" 1>&2 || true ;}                      #:> args to stderr, or noop if null
-chkstd () {  [ "$*" ] && echo "$*"      || true ;}                      #:> args to stdout, or noop if null
-chkwrn () {  [ "$*" ] && { stderr    "^^^ $*" ; return $? ;} || true ;} #:> wrn stderr args return 0, noop if null
-logwrn () {  [ "$*" ] && { logger -s "^^^ $*" ; return $? ;} || true ;} #:> wrn stderr+log args return 0, noop if null
-chkerr () {  [ "$*" ] && { stderr    ">>> $*" ; return 1  ;} || true ;} #:> err stderr args return 1, noop if null
-logerr () {  [ "$*" ] && { logger -s ">>> $*" ; return 1  ;} || true ;} #:> err stderr+log args return 1, noop if null
-chktrue () { [ "$*" ] && { stderr    "><> $*" ; return 0  ;} || return 1 ;} #:> err stderr args exit 1, noop if null
-chkexit () { [ "$*" ] && { stderr    ">>> $*" ; exit 1    ;} || true ;} #:> err stderr args exit 1, noop if null
-logexit () { [ "$*" ] && { logger -s ">>> $*" ; exit 1    ;} || true ;} #:> err stderr+log args exit 1, noop if null
-siff () { local verb="${verb:-chktrue}" ; test -e "$1" \
-        && { { . "${1}" && ${verb} "${2}: . ${1}" ;} || { chkerr "$FUNCNAME: fail in '$1' from '$2'" ; return 1 ;} ;} \
-        || ${verb} "${2}: siff: no file $1" ;} #:> source arg1 if exists, on err recall args for backtrace
-siffx () { local verb="${verb:-chktrue}" ; test -e "$1" \
-        && { { . "${1}" \
-          && { export -f $(grep '^[_[:alpha:]][_[:alnum:]]* () ' "$1" | sed 's/ () .*//' ) >/dev/null && devnul "  function export '^[^ ]* () '" ;} \
-          && { export    $(grep '^[_[:alpha:]][_[:alnum:]]*='    "$1" | sed 's/=.*//'    ) >/dev/null && devnul "       var export '^[:alpha:][_[:alnum:]]*='" ;} \
+devnul() { return 0 ;}                                                 #:> drop args
+stderr() {  [ "$*" ] && echo "$*" 1>&2 || true ;}                      #:> args to stderr, or noop if null
+chkstd() {  [ "$*" ] && echo "$*"      || true ;}                      #:> args to stdout, or noop if null
+chkwrn() {  [ "$*" ] && { stderr    "^^^ $*" ; return $? ;} || true ;} #:> wrn stderr args return 0, noop if null
+logwrn() {  [ "$*" ] && { logger -s "^^^ $*" ; return $? ;} || true ;} #:> wrn stderr+log args return 0, noop if null
+chkerr() {  [ "$*" ] && { stderr    ">>> $*" ; return 1  ;} || true ;} #:> err stderr args return 1, noop if null
+logerr() {  [ "$*" ] && { logger -s ">>> $*" ; return 1  ;} || true ;} #:> err stderr+log args return 1, noop if null
+chktrue() { [ "$*" ] && { stderr    "><> $*" ; return 0  ;} || return 2 ;} #:> err stderr args exit 1, noop if null
+chkexit() { [ "$*" ] && { stderr    ">>> $*" ; exit 1    ;} || true ;} #:> err stderr args exit 1, noop if null
+logexit() { [ "$*" ] && { logger -s ">>> $*" ; exit 1    ;} || true ;} #:> err stderr+log args exit 1, noop if null
+#siff() { local verb="${verb:-devnul}" ; test -e "$1" \
+#        && { { . "${1}" && ${verb} "${2}: . ${1}" ;} || { chkerr "$FUNCNAME: fail in '$1' from '$2'" ; return 1 ;} ;} \
+#        || ${verb} "${2}: siff: no file $1" ;} #:> source arg1 if exists, on err recall args for backtrace
+siffx() { local verb="${verb:-devnul}"
+    { test -e "$1" || { chkwrn "${2}: siffx : no file '$1'" && return 0 || return $? ;} ;}
+    { . "${1}" \
+          && { export -f $(grep '^[_[:alpha:]][_[:alnum:]]*() ' "$1" | sed 's/() .*//' ) >/dev/null ;} \
+          && { export    $(grep '^[_[:alpha:]][_[:alnum:]]*='   "$1" | sed 's/=.*//'   ) >/dev/null ;} \
           && ${verb} "${2}: siffx ${1}"
-        # && ${verb} "${2}: . ${1} # w/ exports"
-          } || { chkerr "${FUNCNAME} : fail in '$1' from '$2'" ; return 1 ;} ;} \
-        || chkwrn "${2}: ${FUNCNAME} : no file $1 from '$2'" ;} #:> source arg1 if exists , on err recall args for backtrace
-# verbosity, typically set to devnul, chkwrn, or chkerr
+          } || { chkerr "${2}: siffx : signal $? in '$1'" ; return 1 ;} \
+    } #:> source arg1 if exists , on err recall args for backtrace
+siffx() { local verb="${verb:-devnul}" s="$1" f='' b=''
+    [ "$s" = "-n" -o "$s" = "--no-source" ] && { f="$2" b="$3" ;} || { f="$1" b="$2" ;}
+    test -e "$f" || { chkwrn "${b} siffx: no file '$f'" && return 0 || return $? ;}
+    [ "$s" = "$f" ] && { . "${f}" || { chkerr "$b siffx: source signal $? in '$f'" ; return 1 ;} ;}
+    # if there is no match does it fail... and if export fails? pass test...
+    {    export -f $(grep '^[_[:alpha:]][_[:alnum:]]*() ' "$f" | sed 's/() .*//'; true ) >/dev/null    \
+      && export    $(grep '^[_[:alpha:]][_[:alnum:]]*='   "$f" | sed 's/=.*//'  ; true ) >/dev/null ;} \
+    && { ${verb} "$b siffx: export '${f}'" ;} \
+    || { chkerr  "$b siffx: export signal $? in '$f'" ; return 1 ;} \
+    } #:> source arg1 if exists , on err recall args for backtrace
+
+# verbosity, typically set in ~/.profile.local to devnul, chkwrn, or chkerr 
 #verb="${verb:=devnul}"
 #verb2="${verb2:=devnul}"
 #verb3="${verb3:=devnul}"
 
-validfn () { #:> validate function, compare unit hash vs operation env hash
-    [ "$1" ] || {
-      cat 1>&2 <<-'EOF'
-		#:: $FUNCNAME {function}        ; returns {function-name} {hash}
-		#:: $FUNCNAME {function} {hash} ; return no error, if hash match
-		#:: the former is intended to provide data for the latter
-		#:: env hashfn= to set the hashing function, "%08x %8x %s\n" cksum program
-		EOF
-      return 1 ;}
-    ps | grep "^[ ]*$$ " | grep -q bash 2>/dev/null || { echo ">>> $0 : Not bash shell (62af847c) <<<" >&2 ; return 1 ;}
-    local _hashfn
-    [ "$hashfn" ] || { _hashfn () { declare -f "$1" | printf "%s %08x %08x\n" "$1" $(cksum) ;} && _hashfn="_hashfn" ;}
-    [ "$_hashfn" ] || _hashfn="$hashfn" # for bugs... use stronger hash for nefarious env
-    local fn="$(sed '/^[ ]*#/d' <<<"$1")"
-    [ "$fn" ] || return 0 # drop comments
-    shift || true
-    local sum="$fn $*"
-    local check="$( "$_hashfn" "$fn" )"
-    [ "$*" ] || { echo "$check" ; return 0 ;} # provide hash data if none given to check
-    [ "$sum" = "$check" ] || { # report hash data discrepancies on failed check
-    cat 1>&2 <<-EOF
-		>>>---
-		$FUNCNAME error :
-		 unit:'$sum'
-		  env:'$check'
-		<<<---
-		EOF
-    return 1 ;}
-    } # validfn
-
-# Now that validfn is defined, run the framework on expected functions...
-#
-# eg first, generate hashses of known functions...
-#   for f in devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue chkexit logexit siff siffx validfn ; do validfn $f ; done
-#
-# then run validfn on that data to report if the functions have ever change
-# print help if hash unit does not match hash from env
-_help_skel () { echo '# ><> eval "$(curl -fsSL https://github.com/georgalis/pub/blob/master/skel/.profile)" <><' 1>&2
-    echo 'export -f devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue chkexit logexit siff siffx validfn' 1>&2 ;}
-test "$(declare -f validfn 2>/dev/null)" || { echo "$0 : validfn not defined" 1>&2 ; _help_sub ; return 1 ;}
-while IFS= read a ; do
-        validfn $a && true || { echo "validfn error : $a" 1>&2 ; _help_skel ; return 1 ;}
-        done <<EOF
-devnul 216e1370 0000001d
-stderr 7ccc5704 00000037
-chkstd ee4aa465 00000032
-chkwrn 2683d3d3 0000005c
-logwrn f279f00e 0000005f
-chkerr 4f18299d 0000005b
-logerr 2db98372 0000005e
-chktrue f37189b7 00000060
-chkexit e6d9b430 0000005a
-logexit 235b98c9 0000005d
-siff 32bbcc06 00000113
-siffx 5e8b9246 0000027d
-validfn c268584c 00000441
-EOF
-
-path_append () { # append $1 if not already in path
+path_append() { # append $1 if not already in path
  echo $PATH | grep -E "(:$1$|^$1$|^$1:|:$1:)" 2>&1 >/dev/null \
   || export PATH="${PATH}:${1}" ;}
-path_prepend () { # prepend $1 if not already in path
+path_prepend() { # prepend $1 if not already in path
  echo $PATH | grep -E "(^$1:|^$1$)" 2>&1 >/dev/null \
   || export PATH="${1}:${PATH}" ;}
 
-ckstat () { # return sortable stat data for args (OR stdin file list)
+ckstat() { # return sortable stat data for args (OR stdin file list)
   # ckstat /etc/resolv.conf
   # 033cb35f 01 .      16 6305e87b /etc/resolv.conf
   # inode links . 0x_size  0x_date input
@@ -232,8 +158,8 @@ ckstat () { # return sortable stat data for args (OR stdin file list)
   while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift || true ; done
   [ "$fs" ] || fs="$(cat)"
   [ "$OS" ] || local OS="$(uname)"
-  [ "$OS" = "Linux" ]                      && _stat () { stat -c %i\ %h\ %s\ %Y "$1" ;} || true
-  [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat () { stat -f %i\ %l\ %z\ %m "$1" ;} || true
+  [ "$OS" = "Linux" ]                      && _stat() { stat -c %i\ %h\ %s\ %Y "$1" ;} || true
+  [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat() { stat -f %i\ %l\ %z\ %m "$1" ;} || true
   echo "$fs" | while IFS= read f; do
     [ -e "$f" ] && {
       # \0 will produce \200, which does not terminate a string but behaves as a null
@@ -245,9 +171,9 @@ ckstat () { # return sortable stat data for args (OR stdin file list)
       # sed 's/^[ -~]*[^ -~]//' # first non-ascii match is \200, filename follows
       } || chkerr "$FUNCNAME : does not exist '$f'"
     done # f
-  } # ckstat ()
+  } # ckstat()
 
-ckstatsum () { # return sortable stat data for args (OR stdin file list)
+ckstatsum() { # return sortable stat data for args (OR stdin file list)
   # ckstatsum /etc/resolv.conf
   # 033cb35f01 b35a88ac       16 6305e87b /etc/resolv.conf
   # inode\links 0x_cksum  0x_size 0x_date input
@@ -261,8 +187,8 @@ ckstatsum () { # return sortable stat data for args (OR stdin file list)
   while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift || true ; done
   [ "$fs" ] || fs="$(cat)"
   [ "$OS" ] || local OS="$(uname)"
-  [ "$OS" = "Linux" ]                      && _stat () { stat -c %i\ %h\ %s\ %Y "$1" ;} || true
-  [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat () { stat -f %i\ %l\ %z\ %m "$1" ;} || true
+  [ "$OS" = "Linux" ]                      && _stat() { stat -c %i\ %h\ %s\ %Y "$1" ;} || true
+  [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat() { stat -f %i\ %l\ %z\ %m "$1" ;} || true
   echo "$fs" | while IFS= read f; do
     [ -e "$f" ] && {
       # \0 will produce \200, which does not terminate a string but behaves as a null
@@ -274,22 +200,22 @@ ckstatsum () { # return sortable stat data for args (OR stdin file list)
       # sed 's/^[ -~]*[^ -~]//' # first non-ascii match is \200, filename follows
       } || chkerr "$FUNCNAME : not a regular file : $f"
     done # f
-  } # ckstatsum ()
+  } # ckstatsum()
 
-ascii_filter () { while IFS= read a ; do echo "$a" | strings -e s ; done ;}
+ascii_filter() { while IFS= read a ; do echo "$a" | strings -e s ; done ;}
 
-dufiles () { #:> report the number of files along with total disk use of directory arg1
+dufiles() { #:> report the number of files along with total disk use of directory arg1
     [ "$1" ] || set .
     { du -sh "$1" ; echo "#" ; find "$1" -type f | wc -l ; echo files ;} \
        | tr '\n' ' ' ; echo ;}
 
-dusum () { # sort $1 (defaults to $PWD) according to disk use, also show cumulative sum.
+dusum() { # sort $1 (defaults to $PWD) according to disk use, also show cumulative sum.
 [ -z "$1" ] && d="./" || d="$1"
 find "$d" -maxdepth 1 -mindepth 1 -print0 \
   | xargs -0 du -sk | sort -n \
   | awk '{sum += $1; printf "%+11sk %+10sk %s %s %s\n", sum, $1, $2, $3, $4}' ;}
 
-dirper () { # reveal dir permissions of "$*" or "$PWD"
+dirper() { # reveal dir permissions of "$*" or "$PWD"
   local d="$*";d="${d#./}";[ -z "$d" -o "$d" = "." -o "$d" = "./" ] && d="$PWD"
   [ "$(dirname "$d")" = '.' ] && d="$PWD/$d";
   case "$(uname)" in Linux) ls -Ldl --full-time "$d" ;; *) ls -LTdl "$d" \
@@ -297,7 +223,7 @@ dirper () { # reveal dir permissions of "$*" or "$PWD"
     $1, $3, $4, $5, $8, $7, $6, $9}' ; ls -Ld "${d}"
   ;; esac ; [ "$d" = "/" ] && return || dirper $(dirname "$d");}
 
-symview () { # report directories and symlinks below args or stdin if $# is 0
+symview() { # report directories and symlinks below args or stdin if $# is 0
     # for consistancy, please start relitative symlinks with a dot,
     # like this: ln -s ./tmp sym
     #  NOT this: ln -s tmp sym
@@ -318,19 +244,17 @@ symview () { # report directories and symlinks below args or stdin if $# is 0
         done
     } # symview
 
-lock () { # lock to prevent concurent runs
+lock() { # lock to prevent concurent runs
  mkdir -p "$HOME/var/run"
  local name="$(basename "$0")"
  local LOCK="$HOME/var/run/${name}.pid"
  local NULL="$HOME/var/run/${name}.null"
  [ -f "$LOCK" ] && { chkerr "Lock exists: $LOCK" ; exit 1 ;} || echo "$$" >"$LOCK" ;}
-unlock () { # remove lock and touch null file
+unlock() { # remove lock and touch null file
  local name="$(basename "$0")"
  local LOCK="$HOME/var/run/${name}.pid"
  local NULL="$HOME/var/run/${name}.null"
  rm "$LOCK" ; touch "$NULL" ;}
-
-uptime
 
 # per $SHELL env
 case "$SHELL" in
@@ -361,7 +285,7 @@ case "$SHELL" in
 #	}
 esac # $SHELL
 
-import_pubkey () { # take a putty exported ssh key and make an authorized_keys line
+import_pubkey() { # take a putty exported ssh key and make an authorized_keys line
 local key_in="$(mktemp /tmp/pubkey-XXXXXX)"
 [ -e "$1" ] && cat "$1" >"$key_in" || cat /dev/stdin >"$key_in"
 printf "$(ssh-keygen -if "$key_in") " \
@@ -392,9 +316,20 @@ rm $key_in ;}
 #   #	&& { printf "Logout: " && kill $2 && echo $(hostname) $0 [$4] killed ssh-agent $2 \
 #   #		|| { echo $(hostname) ssh-agent already died? 2>/dev/stderr ; exit 1 ;} ;}
 
+siffx   "$HOME/.profile.local" "~/.profile (63b8877f)" || { return 2 ; exit 3 ;}
+chktrue "$HOME/.profile.local (642a7466)"
+siffx -n "$HOME/.profile"    "~/.profile (63b8877f2)" || { return 2 ; exit 3 ;}
+chktrue "$HOME/.profile"
+
+# # now just do the export part of siffx... least loop on source
+# {  export -f $(grep '^[_[:alpha:]][_[:alnum:]]*() ' ~/.profile | sed 's/() .*//' )
+# # disable as few env are set this way for export, and no match will show exported env...
+# #   export    $(grep '^[_[:alpha:]][_[:alnum:]]*='    ~/.profile | sed 's/=.*//'    )
+# } && ${verb:-chktrue} "~/.profile: . # w/ exports" \
+#   || chkerr  "~/.profile: fail in export $HOME/.profile"
 
 # ssh socket key and agent managent
-tput rev ; tput dim
+tput dim
 printf "User ${USER}@${HOSTNAME}: "
 [ "$SSH_AGENT_ENV" ] || {
     eval $(ssh-agent)
@@ -406,14 +341,4 @@ tput sgr0
 #[ -n "$SSH_AGENT_ENV" ] && set $SSH_AGENT_ENV && [ "$$" = "$4" ] \
 #	&& { printf "Logout: " && kill $2 && echo $(hostname) $0 [$4] killed ssh-agent $2 \
 #		|| { echo $(hostname) ssh-agent already died? 2>/dev/stderr ; exit 1 ;} ;}
-
-
-siffx "$HOME/.profile.local" "~/.profile (63b8877f)"
-
-# now just do the export part of siffx... least loop on source
-{  export -f $(grep '^[_[:alpha:]][_[:alnum:]]* () ' ~/.profile | sed 's/ () .*//' )
-# disable as few env are set this way for export, and no match will show exported env...
-#   export    $(grep '^[_[:alpha:]][_[:alnum:]]*='    ~/.profile | sed 's/=.*//'    )
-} && ${verb:-chktrue} "~/.profile: . # w/ exports" \
-  || chkerr  "~/.profile: fail in export $HOME/.profile"
 
