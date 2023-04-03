@@ -57,7 +57,6 @@ ps | grep "^[ ]*$$ " | grep -q bash 2>/dev/null \
 
 # earlier and we would normally see it twice...
 uptime
-chktrue $1
 
 validfn () { #:> validate function, compare unit hash vs operation env hash
     [ "$1" ] || {

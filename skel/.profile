@@ -110,17 +110,6 @@ logerr() {  [ "$*" ] && { logger -s ">>> $*" ; return 1  ;} || true ;} #:> err s
 chktrue() { [ "$*" ] && { stderr    "><> $*" ; return 0  ;} || return 2 ;} #:> err stderr args exit 1, noop if null
 chkexit() { [ "$*" ] && { stderr    ">>> $*" ; exit 1    ;} || true ;} #:> err stderr args exit 1, noop if null
 logexit() { [ "$*" ] && { logger -s ">>> $*" ; exit 1    ;} || true ;} #:> err stderr+log args exit 1, noop if null
-#siff() { local verb="${verb:-devnul}" ; test -e "$1" \
-#        && { { . "${1}" && ${verb} "${2}: . ${1}" ;} || { chkerr "$FUNCNAME: fail in '$1' from '$2'" ; return 1 ;} ;} \
-#        || ${verb} "${2}: siff: no file $1" ;} #:> source arg1 if exists, on err recall args for backtrace
-siffx() { local verb="${verb:-devnul}"
-    { test -e "$1" || { chkwrn "${2}: siffx : no file '$1'" && return 0 || return $? ;} ;}
-    { . "${1}" \
-          && { export -f $(grep '^[_[:alpha:]][_[:alnum:]]*() ' "$1" | sed 's/() .*//' ) >/dev/null ;} \
-          && { export    $(grep '^[_[:alpha:]][_[:alnum:]]*='   "$1" | sed 's/=.*//'   ) >/dev/null ;} \
-          && ${verb} "${2}: siffx ${1}"
-          } || { chkerr "${2}: siffx : signal $? in '$1'" ; return 1 ;} \
-    } #:> source arg1 if exists , on err recall args for backtrace
 siffx() { local verb="${verb:-devnul}" s="$1" f='' b=''
     [ "$s" = "-n" -o "$s" = "--no-source" ] && { f="$2" b="$3" ;} || { f="$1" b="$2" ;}
     test -e "$f" || { chkwrn "${b} siffx: no file '$f'" && return 0 || return $? ;}
@@ -316,28 +305,25 @@ rm $key_in ;}
 #   #	&& { printf "Logout: " && kill $2 && echo $(hostname) $0 [$4] killed ssh-agent $2 \
 #   #		|| { echo $(hostname) ssh-agent already died? 2>/dev/stderr ; exit 1 ;} ;}
 
-siffx   "$HOME/.profile.local" "~/.profile (63b8877f)" || { return 2 ; exit 3 ;}
-chktrue "$HOME/.profile.local (642a7466)"
-siffx -n "$HOME/.profile"    "~/.profile (63b8877f2)" || { return 2 ; exit 3 ;}
-chktrue "$HOME/.profile"
-
-# # now just do the export part of siffx... least loop on source
-# {  export -f $(grep '^[_[:alpha:]][_[:alnum:]]*() ' ~/.profile | sed 's/() .*//' )
-# # disable as few env are set this way for export, and no match will show exported env...
-# #   export    $(grep '^[_[:alpha:]][_[:alnum:]]*='    ~/.profile | sed 's/=.*//'    )
-# } && ${verb:-chktrue} "~/.profile: . # w/ exports" \
-#   || chkerr  "~/.profile: fail in export $HOME/.profile"
+siffx    "$HOME/.profile.local" "~/.profile (63b8877f)" || { return 2 ; exit 3 ;}
+chktrue  "$HOME/.profile.local (63b8877f)"
+siffx -n "$HOME/.profile"       "~/.profile (642a7466)" || { return 2 ; exit 3 ;}
+chktrue  "$HOME/.profile (642a7466)"
 
 # ssh socket key and agent managent
 tput dim
 printf "User ${USER}@${HOSTNAME}: "
-[ "$SSH_AGENT_ENV" ] || {
-    eval $(ssh-agent)
-    ssh-add $(find $HOME/.ssh/ \( -name id_\* -o -name ${USER}\* \) -type f \! -name \*pub )
+[ "$SSH_AGENT_ENV" ] || { eval $(ssh-agent)
     export SSH_AGENT_ENV="SSH_AGENT_PID $SSH_AGENT_PID SHELL_PID $$" ;}
-ssh-add -l | cut -d\  -f 3- # show keys in SSH_AUTH_SOCK
+for a in id_rsa id_ecdsa id_ecdsa_sk id_ed25519 id_ed25519_sk id_dsa ; do
+  test -e "$HOME/.ssh/$a" -a -e "$HOME/.ssh/${a}.pub" \
+    && { ssh-add -T "$HOME/.ssh/${a}.pub" 2>/dev/null || ssh-add "$HOME/.ssh/$a" ;}
+  done
+tput bold
+echo $(ssh-add -l | awk '{$1="";$2=""; print}' | sed 's/$/,/')
 tput sgr0
-## shell logout trap, eg ~/.bash_logout ~/.ksh_logout
+
+# shell logout trap, eg ~/.bash_logout ~/.ksh_logout
 #[ -n "$SSH_AGENT_ENV" ] && set $SSH_AGENT_ENV && [ "$$" = "$4" ] \
 #	&& { printf "Logout: " && kill $2 && echo $(hostname) $0 [$4] killed ssh-agent $2 \
 #		|| { echo $(hostname) ssh-agent already died? 2>/dev/stderr ; exit 1 ;} ;}
