@@ -115,7 +115,7 @@ siffx() { local verb="${verb:-devnul}" s="$1" f='' b=''
     test -e "$f" || { chkwrn "${b} siffx: no file '$f'" && return 0 || return $? ;}
     [ "$s" = "$f" ] && { . "${f}" || { chkerr "$b siffx: source signal $? in '$f'" ; return 1 ;} ;}
     # if there is no match does it fail... and if export fails? pass test...
-    {    export -f $(grep '^[_[:alpha:]][_[:alnum:]]*() ' "$f" | sed 's/() .*//'; true ) >/dev/null    \
+    {    export -f $(grep '^[_[:alpha:]][_[:alnum:]]*[ ]*() ' "$f" | sed 's/() .*//'; true ) >/dev/null    \
       && export    $(grep '^[_[:alpha:]][_[:alnum:]]*='   "$f" | sed 's/=.*//'  ; true ) >/dev/null ;} \
     && { ${verb} "$b siffx: export '${f}'" ;} \
     || { chkerr  "$b siffx: export signal $? in '$f'" ; return 1 ;} \

@@ -4,82 +4,132 @@
 #
 # https://github.com/georgalis/pub/blob/master/know/music/comma_mp3.sh
 #
-# maintain numlist audio duration data in "{dir}/0/{maj}," (comma files)
-# where dir is ./, or arg1 iff provided, and maj is first char of mp3s
-# named by comma sequence notation, eg
+# maintain artist, duration, and meta data of mp3 lists by major sequence, in
+# "{dir}/{maj}," (comma files), where dir is ./, or arg1 iff provided, and
+# maj is first char of mp3 name, in numlist comma sequence notation, eg
 #
 # 444,Eva_Cassidy-Autumn_Leaves-Blues_Alley_Jazz_1996_^xXBNlApwh0c.opus-to289.29-ln-parc-v4db.mp3
 #
 
 set -e
-test -x $(which base)
+# exported function requirements from
+# https://github.com/georgalis/pub/blob/master/sub/fn.bash
+test "$(declare -f base)" # base conversion
+test "$(declare -f ts)"   # timestamp generation
 [ -d "$1" ] && d="$1"        || true
 [ -z "$1" ] && d="$(pwd -P)" || true
 cd "$d"
 
+# check for legitimate dir
+[ "$(find . -maxdepth 1 -name \*.mp3 | sed -e '/^\.\/[0y]/d')" ] \
+  || { chkerr "mp3 files not found in '$PWD'" ;}
+
 # read in or create main header tmpfile ./0,~
-[ -e "0/0," ] && { awk 'NR==1,/^$/ ; {!/^$/}' <"0/0," >"0/0,~" ;} \
-  || { mkdir -p "0" && printf "original\n\n" >"0/0,~" \
-      || { chkwrn "unable to create '$PWD/0/0,~' (637596d5)" ; exit 3 ;} ;}
+[ -e "0," ] && { awk 'NR==1,/^$/ ; {!/^$/}' <"0," >"0,~" ;} \
+  || { sed -e '/^0, /!d' -e "s/$/ ${d##*/}/" $0 ; printf "$(ts)\n\n" ;} >"0,~" \
+      || { chkwrn "unable to create '$PWD/0,~' (637596d5)" ; exit 3 ;}
+
 # probe total mp3 duration data into main header,
 # skip on/off ramp (^0|^y) mp3 files
 # (filename spaces will havoc)
-
-set $(soxi $(find . -maxdepth 1 -name \*.mp3 | sed -e '/^\.\/[0y]/d') \
+set $( soxi $(find . -maxdepth 1 -name \*.mp3 | sed -e '/^\.\/[0y]/d') \
     | sed -e '/Duration/!d' -e 's/.*Duration of//' -e 's/Duration[ ]*:/1 file:/' -e 's/ = .*//' -e 's/\...$//' \
-    | tail -n1 ) # eg "Duration of 63 files: 04:32:15" or "Duration : 00:08:58"
-a2=$*
-{   { printf "$a2 " ; hms2sec "${a2#*: }" ;} | awk '{printf "%s %s %s sec ","\\\\ "$1,$2,$4}'
-      kdb_xs2h $(printf "%x" $(hms2sec "${a2#*: }")) | sed -e 's/.*(/(/' -e 's/ )/)/'
-}  >>"0/0,~" # human readable
-echo 1>&2
-cat "0/0,~" 1>&2
+    | tail -n1 ) # eg "1 file: 00:06:02" or " 80 files: 05:24:37"
+fdur=$*
+{   { printf "$fdur " ; hms2sec "${fdur#*: }" ;} | awk '{printf "%s %s %s sec ","\\\\ "$1,$2,$4}'
+      kdb_xs2h $(printf "%x" $(hms2sec "${fdur#*: }")) | sed -e 's/.*(/(/' -e 's/ )/)/'
+}  >>"0,~" # human readable
 
 # at each base 32 major character, capture comma header, total duration,
-# and per artist sort by duration , to "0/0,~" and "0/${maj},~"
+# and per artist sort by duration, to "0,~" and "${maj},~"
 for a in {0..31} ; do export n=$(base 32 $a)
+  spin2
 
   [ "$(find . -maxdepth 1 -name ${n}\*.mp3)" ] && \
-    { # if there are ${n}\*.mp3, if not on/off ramp, calculate duration else set d=''
+    { # if there are ${n}\*.mp3 and not on/off ramp, calculate duration, else reset d=''
       expr "$n" : "^[0y]" >/dev/null \
         && d='' \
         || d=$( # major count and duration
               set $(soxi $(find . -maxdepth 1 -name ${n}\*.mp3 ) \
                     | sed -e '/Duration/!d' -e 's/.*Duration of//' -e 's/Duration[ ]*:/1 file:/' -e 's/ = .*//' -e 's/\...$//' \
-                    | tail -n1 ) # eg "Duration of 63 files: 04:32:15" or "Duration : 00:08:58"
-              a2=$*
-              { printf "${n} $a2 " ; hms2sec "${a2#*: }" ;} | awk '{printf "%29s %6s %3s %-6s %s sec "," ","  \\"$1"\\",$2,$3,$5}'
-              kdb_xs2h $(printf "%x" $(hms2sec "${a2#*: }")) | sed -e 's/.*(/(/' -e 's/ )/)/'
+                    | tail -n1 ) # eg "1 file: 00:06:02" or " 80 files: 05:24:37"
+              fdur=$*
+              { printf "${n} $fdur " ; hms2sec "${fdur#*: }" ;} | awk '{printf "%29s %6s %3s %-6s %s sec "," ","  \\"$1"\\",$2,$3,$5}'
+              kdb_xs2h $(printf "%x" $(hms2sec "${fdur#*: }")) | sed -e 's/.*(/(/' -e 's/ )/)/'
               )
-    } || d='' # reset if n has no mp3
+    } || d='' # reset, no mp3 begin with n
 
-    [ "$d" ] && { # init 0/${n},~ with the major duration
-        [ -e "0/${n}," ] \
-            && { awk 'NR==1,/^$/ ; {!/^$/}' <"0/${n}," >"0/${n},~" ;} \
-            || printf "original\n\n" >"0/${n},~" 
-        echo "$d" >>"0/${n},~" ;}
+       #- || { { grep "^${n}, " $0 ; printf "$(ts)\n\n" ;} >"${n},~" \
+    [ "$d" ] && { # init ${n},~ with an existing header
+        [ -e "${n}," ] && { awk 'NR==1,/^$/ ; {!/^$/}' <"${n}," >"${n},~" ;} \
+          || { { sed -e "/^${n}, /!d" -e "s/$/ ${PWD##*/}/" $0 ; printf "$(ts)\n\n" ;} >"${n},~" \
+               || { chkwrn "unable to create '$PWD/${n},~' (643a082d)" ; exit 5 ;} ;}
+        echo "$d" >>"${n},~" ;}
 
-    [ "$d" ] && { # if duration, calculate per artist, and write to 0/${n},~ and 0/0,~
-      find . -maxdepth 1 -name ${n}\*.mp3 | while read b ; do
+   find . -maxdepth 1 -name ${n}\*.mp3 | grep -v , && { chkerr "$0 : missing comma (643b866e)"  ; exit 5;}
+   find . -maxdepth 1 -name ${n}\*.mp3 | grep  ',.*,' && { chkerr "$0 : extra comma (643c24eb)"  ; exit 5;}
+
+    [ "$d" ] && { # calculate duration per artist, sort, and write to ${n}
+      find . -maxdepth 1 -name ${n}\*.mp3 | while read b ; do spin2
         sed -e 's/.*,//' -e 's/-.*//' <<<"$b"; done | sort -u \
-          | while read c; do export c # artist
-              # artist count and duration
+          | while read c; do export c # count and calculate per artist duration
+#chkwrn "$PWD/${n}xx,$c"
+              spin2
               set $(soxi $(find . -maxdepth 1 -name ${n}\*,${c}\*\.mp3 ) \
                     | sed -e '/Duration/!d' -e 's/.*Duration of//' -e 's/Duration[ ]*:/1 file:/' -e 's/ = .*//' -e 's/\...$//' \
-                    | tail -n1 ) # eg "Duration of 63 files: 04:32:15" or "Duration : 00:08:58"
-              a2=$*
-              { printf "${c} $a2 " ; hms2sec "${a2#*: }" ;} | sed -e 's/://' | awk '{printf "%36s %3s %-6s %s sec ",$1,$2,$3,$5}'
-              kdb_xs2h $(printf "%x" $(hms2sec "${a2#*: }")) | sed -e 's/.*(/(/' -e 's/ )/)/'
-              done | sort -rnk 4 >>0/${n},~
+                    | tail -n1 ) # eg "1 file: 00:06:02" or " 80 files: 05:24:37"
+              fdur=$*
+              { printf "${c} $fdur " ; hms2sec "${fdur#*: }" ;} | sed -e 's/://' | awk '{printf "%36s %3s %-6s %s sec ",$1,$2,$3,$5}'
+              kdb_xs2h $(printf "%x" $(hms2sec "${fdur#*: }")) | sed -e 's/.*(/(/' -e 's/ )/)/'
+              done | sort -rnk 4 >>${n},~
 
-        mv -f "0/${n},~"   "0/${n},"
-        echo >>"0/0,~"
-        cat   "0/${n}," >>"0/0,~"
+        # wrap up and move tmp files to finish
+        mv -f "${n},~" "${n},"
+        # also write to 0,~
+        echo >>"0,~"
+        cat   "${n}," >>"0,~"
 
-        echo 2>&1
-        cat "0/${n}," 2>&1
         } # duration d set per artist c in n from loop a
-  done # n
-mv -f "0/0,~" "0/0,"  
-echo 2>&1
+  done # a (n)
+spin2 0
+
+# finish main
+mv -f "0,~" "0,"
 exit 0
+
+cat >/dev/null <<eof
+compost guide, null comma files:
+
+0, prepare
+1, hook
+2, natural innocent juvinile ingenue
+3, bold
+4, mature
+5, orbit
+6, reckless
+7, pearcing
+8, essential
+9, next
+a, melody
+b, run
+c, lounge
+d, emotion
+e, reunion
+f, juxtapose
+g, reminiscence
+h, reverence
+j, astonish
+k, sustain
+m, root
+n, old
+p, spirit
+q, ring
+r, persue
+s, modest
+t, simple
+u, personal
+v, undecided
+x, extra
+y, exclude
+z, end
+

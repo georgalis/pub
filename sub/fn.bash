@@ -58,6 +58,37 @@ ps | grep "^[ ]*$$ " | grep -q bash 2>/dev/null \
 # earlier and we would normally see it twice...
 uptime
 
+validex () { #:> validate executable, compare unit hash vs operation env hash
+    [ "$1" ] || {
+      cat 1>&2 <<-EOF
+		#:: $FUNCNAME {executable}        ; returns {executable} {hash}
+		#:: $FUNCNAME {executable} {hash} ; return no error, if hash match
+		#:: the former is intended to provide data for the latter
+		#:: env hashex= to set the hashing function, other than the cksum default
+		EOF
+      return 1 ;}
+    ps | grep "^[ ]*$$ " | grep -q bash 2>/dev/null || { echo ">>> $0 : Not bash shell (62af847c) <<<" >&2 ; return 1 ;}
+    local exin="$(sed  -e 's/#.*//' -e 's/^[ ]*//' -e 's/[ ]*$//' -e '/^$/d' <<<"$1")"
+    [ "$exin" ] || return 0 # drop comments
+    which "$exin" >/dev/null || { chkwrn "$FUNCNAME : executable not in PATH, '$exin' (643d9a87)" ; return 1 ;}
+    local _hashfn=''
+    [ "$hashex" ] || { _hashex () { cat $(which "$1") | printf "%s %08x %08x\n" "$1" $(cksum) ;} && _hashex="_hashex" ;}
+    [ "$_hashex" ] || _hashex="$hashex" # for env sanity... use crypto hash for security...
+    shift || true
+    local sum="$exin $*"
+    local check="$( "$_hashex" "$exin" )"
+    [ "$*" ] || { echo "$check" ; return 0 ;} # provide hash data if none given to check
+    [ "$sum" = "$check" ] || { # report hash data discrepancies on failed check
+    cat 1>&2 <<-EOF
+		>>>---
+		$FUNCNAME error :
+		 unit:'$sum'
+		  env:'$check'
+		<<<---
+		EOF
+    return 1 ;}
+    } # validex 64399fcb 20230414 1147 Fri 14 Apr PDT
+
 validfn () { #:> validate function, compare unit hash vs operation env hash
     [ "$1" ] || {
       cat 1>&2 <<-EOF
@@ -68,10 +99,10 @@ validfn () { #:> validate function, compare unit hash vs operation env hash
 		EOF
       return 1 ;}
     ps | grep "^[ ]*$$ " | grep -q bash 2>/dev/null || { echo ">>> $0 : Not bash shell (62af847c) <<<" >&2 ; return 1 ;}
-    local _hashfn
+    local _hashfn=''
     [ "$hashfn" ] || { _hashfn () { declare -f "$1" | printf "%s %08x %08x\n" "$1" $(cksum) ;} && _hashfn="_hashfn" ;}
-    [ "$_hashfn" ] || _hashfn="$hashfn" # for bugs... use stronger hash for nefarious env
-    local fn="$(sed '/^[ ]*#/d' <<<"$1")"
+    [ "$_hashfn" ] || _hashfn="$hashfn" # for env sanity... use crypto hash for security...
+    local fn="$(sed  -e 's/#.*//' -e 's/^[ ]*//' -e 's/[ ]*$//' -e '/^$/d' <<<"$1")"
     [ "$fn" ] || return 0 # drop comments
     shift || true
     local sum="$fn $*"
@@ -109,8 +140,8 @@ logerr 2db98372 0000005e
 chktrue 28662120 00000060
 chkexit e6d9b430 0000005a
 logexit 235b98c9 0000005d
-validfn 9b374f93 0000043f
-siffx d0a50c12 000002f3
+siffx c20a9040 000002f7
+validfn 8f5ab2a4 0000046c
 EOF
 
 alias   gstatus='git status --short'

@@ -37,41 +37,22 @@ have been been performed so slowly that it is difficult to recognize the melody.
 these adjustments, as presented here, are intended to ring true the authenticity of the original,
 attenuating charisma of their age and accentuating the elements that make them timeless.
 
-This is the optimal study sequence of the volumes (not their sorted sequence) revisions to the
+This is the optimal study sequence of the volumes (not their sorted sequence). Revisions to the
 various volumes are made, from time to time.
 
-1. The first volume is [5fb3-deja-muse](https://github.com/georgalis/pub/blob/master/know/music/5fb3-deja-muse.md), from Sun, 28 Feb 2021.
-1. The second volume is [63d2-requeues](https://github.com/georgalis/pub/blob/master/know/music/63d2-requeues.list), a logical extension of the first.
-1. The third volume is [5deb-melody-royal](https://github.com/georgalis/pub/blob/master/know/music/5deb-melody-royal.list), it is a condensed presentation of the fourth volume.
-1. The fourth volume is [5d50-kindle-class](https://github.com/georgalis/pub/blob/master/know/music/5d50-kindle-class.list), and marks the beginning of the effort to identify collections suitable for non-intrusive, edifying, continuous listening at background volumes.
-1. A fifth volume [6344-Ithica](https://github.com/georgalis/pub/blob/master/know/music/6344-Ithica.list), was divinely inspired. It is simply a collection of three CDs purchased in 1994 to memorialize a supernatural sign, rain, directing this musical curation. More on that later.
-1. Volume six [6350-forte-flute](6350-forte-flute.md) is a practice challenge of etudes. Many performances are re-tuned.
-1. Volume seven [63e8-jazzmore](63e8-jazzmore.list) is an extension of volume two with emphasis on jazz.
+1. [5fb3-deja-muse](https://github.com/georgalis/pub/blob/master/know/music/5fb3-deja-muse.md), volume 1, from Sun, 28 Feb 2021, is the only formally released volume, distinguished by notes linked here, vs only a file listing for the others. Some technical revisions are underway.
+1. [63d2-requeues](https://github.com/georgalis/pub/blob/master/know/music/63d2-requeues.list), the second volume, is a logical extension of the first. It is on track for final release, but many additions, pruning, and balance changes are still planned.
+1. [5deb-melody-royal](https://github.com/georgalis/pub/blob/master/know/music/5deb-melody-royal.list), the third volume, is it is a condensed presentation of the fourth volume. Unlikely there will be much content change, probably some technical revisions.
+1. [5d50-kindle-class](https://github.com/georgalis/pub/blob/master/know/music/5d50-kindle-class.list), the fourth volume, is and marks the beginning of the effort to identify collections suitable for non-intrusive, continuous listening (aka timeless selections); for playback on a kindle reader and the foundation of the curation development workflow [tool](https://github.com/georgalis/pub/blob/master/know/music/tool.md) kit for playlist edification.
+1. [6344-Ithica](https://github.com/georgalis/pub/blob/master/know/music/6344-Ithica.list), the fifth volume was divinely inspired. It is simply a collection of three CDs purchased in 1994 to memorialize a supernatural sign, rain, directing this musical curation. More on that later.
+1. [6350-forte-flute](https://github.com/georgalis/pub/blob/master/know/music/6350-forte-flute.md), volume six is a practice challenge of etudes. Many performances are re-tuned.
+1. [63e8-jazzmore](https://github.com/georgalis/pub/blob/master/know/music/63e8-jazzmore.list), volume seven, is an extension of volume two with emphasis on jazz, and a side effect of pruning 63d2-requeues for release.
 
-Only the first volume,
-[5fb3-deja-muse](https://github.com/georgalis/pub/blob/master/know/music/5fb3-deja-muse.md)
-has been formally released, and technical revisions are underway.
-A formal release is approaching for the second volume,
-[63d2-requeues](https://github.com/georgalis/pub/blob/master/know/music/660e-requeues.list).
-Release finalization is approaching for the third volume,
-[5deb-melody-royal](https://github.com/georgalis/pub/blob/master/know/music/5deb-melody-royal.list).
-Last in the queue for release is volume four, created for playback on a kindle reader,
-[5d50-kindle-class](https://github.com/georgalis/pub/blob/master/know/music/5d50-kindle-class.list)
-is the inspiration for the entire project.
-Content is complete for the fifth volume,
-[6344-Ithica](https://github.com/georgalis/pub/blob/master/know/music/6344-Ithica.list),
-a release is pending curation.
-[6350-forte-flute](https://github.com/georgalis/pub/blob/master/know/music/6350-forte-flute.md)
-is also available, without curation.
-Development has begun on
-[63e8-jazzmore](https://github.com/georgalis/pub/blob/master/know/music/63e8-jazzmore.list),
-a side effect of pruning 63d2-requeues for release.
-
-A breakout of the curation development workflow [tools](tools.md) has commenced (for the download of recordings and release management)!
+A breakout of the curation development workflow [tool](tool.md) kit has commenced (for the download of recordings and release management)!
 
 Questions and comments? george@galis.org
 
 Enjoy!<br>
 -George
 
-Initial 20221010 Mon 10 October 2022, rev 20230211
+Initial 20221010 Mon 10 October 2022, rev 20230211, 20230418

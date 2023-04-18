@@ -8,7 +8,7 @@ set -e
 dep_help_skel () { echo '# ><> eval "$(curl -fsSL https://github.com/georgalis/pub/blob/master/skel/.profile)" <><' 1>&2
     echo 'export -f devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue chkexit logexit validfn' 1>&2 ;}
 dep_help_sub () { echo '# ><> eval "$(curl -fsSL https://github.com/georgalis/pub/blob/master/sub/fn.bash)" <><' 1>&2
-    echo 'export -f ckstatsum ckstat revargs formfile formfilestats' 1>&2 ;}
+    echo 'export -f ckstatsum ckstat formfile formfilestats spin2' 1>&2 ;}
 
 test "$(declare -f validfn 2>/dev/null)" || { echo "$0 : validfn not defined" 1>&2 ; dep_help_skel ; exit 1 ;}
 while IFS= read a ; do
@@ -21,10 +21,10 @@ chkwrn 2683d3d3 0000005c
 logwrn f279f00e 0000005f
 chkerr 4f18299d 0000005b
 logerr 2db98372 0000005e
-chktrue f37189b7 00000060
 chkexit e6d9b430 0000005a
 logexit 235b98c9 0000005d
-validfn c268584c 00000441
+chktrue 28662120 00000060
+validfn 8f5ab2a4 0000046c
 EOF
 
 while IFS= read a ; do
@@ -34,11 +34,16 @@ ckstat 36acea2a 000003b2
 ckstatsum 9b617c6f 0000040c
 formfile 22029e47 00000fda
 formfilestats fa92ede0 000004dc
-revargs 5db3f9bb 000000a7
 spin2 1263edf2 00000180
 EOF
 
 [ -e $HOME/sub/markdown.awk ] || { echo "$0 : markdown.awk not found" 1>&2 ; dep_help_sub ; exit 1 ;}
+
+while IFS= read a ; do
+    validex $a && true || { echo "$0 : validex error : $a (643eb771)" 1>&2 ; exit 2 ;}
+    done <<EOF
+comma_mp3.sh afb161ed 000013b3
+EOF
 
 ps | grep -E "^[ ]*$$" | grep -q bash || chkexit "$0 : Not bash"
 test -d "$links"                      || chkexit "$0 : not a directory links='$links'"
@@ -50,16 +55,19 @@ expr "$f" : ".*/" >/dev/null && inpath="${f%/*}" || inpath="." # inpath  ==  dir
 wdp="$(cd "${inpath}" ; pwd -P)"
 infilep="$(cd "${inpath}" ; pwd -P)/${infile}"                 # infilep == realpath f
 mkdir -p "$wdp/%"
+t="$(cd "$wdp/%" && mktemp -d "${infile}-XXXXX")"
+PATH=$wdp:$PATH
 verb="chktrue"
 verb2="chkwrn"
 verb2="devnul"
 
-gen_index () { # in pwd, for "$links/$name/"
-    $verb $FUNCNAME $name ; $verb2 "$links/$name" "$wdp/$name"
-    [ -d "$links/$name" ] && mkdir -p "$wdp/$name" || { chkerr "$FUNCNAME : create \$wdp/\$name from $wdp/$name" ; exit 1 ;}
-    t="$(cd "$wdp/%" && mktemp -d "${infile}-XXXXX")"
+which comma_mp3.sh >/dev/null || chkerr "$0 : comma_mp3.sh not in '$wdp' (PATH)" 
 
-    $verb "${name}.list" ; $verb2 tmp "$wdp/%/$t/${name}.list"
+gen_index () { # in pwd, for "$links/$name/"
+    $verb $links/$name ; $verb2 "$links/$name" "$wdp/$name"
+    [ -d "$links/$name" ] && mkdir -p "$wdp/$name" || { chkerr "$FUNCNAME : create \$wdp/\$name from $wdp/$name" ; exit 1 ;}
+
+    $verb ${name}.list ; $verb2 tmp "$wdp/%/$t/${name}.list"
     # all mp3 in sequence except beginning with 0 or y
     find "$links/$name/" -maxdepth 1 -type f -name \*mp3 \
         | sed -e "
@@ -71,16 +79,21 @@ gen_index () { # in pwd, for "$links/$name/"
     touch -r "$links/$name/" "$wdp/%/$t/${name}.list"
     mv "$wdp/%/$t/${name}.list" "$wdp"
 
-    $verb ${name}.tab ; $verb2 tmp "$wdp/%/$t/${name}.tab"
-    cat "$wdp/${name}.list" | while IFS= read a ; do
-        b="$(formfile "$a" | sed '/^#/d')"
-        sed -e 's/   .*_^/ _^/' -e "s/'//" -e 's/^\(.*\)\( _^.*\)/\2 \1/' -e 's/^\(.*\),\([^ ]*\)/\2 \1 /' <<<"$b" \
-            | awk '{printf "%-85s %-18s",$1,$2;$1="";$2="";$3="";print}'
-        spin2
-        done | sort -f >"$wdp/%/$t/${name}.tab"
-    spin2 0
-    touch -r "$wdp/${name}.list" "$wdp/%/$t/${name}.tab"
-    mv "$wdp/%/$t/${name}.tab" "$wdp/$name"
+    $verb ${name}.view ; $verb2 $(which comma_mp3.sh) "$links/$name/"
+    comma_mp3.sh "$links/$name"
+    cp -f "$links/$name/0," $wdp/${name}.view
+    touch -r "$wdp/${name}.list" $wdp/${name}.view "$links/$name"
+
+#   $verb ${name}.tab ; $verb2 tmp "$wdp/%/$t/${name}.tab"
+#   cat "$wdp/${name}.list" | while IFS= read a ; do
+#       b="$(formfile "$a" | sed '/^#/d')"
+#       sed -e 's/   .*_^/ _^/' -e "s/'//" -e 's/^\(.*\)\( _^.*\)/\2 \1/' -e 's/^\(.*\),\([^ ]*\)/\2 \1 /' <<<"$b" \
+#           | awk '{printf "%-85s %-18s",$1,$2;$1="";$2="";$3="";print}'
+#       spin2
+#       done | sort -f >"$wdp/%/$t/${name}.tab"
+#   spin2 0
+#   touch -r "$wdp/${name}.list" "$wdp/%/$t/${name}.tab"
+#   mv "$wdp/%/$t/${name}.tab" "$wdp/$name"
 
     $verb ${name}.stat.time ; $verb2 tmp "$wdp/%/$t/${name}.stat.time"
     formfilestats "$links/$name" >"$wdp/%/$t/${name}.stat.time"
@@ -102,28 +115,31 @@ gen_index () { # in pwd, for "$links/$name/"
     touch -r "$wdp/${name}.list" "$wdp/%/$t/${name}.ckstat"
     mv "$wdp/%/$t/${name}.ckstat" "$wdp/$name/"
 
-    $verb "$links/$name/*mp3 $links/0/kind/$name/"
-    rm -rf   "$links/0/kind/$name"
-    mkdir -p "$links/0/kind/$name"
-    ln "$links/$name/"*mp3 "$links/0/kind/$name/"
-    # purge staging (0*) and offramp (y*) mp3
-    rm -f "$links/0/kind/$name/"0*mp3 "$links/0/kind/$name/"y*mp3
-    touch -r "$links/$name" "$links/0/kind/$name"
-
-    rm -rf "$wdp/%/$t/"
+   $verb "${name}{.view,.list,.md,/*mp3} $links/0/kind/"
+   rm -rf   "$links/0/kind/${name}"*
+   mkdir -p "$links/0/kind/${name}"
+   ln "$links/$name/"*mp3 "$links/0/kind/$name/"
+   # purge staging (0*) and offramp (y*) mp3
+   rm -f "$links/0/kind/$name/"0*mp3 "$links/0/kind/$name/"y*mp3
+   sed -e 's/$/\r/' "$music/${name}.list" >"$wdp/%/$t/${name}.list.txt"
+   sed -e 's/$/\r/' "$music/${name}.view" >"$wdp/%/$t/${name}.view.txt"
+   touch -r "$links/$name" "$wdp/%/$t/${name}.list.txt" "$wdp/%/$t/${name}.view.txt"
+   mv "$wdp/%/$t/${name}.list.txt" "$wdp/%/$t/${name}.view.txt" "$links/0/kind/"
+   touch -r "$links/$name" "$links/0/kind/${name}"*
     } # gen_index
 
 check_gen_index () { # gen_index iff diff
+    $verb $FUNCNAME  ; $verb2 "$links/0/kind/$name/ /Volumes/CURATE/kind/$name/"
     [ -d "$links/$name/" ] || { chkerr "$0 $FUNCNAME : not a directory '$links/$name/'" ; exit 1 ;}
     # if listing time is different than dir time, gen_index
     [ -e "$wdp/${name}.list" ] \
         && expr "$(ckstat "$wdp/${name}.list" | awk '{print $5}' )" '=' "$(ckstat "$links/$name/" | awk '{print $5}' )" >/dev/null \
         && { $verb "No change, skipping $name" ; return 0 ;} # ie return if no change or continue
-    gen_index 
+    gen_index
     } # check_gen_index
 
 kind_curate_rsync () { # rsync $links/0/kind/$name/
-    $verb2 $FUNCNAME  ; $verb2 "$links/0/kind/$name/ /Volumes/CURATE/kind/$name/"
+    $verb $FUNCNAME  ; $verb2 "$links/0/kind/$name/ /Volumes/CURATE/kind/$name/"
     [ -d "$links/0/kind/$name/" ]         || { chkerr "$0 $FUNCNAME : no source $links/0/kind/$name/" ; exit 1 ;}
     mount | grep -q /Volumes/CURATE       || { chkerr "$0 $FUNCNAME : no /Volumes/CURATE for kind/$name" ; exit 1 ;}
     mkdir -p "/Volumes/CURATE/kind/$name" || { chkwrn "$0 $FUNCNAME : cannot create /Volumes/CURATE/kind/$name" ; exit 1 ;}
@@ -131,41 +147,40 @@ kind_curate_rsync () { # rsync $links/0/kind/$name/
     # https://discussions.apple.com/thread/254383328
     # https://github.com/WayneD/rsync/issues/412
     rsync -aP --delete --modify-window=1 $links/0/kind/${name}* "/Volumes/CURATE/kind/" \
-        | grep -vE '((^sending|^sent|^total) |^$)' || true
-        cd $links/0/kind/ && find . -type f -path "./${name}*" -exec touch -r \{\} "/Volumes/CURATE/kind/"\{\} \;
+        | grep -vE '((^sending|^sent|^total) |^$|^\./$)' || true
+#       cd $links/0/kind/ && find . -type f -path "./${name}*" -exec touch -r \{\} "/Volumes/CURATE/kind/"\{\} \;
     } # kind_curate_rsync
 
 doc2html2kind () { # include a doc file with volume (and make html if it is md)
-    $verb2 $FUNCNAME
+    $verb2 $FUNCNAME  ; $verb2 "$links/0/kind/$name/ /Volumes/CURATE/kind/$name/"
     local doco='' doc="$(sed -e "/^$name/!d" -e 's=.*/==' <<<"$volumes")"
     [ -f "$HOME/sub/markdown.awk" ] || { chkerr "$0 $FUNCNAME : no markdown.awk" ; exit 1 ;}
     [ "${doc##*.}" = "md"   ] && { doco="${doc}.html"
-        awk -f $HOME/sub/markdown.awk <"$wdp/$doc" >"$wdp/%/$doco";}
-    sed -e 's/$/\r/' "$wdp/${name}.list" >"$wdp/%/${name}.list.txt"
-#   [ "${doc##*.}" = "list" ] && { doco="${doc}.txt"
-#       sed -e 's/$/\r/'              <"$wdp/$doc" >"$wdp/%/$doco";}
-    touch -r "$wdp/$doc" "$wdp/%/$doco" "$wdp/%/${name}.list.txt"
-    $verb2 doco "$wdp/%/$doco" "$links/0/kind/"
-    rsync -av   "$wdp/%/$doco" "$wdp/%/${name}.list.txt" "$links/0/kind/" \
-            | grep -vE '((^sending|^sent|^total) |^$)' || true
+        $verb $links/0/kind/$doco
+        awk -f $HOME/sub/markdown.awk <"$wdp/$doc" >"$wdp/%/$t/$doco"
+        touch -r "$wdp/$doc" "$wdp/%/$t/$doco"
+        $verb2 doco "$wdp/%/$t/$doco" "$links/0/kind/"
+        rsync -av   "$wdp/%/$t/$doco" "$links/0/kind/" \
+                | grep -vE '((^sending|^sent|^total) |^$|^\./$)' || true ;} \
+        || true # doc is not md... view and list files were copied to kind with gen_index
     } # doc2html2kind
 
 readme2html2kind () {
-    $verb2 $FUNCNAME  ; $verb2 "$wdp/README.md" "$links/0/kind/README.md.html" #         "/Volumes/CURATE/kind/README.md.html"
+    $verb $FUNCNAME  ; $verb2 "$wdp/README.md" "$links/0/kind/README.md.html" #         "/Volumes/CURATE/kind/README.md.html"
     [ -f "$HOME/sub/markdown.awk" ] || { chkerr "$0 $FUNCNAME : no markdown.awk" ; exit 1 ;}
     [ -f "$wdp/README.md" ]         || { chkerr "$0 $FUNCNAME : no $wdp/README.md" ; exit 1 ;}
-    awk -f $HOME/sub/markdown.awk "$wdp/README.md" >"$wdp/%/README.md.html"
-    touch -r "$wdp/README.md" "$wdp/%/README.md.html"
-    rsync -av "$wdp/%/README.md.html" "$links/0/kind/README.md.html" \
-            | grep -vE '((^sending|^sent|^total) |^$)' || true
+    awk -f $HOME/sub/markdown.awk "$wdp/README.md" >"$wdp/%/$t/README.md.html"
+    touch -r "$wdp/README.md" "$wdp/%/$t/README.md.html"
+    rsync -av "$wdp/%/$t/README.md.html" "$links/0/kind/README.md.html" \
+            | grep -vE '((^sending|^sent|^total) |^$|^\./$)' || true
     } # readme2html2kind
 
 kindreadme2curate () {
     mount | grep -q /Volumes/CURATE       || { chkerr "$0 $FUNCNAME : no /Volumes/CURATE for kind/$name" ; exit 1 ;}
     mkdir -p /Volumes/CURATE/kind || { chkerr "$0 $FUNCNAME : cannot create /Volumes/CURATE/kind" ; exit 1 ;}
       rsync -av "$links/0/kind/README.md.html" "/Volumes/CURATE/kind/README.md.html" \
-            | grep -vE '((^sending|^sent|^total) |^$)' || true
-      touch -r  "$links/0/kind/README.md.html" "/Volumes/CURATE/kind/README.md.html" # https://discussions.apple.com/thread/254383328
+            | grep -vE '((^sending|^sent|^total) |^$|^\./$)' || true
+#     touch -r  "$links/0/kind/README.md.html" "/Volumes/CURATE/kind/README.md.html" # https://discussions.apple.com/thread/254383328
     } # kindreadme2curate
 
 # main
@@ -181,20 +196,20 @@ kindreadme2curate () {
 #        } # is a mac
 mount | grep /Volumes/CURATE >/dev/null \
     && {
-       test -f /Volumes/CURATE/.metadata_never_index || touch $_
+#      test -f /Volumes/CURATE/.metadata_never_index || touch $_ # doesn't help on ventura
        test -e /Volumes/CURATE/.Spotlight-V100 -o -e /Volumes/CURATE/.fseventsd \
-         && chkwrn "remove spolight index: sudo mdutil -X /Volumes/CURATE/"
+         && chkwrn "turn off and remove spolight: sudo mdutil -i off -dEX /Volumes/CURATE/"
        }
 
 # if arg1 is cache, only sync the cache and exit
 [ "$1" = 'cache' ] \
     && {
        test -d  "$links/0/6400-cache/" || { chkerr "$0 $FUNCNAME : no local $links/0/6400-cache/" ; exit 1 ;}
-       test -f "$links/0/6400-cache/.metadata_never_index" \
-        || {
-            touch -r "$links/0/6400-cache/" "$links/0/6400-cache/.metadata_never_index"
-            touch -r "$links/0/6400-cache/.metadata_never_index" "$links/0/6400-cache/"
-           }
+#      test -f "$links/0/6400-cache/.metadata_never_index" \
+#       || {
+#           touch -r "$links/0/6400-cache/" "$links/0/6400-cache/.metadata_never_index"
+#           touch -r "$links/0/6400-cache/.metadata_never_index" "$links/0/6400-cache/"
+#          }
        find "$links/0/6400-cache/" -type f -name \*mp3 \
         | sed -e "s=^${links}/0/6400-cache[/]*==" \
         | sort >"$wdp/%/6400-cache.list"
@@ -203,7 +218,7 @@ mount | grep /Volumes/CURATE >/dev/null \
        touch -r "$links/0/6400-cache/" "$wdp/%/6400-cache.list.txt"
        mv "$wdp/%/6400-cache.list" "$wdp"
        mount | grep -q /Volumes/CURATE       || { chkerr "$0 $FUNCNAME : no /Volumes/CURATE for cache" ; exit 1 ;}
-       test -e /Volumes/CURATE/.metadata_never_index || touch $_
+#      test -e /Volumes/CURATE/.metadata_never_index || touch $_
        set -x
        rsync -av --delete --modify-window=1 $links/0/6400-cache/ "/Volumes/CURATE/6400-cache/"
        mv -f "$wdp/%/6400-cache.list.txt" "/Volumes/CURATE/"
@@ -224,8 +239,9 @@ volumes="
 6350-forte-flute  https://github.com/georgalis/pub/blob/master/know/music/6350-forte-flute.list
 63aa-bee-piano    https://github.com/georgalis/pub/blob/master/know/music/63aa-bee-piano.list
 63e8-jazzmore     https://github.com/georgalis/pub/blob/master/know/music/63e8-jazzmore.list
-640e-bside1970    https://github.com/georgalis/pub/blob/master/know/music/640e-bside1970.list
 "
+#640e-bside1970    https://github.com/georgalis/pub/blob/master/know/music/640e-bside1970.list
+#641a-classencore  https://github.com/georgalis/pub/blob/master/know/music/641a-classencore.list
 
 vols="$(awk '!/^$/ {print $1}' <<<"$volumes")"
 
@@ -256,6 +272,26 @@ readme2html2kind
             kindreadme2curate
             for name in $vols ; do doc2html2kind ; kind_curate_rsync ; done ;}
         }
+
+rm -rf "$wdp/%/$t/"
 $verb2 "eof"
 exit 0
+
+cat >/dev/null <<eof
+pattern plan for refactor into next release format
+
+mastering_source_by_release.sh:        staged_and_vcs_output:                 released_output:
+$links/${name}/[0-z]*,                 $music/${name}.view
+$music/${name}.view                    $links/0/kind/${name}.view.txt         /Volumes/CURATE/kind/${name}.view.txt
+$music/${name}.md                      $links/0/kind/${name}.md.html          /Volumes/CURATE/kind/${name}.md.html
+$links/${name}/[0-z]*,*mp3             $links/0/kind/${name}.list.txt         /Volumes/CURATE/kind/${name}.list.txt
+$links/${name}/[0-z]*,*mp3             $links/0/kind/${name}/[0-z]*,*mp3      /Volumes/CURATE/kind/${name}/[0-z]*,*mp3
+$links/${name}/[0-z]*,*mp3             $music/${name}/${name}.tab
+                                       $music/${name}/${name}.sum
+                                       $music/${name}/${name}.stat.time
+                                       $music/${name}/${name}.stat.pitch
+                                       $music/${name}/${name}.list
+                                       $music/${name}/${name}.ckstat
+
+release exclude:
 
