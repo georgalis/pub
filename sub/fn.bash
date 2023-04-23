@@ -1010,7 +1010,7 @@ numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" 
                done
              } || true
         # drop meta files from rename, but touch a meta file if there are file matches, even in dry run, could use fd to avoid f loop?
-        { grep "^$b[0123456789abcdefghjkmnpqrstuvxyz]*,." <<<"$fs" && touch "${b}," || true ;} \
+        { sed -e "/^$b[0123456789abcdefghjkmnpqrstuvxyz]*,./!d" -e '/^[0123456789abcdefghjkmnpqrstuvxyz]00,.*txt/d' <<<"$fs" && touch "${b}," || true ;} \
             | while IFS= read f ; do printf "%s\n" "$f" ; done \
             | awk '{printf "%s %d %s\n",$0,NR,$0}' \
             | sed -e '/^ /d' -e 's/^[0123456789abcdefghjkmnpqrstuvxyz]*,//' -e '/^$/d' \
@@ -1097,12 +1097,17 @@ mp3range () { # mp3 listing limiter
 playffr () { # use ffplayr to continiously repeat invocations of ffplay
     local f fs
     [ $# -gt 0 ] && { fs="$1" ; shift ;}
+    [ "$fs" = '-volume' ] && { v="$1" ; shift ; fs="$1" ; shift ;}
+    [ "$v" ] && v="-volume $v" || v="-volume 100"
     while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
     echo "$fs" | while IFS= read f; do
         chktrue "$f"
         [ -f "$f" ] && {
-          chktrue $(hms2sec $(ffprobe -hide_banner -loglevel info "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //'))
+        tput bold
+         chktrue "$f"
+         chktrue sec $(hms2sec $(ffprobe -hide_banner  -loglevel info "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')) vol ${v##* }
+        tput sgr0
           ffplay -hide_banner -stats -autoexit -loglevel error -nodisp "$f" || return 1
           } || chkwrn "$0 : not a file : '$f'"
         done
@@ -1112,16 +1117,16 @@ playff () { # use ffplay to play files (args OR stdin filename per line)
     local f='' fs='' v=''
     [ $# -gt 0 ] && { fs="$1" ; shift ;}
     [ "$fs" = '-volume' ] && { v="$1" ; shift ; fs="$1" ; shift ;}
-    [ "$v" ] && v="-volume $v"
+    [ "$v" ] && v="-volume $v" || v="-volume 100"
     while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
     echo "$fs" | while IFS= read f; do
        [ -f "$f" ] && {
         tput bold
          chktrue "$f"
-         chktrue -seconds $(hms2sec $(ffprobe -hide_banner  -loglevel info "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')) $v
+         chktrue sec $(hms2sec $(ffprobe -hide_banner  -loglevel info "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')) vol ${v##* }
         tput sgr0
-         ffplay -hide_banner -stats -autoexit -loglevel info -top 52 -x 1088 -y 280 $v "$f" || return 1
+         ffplay -hide_banner -stats -autoexit -loglevel error -top 52 -x 1088 -y 280 $v "$f" || return 1
          } || chkwrn "$0 : not a file : '$f'"
         done
     } # playff
