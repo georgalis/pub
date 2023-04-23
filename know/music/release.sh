@@ -39,12 +39,6 @@ EOF
 
 [ -e $HOME/sub/markdown.awk ] || { echo "$0 : markdown.awk not found" 1>&2 ; dep_help_sub ; exit 1 ;}
 
-while IFS= read a ; do
-    validex $a && true || { echo "$0 : validex error : $a (643eb771)" 1>&2 ; exit 2 ;}
-    done <<EOF
-comma_mp3.sh afb161ed 000013b3
-EOF
-
 ps | grep -E "^[ ]*$$" | grep -q bash || chkexit "$0 : Not bash"
 test -d "$links"                      || chkexit "$0 : not a directory links='$links'"
 export links # we will need it in sub-shells and pipelines
@@ -61,7 +55,11 @@ verb="chktrue"
 verb2="chkwrn"
 verb2="devnul"
 
-which comma_mp3.sh >/dev/null || chkerr "$0 : comma_mp3.sh not in '$wdp' (PATH)" 
+while IFS= read a ; do
+    validex $a && true || { echo "$0 : validex error : $a (643eb771)" 1>&2 ; exit 2 ;}
+    done <<EOF
+comma_mp3.sh afb161ed 000013b3
+EOF
 
 gen_index () { # in pwd, for "$links/$name/"
     $verb $links/$name ; $verb2 "$links/$name" "$wdp/$name"
