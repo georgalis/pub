@@ -113,43 +113,19 @@ All of these commands are extended shell functions.
 * `_youtube url [dir]` will download the url audio, similar commands get videos and lists of content.
   * `_youtube_json2txt` is called automatically to render needful yaml from json
   * `_youtube_comment_unflatten` renders readable comments from yaml data
-  <head>
-  <meta charset="ISO-8859-1">
-  <title>~/fn.bash.html</title>
-  <meta name="Generator" content="Vim/9.0">
-  <meta name="plugin-version" content="vim9.0_v1">
-  <meta name="syntax" content="bash">
-  <meta name="settings" content="use_css,no_foldcolumn,expand_tabs,pre_wrap,prevent_copy=,use_input_for_pc=fallback">
-  <meta name="colorscheme" content="none">
-  <style>
-  <!--
-  pre { white-space: pre-wrap; font-family: monospace; color: #ffffff; background-color: #000000; }
-  body { font-family: monospace; color: #ffffff; background-color: #000000; }
-  * { font-size: 1em; }
-  .Identifier { color: #5f87ff; }
-  .Statement { color: #804000; }
-  .shOption { color: #005f00; }
-  .shFunctionOne { color: #d7afd7; }
-  .Comment { color: #008080; }
-  .Constant { color: #ffffff; text-decoration: underline; }
-  -->
-  </style>
-  </head>
-  <body>
-  <pre id='vimCodeElement'>
-  <span class="Identifier">_youtube_comment_unflatten () {</span><span class="shFunctionOne"> </span><span class="Comment"># convert comment text from _youtube_json2txt to ascii formatted</span>
-  <span class="shFunctionOne">~~~~</span><span class="Statement">sed</span><span class="shFunctionOne"> </span><span class="shOption">-e</span><span class="shFunctionOne"> </span><span class="Statement">'</span>
-  <span class="Constant">~~~~~~~~s/^[ ]*text: &quot;//</span>
-  <span class="Constant">~~~~~~~~s/^[ ]*//</span>
-  <span class="Constant">~~~~~~~~s/\\$//</span>
-  <span class="Constant">~~~~~~~~s/\\ / /g</span>
-  <span class="Constant">~~~~~~~~s/\\&quot;/&quot;/g</span>
-  <span class="Constant">~~~~~~~~s/\\t/~~/g</span>
-  <span class="Constant">~~~~~~~~s/\\r//g</span>
-  <span class="Constant">~~~~~~~~$s/&quot;$//</span><span class="Statement">'</span><span class="shFunctionOne"> </span><span class="Statement">|</span><span class="shFunctionOne"> tr </span><span class="shOption">-d</span><span         class="shFunctionOne"> </span><span class="Statement">'</span><span class="Constant">\n</span><span class="Statement">'</span><span class="shFunctionOne"> </span><span class="Statement">|</span><span class="shFunctionOne">       awk </span><span class="Statement">'</span><span class="Constant">{gsub(/\\n/,&quot;\n&quot;)}1</span><span class="Statement">'</span>
-  <span class="shFunctionOne">~~~~</span><span class="Identifier">}</span> <span class="Comment"># _youtube_comment_unflatten 20230323</span>
-  </pre>
-  </body>
+<pre id='vimCodeElement'>
+<span class="Identifier">_youtube_comment_unflatten () {</span><span class="shFunctionOne"> </span><span class="Comment"># convert comment text from _youtube_json2txt to ascii formatted</span>
+<span class="shFunctionOne">    </span><span class="Statement">sed</span><span class="shFunctionOne"> </span><span class="shOption">-e</span><span class="shFunctionOne"> </span><span class="Statement">'</span>
+<span class="Constant">        s/^[ ]*text: &quot;//</span>
+<span class="Constant">        s/^[ ]*//</span>
+<span class="Constant">        s/\\$//</span>
+<span class="Constant">        s/\\ / /g</span>
+<span class="Constant">        s/\\&quot;/&quot;/g</span>
+<span class="Constant">        s/\\t/  /g</span>
+<span class="Constant">        s/\\r//g</span>
+<span class="Constant">        $s/&quot;$//</span><span class="Statement">'</span><span class="shFunctionOne"> </span><span class="Statement">|</span><span class="shFunctionOne"> tr </span><span class="shOption">-d</span><span         class="shFunctionOne"> </span><span class="Statement">'</span><span class="Constant">\n</span><span class="Statement">'</span><span class="shFunctionOne"> </span><span class="Statement">|</span><span class="shFunctionOne">       awk </span><span class="Statement">'</span><span class="Constant">{gsub(/\\n/,&quot;\n&quot;)}1</span><span class="Statement">'</span>
+<span class="shFunctionOne">    </span><span class="Identifier">}</span> <span class="Comment"># _youtube_comment_unflatten 20230323</span>
+</pre>
 
 * `formfile` will render the commands to create transcoded mp3 from input file
   * `f2rb2mp3` accepts transcoding parameters input file and output file data to process the master to mp3
