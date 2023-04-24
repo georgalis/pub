@@ -71,7 +71,11 @@ information about the mp3s beginning with the same character. The section info i
 by a blank line, the remainder of the file is periodically refreshed with calculated
 a program duration per artist overview.
 
-Artist or recording meta data may be stored as `/^${b32re}00,.*\.txt/` eg p00,set-name.txt
+Artist or recording meta data may be stored as `/^[${b32re}]00,.*\.txt/` eg p00,set-name.txt,
+which is simply the major base sequence charcter prepended to the yaml file created by
+`_youtube_json2txt` which is invoked from the `_youtube` download process. ie simply prepend
+the name of the txt metadata file with the section in which it belongs, within the collection,
+and it will be sorted, and processed approprately, by `numlist`, and the other tools.
 
 All of these directories and files are enclosed in a project directory in the form `6432-name`
 describing the time of creation and name of the collection. Time is represented by the four
@@ -113,20 +117,6 @@ All of these commands are extended shell functions.
 * `_youtube url [dir]` will download the url audio, similar commands get videos and lists of content.
   * `_youtube_json2txt` is called automatically to render needful yaml from json
   * `_youtube_comment_unflatten` renders readable comments from yaml data
-<pre id='vimCodeElement'>
-<span class="Identifier">_youtube_comment_unflatten () {</span><span class="shFunctionOne"> </span><span class="Comment"># convert comment text from _youtube_json2txt to ascii formatted</span>
-<span class="shFunctionOne">~~~~</span><span class="Statement">sed</span><span class="shFunctionOne"> </span><span class="shOption">-e</span><span class="shFunctionOne"> </span><span class="Statement">'</span>
-<span class="Constant">~~~~~~~~s/^[ ]*text: &quot;//</span>
-<span class="Constant">~~~~~~~~s/^[ ]*//</span>
-<span class="Constant">~~~~~~~~s/\\$//</span>
-<span class="Constant">~~~~~~~~s/\\ / /g</span>
-<span class="Constant">~~~~~~~~s/\\&quot;/&quot;/g</span>
-<span class="Constant">~~~~~~~~s/\\t/~~/g</span>
-<span class="Constant">~~~~~~~~s/\\r//g</span>
-<span class="Constant">~~~~~~~~$s/&quot;$//</span><span class="Statement">'</span><span class="shFunctionOne"> </span><span class="Statement">|</span><span class="shFunctionOne"> tr </span><span class="shOption">-d</span><span   class="shFunctionOne"> </span><span class="Statement">'</span><span class="Constant">\n</span><span class="Statement">'</span><span class="shFunctionOne"> </span><span class="Statement">|</span><span class="shFunctionOne"> awk </span><span class="Statement">'</span><span class="Constant">{gsub(/\\n/,&quot;\n&quot;)}1</span><span class="Statement">'</span>
-<span class="shFunctionOne">~~~~</span><span class="Identifier">}</span> <span class="Comment"># _youtube_comment_unflatten 20230323</span>
-</pre>
-
 * `formfile` will render the commands to create transcoded mp3 from input file
   * `f2rb2mp3` accepts transcoding parameters input file and output file data to process the master to mp3
 * `numlist` accepts a file list and returns shell commands to rename the files, preserving their major sequence character and incrementing in base 32, conveniently ignoring comma files `/${b32re},$/` and artist metadata files `/^${b32re}00,.*\.txt/`
