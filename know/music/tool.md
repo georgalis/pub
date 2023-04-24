@@ -115,16 +115,16 @@ All of these commands are extended shell functions.
   * `_youtube_comment_unflatten` renders readable comments from yaml data
 <pre id='vimCodeElement'>
 <span class="Identifier">_youtube_comment_unflatten () {</span><span class="shFunctionOne"> </span><span class="Comment"># convert comment text from _youtube_json2txt to ascii formatted</span>
-<span class="shFunctionOne">    </span><span class="Statement">sed</span><span class="shFunctionOne"> </span><span class="shOption">-e</span><span class="shFunctionOne"> </span><span class="Statement">'</span>
-<span class="Constant">        s/^[ ]*text: &quot;//</span>
-<span class="Constant">        s/^[ ]*//</span>
-<span class="Constant">        s/\\$//</span>
-<span class="Constant">        s/\\ / /g</span>
-<span class="Constant">        s/\\&quot;/&quot;/g</span>
-<span class="Constant">        s/\\t/  /g</span>
-<span class="Constant">        s/\\r//g</span>
-<span class="Constant">        $s/&quot;$//</span><span class="Statement">'</span><span class="shFunctionOne"> </span><span class="Statement">|</span><span class="shFunctionOne"> tr </span><span class="shOption">-d</span><span         class="shFunctionOne"> </span><span class="Statement">'</span><span class="Constant">\n</span><span class="Statement">'</span><span class="shFunctionOne"> </span><span class="Statement">|</span><span class="shFunctionOne">       awk </span><span class="Statement">'</span><span class="Constant">{gsub(/\\n/,&quot;\n&quot;)}1</span><span class="Statement">'</span>
-<span class="shFunctionOne">    </span><span class="Identifier">}</span> <span class="Comment"># _youtube_comment_unflatten 20230323</span>
+<span class="shFunctionOne">~~~~</span><span class="Statement">sed</span><span class="shFunctionOne"> </span><span class="shOption">-e</span><span class="shFunctionOne"> </span><span class="Statement">'</span>
+<span class="Constant">~~~~~~~~s/^[ ]*text: &quot;//</span>
+<span class="Constant">~~~~~~~~s/^[ ]*//</span>
+<span class="Constant">~~~~~~~~s/\\$//</span>
+<span class="Constant">~~~~~~~~s/\\ / /g</span>
+<span class="Constant">~~~~~~~~s/\\&quot;/&quot;/g</span>
+<span class="Constant">~~~~~~~~s/\\t/~~/g</span>
+<span class="Constant">~~~~~~~~s/\\r//g</span>
+<span class="Constant">~~~~~~~~$s/&quot;$//</span><span class="Statement">'</span><span class="shFunctionOne"> </span><span class="Statement">|</span><span class="shFunctionOne"> tr </span><span class="shOption">-d</span><span   class="shFunctionOne"> </span><span class="Statement">'</span><span class="Constant">\n</span><span class="Statement">'</span><span class="shFunctionOne"> </span><span class="Statement">|</span><span class="shFunctionOne"> awk </span><span class="Statement">'</span><span class="Constant">{gsub(/\\n/,&quot;\n&quot;)}1</span><span class="Statement">'</span>
+<span class="shFunctionOne">~~~~</span><span class="Identifier">}</span> <span class="Comment"># _youtube_comment_unflatten 20230323</span>
 </pre>
 
 * `formfile` will render the commands to create transcoded mp3 from input file
