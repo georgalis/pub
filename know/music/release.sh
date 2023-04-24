@@ -25,6 +25,7 @@ chkexit e6d9b430 0000005a
 logexit 235b98c9 0000005d
 chktrue 28662120 00000060
 validfn 8f5ab2a4 0000046c
+validex 96d50848 000004fb
 EOF
 
 while IFS= read a ; do

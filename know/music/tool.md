@@ -2,6 +2,43 @@
 
 This is a complex workflow! If it is ever fully documented, this is the beginning!
 
+From local archiving and internet scraping of master file and meta data, to indexed
+storage, space optimization, classification cataloging, parameter remastering,
+presentation composition, sequencing, and intermediate steps. The tooling is not
+only complex but ambigious at times. For example 'meta data' may refer to recording,
+composer, artist, or performance venue, dates of composition, performance, release, etc.
+It may refer to data embeded into the file codec, or extrapolated data from a collection
+of recordings.
+
+To avoid unintended consequences, extensive validation is used in the tooling, many
+programs and functions will test and only operate within expected parameters. While
+validation errors may seem endless for a new setup, they are seamless in normal
+operation and very effective at detecting irregularities from an expected setup.
+
+Generally, the tooling downloads master recordings, normalizes file naming,
+remasters to mp3, manages sequence within collections, manages overview of
+collections (artists, duration, liner notes, etc), enables rapid refactoring
+of presentations, and exports composed sets of mp3 playlist files.
+
+## Terminology
+
+* comma files
+* json data
+* txt files
+* view files
+* list files
+* tab files
+* chkstat files
+* link
+* links directory
+* program name (directory)
+* curation kind
+* orig
+* @
+* meta
+* tmp
+* loss
+
 ## File Naming Format
 
 The workflow outputs mp3 files named to identify their sequence in a set, the artist or composer,
@@ -49,7 +86,7 @@ Within the class directory are regex lists of various classifications.
 * `_^XXXXXXXXXX.opus` the master file, xxxxxx is a unique id, and the file is stored in an `./@` directory.
 * `ss=10 to=610` the "start seconds," and "to seconds" from the master
 * `t=1.05 p=1.0216 r3` indicate rubberband parameters, the final time is 1.05 longer than the original, and the pitch is 1 and 216/10000 semitoneis higher
-* `ln` means the excerpt has been ffmpeg loudness measured and normalized
+* `ln` means the excerpt has been ffmpeg loudness measured and normalized (with [EBU R128](https://en.wikipedia.org/wiki/EBU_R_128))
 * `parc`, `par2`, `kbd3`, `hrn3`, etc, are various sox compression envlopes
 * 4db, -3db, etc are final volume adjustments applied by sox after compression when encoding the mp3
 
@@ -76,6 +113,44 @@ All of these commands are extended shell functions.
 * `_youtube url [dir]` will download the url audio, similar commands get videos and lists of content.
   * `_youtube_json2txt` is called automatically to render needful yaml from json
   * `_youtube_comment_unflatten` renders readable comments from yaml data
+  <head>
+  <meta charset="ISO-8859-1">
+  <title>~/fn.bash.html</title>
+  <meta name="Generator" content="Vim/9.0">
+  <meta name="plugin-version" content="vim9.0_v1">
+  <meta name="syntax" content="bash">
+  <meta name="settings" content="use_css,no_foldcolumn,expand_tabs,pre_wrap,prevent_copy=,use_input_for_pc=fallback">
+  <meta name="colorscheme" content="none">
+  <style>
+  <!--
+  pre { white-space: pre-wrap; font-family: monospace; color: #ffffff; background-color: #000000; }
+  body { font-family: monospace; color: #ffffff; background-color: #000000; }
+  * { font-size: 1em; }
+  .Identifier { color: #5f87ff; }
+  .Statement { color: #804000; }
+  .shOption { color: #005f00; }
+  .shFunctionOne { color: #d7afd7; }
+  .Comment { color: #008080; }
+  .Constant { color: #ffffff; text-decoration: underline; }
+  -->
+  </style>
+  </head>
+  <body>
+  <pre id='vimCodeElement'>
+  <span class="Identifier">_youtube_comment_unflatten () {</span><span class="shFunctionOne"> </span><span class="Comment"># convert comment text from _youtube_json2txt to ascii formatted</span>
+  <span class="shFunctionOne">~~~~</span><span class="Statement">sed</span><span class="shFunctionOne"> </span><span class="shOption">-e</span><span class="shFunctionOne"> </span><span class="Statement">'</span>
+  <span class="Constant">~~~~~~~~s/^[ ]*text: &quot;//</span>
+  <span class="Constant">~~~~~~~~s/^[ ]*//</span>
+  <span class="Constant">~~~~~~~~s/\\$//</span>
+  <span class="Constant">~~~~~~~~s/\\ / /g</span>
+  <span class="Constant">~~~~~~~~s/\\&quot;/&quot;/g</span>
+  <span class="Constant">~~~~~~~~s/\\t/~~/g</span>
+  <span class="Constant">~~~~~~~~s/\\r//g</span>
+  <span class="Constant">~~~~~~~~$s/&quot;$//</span><span class="Statement">'</span><span class="shFunctionOne"> </span><span class="Statement">|</span><span class="shFunctionOne"> tr </span><span class="shOption">-d</span><span         class="shFunctionOne"> </span><span class="Statement">'</span><span class="Constant">\n</span><span class="Statement">'</span><span class="shFunctionOne"> </span><span class="Statement">|</span><span class="shFunctionOne">       awk </span><span class="Statement">'</span><span class="Constant">{gsub(/\\n/,&quot;\n&quot;)}1</span><span class="Statement">'</span>
+  <span class="shFunctionOne">~~~~</span><span class="Identifier">}</span> <span class="Comment"># _youtube_comment_unflatten 20230323</span>
+  </pre>
+  </body>
+
 * `formfile` will render the commands to create transcoded mp3 from input file
   * `f2rb2mp3` accepts transcoding parameters input file and output file data to process the master to mp3
 * `numlist` accepts a file list and returns shell commands to rename the files, preserving their major sequence character and incrementing in base 32, conveniently ignoring comma files `/${b32re},$/` and artist metadata files `/^${b32re}00,.*\.txt/`
