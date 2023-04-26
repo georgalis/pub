@@ -31,6 +31,13 @@ declare -f chktrue >/dev/null || { _help_skel ; return 2 ; exit 3 ;}
             SSH_AGENT_ENV="$SSH_AGENT_ENV" \
             verb="$verb" verb1="$verb1" verb2="$verb2" \
             '"${SHELL} -l"
+    alias _env_verb='tput sgr0 ; chkerr "$(jobs -l)" \
+        && exec env -i TERM="$TERM" COLORTERM="$COLORTERM" \
+            HOME="$HOME" LOGNAME="$LOGNAME" USER="$USER" \
+            SSH_AGENT_PID="$SSH_AGENT_PID" SSH_AUTH_SOCK="$SSH_AUTH_SOCK" \
+            SSH_AGENT_ENV="$SSH_AGENT_ENV" \
+            verb="chkwrn" verb1="chkwrn" verb2="chkwrn" \
+            '"${SHELL} -l"
     alias _env_noverb='tput sgr0 ; chkerr "$(jobs -l)" \
         && exec env -i TERM="$TERM" COLORTERM="$COLORTERM" \
             SHELL="$SHELL" HOME="$HOME" LOGNAME="$LOGNAME" USER="$USER" \
@@ -41,7 +48,7 @@ declare -f chktrue >/dev/null || { _help_skel ; return 2 ; exit 3 ;}
 
 export bash_path="$(which bash)"
 # if running bash, and bash_path is different, switch, iff no active jobs.
-ps | grep "^[ ]*$$ " | grep -q bash 2>/dev/null \
+ps | grep "^[ ]*$$ " | grep bash >/dev/null 2>&1 \
   && { test -x $bash_path \
         && { expr "$("$bash_path" --version)" \
             : "GNU bash, version ${BASH_VERSINFO[0]}\.${BASH_VERSINFO[1]}\.${BASH_VERSINFO[2]}(${BASH_VERSINFO[3]})-${BASH_VERSINFO[4]} (${BASH_VERSINFO[5]})" >/dev/null \
@@ -67,7 +74,7 @@ validex () { #:> validate executable, compare unit hash vs operation env hash
 		#:: env hashex= to set the hashing function, other than the cksum default
 		EOF
       return 1 ;}
-    ps | grep "^[ ]*$$ " | grep -q bash 2>/dev/null || { echo ">>> $0 : Not bash shell (62af847c) <<<" >&2 ; return 1 ;}
+    ps | grep "^[ ]*$$ " | grep bash >/dev/null 2>&1 || { echo ">>> $0 : Not bash shell (62af847c) <<<" >&2 ; return 1 ;}
     local exin="$(sed  -e 's/#.*//' -e 's/^[ ]*//' -e 's/[ ]*$//' -e '/^$/d' <<<"$1")"
     [ "$exin" ] || return 0 # drop comments
     which "$exin" >/dev/null || { chkwrn "$FUNCNAME : executable not in PATH, '$exin' (643d9a87)" ; return 1 ;}
@@ -98,7 +105,7 @@ validfn () { #:> validate function, compare unit hash vs operation env hash
 		#:: env hashfn= to set the hashing function, "%08x %8x %s\n" cksum program
 		EOF
       return 1 ;}
-    ps | grep "^[ ]*$$ " | grep -q bash 2>/dev/null || { echo ">>> $0 : Not bash shell (62af847c) <<<" >&2 ; return 1 ;}
+    ps | grep "^[ ]*$$ " | grep bash >/dev/null 2>&1 || { echo ">>> $0 : Not bash shell (62af847c) <<<" >&2 ; return 1 ;}
     local _hashfn=''
     [ "$hashfn" ] || { _hashfn () { declare -f "$1" | printf "%s %08x %08x\n" "$1" $(cksum) ;} && _hashfn="_hashfn" ;}
     [ "$_hashfn" ] || _hashfn="$hashfn" # for env sanity... use crypto hash for security...
@@ -141,7 +148,7 @@ chktrue 28662120 00000060
 chkexit e6d9b430 0000005a
 logexit 235b98c9 0000005d
 siffx c20a9040 000002f7
-validfn 8f5ab2a4 0000046c
+validfn 6fcde5cc 0000046d
 EOF
 
 alias   gstatus='git status --short'
@@ -367,6 +374,7 @@ _youtube_comment_unflatten () { # convert comment text from _youtube_json2txt to
         s/\\r//g
         $s/"$//' | tr -d '\n' | awk '{gsub(/\\n/,"\n")}1'
     } # _youtube_comment_unflatten 20230323
+# $s means only match the last line of the file
 
 span2ssto () { # start (arg1) span (arg2) and remaining args to f2rb2mp3
     # used to calculate ss= to= f2rb2mp3 parameters, given track legnths
@@ -503,13 +511,14 @@ EOF
   [ "$cmp" = "parc" ] && cmpn="$cmp" cmpc="$parc"
   [ "$cmp" = "par2" ] && cmpn="$cmp" cmpc="$par2"
   [ "$cmp" = "par4" ] && cmpn="$cmp" cmpc="$par4"
-  local vn='' vc=''
   $verb2 "cmpn='$cmpn'"
   $verb2 "cmpc='$cmpc'"
   $verb2 "input='$inpath/$infile'"
   mkdir -p "${inpath}/tmp" "./loss"
   null="$(mktemp "${inpath}/tmp/nulltime-XXXXX")"
   null="${null##*/}" # basename
+  local vn='' vc='' # init "volume name" and "volume command"
+  [ "$v" ] && local v=4db # init sane default, if no env overide
   [ "$cmpn" ] && vn="-$cmpn" vc="$cmpc" || true # sox compand is basically a volume adjustment...
   [ "$v" ] && { vn="${vn}-v${v}" vc="${vc} vol ${v} dither" ;} || true # set vol name (vn) and vol command (vc) if needed
   [ "$rev" = "y" ] && vn="${vn}-rev" vc="$vc reverse"
@@ -539,9 +548,9 @@ EOF
     mv -f "${inpath}/tmp/${infile}${secn}.flac~" "${inpath}/tmp/${infile}${secn}.flac"
     mv -f "${inpath}/tmp/${infile}${secn}.meas~" "${inpath}/tmp/${infile}${secn}.meas"
     } # have trimmed measured flac
-#     i   Set integrated loudness target.  Range is -70.0 - -5.0. Default value is -24.0.
-#     lra Set loudness range target.  Range is 1.0 - 20.0. Default value is 7.0.
-#     tp  Set maximum true peak.  Range is -9.0 - +0.0. Default value is -2.0.
+  #   i   Set integrated loudness target. Range is -70.0 - -5.0. Default value is -24.0.
+  #   lra Set loudness range target.      Range is   1.0 - 20.0. Default value is   7.0.
+  #   tp  Set maximum true peak.          Range is  -9.0 - +0.0. Default value is  -2.0.
   local lnn offn tpn lran in measured_thresh measured_LRA measured_TP measured_I
   [ "$off" ] && offn="-off$off"
   [ "$lra" ] && lran="-lra$lra"
@@ -549,8 +558,7 @@ EOF
   [ "$i"   ] &&   in="-i$i"
   $verb2 "$(hms2sec $(ffprobe -hide_banner  -loglevel info  "${inpath}/tmp/${infile}${secn}.flac" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //') ) seconds flac"
   [ "${offn}${lran}${tpn}${in}" ] && lnn="-ln${lran}${tpn}${in}${offn}" || lnn="-ln"
-  $verb "${inpath}/tmp/${infile}${secn}${lnn}.flac"
-  $verb "${inpath}/tmp/${infile}${secn}${lnn}.meas"
+  $verb "${inpath}/tmp/${infile}${secn}${lnn}.{flac,meas}"
   [ -f "${inpath}/tmp/${infile}${secn}${lnn}.flac" ] || { # make loudnorm flac https://en.wikipedia.org/wiki/EBU_R_128
   # local off="${off:=0}" tp="${tp:=-2}"   lra="${lra:=7}" i="${i:=-24}" # assign unset parm to default values
   # local off="${off:=0}" tp="${tp:=-1}"   lra="${lra:=7}" i="${i:=-23}" # https://tech.ebu.ch/docs/r/r128.pdf revision 2020
@@ -671,7 +679,7 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
         local id="$(sed "s/\.${ext}.*//" <<<"${_fname##*_^}")"                  # id between "_^" and ".{ext}"
         local path ; expr "$_fpath" : ".*/" >/dev/null && path="${_fpath%/*}" || path="." # dirname input file
                             origfiles="$(find $(find "$path"    -name \@) -maxdepth 1 -type f -name \*${id}\* 2>/dev/null | head -n1 )" # search @ directories
-        [ "$origfiles" ] || origfiles="$(find $(find "$path/.." -name \@) -maxdepth 1 -type f -name \*${id}\* 2>/dev/null | head -n1 )" # search more @ directories
+      # [ "$origfiles" ] || origfiles="$(find $(find "$path/.." -name \@) -maxdepth 1 -type f -name \*${id}\* 2>/dev/null | head -n1 )" # search more @ directories
       # local origfiles="$(find $(find "$path" "$path/.." -name \@) -maxdepth 1 -type f -name \*${id}\* 2>/dev/null )" # search nearby @ directories
         # first inode found is usually the best choice OR set expected path in quote, as reference
         [ "$origfiles" ] && orig="$(awk 'NR==1' <<<"${origfiles}")" || orig="'@/_^${id}.${ext}'"
@@ -987,45 +995,44 @@ lacks1255tones () {
 # 07/10/21
 numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" (first) character
     # so that when combined with another list, the result is interlaced with major sequence retained.
-    # Depends: base (python script) converts dec to base 32 (alnum lower sans 'ilow');
     # Plan:
-    # Accept args OR stdin (one file per line), only act on regular files, squash any leading "./";
-    # Expect filenames to start with sequence characters (three base 32 chars, followed by ",");
-    # Retain the major sequence character, regenerate base 32 sequence, in a step of 3;
+    # Accept files (args) OR stdin (one file per line), only act on regular files, squash leading "./";
+    # Expect filenames to start with sequence characters (base 32 chars, followed by ",");
+    # Retain the major sequence character, regenerate base 32 sequence;
     # Bump up the sequence major value by "$numlistbump" if set (interger);
-    # Prepend output filenames with the "$numlist" string;
+    # Prepend output filenames with "$numlist" string, if set;
     # Initilize base 32 sequence with 0 major for input files that have no sequence;
-    # For name changes, without colisions, generate mv commands for evaluation or "| sh".
+    # For name changes, without colisions, generate mv commands for review or "| sh"
     local f fs p c b a src dst;
     while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
     fs="$(sed -e 's/^\.\///' <<<"$fs" | while IFS= read f ; do [ -f "${f%%/*}" ] && echo "${f%%/*}" || true ; done)"
-    # 0 1 2 3 4 5 6 7 8 9 a b c d e f g h j k m n p q r s t u v x y z
+    local b32char=$(for a in {0..31} ; do base 32 $a ; done | tr -d '\n') # 0123456789abcdefghjkmnpqrstuvxyz
     for p in {0..31} ; do # iterate on each major base 32
         b="$(base 32 $p)"
         c="$b"
         [ "$numlistbump" -gt 0 ] 2>/dev/null \
           && { for a in {1..$numlistbump} ; do # bump the major sequence by $numlistbump if set
-               c="$(tr "0123456789abcdefghjkmnpqrstuvxyz" "123456789abcdefghjkmnpqrstuvxyz0" <<<$b)"
+               c="$(tr "${b32char}" "${b32char:1}${b32char::1}" <<<$b)"
                done
              } || true
-        # drop meta files from rename, but touch a meta file if there are file matches, even in dry run, could use fd to avoid f loop?
-        { sed -e "/^$b[0123456789abcdefghjkmnpqrstuvxyz]*,./!d" -e '/^[0123456789abcdefghjkmnpqrstuvxyz]00,.*txt/d' <<<"$fs" && touch "${b}," || true ;} \
+        # drop comma & meta files from rename, touch a comma file if there are matches
+        { sed -e "/^$b[${b32char}]*,./!d" -e "/^${b}00,/d" <<<"$fs" && touch "${b}," || true ;} \
             | while IFS= read f ; do printf "%s\n" "$f" ; done \
             | awk '{printf "%s %d %s\n",$0,NR,$0}' \
-            | sed -e '/^ /d' -e 's/^[0123456789abcdefghjkmnpqrstuvxyz]*,//' -e '/^$/d' \
+            | sed -e '/^ /d' -e "s/^[${b32char}]*,//" -e '/^$/d' \
             | while IFS= read a ; do set $a # {f} {NR} {seq,f}
                 printf "%s %s%s%02s,%s\n" "$3" "$numlist" "$c" "$(base 32 $2)" "$1"
                 done \
             | while IFS= read a ; do set $a # {orig} {numlist}{c}{seq},{name}
                 src="$1"
                 # prepend "0," if not a comma file
-                grep -q "^[0123456789abcdefghjkmnpqrstuvxyz]*," <<<"$src" && dst="$2" || dst="0,$2"
+                grep "^[${b32char}]*," <<<"$src" >/dev/null && dst="$2" || dst="0,$2"
                 [ "$src" = "$dst" ] || [ -e "$dst" ] || echo "mv '$src' '$dst'"
                 done
         done # p
     # and give all files that had no sequence a "0" major (no bump) and sequence
-    { sed -e "/^[0123456789abcdefghjkmnpqrstuvxyz]*,/d" -e '/^$/d' <<<"$fs" || true ;} \
+    { sed -e "/^[${b32char}]*,/d" -e '/^$/d' <<<"$fs" || true ;} \
     | while IFS= read f; do printf "%s\n" "$f" ; done \
         | awk '{printf "%s %d %s\n",$0,NR,$0}' \
         | while IFS= read a ; do set $a
@@ -1094,7 +1101,7 @@ mp3range () { # mp3 listing limiter
         done
     } # mp3range 20220803
 
-playffr () { # use ffplayr to continiously repeat invocations of ffplay
+playffr () { # for files (args or stdin), continiously repeat invocations of ffplay, without display
     local f fs
     [ $# -gt 0 ] && { fs="$1" ; shift ;}
     [ "$fs" = '-volume' ] && { v="$1" ; shift ; fs="$1" ; shift ;}
@@ -1113,7 +1120,7 @@ playffr () { # use ffplayr to continiously repeat invocations of ffplay
         done
     } # playffr
 
-playff () { # use ffplay to play files (args OR stdin filename per line)
+playff () { # for files (args or stdin), continiously repeat invocations of ffplay, with display
     local f='' fs='' v=''
     [ $# -gt 0 ] && { fs="$1" ; shift ;}
     [ "$fs" = '-volume' ] && { v="$1" ; shift ; fs="$1" ; shift ;}

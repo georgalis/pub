@@ -305,26 +305,31 @@ rm $key_in ;}
 #   #	&& { printf "Logout: " && kill $2 && echo $(hostname) $0 [$4] killed ssh-agent $2 \
 #   #		|| { echo $(hostname) ssh-agent already died? 2>/dev/stderr ; exit 1 ;} ;}
 
-siffx    "$HOME/.profile.local" "~/.profile (63b8877f)" || { return 2 ; exit 3 ;}
-chktrue  "$HOME/.profile.local (63b8877f)"
-siffx -n "$HOME/.profile"       "~/.profile (642a7466)" || { return 2 ; exit 3 ;}
-chktrue  "$HOME/.profile (642a7466)"
-
 # ssh socket key and agent managent
-tput dim
-printf "User ${USER}@${HOSTNAME}: "
-[ "$SSH_AGENT_ENV" ] || { eval $(ssh-agent)
-    export SSH_AGENT_ENV="SSH_AGENT_PID $SSH_AGENT_PID SHELL_PID $$" ;}
-for a in id_rsa id_ecdsa id_ecdsa_sk id_ed25519 id_ed25519_sk id_dsa ; do
-  test -e "$HOME/.ssh/$a" -a -e "$HOME/.ssh/${a}.pub" \
-    && { ssh-add -T "$HOME/.ssh/${a}.pub" 2>/dev/null || ssh-add -q "$HOME/.ssh/$a" ;}
-  done
-tput bold
-echo $(ssh-add -l | awk '{$1="";$2=""; print}' | sed 's/$/,/')
-tput sgr0
+[ "$SSH_AGENT_ENV" ] || {
+    tput dim || true
+    printf "User ${USER}@${HOSTNAME}: "
+    eval $(ssh-agent)
+    export SSH_AGENT_ENV="SSH_AGENT_PID $SSH_AGENT_PID SHELL_PID $$"
+    for a in id_rsa id_ecdsa id_ecdsa_sk id_ed25519 id_ed25519_sk id_dsa ; do
+      test -e "$HOME/.ssh/$a" -a -e "$HOME/.ssh/${a}.pub" \
+        && { ssh-add -T "$HOME/.ssh/${a}.pub" 2>/dev/null || ssh-add -q "$HOME/.ssh/$a" ;}
+      done
+    tput sgr0
+    }
 
 # shell logout trap, eg ~/.bash_logout ~/.ksh_logout
 #[ -n "$SSH_AGENT_ENV" ] && set $SSH_AGENT_ENV && [ "$$" = "$4" ] \
 #	&& { printf "Logout: " && kill $2 && echo $(hostname) $0 [$4] killed ssh-agent $2 \
 #		|| { echo $(hostname) ssh-agent already died? 2>/dev/stderr ; exit 1 ;} ;}
+
+siffx    "$HOME/.profile.local" "~/.profile (63b8877f)" || { return 2 ; exit 3 ;}
+chktrue  "$HOME/.profile.local (63b8877f)"
+siffx -n "$HOME/.profile"       "~/.profile (642a7466)" || { return 2 ; exit 3 ;}
+chktrue  "$HOME/.profile (642a7466)"
+
+printf "User ${USER}@${HOSTNAME}: "
+tput bold
+echo $(ssh-add -l | awk '{$1="";$2=""; print}' | tr '\n' ',' | sed 's/[.,]*$/./')
+tput sgr0
 
