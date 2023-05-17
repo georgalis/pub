@@ -315,6 +315,10 @@ _youtube () {
   #[ "$ua" ] && uac="--user-agent '$ua'" || uac=''
   [ "$ytdl" ] || ytdl="youtube-dl"
   local t=$(mkdir -p "$HOME/%/ytdl" && cd "$HOME/%/ytdl" && mktemp ytdl-XXXX)
+  # get the id
+  local f="$(find $links -name \*$($ytdl --dump-json $id | jq --ascii-output --raw-output '(.id)' | yq --yaml-output |head -n1)\* | grep -Ev '/(tmp|0)/' | sort)"
+  # check if the id exists already, chance to abort...
+  [ "$f" ] && { echo "$f" ; read -n1 -p "files found, continue (N/y) " f ; echo ; [ "$f" = 'y' ] || return 1 ;}
   $ytdl --write-info-json --write-comments --write-sub --write-thumbnail \
    --restrict-filenames --audio-quality 0 --audio-format best --extract-audio \
    --abort-on-error --no-playlist \
@@ -347,7 +351,7 @@ _youtube_json2txt () { # fixup youtube .info.json to yaml txt and sort files
   local inpath='' _fout="_^$(jq --ascii-output --raw-output '(.id, .acodec)' "$1" \
     | tr -d '"' | tr '\n' '.' | sed 's/\.$//')"
   expr "$1" : ".*/" >/dev/null && inpath="${1%/*}" || inpath="."
-  echo "ss= ; export _f=@/$_fout" | tr -d '"' >"${1}.txt"
+  echo "ss= ; export verb=chkwrn _f=@/$_fout _a= _r=" | tr -d '"' >"${1}.txt"
   { jq --ascii-output --raw-output '(.fulltitle, .duration_string)' "$1" \
         | tr -d '"' ; printf '\n\n\n' "" ;} | sed -e 's,\\u0332,,g' -e 's,\\u2013,-,' >>"${1}.txt"
   jq --compact-output 'del(.formats, .thumbnail, .thumbnails, .downloader_options, .http_headers,
@@ -1016,8 +1020,8 @@ numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" 
                c="$(tr "${b32char}" "${b32char:1}${b32char::1}" <<<$b)"
                done
              } || true
-        # drop comma & meta files from rename, touch a comma file if there are matches
-        { sed -e "/^$b[${b32char}]*,./!d" -e "/^${b}00,/d" <<<"$fs" && touch "${b}," || true ;} \
+        # drop comma & meta files from rename
+        { sed -e "/^$b[${b32char}]*,./!d" -e "/^${b}00,/d" <<<"$fs" || true ;} \
             | while IFS= read f ; do printf "%s\n" "$f" ; done \
             | awk '{printf "%s %d %s\n",$0,NR,$0}' \
             | sed -e '/^ /d' -e "s/^[${b32char}]*,//" -e '/^$/d' \

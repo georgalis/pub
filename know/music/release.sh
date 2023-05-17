@@ -24,8 +24,8 @@ logerr 2db98372 0000005e
 chkexit e6d9b430 0000005a
 logexit 235b98c9 0000005d
 chktrue 28662120 00000060
-validfn 8f5ab2a4 0000046c
-validex 96d50848 000004fb
+validfn 6fcde5cc 0000046d
+validex a652b330 000004fc
 EOF
 
 while IFS= read a ; do
@@ -33,9 +33,9 @@ while IFS= read a ; do
     done <<EOF
 ckstat 36acea2a 000003b2
 ckstatsum 9b617c6f 0000040c
-formfile 22029e47 00000fda
 formfilestats fa92ede0 000004dc
 spin2 1263edf2 00000180
+formfile 46d952a6 00000f51
 EOF
 
 [ -e $HOME/sub/markdown.awk ] || { echo "$0 : markdown.awk not found" 1>&2 ; dep_help_sub ; exit 1 ;}
