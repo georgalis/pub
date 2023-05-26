@@ -41,6 +41,8 @@ hi  shDeref         cterm=none       ctermfg=130       term=none
 hi  shFunctionOne   cterm=none       ctermfg=182       term=none
 hi  vim9Comment     cterm=bold       ctermfg=red       term=bold
 hi  shOption        cterm=none       ctermfg=22        term=none
+hi  NonText         cterm=none       ctermfg=23        term=none
+hi  SpecialKey      cterm=none       ctermfg=DarkBlue  term=none
 " See ~/.Xdefaults
 
 "1 red
@@ -235,7 +237,51 @@ hi  shOption        cterm=none       ctermfg=22        term=none
 " for c in 139 198 94 222 112 34 123 141 91 ;  do printf "\x1b[48;5;${c}m" ; printf "%4d" "${c}" ; done ; echo
 " for c in 0 94 166  167 208 214 112 34  ;  do printf "\x1b[48;5;${c}m" ; printf "%4d\x1b[38;5;7m\x1b[48;5;0m" "${c}" ; done ; echo
 
-" for c in 0 1 9 3 11 15 14 10 2 6 12 4 8 ; do printf "\x1b[48;5;${c}m" ; printf "%3d" "${c}" ; done ; echo ; for c in {16..231} ; do printf "\x1b[48;5;${c}m" ; printf "%4d" "${c}" ; test "$(( ( c - 15 ) % 36 ))" -ne "0" && printf "" || printf "\n" ;  done ; for c in 1 196 208 221 11 123 32 20 91  0 94 166  167 208 214 112 34  ;  do printf "\x1b[48;5;${c}m" ; printf "%4d\x1b[38;5;7m\x1b[48;5;0m" "${c}" ; done ; echo
+" for c in 0 1 9 3 11 15 14 6 2 10 12 8 4  ; do printf "\x1b[48;5;${c}m" ; printf "%3d" "${c}" ; done ; echo ;
+" for c in {16..231} ; do printf "\x1b[48;5;${c}m" ; printf "%4d" "${c}" ; test "$(( ( c - 15 ) % 36 ))" -ne "0" && printf "" || printf "\n" ;  done ;
+" for c in {232..255} ;  do printf "\x1b[48;5;${c}m" ; printf "%4d\x1b[38;5;7m\x1b[48;5;0m" "${c}" ; done ; echo ;
+" for c in 1 196 208 221 11 123 32 20 91  0 94 166  167 208 214 112 34 ; do printf "\x1b[48;5;${c}m" ; printf "%4d\x1b[38;5;7m\x1b[48;5;0m" "${c}" ; done ; echo
+" 
+" for c in 0 1 9 3 11 15 14 6 2 10 12 8 4  ; do printf "\x1b[48;5;${c}m" ; printf "%3d" "${c}" ; done ; echo ; 
+" 
+" for c in {16..51} ; do export c ; for d in {1..6} ; do export d ; for e in {1..5} ; do export e ; f=$((c+35*d*e)) ; printf "\x1b[48;5;${f}m" ; printf "%4d" "${f}" ; test "$(( ( f - 15 ) % 36 ))" -ne "0" && printf "" || printf "\n" ;  done ; done; done
+" for c in {232..255} ;  do printf "\x1b[48;5;${c}m" ; printf "%4d\x1b[38;5;7m\x1b[48;5;0m" "${c}" ; done ; echo ; for c in 1 196 208 221 11 123 32 20 91  0 94 166  167 208 214 112 34 ; do printf "\x1b[48;5;${c}m" ; printf "%4d\x1b[38;5;7m\x1b[48;5;0m" "${c}" ; done ; echo
+" 
+" for f in 38 48; do 
+" for c in {16..231} ; do printf "\x1b[${f};5;${c}m" ; printf "%4d" "${c}" ; test "$(( ( c - 15 ) % 36 ))" -eq "0" && { tput sgr0 ; printf "\n" ;} ;  done
+" n=0 ; for c in \
+"   16  17  18  19  20  21 52  53  54  55  56  57 88  89  90  91  92  93  124 125 126 127 128 129 160 161 162 163 164 165 196 197 198 199 200 201 \
+"   22  23  24  25  26  27 58  59  60  61  62  63 94  95  96  97  98  99  130 131 132 133 134 135 166 167 168 169 170 171 202 203 204 205 206 207 \
+"   28  29  30  31  32  33 64  65  66  67  68  69 100 101 102 103 104 105 136 137 138 139 140 141 172 173 174 175 176 177 208 209 210 211 212 213 \
+"   34  35  36  37  38  39 70  71  72  73  74  75 106 107 108 109 110 111 142 143 144 145 146 147 178 179 180 181 182 183 214 215 216 217 218 219 \
+"   40  41  42  43  44  45 76  77  78  79  80  81 112 113 114 115 116 117 148 149 150 151 152 153 184 185 186 187 188 189 220 221 222 223 224 225 \
+"   46  47  48  49  50  51 82  83  84  85  86  87 118 119 120 121 122 123 154 155 156 157 158 159 190 191 192 193 194 195 226 227 228 229 230 231 \
+" ; do n=$((n+1)) ; printf "\x1b[${f};5;${c}m" ; printf "%4d" "${c}" ; test $((n % 36)) -eq 0 && { tput sgr0 ; printf "\n" ;} ; done \
+" done # f
+" 
+" for f in 38 48 ; do
+" for c in {16..231} ; do printf "\x1b[${f};5;${c}m" ; printf "%4d" "${c}" ; test "$(( ( c - 15 ) % 36 ))" -eq "0" && { tput sgr0 ; printf "\n" ;} ;  done 
+" n=0 ; for c in \
+"   46  47  48  49  50  51 82  83  84  85  86  87 118 119 120 121 122 123 154 155 156 157 158 159 190 191 192 193 194 195 226 227 228 229 230 231 \
+"   40  41  42  43  44  45 76  77  78  79  80  81 112 113 114 115 116 117 148 149 150 151 152 153 184 185 186 187 188 189 220 221 222 223 224 225 \
+"   34  35  36  37  38  39 70  71  72  73  74  75 106 107 108 109 110 111 142 143 144 145 146 147 178 179 180 181 182 183 214 215 216 217 218 219 \
+"   28  29  30  31  32  33 64  65  66  67  68  69 100 101 102 103 104 105 136 137 138 139 140 141 172 173 174 175 176 177 208 209 210 211 212 213 \
+"   22  23  24  25  26  27 58  59  60  61  62  63 94  95  96  97  98  99  130 131 132 133 134 135 166 167 168 169 170 171 202 203 204 205 206 207 \
+"   16  17  18  19  20  21 52  53  54  55  56  57 88  89  90  91  92  93  124 125 126 127 128 129 160 161 162 163 164 165 196 197 198 199 200 201 \
+" ; do n=$((n+1)) ; printf "\x1b[${f};5;${c}m" ; printf "%4d" "${c}" ; test $((n % 36)) -eq 0 && { tput sgr0 ; printf "\n" ;} ; done \
+" ; done # f
+
+"" 24 bit
+"for a in {0..63} ; do r=$(( 4 * a ))
+"for b in {0..63} ; do g=$(( 4 * b ))
+"for c in {0..63} ; do b=$(( 4 * c ))
+"    printf "\x1b[48;2;$r;$g;${b}m $r $g $b "
+"    done ; echo ; done ; done
+"
+
+" Grays
+" for c in {232..255} ; do printf "\x1b[48;5;${c}m" ; printf "%4d\x1b[38;5;7m\x1b[48;5;0m" "${c}" ; done ; echo && \
+" for c in {232..255} ; do printf "\x1b[38;5;${c}m" ; printf "%4d\x1b[48;5;7m\x1b[48;5;0m" "${c}" ; done ; echo
 
 "set termguicolors
 
