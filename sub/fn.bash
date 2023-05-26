@@ -318,7 +318,7 @@ _youtube () {
   # get the id
   local f="$(find $links -name \*$($ytdl --dump-json $id | jq --ascii-output --raw-output '(.id)' | yq --yaml-output |head -n1)\* | grep -Ev '/(tmp|0)/' | sort)"
   # check if the id exists already, chance to abort...
-  [ "$f" ] && { echo "$f" ; read -n1 -p "files found, continue (N/y) " f ; echo ; [ "$f" = 'y' ] || return 1 ;}
+  [ "$f" ] && { echo "$f" ; read -p "files found, continue (N/y) " f ; [ "$f" = 'y' ] || return 1 ;}
   $ytdl --write-info-json --write-comments --write-sub --write-thumbnail \
    --restrict-filenames --audio-quality 0 --audio-format best --extract-audio \
    --abort-on-error --no-playlist \
