@@ -102,7 +102,7 @@ compost guide, null comma files:
 
 0, prepare
 1, hook
-2, natural innocent juvinile ingenue
+2, ingenue
 3, bold
 4, mature
 5, orbit
@@ -128,7 +128,7 @@ r, persue
 s, modest
 t, simple
 u, personal
-v, undecided
+v, tentative
 x, extra
 y, exclude
 z, end
