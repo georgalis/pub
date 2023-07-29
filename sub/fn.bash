@@ -1,4 +1,4 @@
-#!/usr/env bash
+#!/usr/bin/env bash
 
 # (C) 2004-2023 George Georgalis unlimited use with this notice
 #
@@ -151,6 +151,16 @@ siffx c20a9040 000002f7
 validfn 6fcde5cc 0000046d
 EOF
 
+fnhash () { # gen validfn data from fn in a file (arg1), for repo commit comments
+    # search for expected hash from repo log and find matching function revision
+    local f="$1" a=''
+    test -e "$f" || { chkwrn "${FUNCNAME}: no file '$f'" && return 0 || return $? ;}
+    # no fn match no fail...
+    grep '^[_[:alpha:]][_[:alnum:]]*[ ]*() ' "$f" | sed 's/() .*//' \
+        | sort | while read a ; do validfn "$a" ; done
+    } #:> source arg1 if exists , on err recall args for backtrace
+
+# fortify the shell with git alias
 alias   gstatus='git status --short'
 alias   gls='git ls-files'
 alias   gdf='git diff --name-only'
@@ -166,9 +176,9 @@ alias  grst='git reset'
 alias  glog='git log'
 alias  gref='git reflog'
 alias  grst='git reset HEAD'
-# restore files  #  git checkout -- {opt-file-spec}
-# undo add       #  git reset       {opt-file-spec}
-# search commits #  git log -G'{regex}' --full-history --all
+# RESTORE FILES  #  git checkout -- {opt-file-spec}
+# UNDO ADD       #  git reset       {opt-file-spec}
+# SEARCH COMMITS #  git log -G'{regex}' --full-history --all
 #=======================================================
 # https://git-scm.com/book/en/v2/Git-Tools-Reset-Demystified
 # Commit hash, at least four characters and unambiguous beginning
@@ -310,7 +320,7 @@ _youtube () {
   [ "$id" ] || read -p "youtube id: " id
   [ "$id" ] || { chkerr "no id?" ; return 1 ;}
   [ "$d" ]  || read -p "directory: " d
-  [ -d "$d" ] || d="$(pwd -P)"
+  [ -d "$d" ] || { [ -d "${links}/$d" ] && d="${links}/$d" ;} || d="$(pwd -P)"
   [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d'" ; return 1 ;}
   #[ "$ua" ] && uac="--user-agent '$ua'" || uac=''
   [ "$ytdl" ] || ytdl="youtube-dl"
@@ -534,7 +544,7 @@ EOF
   [ -z "$ss" -a "$to" ] && secc="-to $tsec"           secn="-to$tsec"
   [    "$ss" -a "$to" ] && secc="-ss $ssec -to $tsec" secn="-ss${ssec}-to${tsec}"
   $verb "$(hms2sec $(ffprobe -hide_banner -loglevel info "$infilep" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //') ) seconds gross"
-  $verb "$(awk '{ print $2 - $1 }' <<<"${ssec} ${tsec}") seconds request"
+  $verb "$(awk '{ print $2 - $1 }' <<<"${tsec} ${ssec}") seconds request"
   $verb "${inpath}/tmp/${infile}${secn}.meas"
   [ -f "${inpath}/tmp/${infile}${secn}.meas" ] || { # measure
     # XXX check ss -lt to etc
@@ -670,12 +680,13 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
         chkwrn "each filename into a rendering command."
         return 0 ;} || true
     local fs="$1" ; shift || true
+    local verb="${verb:-devnul}"
     while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift || true ; done
     [ "$fs" ] || fs="$(cat)"
     local orig='' args='' sortargs='' parm='' origfiles=''
     echo "$fs" | while IFS= read _fpath ; do # filepath list
         local _fname="${_fpath##*/}" # basename
-        echo "# ${_fname}"
+        $verb2 "${_fname}"
         local ext='' id='' orig=''
         local title="${_fname%%_^*}"
         local ext="$(sed -e 's/_^[^.]*.//' -e 's/\..*//' -e 's/-.*//' <<<"_^${_fname##*_^}")" # expect _^ to proceed id, followed by dot orig ext,
@@ -1076,11 +1087,11 @@ mp3range () { # mp3 listing limiter
     # or current dir if no remaining args.
     #
     # file fullpath of two directories, sorted by filepath...
-    # mp3range 2 3  ../ . | ckstat | sort -k6 | awk '{print $6}'
+    # mp3range 2 3 ../ . | ckstat | sort -k6 | awk '{print $6}'
     #
     local start="$1" stop="$2" dirs= a= opwd="$PWD" prefix=
     local verb="${verb:=devnul}"
-    $verb for expr "${stop}" : "${start}"
+    $verb2 for expr "${stop}" : "${start}"
     [ "$stop" ] && { expr "${stop}" : "${start}" >/dev/null \
             && chkwrn "$FUNCNAME : unintended consequences : $start $stop"
         stop="/^${stop}/" ;} \
