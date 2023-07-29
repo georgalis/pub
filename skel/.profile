@@ -25,11 +25,11 @@ Darwin)
  export LSCOLORS='xefxcxdxbxegedabagacad' # invert directory color
  alias   l='ls -GFr'
  alias  lr='ls -GF'
- alias  ll='ls -AFTGlr'
- alias llr='ls -AFTGl'
- alias  lt='ls -AFGTrt'
- alias llt='ls -AFGTlrt'
- alias  lS='ls -AFGTlrS'
+ alias  ll='ls -AFTGlr  -D %Y%m%d_%H%M%S'
+ alias llr='ls -AFTGl   -D %Y%m%d_%H%M%S'
+ alias  lt='ls -AFGTrt  -D %Y%m%d_%H%M%S'
+ alias llt='ls -AFGTlrt -D %Y%m%d_%H%M%S'
+ alias  lS='ls -AFGTlrS -D %Y%m%d_%H%M%S'
  alias   t='tail -F'
  alias top='top -S -n24 -s4 -o cpu'
  alias   p='ps -ax -o uid,pid,command -ww'
@@ -153,7 +153,10 @@ ckstat() { # return sortable stat data for args (OR stdin file list)
     [ -e "$f" ] && {
       # \0 will produce \200, which does not terminate a string but behaves as a null
       # per terminfo.5, so just use \200 to separate filnames with regex unfriendly char
-      _stat "$f" | awk '{printf "%07x %02x . % 8x %08x \200",$1,$2,$3,$4}'
+      # _stat "$f" | awk '{printf "%07x %02x . % 8x %08x \200",$1,$2,$3,$4}'
+      # \200 seems problematic for old mac bash, use this to extract filenames with spaces:
+      # ckstat * | sed -e 's/^\([ ]*[[:xdigit:]]*\)\{2\} [.]*[ ]*[[:xdigit:]]*\([ ]*[[:xdigit:]]*\)\{2\} //'
+      _stat "$f" | awk '{printf "%8x %2x . % 8x %08x ",$1,$2,$3,$4}'
       ls -dF "$f"
       # two ways to filter the names from the preceeding char
       # awk '{sub(/^[^\200]*\200/,"") ; print}' # filename follows the first \200
@@ -182,7 +185,10 @@ ckstatsum() { # return sortable stat data for args (OR stdin file list)
     [ -e "$f" ] && {
       # \0 will produce \200, which does not terminate a string but behaves as a null
       # per terminfo.5, so just use \200 to separate filnames with regex unfriendly char
-      { _stat "$f" ; cksum <"$f" ;} | tr '\n' ' ' | awk '{printf "%07x %02x %08x % 8x %08x \200",$1,$2,$5,$3,$4}'
+      # { _stat "$f" ; cksum <"$f" ;} | tr '\n' ' ' | awk '{printf "%07x %02x %08x % 8x %08x \200",$1,$2,$5,$3,$4}'
+      # \200 seems problematic for old mac bash, use this to extract filenames with spaces:
+      # ckstatsum * | sed -e 's/^\([ ]*[[:xdigit:]]*\)\{2\} [.]*[ ]*[[:xdigit:]]*\([ ]*[[:xdigit:]]*\)\{2\} //'
+      { _stat "$f" ; cksum <"$f" ;} | tr '\n' ' ' | awk '{printf "%8x %2x %08x % 8x %08x ",$1,$2,$5,$3,$4}'
       ls -dF "$f"
       # two ways to filter the names from the preceeding char
       # awk '{sub(/^[^\200]*\200/,"") ; print}' # filename follows the first \200
@@ -305,16 +311,18 @@ rm $key_in ;}
 #   #	&& { printf "Logout: " && kill $2 && echo $(hostname) $0 [$4] killed ssh-agent $2 \
 #   #		|| { echo $(hostname) ssh-agent already died? 2>/dev/stderr ; exit 1 ;} ;}
 
-# ssh socket key and agent managent
+# ssh socket, key, and agent managent
 [ "$SSH_AGENT_ENV" ] || {
-    tput dim || true
+    tput dim
+    ps x | sed -e '/ ssh-agent$/!d' -e 's/ .*//' -e 's/^[ ]*//' | tr '\n' ' ' | sed -e '/./s/^/extra agents: /'
     printf "User ${USER}@${HOSTNAME}: "
     eval $(ssh-agent)
     export SSH_AGENT_ENV="SSH_AGENT_PID $SSH_AGENT_PID SHELL_PID $$"
-    for a in id_rsa id_ecdsa id_ecdsa_sk id_ed25519 id_ed25519_sk id_dsa ; do
-      test -e "$HOME/.ssh/$a" -a -e "$HOME/.ssh/${a}.pub" \
-        && { ssh-add -T "$HOME/.ssh/${a}.pub" 2>/dev/null || ssh-add -q "$HOME/.ssh/$a" ;}
-      done
+    ssh-add -q
+#   for a in id_rsa id_ecdsa id_ecdsa_sk id_ed25519 id_ed25519_sk id_dsa ; do
+#     test -e "$HOME/.ssh/$a" -a -e "$HOME/.ssh/${a}.pub" \
+#       && { ssh-add -T "$HOME/.ssh/${a}.pub" 2>/dev/null || ssh-add -q ;}
+#     done
     tput sgr0
     }
 
@@ -328,6 +336,7 @@ chktrue  "$HOME/.profile.local (63b8877f)"
 siffx -n "$HOME/.profile"       "~/.profile (642a7466)" || { return 2 ; exit 3 ;}
 chktrue  "$HOME/.profile (642a7466)"
 
+tput dim
 printf "User ${USER}@${HOSTNAME}: "
 tput bold
 echo $(ssh-add -l | awk '{$1="";$2=""; print}' | tr '\n' ',' | sed 's/[.,]*$/./')
