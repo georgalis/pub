@@ -229,17 +229,26 @@ gstat () { # find uncommited changes to all repos below $@ (or current repo), so
 
 tss () { # timestamp highres and pass through args
     local a="$*"
-    set $(echo | tai64n | sed -e 's/^\(@4[0]*\)\([[:xdigit:]]\{8\}\)\([[:xdigit:]]\{8\}\)\(.*\)/\1\2\3\4 \2 \3/')
-    { echo $2 $3 ; tai64nlocal <<<$1 | sed -e 's/-//g' -e 's/://' -e 's/[:]/ /g' -e 's/.\{4\}$//'
-      date -j -r $((0x$2)) "+%a %e %b %Z" ;} | tr '\n' ' '
-      echo "$a" ;} # 641e2b67 38efff14 20230324 1559 41.95525 Fri 24 Mar PDT
+    [ "$(which tai64n)" -a "$(which tai64nlocal)" ] \
+        && { set $(echo | tai64n | sed -e 's/^\(@4[0]*\)\([[:xdigit:]]\{8\}\)\([[:xdigit:]]\{8\}\)\(.*\)/\1\2\3\4 \2 \3/') 
+             { echo $2 $3 ; tai64nlocal <<<$1 | sed -e 's/-//g' -e 's/://' -e 's/[:]/ /g' -e 's/.\{4\}$//' ;} | tr '\n' ' ' ;} \
+        || { set $(date +%s | awk '{printf "@4%015x%08d  %8x %08d\n",$1,0,$1,0}')
+             { echo $2 $3 ; date -j -r $((0x$2)) "+%Y%m%d %H%M %0S.00000" ;} | tr '\n' ' ' ;}
+      echo "$a" ;}
+      # 64c471f9 00000000 20230728 1857 13.00000
+      # 64c47234 17284a94 20230728 1858 02.38851
 
 ts () { # timestamp lowres and pass through args
     local a="$*"
-    set $(echo | tai64n | sed -e 's/^\(@4[0]*\)\([[:xdigit:]]\{8\}\)\([[:xdigit:]]\{8\}\)\(.*\)/\1\2\3\4 \2/')
-    { echo $2    ; tai64nlocal <<<$1 | sed -e 's/-//g' -e 's/://' -e 's/[:]/ /g' -e 's/ ..\..*$//'
-      date -j -r $((0x$2)) "+%a %e %b %Z" ;} | tr '\n' ' '
-      echo "$a" ;} # 641e2d3a 20230324 1607 Fri 24 Mar PDT
+    [ "$(which tai64n)" -a "$(which tai64nlocal)" ] \
+      && { set $(echo | tai64n | sed -e 's/^\(@4[0]*\)\([[:xdigit:]]\{8\}\)\([[:xdigit:]]\{8\}\)\(.*\)/\1\2\3\4 \2/')
+            { echo $2    ; tai64nlocal <<<$1 | sed -e 's/-//g' -e 's/://' -e 's/[:]/ /g' -e 's/ ..\..*$//'
+              date -j -r $((0x$2)) "+%a %e %b %Z" ;} | tr '\n' ' ' ;} \
+      || { set $(date +%s | awk '{printf "@4%015x%08d  %8x %08d\n",$1,0,$1,0}')
+           { echo $2 ; date -j -r $((0x$2)) "+%Y%m%d %H%M %a %e %b %Z" ;} | tr '\n' ' ' ;}
+      echo "$a" ;}
+      # 64c47437 20230728 1906 Fri 28 Jul PDT
+      # 64c47688 20230728 1916 Fri 28 Jul PDT
 
 revargs () {
     local a out
