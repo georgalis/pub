@@ -250,6 +250,30 @@ ts () { # timestamp lowres and pass through args
       # 64c47437 20230728 1906 Fri 28 Jul PDT
       # 64c47688 20230728 1916 Fri 28 Jul PDT
 
+which tmux >/dev/null 2>&1 && \
+tmu() { # tmux intuitive wrapper
+    [ "$1" = "-h" -o "$1" = "--help" ] && {
+    echo 'List sessions, attach last, or create session 0,
+  exit with signal and list remaining sessions."
+  * Use "se" or "sessions" as arg for report of running sessions
+  * Use "at" or "attach" to attach to most recent active session
+  * Use "{name}" to create and/or attach to named session
+  * Default session (no args) is "0"'
+  return 0 ;}
+    local args sig
+    _tmu_active_sessions() {
+        tmux list-sessions -F '#{session_name} #{session_activity}' | column -t | sort -k2n \
+            | while IFS= read -r a ; do set $a ; echo -n "$1 " ; date -r $2 ; done \
+            | awk '{printf "%8s : %s %s %s %s %s %s\n",$1,$2,$3,$4,$5,$6,$7}' ;}
+    [ "$@" ] && args=$@
+    [ "$args" = "at" -o "$args" = "attach" -o -z "$args" ] && args="$( _tmu_active_sessions | awk 'END {print $1}')"
+    [ "$args" = "se" -o "$args" = "sessions" ] && { _tmu_active_sessions ; return $? ;}
+    [ "$args" ] || args=0
+    tmux new -A -s $args ; sig=$?
+    _tmu_active_sessions
+    return $sig
+    } || true # 6429e6a6 20230402 1333 Sun 2 Apr PDT
+
 revargs () {
     local a out
     out="$1" ; shift || true
