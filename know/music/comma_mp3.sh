@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# (C) 2023 George Georgalis <george@galis.org> unlimited use with this notice
+# (c) 2023 George Georgalis <george@galis.org> unlimited use with this notice
 #
 # https://github.com/georgalis/pub/blob/master/know/music/comma_mp3.sh
 #
@@ -57,14 +57,16 @@ for a in {0..31} ; do export n=$(base 32 $a)
               { printf "${n} $fdur " ; hms2sec "${fdur#*: }" ;} | awk '{printf "%29s %6s %3s %-6s %s sec "," ","  \\"$1"\\",$2,$3,$5}'
               kdb_xs2h $(printf "%x" $(hms2sec "${fdur#*: }")) | sed -e 's/.*(/(/' -e 's/ )/)/'
               )
+    # iff there are files (and not on/off ramp), use or create default comma file
+    [ "$d" ] && { # init ${n},~ with an existing header
+        [ -e "${n}," ] && { awk 'NR==1,/^$/ ; {!/^$/}' <"${n}," >"${n},~" ;} \
+          || { # filter default comma header from compost guide 
+               { sed -e "/^${n}, /!d" -e "s/$/ ${PWD##*/}/" $0 ; printf "$(ts)\n\n" ;} >"${n},~" \
+                 || { chkwrn "unable to create '$PWD/${n},~' (643a082d)" ; exit 5 ;} ;}
+        echo "$d" >>"${n},~" ;}
     } || d='' # reset, no mp3 begin with n
 
        #- || { { grep "^${n}, " $0 ; printf "$(ts)\n\n" ;} >"${n},~" \
-    [ "$d" ] && { # init ${n},~ with an existing header
-        [ -e "${n}," ] && { awk 'NR==1,/^$/ ; {!/^$/}' <"${n}," >"${n},~" ;} \
-          || { { sed -e "/^${n}, /!d" -e "s/$/ ${PWD##*/}/" $0 ; printf "$(ts)\n\n" ;} >"${n},~" \
-               || { chkwrn "unable to create '$PWD/${n},~' (643a082d)" ; exit 5 ;} ;}
-        echo "$d" >>"${n},~" ;}
 
    find . -maxdepth 1 -name ${n}\*.mp3 | grep -v , && { chkerr "$0 : missing comma (643b866e)"  ; exit 5;}
    find . -maxdepth 1 -name ${n}\*.mp3 | grep  ',.*,' && { chkerr "$0 : extra comma (643c24eb)"  ; exit 5;}
