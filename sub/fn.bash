@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# (C) 2004-2023 George Georgalis unlimited use with this notice
+# (c) 2004-2023 George Georgalis unlimited use with this notice
 #
 # Sundry functions, and commensurate alias, env.
 #
@@ -353,7 +353,8 @@ _youtube () {
   [ "$id" ] || read -p "youtube id: " id
   [ "$id" ] || { chkerr "no id?" ; return 1 ;}
   [ "$d" ]  || read -p "directory: " d
-  [ -d "$d" ] || { [ -d "${links}/$d" ] && d="${links}/$d" ;} || d="$(pwd -P)"
+  [ "$d" ]  || d='.'
+  [ -d "$d" ] || { [ -d "${links}/$d" ] && d="${links}/$d" ;}
   [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d'" ; return 1 ;}
   #[ "$ua" ] && uac="--user-agent '$ua'" || uac=''
   [ "$ytdl" ] || ytdl="youtube-dl"
@@ -366,8 +367,8 @@ _youtube () {
    --restrict-filenames --audio-quality 0 --audio-format best --extract-audio \
    --abort-on-error --no-playlist \
    -o "$d/00,%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id | tee "$HOME/%/ytdl/$t"
-  _youtube_json2txt $(sed -e '/as JSON to/!d' -e 's/.*to: //' <"$HOME/%/ytdl/$t")
-  rm -f "$HOME/%/ytdl/$t"
+  _youtube_json2txt $(sed -e '/as JSON to/!d' -e 's/.*to: //' <"$HOME/%/ytdl/$t") && rm -f "$HOME/%/ytdl/$t" \
+    || { chkwrn "failed: _youtube_json2txt $HOME/%/ytdl/$t" ; return 1 ;}
   } # _youtube 20220516
 
 _youtube_video () {
@@ -395,17 +396,20 @@ _youtube_json2txt () { # fixup youtube .info.json to yaml txt and sort files
     | tr -d '"' | tr '\n' '.' | sed 's/\.$//')"
   expr "$1" : ".*/" >/dev/null && inpath="${1%/*}" || inpath="."
   echo "ss= ; export verb=chkwrn _f=@/$_fout _a= _r=" | tr -d '"' >"${1}.txt"
-  { jq --ascii-output --raw-output '(.fulltitle, .duration_string)' "$1" \
-        | tr -d '"' ; printf '\n\n\n' "" ;} | sed -e 's,\\u0332,,g' -e 's,\\u2013,-,' >>"${1}.txt"
+  { jq --ascii-output --raw-output '(.fulltitle)' "$1" \
+        | tr -d '"' ; printf '\n' "" ;} | sed -e 's,\\u0332,,g' -e 's,\\u2013,-,g' -e 's,\\u00d7,-,g' >>"${1}.txt"
+  printf '\n ss= to= f2rb2mp3 $_f 81,${_a}-Trak_Title-${_r}\n' >>"${1}.txt"
+  jq --ascii-output --raw-output '(.duration_string)' "$1" \ | tr -d '"' >>"${1}.txt"
+  yes | tr -d 'y' | head -n 5 >>"${1}.txt"
   jq --compact-output 'del(.formats, .thumbnail, .thumbnails, .downloader_options, .http_headers,
         .webpage_url_basename, .author_thumbnail, .playable_in_embed, .live_status, .automatic_captions,
         .extractor, .is_live, .was_live )' "$1" \
     | yq --yaml-output | tr -cd '[ -~]\n' >>"${1}.txt"
   mkdir -p "$inpath/@/meta" "$inpath/orig"
 # { set -x
-    ln "$inpath"/*${_fout} "$inpath"/@/${_fout} \
-      && mv "$inpath"/*${_fout} "$inpath/orig" \
-      && mv "$1" "$inpath"/*${_fout%%.*}.webp "$inpath"'/@/meta'
+    ln -f "$inpath"/*${_fout} "$inpath"/@/${_fout}
+    mv -f "$inpath"/*${_fout} "$inpath/orig"
+    mv -f "$1" "$inpath"/*${_fout%%.*}.webp "$inpath"'/@/meta'
 #   set +x ;}
   echo "${1}.txt"
   } # _youtube_json2txt 20220516
@@ -576,8 +580,8 @@ EOF
   [ "$to" ] && { tsec=$(hms2sec ${to}) ;}
   [ -z "$ss" -a "$to" ] && secc="-to $tsec"           secn="-to$tsec"
   [    "$ss" -a "$to" ] && secc="-ss $ssec -to $tsec" secn="-ss${ssec}-to${tsec}"
-  $verb "$(hms2sec $(ffprobe -hide_banner -loglevel info "$infilep" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //') ) seconds gross"
-  $verb "$(awk '{ print $2 - $1 }' <<<"${tsec} ${ssec}") seconds request"
+  $verb "$(hms2sec $(ffprobe -hide_banner -loglevel info "$infilep" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //') | awk '{printf "%9.3f sec gross",$1}')"
+  $verb "$(awk '{ print $1 - $2 }' <<<"${tsec} ${ssec}" | awk '{printf "%9.3f sec request",$1}')"
   $verb "${inpath}/tmp/${infile}${secn}.meas"
   [ -f "${inpath}/tmp/${infile}${secn}.meas" ] || { # measure
     # XXX check ss -lt to etc
