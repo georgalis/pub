@@ -1,6 +1,6 @@
 " .vimrc
 
-" (C) 2017-2023 George Georgalis <george@galis.org> unlimited use with this notice
+" (c) 2017-2023 George Georgalis <george@galis.org> unlimited use with this notice
 
 " I know not using ascii is going to hurt, but binary txt files already hurts
 "set fileencoding=utf8
