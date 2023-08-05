@@ -31,11 +31,11 @@ EOF
 while IFS= read a ; do
     validfn $a && true || { echo "$0 : validfn error : $a" 1>&2 ; dep_help_sub ; exit 1 ;}
     done <<EOF
-ckstat 36acea2a 000003b2
-ckstatsum 9b617c6f 0000040c
 formfilestats fa92ede0 000004dc
 spin2 1263edf2 00000180
-formfile 46d952a6 00000f51
+ckstat c44370c9 000003ac
+ckstatsum 464f5378 00000406
+formfile d9778c91 00000f73
 EOF
 
 [ -e $HOME/sub/markdown.awk ] || { echo "$0 : markdown.awk not found" 1>&2 ; dep_help_sub ; exit 1 ;}
@@ -59,7 +59,7 @@ verb2="devnul"
 while IFS= read a ; do
     validex $a && true || { echo "$0 : validex error : $a (643eb771)" 1>&2 ; exit 2 ;}
     done <<EOF
-comma_mp3.sh c77cfe05 00001399
+comma_mp3.sh 4c76f904 0000142e
 EOF
 
 gen_index () { # in pwd, for "$links/$name/"
@@ -85,7 +85,7 @@ gen_index () { # in pwd, for "$links/$name/"
 
 #   $verb ${name}.tab ; $verb2 tmp "$wdp/%/$t/${name}.tab"
 #   cat "$wdp/${name}.list" | while IFS= read a ; do
-#       b="$(formfile "$a" | sed '/^#/d')"
+#       b="$(verb2=devnull ; formfile "$a" )"
 #       sed -e 's/   .*_^/ _^/' -e "s/'//" -e 's/^\(.*\)\( _^.*\)/\2 \1/' -e 's/^\(.*\),\([^ ]*\)/\2 \1 /' <<<"$b" \
 #           | awk '{printf "%-85s %-18s",$1,$2;$1="";$2="";$3="";print}'
 #       spin2
@@ -255,8 +255,10 @@ _sync=n
 # always render the readme
 readme2html2kind
 
-# always gen_index for args, OR iff no args, check and gen_index as needed
-[ "$*" ] && { for name in $*    ; do gen_index      ; done ;} \
+## always gen_index for args, OR iff no args, check and gen_index as needed
+#[ "$*" ] && { for name in $*    ; do gen_index      ; done ;} \
+# for $* or $vols, check and gen_index as needed
+[ "$*" ] && { for name in $*    ; do check_gen_index ; done ;} \
          || { for name in $vols ; do check_gen_index ; done ;}
 
 # if first arg was sync, kind_curate_rsync remaining args, OR all volumes if null
