@@ -35,7 +35,7 @@ cd "$d"
 set $( soxi $(find . -maxdepth 1 -name \*.mp3 | sed -e '/^\.\/[0y]/d') \
     | sed -e '/Duration/!d' -e 's/.*Duration of//' -e 's/Duration[ ]*:/1 file:/' -e 's/ = .*//' -e 's/\...$//' \
     | tail -n1 ) # eg "1 file: 00:06:02" or " 80 files: 05:24:37"
-fdur=$*
+fdur="$*"
 {   { printf "$fdur " ; hms2sec "${fdur#*: }" ;} | awk '{printf "%s %s %s sec ","\\\\ "$1,$2,$4}'
       kdb_xs2h $(printf "%x" $(hms2sec "${fdur#*: }")) | sed -e 's/.*(/(/' -e 's/ )/)/'
 }  >>"0,~" # human readable
@@ -53,7 +53,7 @@ for a in {0..31} ; do export n=$(base 32 $a)
               set $(soxi $(find . -maxdepth 1 -name ${n}\*.mp3 ) \
                     | sed -e '/Duration/!d' -e 's/.*Duration of//' -e 's/Duration[ ]*:/1 file:/' -e 's/ = .*//' -e 's/\...$//' \
                     | tail -n1 ) # eg "1 file: 00:06:02" or " 80 files: 05:24:37"
-              fdur=$*
+              fdur="$*"
               { printf "${n} $fdur " ; hms2sec "${fdur#*: }" ;} | awk '{printf "%29s %6s %3s %-6s %s sec "," ","  \\"$1"\\",$2,$3,$5}'
               kdb_xs2h $(printf "%x" $(hms2sec "${fdur#*: }")) | sed -e 's/.*(/(/' -e 's/ )/)/'
               )
@@ -80,7 +80,7 @@ for a in {0..31} ; do export n=$(base 32 $a)
               set $(soxi $(find . -maxdepth 1 -name ${n}\*,${c}\*\.mp3 ) \
                     | sed -e '/Duration/!d' -e 's/.*Duration of//' -e 's/Duration[ ]*:/1 file:/' -e 's/ = .*//' -e 's/\...$//' \
                     | tail -n1 ) # eg "1 file: 00:06:02" or " 80 files: 05:24:37"
-              fdur=$*
+              fdur="$*"
               { printf "${c} $fdur " ; hms2sec "${fdur#*: }" ;} | sed -e 's/://' | awk '{printf "%36s %3s %-6s %s sec ",$1,$2,$3,$5}'
               kdb_xs2h $(printf "%x" $(hms2sec "${fdur#*: }")) | sed -e 's/.*(/(/' -e 's/ )/)/'
               done | sort -rnk 4 >>${n},~
