@@ -230,7 +230,7 @@ gstat () { # find uncommited changes to all repos below $@ (or current repo), so
 tss () { # timestamp highres and pass through args
     local a="$*"
     [ "$(which tai64n)" -a "$(which tai64nlocal)" ] \
-        && { set $(echo | tai64n | sed -e 's/^\(@4[0]*\)\([[:xdigit:]]\{8\}\)\([[:xdigit:]]\{8\}\)\(.*\)/\1\2\3\4 \2 \3/') 
+        && { set $(echo | tai64n | sed -e 's/^\(@4[0]*\)\([[:xdigit:]]\{8\}\)\([[:xdigit:]]\{8\}\)\(.*\)/\1\2\3\4 \2 \3/')
              { echo $2 $3 ; tai64nlocal <<<$1 | sed -e 's/-//g' -e 's/://' -e 's/[:]/ /g' -e 's/.\{4\}$//' ;} | tr '\n' ' ' ;} \
         || { set $(date +%s | awk '{printf "@4%015x%08d  %8x %08d\n",$1,0,$1,0}')
              { echo $2 $3 ; date -j -r $((0x$2)) "+%Y%m%d %H%M %0S.00000" ;} | tr '\n' ' ' ;}
@@ -569,24 +569,23 @@ EOF
   null="$(mktemp "${inpath}/tmp/nulltime-XXXXX")"
   null="${null##*/}" # basename
   local vn='' vc='' # init "volume name" and "volume command"
-  [ "$v" ] && local v=4db # init sane default, if no env overide
+  expr "$v" : "^[-]*[[:digit:]]*db$" >/dev/null || local v=4db # init sane default, if no env overide
   [ "$cmpn" ] && vn="-$cmpn" vc="$cmpc" || true # sox compand is basically a volume adjustment...
   [ "$v" ] && { vn="${vn}-v${v}" vc="${vc} vol ${v} dither" ;} || true # set vol name (vn) and vol command (vc) if needed
   [ "$rev" = "y" ] && vn="${vn}-rev" vc="$vc reverse"
   local secc='' secn='' ssec='' tsec=''
-  # always set duration
-  [ "$ss" = 0 ] && local ss= || { ssec=$(hms2sec ${ss}) ;}
+  [ "$ss" = 0 ] && local ss= || { ssec=$(hms2sec ${ss}) ;} # ss is 0 if unspecified, probe "to" if unspecified
   [ "$to" ] || local to="$(ffprobe -hide_banner -loglevel info "$infilep" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')"
   [ "$to" ] && { tsec=$(hms2sec ${to}) ;}
   [ -z "$ss" -a "$to" ] && secc="-to $tsec"           secn="-to$tsec"
   [    "$ss" -a "$to" ] && secc="-ss $ssec -to $tsec" secn="-ss${ssec}-to${tsec}"
-  $verb "$(hms2sec $(ffprobe -hide_banner -loglevel info "$infilep" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //') | awk '{printf "%9.3f sec gross",$1}')"
+  $verb "$(hms2sec $(ffprobe -hide_banner -loglevel info "$infilep" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //') \
+                                                        | awk '{printf "%9.3f sec gross",$1}')"
   $verb "$(awk '{ print $1 - $2 }' <<<"${tsec} ${ssec}" | awk '{printf "%9.3f sec request",$1}')"
   $verb "${inpath}/tmp/${infile}${secn}.meas"
-  [ -f "${inpath}/tmp/${infile}${secn}.meas" ] || { # measure
+  [ -f "${inpath}/tmp/${infile}${secn}.meas" ] || { # measure for EBU R128 loudness normalization
     # XXX check ss -lt to etc
-    # echo ffmpeg -hide_banner -loglevel info -benchmark -y $secc -i "$infilep" \
-    { echo             "# ${infile}${secn}.meas infile secn meas flac"
+      { echo "# ${infile}${secn}.meas infile secn meas flac"
       ffmpeg -hide_banner -loglevel info -benchmark -y $secc -i "$infilep" \
         -af "loudnorm=print_format=json" \
         -f flac "${inpath}/tmp/${infile}${secn}.flac~" 2>&1 \
@@ -595,9 +594,9 @@ EOF
                                  {out_i_LUFS:.output_i,out_tp_dBTP:.output_tp,out_lra_LU:.output_lra,out_tr_LUFS:.output_thresh,offset_LU:.target_offset},
                                  {linear:.linear}
                                 ' | tr -d '"{}' | tr ':' '=' | awk -F, '{printf "% 18s % 18s % 18s % 22s % 15s \n",$1,$2,$3,$4,$5}'
-     } >"${inpath}/tmp/${infile}${secn}.meas~"
-    mv -f "${inpath}/tmp/${infile}${secn}.flac~" "${inpath}/tmp/${infile}${secn}.flac"
-    mv -f "${inpath}/tmp/${infile}${secn}.meas~" "${inpath}/tmp/${infile}${secn}.meas"
+       } >"${inpath}/tmp/${infile}${secn}.meas~" \
+         && mv -f "${inpath}/tmp/${infile}${secn}.flac~" "${inpath}/tmp/${infile}${secn}.flac" \
+         && mv -f "${inpath}/tmp/${infile}${secn}.meas~" "${inpath}/tmp/${infile}${secn}.meas"
     } # have trimmed measured flac
   #   i   Set integrated loudness target. Range is -70.0 - -5.0. Default value is -24.0.
   #   lra Set loudness range target.      Range is   1.0 - 20.0. Default value is   7.0.
@@ -720,7 +719,7 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
     local verb="${verb:-devnul}"
     while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift || true ; done
     [ "$fs" ] || fs="$(cat)"
-    local orig='' args='' sortargs='' parm='' origfiles=''
+    local orig='' sortargs='' parm='' origfiles=''
     echo "$fs" | while IFS= read _fpath ; do # filepath list
         local _fname="${_fpath##*/}" # basename
         $verb2 "${_fname}"
@@ -736,7 +735,7 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
         # first inode found is usually the best choice OR set expected path in quote, as reference
         [ "$origfiles" ] && orig="$(awk 'NR==1' <<<"${origfiles}")" || orig="'@/_^${id}.${ext}'"
         # decode f2rb2mp3 arguments
-        args="$(sed -E -e "
+        local args="$(sed -E -e "
             s/.*\.${ext}//
             s/.mp3$//
             s/-(ckb|hrn|cps|par)/ cmp=\1/
@@ -768,36 +767,36 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
         # print parm from filename
         # also print known parm from env if it is different than filename parm
         # result parsed and env parameters printed if different, last (env) parm wins
-        args='%'
-#       [ "$ss"  ] && { grep "ss=$ss"   >/dev/null <<<"$sortargs" || args="ss=$ss"         ;}
-        [ "$to"  ] && { grep "to=$to"   >/dev/null <<<"$sortargs" || args="$args to=$to"   ;}
-        [ "$t"   ] && { grep "t=$t"     >/dev/null <<<"$sortargs" || args="$args t=$t"     ;}
-        [ "$p"   ] && { grep "p=$p"     >/dev/null <<<"$sortargs" || args="$args p=$p"     ;}
-        [ "$f"   ] && { grep "f=$f"     >/dev/null <<<"$sortargs" || args="$args f=$f"     ;}
-        [ "$c"   ] && { grep "c=$c"     >/dev/null <<<"$sortargs" || args="$args c=$c"     ;}
-        [ "$F"   ] && { grep "F=$F"     >/dev/null <<<"$sortargs" || args="$args F=$F"     ;}
-        [ "$CF"  ] && { grep "CF=$CF"   >/dev/null <<<"$sortargs" || args="$args CF=$CF"   ;}
-        [ "$off" ] && { grep "off=$off" >/dev/null <<<"$sortargs" || args="$args off=$off" ;}
-        [ "$tp"  ] && { grep "tp=$tp"   >/dev/null <<<"$sortargs" || args="$args tp=$tp"   ;}
-        [ "$lra" ] && { grep "lra=$lra" >/dev/null <<<"$sortargs" || args="$args lra=$lra" ;}
-        [ "$i"   ] && { grep "i=$i"     >/dev/null <<<"$sortargs" || args="$args i=$i"     ;}
-        [ "$cmp" ] && { grep "cmp=$cmp" >/dev/null <<<"$sortargs" || args="$args cmp=$cmp" ;}
-        [ "$v"   ] && { grep "v=$v"     >/dev/null <<<"$sortargs" || args="$args v=$v"     ;}
+        args=' '
+        [ "$ss"  ] && { grep "ss=$ss"   >/dev/null <<<"$sortargs" || args="$args ss=$ss"    ;}
+        [ "$to"  ] && { grep "to=$to"   >/dev/null <<<"$sortargs" || args="$args to=$to "   ;}
+        [ "$t"   ] && { grep "t=$t"     >/dev/null <<<"$sortargs" || args="$args t=$t "     ;}
+        [ "$p"   ] && { grep "p=$p"     >/dev/null <<<"$sortargs" || args="$args p=$p "     ;}
+        [ "$f"   ] && { grep "f=$f"     >/dev/null <<<"$sortargs" || args="$args f=$f "     ;}
+        [ "$c"   ] && { grep "c=$c"     >/dev/null <<<"$sortargs" || args="$args c=$c "     ;}
+        [ "$F"   ] && { grep "F=$F"     >/dev/null <<<"$sortargs" || args="$args F=$F "     ;}
+        [ "$CF"  ] && { grep "CF=$CF"   >/dev/null <<<"$sortargs" || args="$args CF=$CF "   ;}
+        [ "$off" ] && { grep "off=$off" >/dev/null <<<"$sortargs" || args="$args off=$off " ;}
+        [ "$tp"  ] && { grep "tp=$tp"   >/dev/null <<<"$sortargs" || args="$args tp=$tp "   ;}
+        [ "$lra" ] && { grep "lra=$lra" >/dev/null <<<"$sortargs" || args="$args lra=$lra " ;}
+        [ "$i"   ] && { grep "i=$i"     >/dev/null <<<"$sortargs" || args="$args i=$i "     ;}
+        [ "$cmp" ] && { grep "cmp=$cmp" >/dev/null <<<"$sortargs" || args="$args cmp=$cmp " ;}
+        [ "$v"   ] && { grep "v=$v"     >/dev/null <<<"$sortargs" || args="$args v=$v "     ;}
         # expr "$v" : ".* v=$v " >/dev/null # ...
         args="$(tr ' ' '\n' <<<"$args" | sed '/^$/d' )"
-        for parm in % ss= to= t= p= f= c= F= CF= off= tp= lra= i= cmp= v= ; do
+        for parm in ss= to= t= p= f= c= F= CF= off= tp= lra= i= cmp= v= ; do
             sortargs="$sortargs $(grep "^$parm" <<<"$args")"
             done
         grep 'ss=' <<<"$sortargs" >/dev/null || sortargs="ss=0 $sortargs"
         sortargs=$(tr '\n' ' ' <<<${sortargs} \
             | sed -e '
-                s/^ [ ]*//g
+                s/^ [ ]*//
                 s/ [ ]*/ /g
                 s/ [ ]*$//
-                s/ % /   /' ) # <<< with no quotes removes the \n
+                ' ) # <<< with no quotes removes the \n
         echo "$sortargs f2rb2mp3 $orig $title"
         done # a (filelist)
-    } # formfile 633524ed 20220928
+    } # formfile 64d36229 20230809
 
 formfilestats () { # accept dir(s) as args, report unique formfile time and pitch stats from @ dir/*mp3
   local dir a b
@@ -1156,7 +1155,7 @@ mp3range () { # mp3 listing limiter
 playffr () { # for files (args or stdin), continiously repeat invocations of ffplay, without display
     local f fs
     [ $# -gt 0 ] && { fs="$1" ; shift ;}
-    [ "$fs" = '-volume' ] && { v="$1" ; shift ; fs="$1" ; shift ;}
+    [ "$fs" = '-volume' -o "$fs" = '-v' ] && { v="$1" ; shift ; fs="$1" ; shift ;}
     [ "$v" ] && v="-volume $v" || v="-volume 100"
     while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
@@ -1173,6 +1172,7 @@ playffr () { # for files (args or stdin), continiously repeat invocations of ffp
     } # playffr
 
 playff () { # for files (args or stdin), continiously repeat invocations of ffplay, with display
+    # -v or -volume to set volume, default is 100
     local f='' fs='' v=''
     [ $# -gt 0 ] && { fs="$1" ; shift ;}
     [ "$fs" = '-volume' ] && { v="$1" ; shift ; fs="$1" ; shift ;}
@@ -1189,6 +1189,32 @@ playff () { # for files (args or stdin), continiously repeat invocations of ffpl
          } || chkwrn "$0 : not a file : '$f'"
         done
     } # playff
+
+playffend () { # Play the ending of files (args or stdin), always "no display"
+    # -v or -volume to set volume, default is 100
+    # and touch since mac does not update atime, cf APFS_FEATURE_STRICTATIME
+    # https://developer.apple.com/support/downloads/Apple-File-System-Reference.pdf#page=67&zoom=auto,-62,145
+    # typical invoke for review of recent file endings
+    # find . -maxdepth 1 -name \*mp3 -mtime +1 -mtime -40 -atime +1 | sort | playffend
+    local _file='' _files='' _v='' end='';
+    [ $# -gt 0 ] && { _files="$1"; shift ;}
+    [ "$_files" = '-volume' -o "$_files" = "-v" ] && { _v="$1"; shift; _files="$1"; shift ;}
+    [ "$_v" ] && _v="-volume $v" || _v="-volume 100";
+    while [ $# -gt 0 ]; do _files="$(printf "%s\n%s\n" "$_files" "$1")"; shift; done;
+    [ "$_files" ] || _files="$(cat)";
+    echo "$_files" | while IFS= read _file; do
+        [ -f "$_file" ] && {
+            tput bold;
+            formfile $_file
+            tput sgr0;
+            end=$( dc -e "$(hms2sec $(ffprobe -hide_banner -loglevel info "$_file" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')) 15 - p" )
+            chktrue "ffplay -ss $end -hide_banner -stats -autoexit -loglevel error -top 52 -x 1088 -y 280 $_v $_file";
+            chktrue probsec $(hms2sec $(ffprobe -hide_banner -loglevel info "$_file" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')) vol: ${v##* };
+            ffplay -ss $end -hide_banner -stats -autoexit -loglevel error -nodisp "$_file" || return 1
+            touch -a "$_file"
+        } || chkwrn "$0 : not a file : '$_file'";
+    done
+} # playffend 64d51e6d 20230810
 
 probeff () { # use ffprobe to extract duration of files (args OR stdin filename per line)
     local f fs
