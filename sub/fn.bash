@@ -1152,23 +1152,40 @@ mp3range () { # mp3 listing limiter
         done
     } # mp3range 20220803
 
+mp3loop () ( # derive start (arg1) to end, and loop from begining (optional: first cd to arg2), send list to playffr
+    [ "$2" -a -d "$2" ] && { cd "$2" || { chkwrn "$FUNCNAME : arg2 not a dir '$2' (64e3c5f4)" ; return 1 ;} ;}
+    local local start='' startn='' a='' mp3s="$(ls *.mp3)"
+    [ "$mp3s" ] || [ -e "$HOME/0/v/playffr" ] && { # if pwd has no mp3s use last playffr dir
+        cd "$(awk 'NR==2 { print }' "$HOME/0/v/playffr" | sed 's=\(.*\)/.*=\1=' )" && mp3s="$(ls *.mp3)" ;} \
+        || { chkwrn "$FUNCNAME no mp3 found (64e3ca7b)" ; return 1 ;}
+    [ "$1" ] && start="$1" # derive start if not provided as arg1
+    [ "$start" ] || { [ -e "$HOME/0/v/playffr" ] && start="$(awk 'NR==1 {sub(/,.*/,//) ;print}' "$HOME/0/v/playffr")" ;}
+    startn=$(while IFS= read a ; do expr "$start" '<' "$a" && cat >/dev/null ; done <<<"$mp3s" | wc -l) # slow but works
+    { awk -vstartn="$startn" 'NR>=startn { print }' <<<"$mp3s"
+      awk -vstartn="$startn" 'NR< startn { print }' <<<"$mp3s"
+    } | playffr
+    ) # mp3loop 64e3caf9 20230821
+
 playffr () { # for files (args or stdin), continiously repeat invocations of ffplay, without display
     local f fs
     [ $# -gt 0 ] && { fs="$1" ; shift ;}
-    [ "$fs" = '-volume' -o "$fs" = '-v' ] && { v="$1" ; shift ; fs="$1" ; shift ;}
-    [ "$v" ] && v="-volume $v" || v="-volume 100"
+    [ "$fs" = '-volume' -o "$fs" = '-v' ] && { local v="$1" ; shift ; fs="$1" ; shift ;}
+    [ "$v" ] && local v="-volume $v" || local v="-volume 100"
     while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
-    echo "$fs" | while IFS= read f; do
-        chktrue "$f"
+    mkdir -p "$HOME/0/v/"
+    while IFS= read f; do
         [ -f "$f" ] && {
-        tput bold
-         chktrue "$f"
-         chktrue sec $(hms2sec $(ffprobe -hide_banner  -loglevel info "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')) vol ${v##* }
-        tput sgr0
+          tput bold
+          chktrue "$f"
+          chktrue sec $(hms2sec $(ffprobe -hide_banner  -loglevel info "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')) vol ${v##* }
+          tput sgr0
+          echo "${f##*/}" >"$HOME/0/v/playffr"
+          expr "$f" : ".*/" >/dev/null && fpath="${f%/*}" || fpath="." ;  # f dirname
+          echo "$(cd "${fpath}" ; pwd -P)/${f##*/}" >>"$HOME/0/v/playffr" # realpath f
           ffplay -hide_banner -stats -autoexit -loglevel error -nodisp "$f" || return 1
           } || chkwrn "$0 : not a file : '$f'"
-        done
+        done <<<"$fs"
     } # playffr
 
 playff () { # for files (args or stdin), continiously repeat invocations of ffplay, with display
@@ -1323,4 +1340,11 @@ base () { # convert {decimal} arg2 to {base} arg1
         done
     echo "${sign}${out}"
     } # base 20221013 6348728e
+
+diffenv () { # creat an env file, report diff iff file exists
+    local diffenvf="$HOME/0/v/diffenv" diffenv="$(declare -p | sort)"
+    mkdir -p "${diffenvf%/*}"
+    [ -e "$diffenvf" ] && diff -U 0 "$diffenvf" - <<<"$diffenv"
+    cat >"$diffenvf" <<<"$diffenv"
+    }
 
