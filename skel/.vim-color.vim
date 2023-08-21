@@ -27,6 +27,8 @@ map gm :call SynStack()<CR>
 set background=dark
 highlight clear
 syntax reset
+set termguicolors
+
 "1   2               3          4                5                 6             7         8              9
 "hi  name            term=none  cterm=none       ctermfg=none      ctermbg=none  gui=none  guifg=none     guibg=none
 hi   Comment         term=NONE  cterm=NONE       ctermfg=DarkCyan  ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
@@ -43,18 +45,16 @@ hi   makeTarget      term=NONE  cterm=bold       ctermfg=3         ctermbg=NONE 
 hi   shCmdSubRegion  term=NONE  cterm=NONE       ctermfg=1         ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
 hi   shCmdSubRegion  term=NONE  cterm=NONE       ctermfg=197       ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
 hi   shCommandSub    term=NONE  cterm=NONE       ctermfg=90        ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
-hi   shDeref         term=NONE  cterm=NONE       ctermfg=130       ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
+hi   shDeref         term=NONE  cterm=underline  ctermfg=130       ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
 hi   shFunctionOne   term=NONE  cterm=NONE       ctermfg=182       ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
 hi   shOption        term=NONE  cterm=NONE       ctermfg=22        ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
 hi   vim9Comment     term=NONE  cterm=bold       ctermfg=red       ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
-hi   SpecialKey      term=NONE  cterm=reverse    ctermfg=237       ctermbg=NONE  gui=NONE  guifg=#212518  guibg=NONE
+hi   SpecialKey      term=NONE  cterm=reverse    ctermfg=237       ctermbg=NONE  gui=NONE  guifg=#3c403c  guibg=NONE
 hi   Constant        term=NONE  cterm=underline  ctermfg=109       ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
-hi   PreProc         term=NONE  cterm=NONE       ctermfg=NONE      ctermbg=NONE  gui=NONE  guifg=#5f30a1     guibg=NONE
-hi   shParen         term=NONE  cterm=NONE       ctermfg=NONE      ctermbg=NONE  gui=NONE  guifg=#b499bf     guibg=NONE
-hi   shDerefPattern  term=NONE  cterm=NONE       ctermfg=NONE      ctermbg=NONE  gui=NONE  guifg=#6e6c64     guibg=NONE
-hi   shExpr          term=NONE  cterm=NONE       ctermfg=NONE      ctermbg=NONE  gui=NONE  guifg=#8f8029     guibg=NONE
-
-set termguicolors
+hi   PreProc         term=NONE  cterm=NONE       ctermfg=NONE      ctermbg=NONE  gui=NONE  guifg=#5f30a1  guibg=NONE
+hi   shParen         term=NONE  cterm=NONE       ctermfg=NONE      ctermbg=NONE  gui=NONE  guifg=#b499bf  guibg=NONE
+hi   shDerefPattern  term=NONE  cterm=NONE       ctermfg=NONE      ctermbg=NONE  gui=NONE  guifg=#6e6c64  guibg=NONE
+hi   shExpr          term=NONE  cterm=NONE       ctermfg=NONE      ctermbg=NONE  gui=NONE  guifg=#8f8029  guibg=NONE
 
 " cterm: none,bold,underline,reverse
 hi  User1  guibg=NONE  guifg=NONE  gui=NONE  ctermbg=1     ctermfg=NONE  cterm=bold
