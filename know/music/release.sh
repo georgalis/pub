@@ -35,7 +35,7 @@ formfilestats fa92ede0 000004dc
 spin2 1263edf2 00000180
 ckstat c44370c9 000003ac
 ckstatsum 464f5378 00000406
-formfile d9778c91 00000f73
+formfile b646d543 00000fe1
 EOF
 
 [ -e $HOME/sub/markdown.awk ] || { echo "$0 : markdown.awk not found" 1>&2 ; dep_help_sub ; exit 1 ;}
