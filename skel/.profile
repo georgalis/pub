@@ -311,18 +311,16 @@ rm $key_in ;}
 #   #	&& { printf "Logout: " && kill $2 && echo $(hostname) $0 [$4] killed ssh-agent $2 \
 #   #		|| { echo $(hostname) ssh-agent already died? 2>/dev/stderr ; exit 1 ;} ;}
 
+
 # ssh socket, key, and agent managent
 [ "$SSH_AGENT_ENV" ] || {
     tput dim
-    ps x | sed -e '/ ssh-agent$/!d' -e 's/ .*//' -e 's/^[ ]*//' | tr '\n' ' ' | sed -e '/./s/^/extra agents: /'
+    _ssh_agents=$(ps ax | awk '/ ssh-agent$/ {print $1}' )
+    [ "$_ssh_agents" ] && echo extra agents: $_ssh_agents ; unset _ssh_agents
     printf "User ${USER}@${HOSTNAME}: "
     eval $(ssh-agent)
     export SSH_AGENT_ENV="SSH_AGENT_PID $SSH_AGENT_PID SHELL_PID $$"
     ssh-add -q
-#   for a in id_rsa id_ecdsa id_ecdsa_sk id_ed25519 id_ed25519_sk id_dsa ; do
-#     test -e "$HOME/.ssh/$a" -a -e "$HOME/.ssh/${a}.pub" \
-#       && { ssh-add -T "$HOME/.ssh/${a}.pub" 2>/dev/null || ssh-add -q ;}
-#     done
     tput sgr0
     }
 
@@ -341,4 +339,3 @@ printf "User ${USER}@${HOSTNAME}: "
 tput bold
 echo $(ssh-add -l | awk '{$1="";$2=""; print}' | tr '\n' ',' | sed 's/[.,]*$/./')
 tput sgr0
-
