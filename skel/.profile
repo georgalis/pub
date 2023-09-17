@@ -107,7 +107,7 @@ chkwrn() {  [ "$*" ] && { stderr    "^^^ $*" ; return $? ;} || true ;} #:> wrn s
 logwrn() {  [ "$*" ] && { logger -s "^^^ $*" ; return $? ;} || true ;} #:> wrn stderr+log args return 0, noop if null
 chkerr() {  [ "$*" ] && { stderr    ">>> $*" ; return 1  ;} || true ;} #:> err stderr args return 1, noop if null
 logerr() {  [ "$*" ] && { logger -s ">>> $*" ; return 1  ;} || true ;} #:> err stderr+log args return 1, noop if null
-chktrue() { [ "$*" ] && { stderr    "><> $*" ; return 0  ;} || return 2 ;} #:> err stderr args exit 1, noop if null
+chktrue() { [ "$*" ] && { stderr    "><> $*" ; true      ;} || return 2 ;} #:> err stderr args exit 1, noop if null
 chkexit() { [ "$*" ] && { stderr    ">>> $*" ; exit 1    ;} || true ;} #:> err stderr args exit 1, noop if null
 logexit() { [ "$*" ] && { logger -s ">>> $*" ; exit 1    ;} || true ;} #:> err stderr+log args exit 1, noop if null
 siffx() { local verb="${verb:-devnul}" s="$1" f='' b=''
@@ -335,7 +335,8 @@ siffx -n "$HOME/.profile"       "~/.profile (642a7466)" || { return 2 ; exit 3 ;
 chktrue  "$HOME/.profile (642a7466)"
 
 tput dim
-printf "User ${USER}@${HOSTNAME}: "
+echo "User ${USER}@${HOSTNAME}: "
 tput bold
-echo $(ssh-add -l | awk '{$1="";$2=""; print}' | tr '\n' ',' | sed 's/[.,]*$/./')
+#echo $(ssh-add -l | awk '{$1="";$2=""; print}' | tr '\n' ',' | sed 's/[.,]*$/./')
+ssh-add -l | awk '{$1="";$2=""; print}'
 tput sgr0
