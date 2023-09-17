@@ -23,7 +23,7 @@ chkerr 4f18299d 0000005b
 logerr 2db98372 0000005e
 chkexit e6d9b430 0000005a
 logexit 235b98c9 0000005d
-chktrue 28662120 00000060
+chktrue 1f11f91d 0000005c
 validfn 6fcde5cc 0000046d
 validex a652b330 000004fc
 EOF
@@ -59,7 +59,7 @@ verb2="devnul"
 while IFS= read a ; do
     validex $a && true || { echo "$0 : validex error : $a (643eb771)" 1>&2 ; exit 2 ;}
     done <<EOF
-comma_mp3.sh e4d134e7 00001434
+comma_mp3.sh 8c4f6f5f 00001434
 EOF
 
 gen_index () { # in pwd, for "$links/$name/"

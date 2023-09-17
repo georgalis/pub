@@ -1,7 +1,7 @@
 0, prepare 63e8-jazzmore for never ending delight
 643c4f8b 20230416 1241 Sun 16 Apr PDT 
 
-\\ 107 files: 34737 sec (9 h 38 m 57 s)
+\\ 123 files: 39517 sec (10 h 58 m 37 s)
 
 1, hook 63e8-jazzmore are you ready
 643c4f8b 20230416 1241 Sun 16 Apr PDT 
@@ -71,11 +71,13 @@
 c, lounge 63e8-jazzmore
 64751264 20230529 1400 Mon 29 May PDT 
 
-                                 \c\  16 files: 6711 sec (1 h 51 m 51 s)
+                                 \c\  17 files: 6977 sec (1 h 56 m 17 s)
             John_Lewis__Sacha_Distel   6 files  2602 sec (43 m 22 s)
-                   Barry_Harris_Trio   6 files  2387 sec (39 m 47 s)
+                   Barry_Harris_Trio   5 files  1989 sec (33 m 9 s)
                          Harold_Land   3 files  1352 sec (22 m 32 s)
+                        Lester_Young   1 file   425 sec (7 m 5 s)
                        Horace_Parlan   1 file   370 sec (6 m 10 s)
+              Julian_Priester_Sextet   1 file   238 sec (3 m 58 s)
 
 d, emotion 63e8-jazzmore
 643c4f8c 20230416 1241 Sun 16 Apr PDT 
@@ -94,8 +96,29 @@ f, juxtapose 63e8-jazzmore
 k, sustain 63e8-jazzmore
 64645922 20230516 2133 Tue 16 May PDT 
 
-                                 \k\  12 files: 2228 sec (37 m 8 s)
+                                 \k\  17 files: 3553 sec (59 m 13 s)
                        Hank_Crawford  12 files  2228 sec (37 m 8 s)
+                   George_Wallington   3 files  719 sec (11 m 59 s)
+               Horace_Silver_Quintet   1 file   380 sec (6 m 20 s)
+                       Oliver_Nelson   1 file   225 sec (3 m 45 s)
+
+n, old 63e8-jazzmore
+64ee25e8 20230829 1007 Tue 29 Aug PDT 
+
+                                 \n\   5 files: 1129 sec (18 m 49 s)
+                      Charlie_Parker   5 files  1129 sec (18 m 49 s)
+
+r, persue 63e8-jazzmore
+64ee15ed 20230829 0859 Tue 29 Aug PDT 
+
+                                 \r\   1 file:  291 sec (4 m 51 s)
+       McCoy_Tyner__Bobby_Hutcherson   1 file   291 sec (4 m 51 s)
+
+s, modest 63e8-jazzmore
+64ee15ed 20230829 0859 Tue 29 Aug PDT 
+
+                                 \s\   4 files: 1769 sec (29 m 29 s)
+                     Steve_Kuhn_Trio   4 files  1769 sec (29 m 29 s)
 
 x, extra 63e8-jazzmore
 6456c734 20230506 1431 Sat  6 May PDT 
