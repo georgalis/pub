@@ -23,18 +23,22 @@ function! SynStack ()
 endfunction
 map gm :call SynStack()<CR>
 
+" :scriptnames all the files sourced in the configuratioon
+" :highlight (:hi) shows all highlight settings, with arg1 the settings for that highlight, otherwise sets arg1 settings
 " level the deck, least artifacts remain...
-set background=dark
 highlight clear
 syntax reset
+set background=dark
 set termguicolors
+syntax on
 
 "1   2               3          4                5                 6             7         8              9
 "hi  name            term=none  cterm=none       ctermfg=none      ctermbg=none  gui=none  guifg=none     guibg=none
 hi   Comment         term=NONE  cterm=NONE       ctermfg=DarkCyan  ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
 hi   Identifier      term=NONE  cterm=NONE       ctermfg=69        ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
 hi   NonText         term=NONE  cterm=NONE       ctermfg=23        ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
-hi   Search          term=NONE  cterm=reverse    ctermfg=24        ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
+hi   Search          term=NONE  cterm=reverse    ctermfg=24        ctermbg=NONE  gui=NONE  guifg=#600982  guibg=NONE
+hi   CurSearch       term=NONE  cterm=reverse    ctermfg=24        ctermbg=NONE  gui=NONE  guifg=#c77a0e  guibg=NONE
 hi   Special         term=NONE  cterm=NONE       ctermfg=5         ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
 hi   Statement       term=NONE  cterm=NONE       ctermfg=3         ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
 hi   makeCommands    term=NONE  cterm=NONE       ctermfg=7         ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
@@ -42,14 +46,13 @@ hi   makeComment     term=NONE  cterm=NONE       ctermfg=6         ctermbg=NONE 
 hi   makeIdent       term=NONE  cterm=NONE       ctermfg=5         ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
 hi   makeImplicit    term=NONE  cterm=NONE       ctermfg=2         ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
 hi   makeTarget      term=NONE  cterm=bold       ctermfg=3         ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
-hi   shCmdSubRegion  term=NONE  cterm=NONE       ctermfg=1         ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
 hi   shCmdSubRegion  term=NONE  cterm=NONE       ctermfg=197       ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
 hi   shCommandSub    term=NONE  cterm=NONE       ctermfg=90        ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
 hi   shDeref         term=NONE  cterm=underline  ctermfg=130       ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
 hi   shFunctionOne   term=NONE  cterm=NONE       ctermfg=182       ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
 hi   shOption        term=NONE  cterm=NONE       ctermfg=22        ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
 hi   vim9Comment     term=NONE  cterm=bold       ctermfg=red       ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
-hi   SpecialKey      term=NONE  cterm=reverse    ctermfg=237       ctermbg=NONE  gui=NONE  guifg=#3c403c  guibg=NONE
+hi   SpecialKey      term=NONE  cterm=reverse    ctermfg=237       ctermbg=NONE  gui=NONE  guifg=#36261a  guibg=NONE
 hi   Constant        term=NONE  cterm=underline  ctermfg=109       ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
 hi   PreProc         term=NONE  cterm=NONE       ctermfg=NONE      ctermbg=NONE  gui=NONE  guifg=#5f30a1  guibg=NONE
 hi   shParen         term=NONE  cterm=NONE       ctermfg=NONE      ctermbg=NONE  gui=NONE  guifg=#b499bf  guibg=NONE
@@ -74,9 +77,9 @@ set statusline+=%6*\ %<%F\                             " left, File+path
 set statusline+=%1*%{(&bomb?\",\ BOM\ \":\"\")}        " BOM status (Byte Order Mark, for utf-8, or the little/big endian variants)
 set statusline+=%7*\ %M%R%Y\                           " Modified? Readonly? Help?
 set statusline+=%3*\ %{&ff}\                           " FileFormat (dos/unix..)
-set statusline+=%4*\ %{''.(&fenc!=''?&fenc:&enc).''}\  " FileType Encoding
-set statusline+=%5*\ %{&spelllang}\                    " spell language
-set statusline+=%5*\ %=%o,0x%B\                        " begin right, with (under cursor) 'file byte, hex value'
+set statusline+=%5*\ %{''.(&fenc!=''?&fenc:&enc).''}\  " FileType Encoding
+set statusline+=%4*\ %{&spelllang}\                    " spell language
+set statusline+=%4*\ %=%o,0x%B\                        " begin right, with (under cursor) 'file byte, hex value'
 set statusline+=%8*\ %v,%l\ %P/%L\                     " column,line line-percent/line-total
 
 
