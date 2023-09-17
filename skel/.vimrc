@@ -30,6 +30,7 @@ set ttyfast
 set hlsearch
 set sidescroll=20
 set scrolloff=48	
+set mouse=a     " helps, and no problems
 set wrap	" so longlines are visible
 "set nowrap	" can be better
 set nolbr   " better for copying
