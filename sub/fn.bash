@@ -144,7 +144,7 @@ chkwrn 2683d3d3 0000005c
 logwrn f279f00e 0000005f
 chkerr 4f18299d 0000005b
 logerr 2db98372 0000005e
-chktrue 28662120 00000060
+chktrue 1f11f91d 0000005c
 chkexit e6d9b430 0000005a
 logexit 235b98c9 0000005d
 siffx c20a9040 000002f7
@@ -231,9 +231,9 @@ tss () { # timestamp highres and pass through args
     local a="$*"
     [ "$(which tai64n)" -a "$(which tai64nlocal)" ] \
         && { set $(echo | tai64n | sed -e 's/^\(@4[0]*\)\([[:xdigit:]]\{8\}\)\([[:xdigit:]]\{8\}\)\(.*\)/\1\2\3\4 \2 \3/')
-             { echo $2 $3 ; tai64nlocal <<<$1 | sed -e 's/-//g' -e 's/://' -e 's/[:]/ /g' -e 's/.\{4\}$//' ;} | tr '\n' ' ' ;} \
+             { echo $2 $3 ; tai64nlocal <<<$1 | sed -e 's/-//g' -e 's/:\([^:]*\)$/ \1/' -e 's/.\{4\}$//' ;} | tr '\n' ' ' ;} \
         || { set $(date +%s | awk '{printf "@4%015x%08d  %8x %08d\n",$1,0,$1,0}')
-             { echo $2 $3 ; date -j -r $((0x$2)) "+%Y%m%d %H%M %0S.00000" ;} | tr '\n' ' ' ;}
+             { echo $2 $3 ; date -j -r $((0x$2)) "+%Y%m%d %H:%M %0S.00000" ;} | tr '\n' ' ' ;}
       echo "$a" ;}
       # 64c471f9 00000000 20230728 1857 13.00000
       # 64c47234 17284a94 20230728 1858 02.38851
@@ -242,10 +242,10 @@ ts () { # timestamp lowres and pass through args
     local a="$*"
     [ "$(which tai64n)" -a "$(which tai64nlocal)" ] \
       && { set $(echo | tai64n | sed -e 's/^\(@4[0]*\)\([[:xdigit:]]\{8\}\)\([[:xdigit:]]\{8\}\)\(.*\)/\1\2\3\4 \2/')
-            { echo $2    ; tai64nlocal <<<$1 | sed -e 's/-//g' -e 's/://' -e 's/[:]/ /g' -e 's/ ..\..*$//'
+            { echo $2    ; tai64nlocal <<<$1 | sed -e 's/-//g' -e 's/:\([^:]*\)$//' 
               date -j -r $((0x$2)) "+%a %e %b %Z" ;} | tr '\n' ' ' ;} \
       || { set $(date +%s | awk '{printf "@4%015x%08d  %8x %08d\n",$1,0,$1,0}')
-           { echo $2 ; date -j -r $((0x$2)) "+%Y%m%d %H%M %a %e %b %Z" ;} | tr '\n' ' ' ;}
+           { echo $2 ; date -j -r $((0x$2)) "+%Y%m%d %H:%M %a %e %b %Z" ;} | tr '\n' ' ' ;}
       echo "$a" ;}
       # 64c47437 20230728 1906 Fri 28 Jul PDT
       # 64c47688 20230728 1916 Fri 28 Jul PDT
@@ -262,7 +262,7 @@ tmu() { # tmux intuitive wrapper
   return 0 ;}
     local args sig
     _tmu_active_sessions() {
-        tmux list-sessions -F '#{session_name} #{session_activity}' | column -t | sort -k2n \
+        tmux list-sessions -F '#{session_name} #{session_activity}' 2>/dev/null | column -t | sort -k2n \
             | while IFS= read -r a ; do set $a ; echo -n "$1 " ; date -r $2 ; done \
             | awk '{printf "%8s : %s %s %s %s %s %s\n",$1,$2,$3,$4,$5,$6,$7}' ;}
     [ "$@" ] && args=$@
@@ -549,7 +549,8 @@ EOF
   local ckb3="compand 0.2,0.8  -60,-99,-50,-56,-38,-32,-23,-18,0,-4         -2 -60 0.2" # piano old analog master
   local hrn3="compand 0.08,0.3 -74,-80,-50,-46,-18,-18,-0,-6                -1 -68 0"    # peaky horn
   local cps1="compand 0.07,0.25 -70,-84,-50,-45,-32,-33,-0,-21               3 -71 0.07" # high compress
-  local parc="compand 0.09,0.25 -97,-106,-85,-89,-73,-73,-57,-61,-40,-49,-21,-37,0,-25         11 -95 0.08" # parabolic standard
+  local parc="compand 0.09,0.25 -97,-106,-85,-89,-73,-73,-57,-61,-40,-49,-21,-37,0,-25                           11 -95 0.08" # parabolic standard
+  local pard="compand 0.09,0.25 -84.4,-110.7,-74.4,-89.1,-64.4,-71.0,-54.4,-56.3,-39.7,-46.3,-21.7,-36.3,0,-26.3 15 -95 0.08" # parabolic-d
   local par2="compand 0.09,0.25 -100,-116,-88,-97,-80,-80,-63,-72,-54,-60,-23,-48,0,-36        19 -95 0.08" # parabolic extra
   local par4="compand 0.13,0.16 -72,-97,-68,-84,-64,-73,-56,-65,-55,-61,-32,-57,-17,-53,0,-49  25 -55 0.12" # parabolic squared
   [ "$cmp" = "hrn" -o "$cmp" = "hrn1" ] && cmpn="hrn3" cmpc="$hrn3"
@@ -560,12 +561,13 @@ EOF
   [ "$cmp" = "hrn3" ] && cmpn="$cmp" cmpc="$hrn3"
   [ "$cmp" = "cps1" ] && cmpn="$cmp" cmpc="$cps1"
   [ "$cmp" = "parc" ] && cmpn="$cmp" cmpc="$parc"
+  [ "$cmp" = "pard" ] && cmpn="$cmp" cmpc="$pard"
   [ "$cmp" = "par2" ] && cmpn="$cmp" cmpc="$par2"
   [ "$cmp" = "par4" ] && cmpn="$cmp" cmpc="$par4"
   $verb2 "cmpn='$cmpn'"
   $verb2 "cmpc='$cmpc'"
   $verb2 "input='$inpath/$infile'"
-  mkdir -p "${inpath}/tmp" "./loss"
+  mkdir -p "${inpath}/tmp"
   null="$(mktemp "${inpath}/tmp/nulltime-XXXXX")"
   null="${null##*/}" # basename
   local vn='' vc='' # init "volume name" and "volume command"
@@ -677,6 +679,7 @@ EOF
          }
     # prepend output filename
     $verb "./loss/${prependt}${out}${vn}.mp3"
+    mkdir -p "./loss"
     mv -f "${inpath}/tmp/${out}${vn}.mp3" "./loss/${prependt}${out}${vn}.mp3" \
       && rm -f "${inpath}/tmp/$null" \
       && $verb "$(hms2sec $(ffprobe -hide_banner -loglevel info "./loss/${prependt}${out}${vn}.mp3" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //') ) seconds mp3" \
@@ -1154,7 +1157,7 @@ mp3range () { # mp3 listing limiter
 
 mp3loop () ( # derive start (arg1) to end, and loop from begining (optional: first cd to arg2), send list to playffr
     [ "$2" -a -d "$2" ] && { cd "$2" || { chkwrn "$FUNCNAME : arg2 not a dir '$2' (64e3c5f4)" ; return 1 ;} ;}
-    local local start='' startn='' a='' mp3s="$(ls *.mp3)"
+    local local start='' startn='' a='' mp3s="$(ls *.mp3 2>/dev/null)"
     [ "$mp3s" ] || [ -e "$HOME/0/v/playffr" ] && { # if pwd has no mp3s use last playffr dir
         cd "$(awk 'NR==2 { print }' "$HOME/0/v/playffr" | sed 's=\(.*\)/.*=\1=' )" && mp3s="$(ls *.mp3)" ;} \
         || { chkwrn "$FUNCNAME no mp3 found (64e3ca7b)" ; return 1 ;}
