@@ -222,8 +222,8 @@ NOW=$(now)
 # optimmized for Mac and NetBSD accounts
 # rsync -a = -rlptgoD = --recursive --links --perms --times --group --owner --devices
 #                -vCc = --verbose --cvs-exclude --checksum --numeric-ids
-[ "$UID" = 0 ] && rsync_opt="--recursive --links --perms --times --group         --devices --specials --numeric-ids --chmod=u=rwX" \
-               || rsync_opt="--recursive --links --perms --times --group --owner --devices --specials --numeric-ids --chmod=u=rwX"
+[ "$UID" = 0 ] && rsync_opt="--recursive --hard-links --links --perms --times --group         --devices --specials --numeric-ids --chmod=u=rwX" \
+               || rsync_opt="--recursive --hard-links --links --perms --times --group --owner --devices --specials --numeric-ids --chmod=u=rwX"
 #
 # additional rsync options for terminal (non-cron) backups
 [ -t 0 ] && rsync_opt="$rsync_opt --verbose --progress" || true
