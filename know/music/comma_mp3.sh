@@ -26,7 +26,7 @@ cd "$d"
 
 # read in or create main header tmpfile ./0,~
 [ -e "0," ] && { awk 'NR==1,/^$/ ; {!/^$/}' <"0," >"0,~" ;} \
-  || { sed -e '/^0, /!d' -e "s/$/ ${d##*/}/" $0 ; printf "$(ts)\n\n" ;} >"0,~" \
+  || { sed -e '/^0, /!d' -e "s/^/${d##*/}\//" $0 ; printf "$(ts)\n\n" ;} >"0,~" \
       || { chkwrn "unable to create '$PWD/0,~' (637596d5)" ; exit 3 ;}
 
 # probe total mp3 duration data into main header,
@@ -61,13 +61,14 @@ for a in {0..31} ; do export n=$(base 32 $a)
     [ "$d" ] && { # init ${n},~ with an existing header
         [ -e "${n}," ] && { awk 'NR==1,/^$/ ; {!/^$/}' <"${n}," >"${n},~" ;} \
           || { # filter default comma header from compost guide 
-               { sed -e "/^${n}, /!d" -e "s/$/ ${PWD##*/}/" $0 ; printf "$(ts)\n\n" ;} >"${n},~" \
+               { sed -e "/^${n}, /!d" -e "s/^/${PWD##*/}\//" $0 ; printf "$(ts)\n\n" ;} >"${n},~" \
                  || { chkwrn "unable to create '$PWD/${n},~' (643a082d)" ; exit 5 ;} ;}
         echo "$d" >>"${n},~" ;}
     } || d='' # reset, no mp3 begin with n
 
        #- || { { grep "^${n}, " $0 ; printf "$(ts)\n\n" ;} >"${n},~" \
 
+   find . -maxdepth 1 -name ${n}\*.mp3 | grep -v -- '-' && { chkerr "$0 : missing dash (6510998a)"  ; exit 5;}
    find . -maxdepth 1 -name ${n}\*.mp3 | grep -v , && { chkerr "$0 : missing comma (643b866e)"  ; exit 5;}
    find . -maxdepth 1 -name ${n}\*.mp3 | grep  ',.*,' && { chkerr "$0 : extra comma (643c24eb)"  ; exit 5;}
 
