@@ -58,6 +58,7 @@ hi   PreProc         term=NONE  cterm=NONE       ctermfg=NONE      ctermbg=NONE 
 hi   shParen         term=NONE  cterm=NONE       ctermfg=NONE      ctermbg=NONE  gui=NONE  guifg=#b499bf  guibg=NONE
 hi   shDerefPattern  term=NONE  cterm=NONE       ctermfg=NONE      ctermbg=NONE  gui=NONE  guifg=#6e6c64  guibg=NONE
 hi   shExpr          term=NONE  cterm=NONE       ctermfg=NONE      ctermbg=NONE  gui=NONE  guifg=#8f8029  guibg=NONE
+hi   Todo  guibg=NONE  guifg=NONE  gui=NONE  ctermbg=208   ctermfg=NONE  cterm=bold
 
 " cterm: none,bold,underline,reverse
 hi  User1  guibg=NONE  guifg=NONE  gui=NONE  ctermbg=1     ctermfg=NONE  cterm=bold
