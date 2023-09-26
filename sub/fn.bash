@@ -352,6 +352,7 @@ _youtube () {
   local id="$1" d="$2"
   [ "$id" ] || read -p "youtube id: " id
   [ "$id" ] || { chkerr "no id?" ; return 1 ;}
+  id=$(sed 's/?.*//' <<<"$id") # squash trackers from url
   [ "$d" ]  || read -p "directory: " d
   [ "$d" ]  || d='.'
   [ -d "$d" ] || { [ -d "${links}/$d" ] && d="${links}/$d" ;}
@@ -399,12 +400,11 @@ _youtube_json2txt () { # fixup youtube .info.json to yaml txt and sort files
   { jq --ascii-output --raw-output '(.fulltitle)' "$1" \
         | tr -d '"' ; printf '\n' "" ;} | sed -e 's,\\u0332,,g' -e 's,\\u2013,-,g' -e 's,\\u00d7,-,g' >>"${1}.txt"
   printf '\n ss= to= f2rb2mp3 $_f 81,${_a}-Trak_Title-${_r}\n' >>"${1}.txt"
-  jq --ascii-output --raw-output '(.duration_string)' "$1" \ | tr -d '"' >>"${1}.txt"
+  jq --ascii-output --raw-output '(.duration_string)' "$1" | tr -d '"' >>"${1}.txt"
   yes | tr -d 'y' | head -n 5 >>"${1}.txt"
   jq --compact-output 'del(.formats, .thumbnail, .thumbnails, .downloader_options, .http_headers,
         .webpage_url_basename, .author_thumbnail, .playable_in_embed, .live_status, .automatic_captions,
-        .extractor, .is_live, .was_live )' "$1" \
-    | yq --yaml-output | tr -cd '[ -~]\n' >>"${1}.txt"
+        .extractor, .is_live, .was_live )' "$1" | yq --yaml-output | tr -cd '[ -~]\n' >>"${1}.txt"
   mkdir -p "$inpath/@/meta" "$inpath/orig"
 # { set -x
     ln -f "$inpath"/*${_fout} "$inpath"/@/${_fout}
@@ -1351,3 +1351,15 @@ diffenv () { # creat an env file, report diff iff file exists
     cat >"$diffenvf" <<<"$diffenv"
     }
 
+auto_dgst_sha3_384 () { #0> auto create digest (_/dgst), hash _/dgst-sha3-384, and rcs in ./_ (or arg1/_)
+    local a='' d='' h='sha3-384'
+    [ -d "$1" ] && d="$1" || d="."
+    which openssl >/dev/null 2>&1 || { chkerr "$FUNCNAME : openssl not available (65136036)" ; return 1 ;}
+    which rcs     >/dev/null 2>&1 || { chkerr "$FUNCNAME : rcs not available (65136072)" ; return 1 ;}
+    mkdir -p "$d/_"
+    find -E "$d" -regex '\./.*(/%|/0|/v|/c|,)' -prune -type f -o -type f | sort >"$d/_/dgst"
+    ci -m"($FUNCNAME)" -l -t-"auto digest ${h}" -q "./_/dgst"
+    grep -Ev "$d/_/dgst-${h}(,$|,,v$)" "$d/_/dgst" \
+        | while read a; do openssl dgst -${h} "$a" ; done >"$d/_/dgst-${h},"
+    ci -m"($FUNCNAME)" -l -t-"auto digest ${h}" -q "$d/_/dgst-${h},"
+    }
