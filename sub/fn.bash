@@ -128,7 +128,7 @@ validfn () { #:> validate function, compare unit hash vs operation env hash
 
 # Now that validfn is defined, run the framework on expected functions...
 #
-# eg first, generate hashses of known functions...
+# eg first, generate hashes of known functions...
 #   for f in devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue chkexit logexit siffx validfn ; do validfn $f ; done
 #
 # then run validfn on that data to report if the functions have ever change
@@ -212,8 +212,8 @@ gsta () { # git short form status of all repos below $@ (or current repo), sorte
   find $start -name .git -type d | while IFS= read a ; do
    ( cd "${a%/*}" ; gst ) | awk  -v a="${a%/*}/./" '{printf "%-2s",$1; $1=""; $2=a$2; printf "%s\n",$0}'
    done | sort ;}
-gstat () { # find uncommited changes to all repos below $@ (or current repo), sorted by time
-  # reports files with <space> in name as irregular... ("read a" doesn't evaluate quotes incerted by git)
+gstat () { # find uncommitted changes to all repos below $@ (or current repo), sorted by time
+  # reports files with <space> in name as irregular... ("read a" doesn't evaluate quotes inserted by git)
   gsta $@ | sed 's/^...//' | while IFS= read a ; do ckstat "$a" ; done \
     | sort -k5 | awk -F "\t" '{print $3}' ;}
 
@@ -281,7 +281,7 @@ revargs () {
     echo "$out"
     }
 
-kwds () { # convert stdin to unique words (at least arg1 chars) sorted on legnth, to stdout
+kwds () { # convert stdin to unique words (at least arg1 chars) sorted on length, to stdout
   local c="$1"
   [ "$c" ] || c=1
   [ "$c" -ge 0 ] || c=0
@@ -428,7 +428,7 @@ _youtube_comment_unflatten () { # convert comment text from _youtube_json2txt to
 # $s means only match the last line of the file
 
 span2ssto () { # start (arg1) span (arg2) and remaining args to f2rb2mp3
-    # used to calculate ss= to= f2rb2mp3 parameters, given track legnths
+    # used to calculate ss= to= f2rb2mp3 parameters, given track lengths
     # eg
      # export offset=1
     # sp2ssto 0   7:14 01,\${a}-Song_For_My_Father-\${_r}
@@ -491,7 +491,7 @@ EOF
   [ -x "$(which ffmpeg)" ] || { chkerr "$FUNCNAME : ffmpeg not in path" ; return 1 ;}
   [ -x "$(which sox)"    ] || { chkerr "$FUNCNAME : sox not in path" ; return 1 ;}
   # success valid env
-  [ "$1" = "help" ] && { # a function to adjust audio file tempo and pitch independantly
+  [ "$1" = "help" ] && { # a function to adjust audio file tempo and pitch independently
     # depends on ffmpeg, rubberband and sox
     # https://hg.sr.ht/~breakfastquay/rubberband
     # https://github.com/breakfastquay/rubberband
@@ -644,9 +644,9 @@ EOF
   [ "$c" -a -z "$cc" ] && { expr "$c" : '^[0123456]$' >/dev/null || { chkerr "$FUNCNAME parm invalid : c=$c" ; return 1 ;} ;}
   [ "$c" -a -z "$cc" ] && { cc="--crisp $c" cn="-c${c}" ;} || true
   expr "$t" : '^-' >/dev/null && { chkerr "$FUNCNAME parm invalid : t=$t" ; return 1 ;} || true
-  expr "$p" : '^-[[:digit:]]*$' >/dev/null && p="${p}.0" || true # fixup negative intergers, least test fail... -bash: [: -3: unary operator expected
-  expr "$f" : '^-[[:digit:]]*$' >/dev/null && f="${f}.0" || true # fixup negative intergers, least test fail
-  # [ "" -o "-3" -o "" ] yeilds error on native mac bash https://discussions.apple.com/thread/254233125
+  expr "$p" : '^-[[:digit:]]*$' >/dev/null && p="${p}.0" || true # fixup negative integers, least test fail... -bash: [: -3: unary operator expected
+  expr "$f" : '^-[[:digit:]]*$' >/dev/null && f="${f}.0" || true # fixup negative integers, least test fail
+  # [ "" -o "-3" -o "" ] yields error on native mac bash https://discussions.apple.com/thread/254233125
   [ "$t" -o "$p" -o "$f" ] && { # rb parm
     [ "$F" = "y" ]  &&  Fc='--formant'       Fn='-F'  || Fc=''   Fn=''
     [ "$cf" = "y" ] && cfc='--centre-focus' cfn='-cf' || cfc='' cfn=''
@@ -874,8 +874,8 @@ verb2=chkwrn
  }
 
 
-# The lack tone functions generate a drone intended to add asthetic to a noisy environment.
-# Execute one of the following (increasoing complexity) in a new shell. Use ctrl-c repeatedly to stop.
+# The lack tone functions generate a drone intended to add aesthetic to a noisy environment.
+# Execute one of the following (increasing complexity) in a new shell. Use ctrl-c repeatedly to stop.
 #    lacks1tone
 #    lacks2tone
 #    lacks5tone
@@ -896,7 +896,7 @@ lacktone () { # monitor lacktone logfile
    touch "$tmp/lacktone"
    $tail "$tmp/lacktone"
  }
- lacktone1a () { # play background tone, optioal gain (arg1) default -45
+ lacktone1a () { # play background tone, optional gain (arg1) default -45
    local g tmp
    [ -d $HOME/Downloads ] && tmp="$HOME/Downloads/tmp" || tmp="$HOME/tmp"
    mkdir -p "$tmp"
@@ -909,7 +909,7 @@ lacktone () { # monitor lacktone logfile
       printf "%s" "1a/$g " >>"$tmp/lacktone" &
       done
  }
- lacktone1b () { # play background tone, optioal gain (arg1) default -45
+ lacktone1b () { # play background tone, optional gain (arg1) default -45
    local g tmp
    [ -d $HOME/Downloads ] && tmp="$HOME/Downloads/tmp" || tmp="$HOME/tmp"
    mkdir -p "$tmp"
@@ -922,7 +922,7 @@ lacktone () { # monitor lacktone logfile
       printf "%s" "1b/$g " >>"$tmp/lacktone" &
       done
   }
- lacktone2a () { # play background tone, optioal gain (arg1) default -45
+ lacktone2a () { # play background tone, optional gain (arg1) default -45
    local g tmp
    [ -d $HOME/Downloads ] && tmp="$HOME/Downloads/tmp" || tmp="$HOME/tmp"
    mkdir -p "$tmp"
@@ -936,7 +936,7 @@ lacktone () { # monitor lacktone logfile
       printf "%s" "2a/$g " >>"$tmp/lacktone" &
       done
  }
- lacktone2b () { # play background tone, optioal gain (arg1) default -45
+ lacktone2b () { # play background tone, optional gain (arg1) default -45
    local g tmp
    [ -d $HOME/Downloads ] && tmp="$HOME/Downloads/tmp" || tmp="$HOME/tmp"
    mkdir -p "$tmp"
@@ -964,7 +964,7 @@ lacktone () { # monitor lacktone logfile
       printf "%s" "5a/$g " >>"$tmp/lacktone" &
       done
  }
- lacktone5b () { # play background tone, optioal gain (arg1) default -45
+ lacktone5b () { # play background tone, optional gain (arg1) default -45
    local g tmp
    [ -d $HOME/Downloads ] && tmp="$HOME/Downloads/tmp" || tmp="$HOME/tmp"
    mkdir -p "$tmp"
@@ -1053,10 +1053,10 @@ numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" 
     # Accept files (args) OR stdin (one file per line), only act on regular files, squash leading "./";
     # Expect filenames to start with sequence characters (base 32 chars, followed by ",");
     # Retain the major sequence character, regenerate base 32 sequence;
-    # Bump up the sequence major value by "$numlistbump" if set (interger);
+    # Bump up the sequence major value by "$numlistbump" if set (integer);
     # Prepend output filenames with "$numlist" string, if set;
-    # Initilize base 32 sequence with 0 major for input files that have no sequence;
-    # For name changes, without colisions, generate mv commands for review or "| sh"
+    # Initialize base 32 sequence with 0 major for input files that have no sequence;
+    # For name changes, without collisions, generate mv commands for review or "| sh"
     local f fs p c b a src dst;
     while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
@@ -1155,7 +1155,7 @@ mp3range () { # mp3 listing limiter
         done
     } # mp3range 20220803
 
-mp3loop () ( # derive start (arg1) to end, and loop from begining (optional: first cd to arg2), send list to playffr
+mp3loop () ( # derive start (arg1) to end, and loop from beginning (optional: first cd to arg2), send list to playffr
     [ "$2" -a -d "$2" ] && { cd "$2" || { chkwrn "$FUNCNAME : arg2 not a dir '$2' (64e3c5f4)" ; return 1 ;} ;}
     local local start='' startn='' a='' mp3s="$(ls *.mp3 2>/dev/null)"
     [ "$mp3s" ] || [ -e "$HOME/0/v/playffr" ] && { # if pwd has no mp3s use last playffr dir
@@ -1169,7 +1169,7 @@ mp3loop () ( # derive start (arg1) to end, and loop from begining (optional: fir
     } | playffr
     ) # mp3loop 64e3caf9 20230821
 
-playffr () { # for files (args or stdin), continiously repeat invocations of ffplay, without display
+playffr () { # for files (args or stdin), continuously repeat invocations of ffplay, without display
     local f fs
     [ $# -gt 0 ] && { fs="$1" ; shift ;}
     [ "$fs" = '-volume' -o "$fs" = '-v' ] && { local v="$1" ; shift ; fs="$1" ; shift ;}
@@ -1191,7 +1191,7 @@ playffr () { # for files (args or stdin), continiously repeat invocations of ffp
         done <<<"$fs"
     } # playffr
 
-playff () { # for files (args or stdin), continiously repeat invocations of ffplay, with display
+playff () { # for files (args or stdin), continuously repeat invocations of ffplay, with display
     # -v or -volume to set volume, default is 100
     local f='' fs='' v=''
     [ $# -gt 0 ] && { fs="$1" ; shift ;}
@@ -1278,8 +1278,8 @@ rotatefile () { #P> keep at least n backups, and delete files older than m secon
     test -f "$f" || { chkerr "$FUNCNAME : not a file '$f' (630b96a3)" ; $FUNCNAME --help ; return 1 ;}
     test "$rotatefile_secs" || local rotatefile_secs="$((18 * 60 * 60 * 24 ))"
     test "$rotatefile_keep" || local rotatefile_keep="7"
-    test "$rotatefile_secs" -ge 0 || { chkerr "$FUNCNAME : {rotatefile_secs} not an interger '$rotatefile_secs' (630b9a9f)" ; return 1 ;}
-    test "$rotatefile_keep" -ge 0 || { chkerr "$FUNCNAME : {rotatefile_keep} not an interger '$rotatefile_keep' (630b9ac3)" ; return 1 ;}
+    test "$rotatefile_secs" -ge 0 || { chkerr "$FUNCNAME : {rotatefile_secs} not an integer '$rotatefile_secs' (630b9a9f)" ; return 1 ;}
+    test "$rotatefile_keep" -ge 0 || { chkerr "$FUNCNAME : {rotatefile_keep} not an integer '$rotatefile_keep' (630b9ac3)" ; return 1 ;}
     local infile inpath infilep
     infile="${f##*/}"                                              # infile  == basename f
     expr "$f" : ".*/" >/dev/null && inpath="${f%/*}" || inpath="." # inpath  ==  dirname f
@@ -1322,7 +1322,7 @@ base () { # convert {decimal} arg2 to {base} arg1
   # local digs=$(echo {0..9} {a..z} | tr -d ' ilow\n')
     expr "$1" : "-[-]*h" >/dev/null && { # support --help and -h
         chktrue "$FUNCNAME : convert {decimal} arg2 to {base} arg1"
-        chktrue "base and input are intergers, base <= 32   "
+        chktrue "base and input are integers, base <= 32   "
         chktrue 'base32 = "0123456789abcdefghjkmnpqrstuvxyz"'
         chktrue '(sans "ilow")'
         return 2 ;}
@@ -1344,11 +1344,11 @@ base () { # convert {decimal} arg2 to {base} arg1
     echo "${sign}${out}"
     } # base 20221013 6348728e
 
-diffenv () { # creat an env file, report diff iff file exists
-    local diffenvf="$HOME/0/v/diffenv" diffenv="$(declare -p | sort)"
-    mkdir -p "${diffenvf%/*}"
-    [ -e "$diffenvf" ] && diff -U 0 "$diffenvf" - <<<"$diffenv"
-    cat >"$diffenvf" <<<"$diffenv"
+diffenv () { # create an env file, report diff iff file exists
+    local d_file="$HOME/0/v/diffenv" d_env="$(declare -p | sort)"
+    mkdir -p "${d_file%/*}"
+    [ -e "$d_file" ] && diff -U 0 "$d_file" - <<<"$d_env"
+    cat >"$d_file" <<<"$d_env"
     }
 
 auto_dgst_sha3_384 () { #0> auto create digest (_/dgst), hash _/dgst-sha3-384, and rcs in ./_ (or arg1/_)
@@ -1358,7 +1358,7 @@ auto_dgst_sha3_384 () { #0> auto create digest (_/dgst), hash _/dgst-sha3-384, a
     which openssl >/dev/null 2>&1 || { chkerr "$FUNCNAME : openssl not available (65136036)" ; return 1 ;}
     which rcs     >/dev/null 2>&1 || { chkerr "$FUNCNAME : rcs not available (65136072)" ; return 1 ;}
     mkdir -p "$d/_"
-    ( cd "$d"
+    ( cd "$d" # root relative digest and preserve OLDPWD
       find -E . -regex ".*(/%$|/0$|/v$|/c$|,$|~$)" -prune -type f -o -type f \
           | grep -Ev '(/\.DS_Store|/tmp/|/.git/|,$|~$)' | sort >"./_/dgst"
       ci -m"($FUNCNAME)" -l -t-"auto digest ${h}" -q "./_/dgst"
