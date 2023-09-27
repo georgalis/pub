@@ -1357,7 +1357,8 @@ auto_dgst_sha3_384 () { #0> auto create digest (_/dgst), hash _/dgst-sha3-384, a
     which openssl >/dev/null 2>&1 || { chkerr "$FUNCNAME : openssl not available (65136036)" ; return 1 ;}
     which rcs     >/dev/null 2>&1 || { chkerr "$FUNCNAME : rcs not available (65136072)" ; return 1 ;}
     mkdir -p "$d/_"
-    find -E "$d" -regex '\./.*(/%|/0|/v|/c|,)' -prune -type f -o -type f | sort >"$d/_/dgst"
+    find -E "$d" -regex ".*(/%$|/0$|/v$|/c$|,$|~$)" -prune -type f -o -type f \
+        | grep -Ev '(/\.DS_Store|/tmp/|/.git/|,$|~$)' | sort >"$d/_/dgst"
     ci -m"($FUNCNAME)" -l -t-"auto digest ${h}" -q "./_/dgst"
     grep -Ev "$d/_/dgst-${h}(,$|,,v$)" "$d/_/dgst" \
         | while read a; do openssl dgst -${h} "$a" ; done >"$d/_/dgst-${h},"
