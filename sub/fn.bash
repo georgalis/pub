@@ -1351,18 +1351,19 @@ diffenv () { # create an env file, report diff iff file exists
     cat >"$d_file" <<<"$d_env"
     }
 
-auto_dgst_sha3_384 () { #0> auto create digest (_/dgst), hash _/dgst-sha3-384, and rcs in ./_ (or arg1/_)
+auto_dgst () { #0> auto create digest (_/dgst), _/dgst-sha3-384, _/dgst-ckstatsum, and rcs in ./_ (or [arg1]/_)
     local a='' d='' h='sha3-384'
     [ "$1" ] && { [ -d "$1" ] && d="$1" || { chkerr "$FUNCNAME : arg1 not a dir '$1' (6513cb4c)" ; return 1 ;} ;}
     [ "$d" ] || d="."
     which openssl >/dev/null 2>&1 || { chkerr "$FUNCNAME : openssl not available (65136036)" ; return 1 ;}
     which rcs     >/dev/null 2>&1 || { chkerr "$FUNCNAME : rcs not available (65136072)" ; return 1 ;}
     mkdir -p "$d/_"
-    ( cd "$d" # root relative digest and preserve OLDPWD
-      find -E . -regex ".*(/%$|/0$|/v$|/c$|,$|~$)" -prune -type f -o -type f \
-          | grep -Ev '(/\.DS_Store|/tmp/|/.git/|,$|~$)' | sort >"./_/dgst"
-      ci -m"($FUNCNAME)" -l -t-"auto digest ${h}" -q "./_/dgst"
-      grep -Ev "./_/dgst-${h}(,$|,,v$)" "./_/dgst" \
-          | while read a; do openssl dgst -${h} "$a" ; done >"./_/dgst-${h},"
+    ( cd "$d" # root relative digest and preserve OLDPWD, maybe exclude ',v$' and ',$' files later...
+      find -E . -regex ".*(/%$|/0$|,$|~$)" -prune -type f -o -type f \
+          | grep -Ev '(/\.DS_Store|/tmp/|/.git/|,v$|~$)' | sort >"./_/dgst"
+      while read a; do openssl dgst -${h} "$a" ; done >"./_/dgst-${h},"      <"./_/dgst"
+      while read a; do ckstatsum "$a"          ; done >"./_/dgst-ckstatsum," <"./_/dgst"
+      ci -m"($FUNCNAME)" -l -t-"auto digest" -q "./_/dgst"
       ci -m"($FUNCNAME)" -l -t-"auto digest ${h}" -q "./_/dgst-${h},"
+      ci -m"($FUNCNAME)" -l -t-"auto digest ckstatsum" -q "./_/dgst-ckstatsum,"
     ) ;}
