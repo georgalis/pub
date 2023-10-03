@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Unlimited use with this notice. (C) 2006-2021 George Georgalis <george@galis.org>
+# Unlimited use with this notice. (C) 2006-2023 George Georgalis <george@galis.org>
 #
 #:: This script automates the process of rsync snapshot backup
 #:: and rotation in a push, pull or localhost configuration.
@@ -58,26 +58,41 @@ testlast () { [ -z "$LAST" ] && chkerr ">>> No prior backup?  mkdir -p $PREFIX/0
 localsnap () {
  mkdir -p "$LAST/$ORIG" "$PREFIX/0/$NOW/$ORIG/"
  { rsync $rsync_opt --link-dest="$LAST/$ORIG" $ORIG/ $PREFIX/0/$NOW/$ORIG/ \
-  || true # files could dissappear durring rsync
+  || true # files could disappear during rsync
  } | grep -v /$ || true # cleanup output, false exit expected
  mv $PREFIX/0/$NOW $PREFIX/1/
+ cat >$PREFIX/1/$NOW/${NOW}-${FUNCNAME} <<EOL
+RSYNC_OPT='$RSYNC_OPT' $0 $op $ORIG $PREFIX
+# aka:
+  rsync $rsync_opt --link-dest="$LAST/$ORIG" $ORIG/ $PREFIX/0/$NOW/$ORIG/ 
+EOL
 } # localsnap
 
 pushsnap () {
  ssh $HOST "mkdir -p '$LAST/$ORIG' '$PREFIX/0/$NOW/$ORIG/'"
- { rsync $rsync_opt --link-dest="$LAST/$ORIG" $ORIG/ ${HOST}:$PREFIX/0/$NOW/$ORIG/ \
-  || true # files could dissappear durring rsync
- } | grep -v /$ || true # cleanup output, false exit expected
+ { rsync $rsync_opt --link-dest="$LAST/$ORIG" $ORIG/ ${HOST}:$PREFIX/0/$NOW/$ORIG/ 2>&1 | tee /tmp/${NOW}-${op}-errout \
+  || true # false exit not unusual, files could disappear or not have read perms, check log
+ } | grep -Ev '(/$| -> )' || true # rm dir and symlink creation from output, false exit not unusual
  ssh $HOST "mv $PREFIX/0/$NOW $PREFIX/1/"
+ ssh $HOST "cat >$PREFIX/1/$NOW/${NOW}-${op}-errout" </tmp/${NOW}-${op}-errout && rm /tmp/${NOW}-${op}-errout
+ ssh $HOST "cat >$PREFIX/1/$NOW/${NOW}-${op}" <<EOL
+RSYNC_OPT='$RSYNC_OPT' $0 $op $HOST $ORIG $PREFIX
+## $(hostname):rsync $rsync_opt --link-dest="$LAST/$ORIG" $ORIG/ ${HOST}:$PREFIX/0/$NOW/$ORIG/
+EOL
 } # pushsnap
 
 pullsnap () {
  mkdir -p  "$LAST/$ORIG" "$PREFIX/0/$NOW/$ORIG/"
  {
-   rsync $rsync_opt --link-dest="$LAST/$ORIG" $HOST:$ORIG/ $PREFIX/0/$NOW/$ORIG/ 2>/dev/null \
-  || true # files could dissappear durring rsync
- } | grep -v /$ || true # cleanup output, false exit expected
+   rsync $rsync_opt --link-dest="$LAST/$ORIG" $HOST:$ORIG/ $PREFIX/0/$NOW/$ORIG/ 2>&1 | tee /tmp/${NOW}-${op}-errout \
+  || true # false exit not unusual, files could disappear or not have read perms, check log
+ } | grep -Ev '(/$| -> )' || true # rm dir and symlink creation from output, false exit not unusual
  mv $PREFIX/0/$NOW $PREFIX/1/
+ mv /tmp/${NOW}-${op}-errout $PREFIX/1/$NOW/${NOW}-${op}-errout
+ cat >"$PREFIX/1/$NOW/${NOW}-${op}" <<EOL
+ RSYNC_OPT='$RSYNC_OPT' $0 $op $HOST $ORIG $PREFIX
+ ## $(hostname):rsync $rsync_opt --link-dest="$LAST/$ORIG" $ORIG/ ${HOST}:$PREFIX/0/$NOW/$ORIG/
+EOL
 } # pullsnap
 
 rotlocal () {
@@ -111,14 +126,14 @@ rotremote () {
 purglocal () {
  case $LEVEL in
   1) # dispose snapshots older than 4 days, but keep at least 50
-   # (sed expresession suppresses 40 lines from tail of input)
+   # (sed expression suppresses 40 lines from tail of input)
    chkerr $( ls -d $PREFIX/1/* 2>/dev/null | sed -n -e :a -e '$q;N;2,50ba' -e 'P;D' \
               | while read dir; do
                   find $dir -maxdepth 0 -mtime +4 -exec rm -rf \{\} \;
                   done 2>&1 )
   ;;
   2) # dispose of dailies older than 14 days but keep at least 20
-   # (sed expresession suppresses 20 lines from tail of input)
+   # (sed expression suppresses 20 lines from tail of input)
    chkerr $( ls -d $PREFIX/2/* 2>/dev/null | sed -n -e :a -e "\$q;N;2,20ba" -e "P;D" \
               | while read dir; do
                   find $dir -maxdepth 0 -mtime +14 -exec rm -rf \{\} \;
@@ -131,14 +146,14 @@ purglocal () {
 purgremote () {
  case $LEVEL in
   1) # dispose snapshots older than 3 days, but keep at least 40
-   # (sed expresession suppresses 40 lines from tail of input)
+   # (sed expression suppresses 40 lines from tail of input)
    chkerr $(ssh $HOST "ls -d $PREFIX/1/* 2>/dev/null | sed -n -e :a -e '\$q;N;2,40ba' -e 'P;D' \
     | while read dir; do
      find \$dir -maxdepth 0 -mtime +3 -exec rm -rf \{\} \;
     done" 2>&1 )
   ;;
   2) # dispose of dailies older than 14 days but keep at least 20
-   # (sed expresession suppresses 20 lines from tail of input)
+   # (sed expression suppresses 20 lines from tail of input)
    chkerr $(ssh $HOST 'ls -d '$PREFIX'/2/* 2>/dev/null | sed -n -e :a -e "$q;N;2,20ba" -e "P;D" \
     | while read dir; do
      find $s -maxdepth 0 -mtime +14 -exec rm -rf \{\} \;
@@ -219,7 +234,7 @@ NOW=$(now)
 
 # Block may be used as a template for ~/.$0.rc
 ##################################################
-# optimmized for Mac and NetBSD accounts
+# optimized for Mac and NetBSD accounts
 # rsync -a = -rlptgoD = --recursive --links --perms --times --group --owner --devices
 #                -vCc = --verbose --cvs-exclude --checksum --numeric-ids
 [ "$UID" = 0 ] && rsync_opt="--recursive --hard-links --links --perms --times --group         --devices --specials --numeric-ids --chmod=u=rwX" \
