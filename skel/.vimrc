@@ -8,11 +8,21 @@
 "set termencoding=utf8
 " :e! ++enc=utf8
 " :e! ++enc=ascii
+
 set timeout timeoutlen=3000 ttimeoutlen=100
 "set noesckeys
+
+" https://linuxhandbook.com/vim-auto-complete/
+
 " zm zr foldmethod=indent foldmethod=syntax foldlevel=20
 " %  jump to matching ([{}]), start/end of C-style comment, preprocessor conditional, code block
-" setlocal spell spelllang=en_us
+
+"  ]s  [s :: fwd and back move to a misspelled word
+"  z= :: get suggestions
+"  zg :: add word to dictionary
+"  zw :: mark word incorrect
+setlocal nospell
+set spelllang=en_us
 
 set nocompatible
 set modelines=0 " prior to 6.3.83, modelines could could execute arbitrary commands
