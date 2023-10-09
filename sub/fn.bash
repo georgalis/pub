@@ -556,13 +556,13 @@ EOF
   local par2="compand 0.09,0.25 -100,-116,-88,-97,-80,-80,-63,-72,-54,-60,-23,-48,0,-36        19 -95 0.08" # parabolic extra
   local par4="compand 0.13,0.16 -72,-97,-68,-84,-64,-73,-56,-65,-55,-61,-32,-57,-17,-53,0,-49  25 -55 0.12" # parabolic squared
   [ "$cmp" = "hrn" -o "$cmp" = "hrn1" ] && cmpn="hrn3" cmpc="$hrn3"
-  [ "$cmp" = "cps" ]  && cmpn="cps1" cmpc="$cps1"
+  [ "$cmp" = "cps" ]  && cmpn="pard" cmpc="$pard"
   [ "$cmp" = "ckb" ]  && cmpn="$cmp" cmpc="$ckb0"
   [ "$cmp" = "ckb2" ] && cmpn="$cmp" cmpc="$ckb2"
   [ "$cmp" = "ckb3" ] && cmpn="$cmp" cmpc="$ckb3"
   [ "$cmp" = "hrn3" ] && cmpn="$cmp" cmpc="$hrn3"
-  [ "$cmp" = "cps1" ] && cmpn="$cmp" cmpc="$cps1"
-  [ "$cmp" = "parc" ] && cmpn="$cmp" cmpc="$parc"
+  [ "$cmp" = "cps1" ] && cmpn="pard" cmpc="$pard"
+  [ "$cmp" = "parc" ] && cmpn="pard" cmpc="$pard"
   [ "$cmp" = "pard" ] && cmpn="$cmp" cmpc="$pard"
   [ "$cmp" = "par2" ] && cmpn="$cmp" cmpc="$par2"
   [ "$cmp" = "par4" ] && cmpn="$cmp" cmpc="$par4"
