@@ -157,7 +157,7 @@ fnhash () { # gen validfn data from env and fn names in file (arg1), for repo co
     test -e "$f" || { chkwrn "${FUNCNAME}: no file '$f'" && return 0 || return $? ;}
     # no fn match no fail...
     # helpful for 'git commit -m "bugfix $(fnhash file)" file'
-    printf "\n%s\n" "# $(git rev-parse --show-prefix "$f" | tr -d '\n' ; echo)"
+    printf "\n\n%s\n" "# $(git rev-parse --show-prefix "$f" | tr -d '\n' ; echo)"
     grep '^[_[:alpha:]][_[:alnum:]]*[ ]*() ' "$f" | sed 's/() .*//' \
         | sort -u | while read a ; do validfn "$a" ; done
     } #:> source arg1 if exists , on err recall args for backtrace
