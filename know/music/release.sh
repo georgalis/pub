@@ -59,7 +59,7 @@ verb2="devnul"
 while IFS= read a ; do
     validex $a && true || { echo "$0 : validex error : $a (643eb771)" 1>&2 ; exit 2 ;}
     done <<EOF
-comma_mp3.sh 8c4f6f5f 00001434
+comma_mp3.sh 02812680 000014a5
 EOF
 
 gen_index () { # in pwd, for "$links/$name/"
