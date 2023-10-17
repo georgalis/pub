@@ -398,7 +398,8 @@ _youtube_json2txt () { # fixup youtube .info.json to yaml txt and sort files
   local inpath='' _fout="_^$(jq --ascii-output --raw-output '(.id, .acodec)' "$1" \
     | tr -d '"' | tr '\n' '.' | sed 's/\.$//')"
   expr "$1" : ".*/" >/dev/null && inpath="${1%/*}" || inpath="."
-  echo "ss= ; export verb=chkwrn _f=@/$_fout _a= _r=" | tr -d '"' >"${1}.txt"
+  printf "%s\n" "ss= ; export verb=chkwrn ss= to= t= p= f= c=r3 F= CF= off= tp= lra= i= cmp=pard v=3db" >"${1}.txt"
+  printf "%s\n_a=\n_r=\n" "ss= ; export verb=chkwrn _f=@/${_fout}" | tr -d '"' >>"${1}.txt"
   { jq --ascii-output --raw-output '(.fulltitle)' "$1" \
         | tr -d '"' ; printf '\n' "" ;} | sed -e 's,\\u0332,,g' -e 's,\\u2013,-,g' -e 's,\\u00d7,-,g' >>"${1}.txt"
   printf '\n ss= to= f2rb2mp3 $_f 81,${_a}-Trak_Title-${_r}\n' >>"${1}.txt"

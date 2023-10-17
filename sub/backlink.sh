@@ -69,16 +69,18 @@ EOL
 } # localsnap
 
 pushsnap () {
+cat >"/tmp/${NOW}-${op}" <<EOL
+RSYNC_OPT="$RSYNC_OPTS" $0 $op $HOST $ORIG $PREFIX
+## ${hostname}:rsync $rsync_opt --link-dest="$LAST/$ORIG" $ORIG/ ${HOST}:$PREFIX/0/$NOW/$ORIG/
+EOL
  ssh $HOST "mkdir -p '$LAST/$ORIG' '$PREFIX/0/$NOW/$ORIG/'"
  { rsync $rsync_opt --link-dest="$LAST/$ORIG" $ORIG/ ${HOST}:$PREFIX/0/$NOW/$ORIG/ 2>&1 | tee /tmp/${NOW}-${op}-errout \
   || true # false exit not unusual, files could disappear or not have read perms, check log
  } | grep -Ev '(/$| -> )' || true # rm dir and symlink creation from output, false exit not unusual
- ssh $HOST "mv $PREFIX/0/$NOW $PREFIX/1/"
- ssh $HOST "cat >$PREFIX/1/$NOW/${NOW}-${op}-errout" </tmp/${NOW}-${op}-errout && rm /tmp/${NOW}-${op}-errout
- ssh $HOST "cat >$PREFIX/1/$NOW/${NOW}-${op}" <<EOL
-RSYNC_OPT='$RSYNC_OPT' $0 $op $HOST $ORIG $PREFIX
-## $(hostname):rsync $rsync_opt --link-dest="$LAST/$ORIG" $ORIG/ ${HOST}:$PREFIX/0/$NOW/$ORIG/
-EOL
+ssh $HOST "mv $PREFIX/0/$NOW $PREFIX/1/" \
+ && ssh $HOST "cat >$PREFIX/1/$NOW/${NOW}-${op}-errout" </tmp/${NOW}-${op}-errout && rm /tmp/${NOW}-${op}-errout \
+ && ssh $HOST "cat >$PREFIX/1/$NOW/${NOW}-${op}" <"/tmp/${NOW}-${op}" \
+ && rm -f "/tmp/${NOW}-${op}-errout" "/tmp/${NOW}-${op}"
 } # pushsnap
 
 pullsnap () {
@@ -91,7 +93,7 @@ pullsnap () {
  mv /tmp/${NOW}-${op}-errout $PREFIX/1/$NOW/${NOW}-${op}-errout
  cat >"$PREFIX/1/$NOW/${NOW}-${op}" <<EOL
  RSYNC_OPT='$RSYNC_OPT' $0 $op $HOST $ORIG $PREFIX
- ## $(hostname):rsync $rsync_opt --link-dest="$LAST/$ORIG" $ORIG/ ${HOST}:$PREFIX/0/$NOW/$ORIG/
+ ## ${hostname}:rsync $rsync_opt --link-dest="$LAST/$ORIG" $ORIG/ ${HOST}:$PREFIX/0/$NOW/$ORIG/
 EOL
 } # pullsnap
 
@@ -170,8 +172,8 @@ _logger () { logger "$*" ; [ -t 1 ] && chkwrn "$*" || true ;}
 
 now () { date +%Y%m%d_%H%M%S ;}
 
-op=$1 # operation
-case $op in
+op="$1" # operation
+case "$op" in
  local)
   [ $# = 3 ] || chkerr "local : not 3 args : $(usage)"
   ORIG="$2" ; PREFIX="$3"/bk
@@ -221,7 +223,7 @@ case $op in
  ;;
 esac # $op
 
-case $op in # set LAST
+case "$op" in # set LAST
  local|pull|rotlocal) LAST="$(locallast)"
   testlast
  ;;
