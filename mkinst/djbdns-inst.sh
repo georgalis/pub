@@ -53,6 +53,9 @@ patch <$dist/djbdns-dnscache-sigpipe.patch
 # save cache on sigterm, restore on start, mkdir -p $ROOT/cache
 patch <$dist/djbdns-1.05.cache-save.patch.diff
 
+# support for AAAA records http://www.fefe.de/dns/
+patch <$dist/djbdns-1.05-test28.diff
+
 # Jeremy Kister has an all-in-one patch for djbdns  for various resource record types
 #patch <$dist/djbdns-1.05.isp.patch
 
