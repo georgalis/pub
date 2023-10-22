@@ -3,7 +3,7 @@
 # REQUIRE: shell
 # BEFORE:
 # PROVIDE: pkgin
-# KEYWORD: nbsd
+# KEYWORD: x-nbsd
 
 set -e 
 

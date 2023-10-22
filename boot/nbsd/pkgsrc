@@ -1,16 +1,16 @@
 #!/bin/sh
 
-# REQUIRE: shell
+# REQUIRE: shell comp
 # BEFORE:
 # PROVIDE: pkgsrc
-# KEYWORD: opt-nbsd
+# KEYWORD: x-nbsd
 
 set -e 
 
 	cd /usr
-	ftp -a "http://ftp.netbsd.org/pub/pkgsrc/current/pkgsrc.tar.bz2"
+	ftp -a "https://cdn.netbsd.org/pub/pkgsrc/current/pkgsrc.tar.xz"
 	echo "Extracting latest pkgsrc stable release under /usr..."
-	tar -xjpf pkgsrc.tar.bz2 -C /usr/
+	tar -xpf pkgsrc.tar.bz2 -C /usr/
 	rm -f pkgsrc.tar.bz2
 
 exit 0
