@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# (c) 2017-2022 George Georgalis <george@galis.org> unlimited use with this notice 
+# (c) 2017-2023 George Georgalis <george@galis.org> unlimited use with this notice 
 
 set -e
 
@@ -13,12 +13,15 @@ dist=/usr/local/dist
 src=/usr/local/src
 mkdir -p $dist $src
 
+cd $dist
 ftp http://cr.yp.to/djbdns/djbdns-1.05.tar.gz
+
 cp -p \
 	$base/patch/djbdns-runit-socklog.2.patch \
 	$base/patch/djbdns-dnscache-cname.patch \
 	$base/patch/djbdns-dnscache-sigpipe.patch \
 	$base/patch/djbdns-1.05.cache-save.patch.diff \
+	$base/patch/djbdns-1.05-test32.diff \
 	"${dist}"
 
 # https://web.archive.org/web/20161203224414/http://tinydns.org/
@@ -54,7 +57,7 @@ patch <$dist/djbdns-dnscache-sigpipe.patch
 patch <$dist/djbdns-1.05.cache-save.patch.diff
 
 # support for AAAA records http://www.fefe.de/dns/
-patch <$dist/djbdns-1.05-test28.diff
+patch <$dist/djbdns-1.05-test32.diff
 
 # Jeremy Kister has an all-in-one patch for djbdns  for various resource record types
 #patch <$dist/djbdns-1.05.isp.patch
