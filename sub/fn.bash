@@ -316,21 +316,6 @@ ct () { #:> on terminal output, truncate lines to width
 # also, aparently (?) youtube throttles is you do not run javascript first (youtube-dl vs yt-dlp)
 # cf https://github.com/ytdl-org/youtube-dl/issues/29326#issuecomment-894619419
 
-_youtube_list () {
-  local id="$1" d="$2"
-  [ "$id" ] || read -p "youtube id: " id
-  [ "$id" ] || { chkerr "no id?" ; return 1 ;}
-  [ "$d" ]  || read -p "directory: " d
-  [ -d "$d" ] || d="$(pwd -P)"
-  [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d'" ; return 1 ;}
-  [ "$ytdl" ] || ytdl="youtube-dl"
-  "$ytdl" --abort-on-error --yes-playlist \
-   --write-info-json --write-comments --write-sub --write-thumbnail \
-   --restrict-filenames --audio-quality 0 --audio-format best --extract-audio \
-   --playlist-start 1 \
-   -o "$d/%(playlist_title)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
-  } # _youtube_list 20220516
-
 _youtube_video_list () {
   local id="$1" d="$2"
   [ "$id" ] || read -p "youtube id: " id
@@ -349,6 +334,39 @@ _youtube_video_list () {
    --playlist-start 1 \
    -o "$d/%(playlist_title)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   } # _youtube_video_list 20220516
+
+_youtube_video () {
+  local id="$1" d="$2"
+  [ "$id" ] || read -p "youtube id: " id
+  [ "$id" ] || { chkerr "no id?" ; return 1 ;}
+  [ "$d" ]  || read -p "directory: " d
+  [ -d "$d" ] || d="$(pwd -P)"
+  [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d'" ; return 1 ;}
+  [ "$ytdl" ] || ytdl="youtube-dl"
+  "$ytdl" --write-info-json --write-comments --write-sub --write-thumbnail \
+   --restrict-filenames --audio-quality 0 --audio-format best \
+   --abort-on-error --no-playlist \
+   -o "$d/00,%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+  "$ytdl" \
+   --restrict-filenames --audio-quality 0 --audio-format best --extract-audio --keep-video \
+   --abort-on-error --no-playlist \
+   -o "$d/00,%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+  } # _youtube_video 20220516
+
+_youtube_list () {
+  local id="$1" d="$2"
+  [ "$id" ] || read -p "youtube id: " id
+  [ "$id" ] || { chkerr "no id?" ; return 1 ;}
+  [ "$d" ]  || read -p "directory: " d
+  [ -d "$d" ] || d="$(pwd -P)"
+  [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d'" ; return 1 ;}
+  [ "$ytdl" ] || ytdl="youtube-dl"
+  "$ytdl" --abort-on-error --yes-playlist \
+   --write-info-json --write-comments --write-sub --write-thumbnail \
+   --restrict-filenames --audio-quality 0 --audio-format best --extract-audio \
+   --playlist-start 1 \
+   -o "$d/%(playlist_title)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+  } # _youtube_list 20220516
 
 _youtube () {
   local id="$1" d="$2"
@@ -374,24 +392,6 @@ _youtube () {
     || { chkwrn "failed: _youtube_json2txt $HOME/%/ytdl/$t" ; return 1 ;}
   } # _youtube 20220516
 
-_youtube_video () {
-  local id="$1" d="$2"
-  [ "$id" ] || read -p "youtube id: " id
-  [ "$id" ] || { chkerr "no id?" ; return 1 ;}
-  [ "$d" ]  || read -p "directory: " d
-  [ -d "$d" ] || d="$(pwd -P)"
-  [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d'" ; return 1 ;}
-  [ "$ytdl" ] || ytdl="youtube-dl"
-  "$ytdl" --write-info-json --write-comments --write-sub --write-thumbnail \
-   --restrict-filenames --audio-quality 0 --audio-format best \
-   --abort-on-error --no-playlist \
-   -o "$d/00,%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
-  "$ytdl" \
-   --restrict-filenames --audio-quality 0 --audio-format best --extract-audio --keep-video \
-   --abort-on-error --no-playlist \
-   -o "$d/00,%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
-  } # _youtube_video 20220516
-
 _youtube_json2txt () { # fixup youtube .info.json to yaml txt and sort files
   [ -f "${1}" ]     || { chkerr "$FUNCNAME : not a file : ${1}" ; return 1 ;}
   [ -f "${1}.txt" ] && { chkerr "$FUNCNAME : exists ${1}.txt" ; return 1 ;}
@@ -399,12 +399,14 @@ _youtube_json2txt () { # fixup youtube .info.json to yaml txt and sort files
     | tr -d '"' | tr '\n' '.' | sed 's/\.$//')"
   expr "$1" : ".*/" >/dev/null && inpath="${1%/*}" || inpath="."
   printf "%s\n" "ss= ; export verb=chkwrn ss= to= t= p= f= c=r3 F= CF= off= tp= lra= i= cmp=pard v=3db" >"${1}.txt"
-  printf "%s\n_a=\n_r=\n" "ss= ; export verb=chkwrn _f=@/${_fout}" | tr -d '"' >>"${1}.txt"
+  printf "%s\n" "ss= ; export verb=chkwrn _f=@/${_fout}" | tr -d '"' >>"${1}.txt"
   { jq --ascii-output --raw-output '(.fulltitle)' "$1" \
-        | tr -d '"' ; printf '\n' "" ;} | sed -e 's,\\u0332,,g' -e 's,\\u2013,-,g' -e 's,\\u00d7,-,g' >>"${1}.txt"
-  printf '\n ss= to= f2rb2mp3 $_f 81,${_a}-Trak_Title-${_r}\n' >>"${1}.txt"
+        | tr -d '"' ; printf '\n' "" ;} \
+        | sed -e 's,\\u0332,,g' -e 's,\\u2013,-,g' -e 's,\\u00d7,-,g' \
+        | awk '{print "\n_a="$0"\n_r=\n"$0"\n\n"$0"\n\n"}' >>"${1}.txt"
+  printf ' ss= to= f2rb2mp3 $_f ooo,${_a}-Trak_Title-${_r}\n' >>"${1}.txt"
   jq --ascii-output --raw-output '(.duration_string)' "$1" | tr -d '"' >>"${1}.txt"
-  yes | tr -d 'y' | head -n 5 >>"${1}.txt"
+  yes | tr -d 'y' | head -n 2 >>"${1}.txt"
   jq --compact-output 'del(.formats, .thumbnail, .thumbnails, .downloader_options, .http_headers,
         .webpage_url_basename, .author_thumbnail, .playable_in_embed, .live_status, .automatic_captions,
         .extractor, .is_live, .was_live )' "$1" | yq --yaml-output | tr -cd '[ -~]\n' >>"${1}.txt"
