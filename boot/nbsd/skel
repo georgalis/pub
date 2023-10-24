@@ -1,13 +1,13 @@
 #!/bin/sh
 
+# PROVIDE: skel
 # REQUIRE: shell
 # BEFORE: pkgin
-# PROVIDE: skel
 # KEYWORD: nbsd
 
 set -e 
 
 [ -e ../../skel -a -e ../../mkinst/skel-inst.sh ] \
 	&& sh ../../mkinst/skel-inst.sh ../../skel /etc/skel \
-	&& sh ../../mkinst/skel-inst.sh ../../skel
+	&& sh ../../mkinst/skel-inst.sh ../../skel $HOME
 
