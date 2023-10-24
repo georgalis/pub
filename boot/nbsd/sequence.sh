@@ -1,23 +1,22 @@
 #!/bin/sh
 
 # (C) 2023 George Georgalis <george@galis.org> unlimited use with this notice
-# 6536a4f43 foundation code based Claude 2 prompt to enhance rcorder functionality
+# 6536a4f43 foundation code based on AI prompt to emulate rcorder in shell
 
 # given a bootstrap setup directory (arg1) with scripts annotated in
 # rcorder format, consider respective PROVIDE, REQUIRE, and BEFORE
 # metadata, and additional args denoting PROVIDE requirements from
-# the setup directory scripts, the required scripts in the proper
-# sequence, to satisfy the dependencies, are discovered and printed.
+# the setup directory scripts. The required scripts in the proper
+# sequence, to satisfy the dependencies, are discovered and printed,
+# through the following key steps:
 #
-# Through the following key steps:
-# 
 # 1. Parse the input PROVIDE requirement into an array.
-# 
+#
 # 2. Loop through each requirement and find scripts in the bootstrap
 #      setup directory that PROVIDE it. Add those scripts to a
 #      'required' array.
 #    - If no script provides a service, exit with error.
-# 
+#
 # 3. Parse the BEFORE metadata for each required script and build
 #      a 'before' array with before/after pairs.
 #
@@ -28,14 +27,14 @@
 #    - Loop through required array and check for back edges to
 #        already visited nodes to detect cycles.
 #    - Track visited nodes and append to tsorted array in dep order.
-# 
-# 5. Print the sorted script list. 
+#
+# 5. Print the sorted script list.
 #    - For each script, print its REQUIRE dependencies.
 #    - Check required array for missing dependencies, exit if found.
-# 
+#
 # This ensures we only print the minimum set of scripts needed
 # for the provided services, in the proper dependency order while
-# detecting cycles and errors.
+# detecting loop cycles, and other errors.
 #
 # The key data structures are the 'required', 'provided', 'before'
 # and 'tsorted' arrays. By tracking them separately, we can build
@@ -74,7 +73,7 @@ for i in ${!provided[@]}; do
   $verb "provided[$i] = ${provided[$i]}"
   done
 
-# Find scripts that PROVIDE required
+# Find scripts that PROVIDE the ask
 for p in "${provided[@]}"; do
   found=0
   for f in $(find . -maxdepth 1 -type f | sed 's=./=='); do
@@ -105,7 +104,7 @@ $verb "required: ${required[@]}"
 for r in "${required[@]}"; do
   for d in $(file_metadata "$r" | grep '^# BEFORE: ' | cut -d: -f2-); do
     $verb "before get $d"
-    before+=("$r $d") 
+    before+=("$r $d")
   done
 done
 # verb
@@ -125,14 +124,14 @@ tsorted=()
       for b in "${before[@]}"; do
         read before after <<<"$b"
         [ "$after" = "$r" ] && [[ " ${visited[@]} " =~ " ${before} " ]] && \
-          { chkerr "$0 : Dependency loop detected (6536c3b6)" ; exit 1 ;} 
+          { chkerr "$0 : Dependency loop detected (6536c3b6)" ; exit 1 ;}
         done
       visited+=("$r")
       tsorted+=("$r")
       done
     required=("${tsorted[@]}")
   } # With BEFORE dependencies
-$verb "sorted scripts ${tsorted[@]}" 
+$verb "sorted scripts ${tsorted[@]}"
 
 # Print sorted scripts in reverse order
 for ((i=${#tsorted[@]}-1; i>=0; i--)); do
