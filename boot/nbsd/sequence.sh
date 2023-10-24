@@ -1,9 +1,9 @@
 #!/bin/sh
 
 # (C) 2023 George Georgalis <george@galis.org> unlimited use with this notice
-# 6536a4f43 foundation code based Claud 2 prompt to enhance rcorder functionality
+# 6536a4f43 foundation code based Claude 2 prompt to enhance rcorder functionality
 
-# given a bootstrap setup directory (arg1) with scripts annoted in
+# given a bootstrap setup directory (arg1) with scripts annotated in
 # rcorder format, consider respective PROVIDE, REQUIRE, and BEFORE
 # metadata, and additional args denoting PROVIDE requirements from
 # the setup directory scripts, the required scripts in the proper
@@ -41,7 +41,6 @@
 # and 'tsorted' arrays. By tracking them separately, we can build
 # the dependency graph and sort it for the correct output.
 
-
 rcd="$1"
 [ "$#" -gt 1 ] && shift
 ask=$@
@@ -54,15 +53,10 @@ chkerr() {  [ "$*" ] && { stderr    ">>> $*" ; return 1  ;} || true ;} #:> err s
 [ "$rcd" ] || { chkerr "$0 : no rc.d (arg1) given (6536a66a)" ; exit 1 ;}
 [ -d "$rcd" ] || { chkerr "$0 : rc.d (arg1) not a directory (6536a6a4)" ; exit 1 ;}
 cd "$rcd"
-[ "$ask" ] || ask='.'
-
-required=()
-provided=()
-before=()
 
 # set verb to chkwrn for debug output
-verb=devnul
 verb=chkwrn
+verb=devnul
 
 file_metadata() { awk ' /^# / { tag = $2
     if (tag == "PROVIDE:") { print; tag="REQUIRE:"
@@ -97,8 +91,7 @@ for i in ${!required[@]}; do
 
 # Validate REQUIRE dependencies
 for r in "${required[@]}"; do
-  deps=$(grep '^# REQUIRE: ' "$r" | cut -d: -f2-)
-  for d in $deps; do
+  for d in $(file_metadata "$r" | grep '^# REQUIRE: ' | cut -d: -f2-); do
     provided=0
     for f in $(find . -maxdepth 1 -type f | sed 's=./=='); do
       file_metadata "$f" | grep "^# PROVIDE: $d$" >/dev/null && { provided=1 ; break ;}
@@ -110,8 +103,7 @@ done
 $verb "required: ${required[@]}"
 # Build BEFORE dependency graph
 for r in "${required[@]}"; do
-  deps=$(grep -E '^# BEFORE: ' "$r" | cut -d: -f2-)
-  for d in $deps; do
+  for d in $(file_metadata "$r" | grep '^# BEFORE: ' | cut -d: -f2-); do
     $verb "before get $d"
     before+=("$r $d") 
   done
@@ -140,33 +132,11 @@ tsorted=()
       done
     required=("${tsorted[@]}")
   } # With BEFORE dependencies
-
 $verb "sorted scripts ${tsorted[@]}" 
 
-revargs () {
-    local a out
-    out="$1" ; shift || true
-    while test $# -gt 0 ; do out="$1 $out" ; shift || true ; done
-    echo "$out"
-    }
-
-# Print sorted scripts in reverse order + REQUIRE deps
-printed=()
+# Print sorted scripts in reverse order
 for ((i=${#tsorted[@]}-1; i>=0; i--)); do
-  s=${tsorted[$i]}
-  [[ " ${printed[@]} " =~ " $s " ]] && continue
-  printed+=("$s")
-  echo "$s"
-  deps=$(grep '^# REQUIRE: ' "$s" | cut -d: -f2-)
-  for d in $deps; do
-    if [ ${#required[@]} -eq 0 ]; then
-      echo "Missing dependency: $d" >&2
-      exit 1
-    fi  
-    echo "$d"
-  done
-done
+ echo "${tsorted[$i]}"
+ done
 
-
-$verb end
 exit 0
