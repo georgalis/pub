@@ -1,8 +1,8 @@
 #!/bin/sh
 
+# PROVIDE: pkgin
 # REQUIRE: shell
 # BEFORE:
-# PROVIDE: pkgin
 # KEYWORD: x-nbsd
 
 set -e 

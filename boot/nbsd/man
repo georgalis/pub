@@ -1,8 +1,9 @@
 #!/bin/sh
 
-# REQUIRE: 
-# BEFORE:
 # PROVIDE: man
+# REQUIRE: etc
+# REQUIRE: time
+# BEFORE:
 # KEYWORD: nbsd
 
 set -e 

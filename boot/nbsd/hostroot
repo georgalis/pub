@@ -1,8 +1,8 @@
 #!/bin/sh
 
+# PROVIDE: hostroot
 # REQUIRE: time
 # BEFORE: etc
-# PROVIDE: hostroot
 # KEYWORD: nbsd
 
 set -e

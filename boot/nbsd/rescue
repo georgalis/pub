@@ -1,8 +1,8 @@
 #!/bin/sh
 
-# REQUIRE: 
-# BEFORE:
 # PROVIDE: rescue
+# REQUIRE:
+# BEFORE:
 # KEYWORD: nbsd
 
 set -e 

@@ -1,8 +1,8 @@
 #!/bin/sh
 
+# PROVIDE: certs
 # REQUIRE: pkgsrc
 # BEFORE:
-# PROVIDE: certs
 # KEYWORD: nbsd
 
 set -e 

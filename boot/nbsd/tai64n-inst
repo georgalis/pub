@@ -5,9 +5,9 @@
 # (c) 2008-2022 George Georgalis <george@galis.org> unlimited use with this notice
 #
 
+# PROVIDE: tai64n-inst
 # REQUIRE: comp
 # BEFORE:
-# PROVIDE: tai64
 # KEYWORD: nbsd
 
 set -e

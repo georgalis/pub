@@ -1,8 +1,8 @@
 #!/bin/sh
 
+# PROVIDE: cron
 # REQUIRE: etc
 # BEFORE:
-# PROVIDE: cron
 # KEYWORD: nbsd
 
 #:: Add maintenance routines to root crontab.

@@ -1,8 +1,8 @@
 #!/bin/sh
 
+# PROVIDE: comp
 # REQUIRE: 
 # BEFORE:
-# PROVIDE: comp
 # KEYWORD: nbsd
 
 set -e 

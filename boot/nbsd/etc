@@ -1,8 +1,8 @@
 #!/bin/sh
 
+# PROVIDE: etc
 # REQUIRE:
 # BEFORE: shell
-# PROVIDE: etc
 # KEYWORD: nbsd
 
 

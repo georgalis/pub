@@ -1,8 +1,8 @@
 #!/bin/sh
 
+# PROVIDE: time
 # REQUIRE:
 # BEFORE:
-# PROVIDE: time
 # KEYWORD: nbsd
 
 # set the clock and turn on ntp before touching any other file

@@ -1,8 +1,8 @@
 #!/bin/sh
 
+# PROVIDE: pkgsrc
 # REQUIRE: shell comp
 # BEFORE:
-# PROVIDE: pkgsrc
 # KEYWORD: x-nbsd
 
 set -e 

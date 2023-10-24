@@ -1,8 +1,8 @@
 #!/bin/sh
 
+# PROVIDE: ipsvd-inst
 # REQUIRE: socklog-conf comp
 # BEFORE:
-# PROVIDE: ipsvd-inst
 # KEYWORD: nbsd
 
 set -e

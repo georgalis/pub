@@ -1,8 +1,8 @@
 #!/bin/sh
 
+# PROVIDE: shell
 # REQUIRE: time
 # BEFORE:
-# PROVIDE: shell
 # KEYWORD: nbsd
 
 #:: Set ksh as the default shell.

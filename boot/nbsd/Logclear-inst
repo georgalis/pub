@@ -9,9 +9,9 @@
 # Date:  2001-10-09 19:23:39
 # http://marc.theaimsgroup.com/?l=log&m=100265849322872
 #
+# PROVIDE: Logclear-inst
 # REQUIRE: runit-conf
 # BEFORE:
-# PROVIDE: Logclear
 # KEYWORD: nbsd
 
 set -e

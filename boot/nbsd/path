@@ -1,8 +1,8 @@
 #!/bin/sh
 
+# PROVIDE: path
 # REQUIRE: time
 # BEFORE: shell
-# PROVIDE: path
 # KEYWORD: nbsd
 
 set -e

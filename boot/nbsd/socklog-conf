@@ -4,9 +4,9 @@
 
 # http://smarden.org/socklog/configuration.html
 
+# PROVIDE: socklog-conf
 # REQUIRE: socklog-inst runit-conf
 # BEFORE:
-# PROVIDE: socklog-conf
 # KEYWORD: nbsd
 
 set -e
