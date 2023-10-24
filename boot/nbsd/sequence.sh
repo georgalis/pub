@@ -44,17 +44,17 @@
 
 rcd="$1"
 [ "$#" -gt 1 ] && shift
-provide=$@
+ask=$@
 
 devnul() { return 0 ;}                                                 #:> drop args
 stderr() {  [ "$*" ] && echo "$*" 1>&2 || true ;}                      #:> args to stderr, or noop if null
 chkwrn() {  [ "$*" ] && { stderr    "^^^ $*" ; return $? ;} || true ;} #:> wrn stderr args return 0, noop if null
 chkerr() {  [ "$*" ] && { stderr    ">>> $*" ; return 1  ;} || true ;} #:> err stderr args return 1, noop if null
 
-[ "$rcd" ] || { chkerr "$0 : no rc.d (arg1) provided (6536a66a)" ; exit 1 ;}
+[ "$rcd" ] || { chkerr "$0 : no rc.d (arg1) given (6536a66a)" ; exit 1 ;}
 [ -d "$rcd" ] || { chkerr "$0 : rc.d (arg1) not a directory (6536a6a4)" ; exit 1 ;}
 cd "$rcd"
-[ "$provide" ] || provide='.'
+[ "$ask" ] || ask='.'
 
 required=()
 provided=()
@@ -64,8 +64,15 @@ before=()
 verb=devnul
 verb=chkwrn
 
+file_metadata() { awk ' /^# / { tag = $2
+    if (tag == "PROVIDE:") { print; tag="REQUIRE:"
+    } else if (tag == "REQUIRE:") { print; tag="BEFORE:"
+    } else if (tag == "BEFORE:") { print; tag="KEYWORD:"
+    } else if (tag == "KEYWORD:") { print; exit }
+  } ' "$1" ;}
+
 # Parse PROVIDED data
-for p in $provide; do
+for p in $ask; do
   provided+=("$p")
   done
 # verb
@@ -73,15 +80,12 @@ for i in ${!provided[@]}; do
   $verb "provided[$i] = ${provided[$i]}"
   done
 
-# Find scripts that PROVIDE services
+# Find scripts that PROVIDE required
 for p in "${provided[@]}"; do
   found=0
-  for f in *; do
-    [ -d "$f" ] || if grep -Eq "^# PROVIDE:.*( ${p} | ${p}$)" "$f"; then
-      required+=("$f")
-      found+=1
-      break
-    fi
+  for f in $(find . -maxdepth 1 -type f | sed 's=./=='); do
+    file_metadata "$f" | grep -E "^# PROVIDE:.*( ${p} | ${p}$)" >/dev/null \
+      && { required+=("$f") found+=1 ;}
   done
   [ $found -eq 0 ] && { chkerr "$0 : No script provides $p (6536c080)" ; exit 1 ;}
   [ $found -gt 1 ] && { chkerr "$0 : Multiple scripts provide $p (6536c0c8)" ; exit 1 ;}
@@ -90,6 +94,18 @@ done
 for i in ${!required[@]}; do
   $verb "required[$i] = ${required[$i]}"
   done
+
+# Validate REQUIRE dependencies
+for r in "${required[@]}"; do
+  deps=$(grep '^# REQUIRE: ' "$r" | cut -d: -f2-)
+  for d in $deps; do
+    provided=0
+    for f in $(find . -maxdepth 1 -type f | sed 's=./=='); do
+      file_metadata "$f" | grep "^# PROVIDE: $d$" >/dev/null && { provided=1 ; break ;}
+    done
+    [ $provided -eq 0 ] && { chkerr "$0 : Missing dependency $d required by $r" ; exit 1 ;}
+  done
+done
 
 $verb "required: ${required[@]}"
 # Build BEFORE dependency graph
@@ -125,9 +141,7 @@ tsorted=()
     required=("${tsorted[@]}")
   } # With BEFORE dependencies
 
-
 $verb "sorted scripts ${tsorted[@]}" 
-
 
 revargs () {
     local a out
@@ -136,24 +150,19 @@ revargs () {
     echo "$out"
     }
 
-# # Print sorted scripts + REQUIRE deps
-# for ((i=${#tsorted[@]}-1; i>=0; i--)); do
-#   s=${tsorted[$i]}
-#   echo "$s"
-#   deps=$(grep '^# REQUIRE: ' "$s" | cut -d: -f2-)
-#   for d in $deps; do
-#   for d in $deps; do
-# 
-
-
-for s in "${tsorted[@]}"; do
+# Print sorted scripts in reverse order + REQUIRE deps
+printed=()
+for ((i=${#tsorted[@]}-1; i>=0; i--)); do
+  s=${tsorted[$i]}
+  [[ " ${printed[@]} " =~ " $s " ]] && continue
+  printed+=("$s")
   echo "$s"
   deps=$(grep '^# REQUIRE: ' "$s" | cut -d: -f2-)
   for d in $deps; do
     if [ ${#required[@]} -eq 0 ]; then
       echo "Missing dependency: $d" >&2
-      exit 1  
-    fi
+      exit 1
+    fi  
     echo "$d"
   done
 done
@@ -161,4 +170,3 @@ done
 
 $verb end
 exit 0
-
