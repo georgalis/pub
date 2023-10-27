@@ -325,7 +325,7 @@ _youtube_video_list () {
   [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d'" ; return 1 ;}
   [ "$ytdl" ] || ytdl="youtube-dl"
   "$ytdl" --abort-on-error --yes-playlist \
-   --write-info-json --write-comments --write-sub --write-thumbnail \
+   --write-info-json --write-comments --write-sub --write-auto-sub --sub-lang en --write-thumbnail \
    --restrict-filenames --audio-quality 0 --audio-format best \
    --playlist-start 1 \
    -o "$d/%(playlist_title)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
@@ -343,7 +343,7 @@ _youtube_video () {
   [ -d "$d" ] || d="$(pwd -P)"
   [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d'" ; return 1 ;}
   [ "$ytdl" ] || ytdl="youtube-dl"
-  "$ytdl" --write-info-json --write-comments --write-sub --write-thumbnail \
+  "$ytdl" --write-info-json --write-comments --write-sub --write-auto-sub --sub-lang en --write-thumbnail \
    --restrict-filenames --audio-quality 0 --audio-format best \
    --abort-on-error --no-playlist \
    -o "$d/00,%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
@@ -362,7 +362,7 @@ _youtube_list () {
   [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d'" ; return 1 ;}
   [ "$ytdl" ] || ytdl="youtube-dl"
   "$ytdl" --abort-on-error --yes-playlist \
-   --write-info-json --write-comments --write-sub --write-thumbnail \
+   --write-info-json --write-comments --write-sub --write-auto-sub --sub-lang en --write-thumbnail \
    --restrict-filenames --audio-quality 0 --audio-format best --extract-audio \
    --playlist-start 1 \
    -o "$d/%(playlist_title)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
@@ -384,7 +384,7 @@ _youtube () {
   local f="$(find $links -name \*$($ytdl --dump-json $id | jq --ascii-output --raw-output '(.id)' | yq --yaml-output |head -n1)\* | grep -Ev '/(tmp|0)/' | sort)"
   # check if the id exists already, chance to abort...
   [ "$f" ] && { echo "$f" ; read -p "files found, continue (N/y) " f ; [ "$f" = 'y' ] || return 1 ;}
-  $ytdl --write-info-json --write-comments --write-sub --write-thumbnail \
+  $ytdl --write-info-json --write-comments --write-sub --write-auto-sub --sub-lang en --write-thumbnail \
    --restrict-filenames --audio-quality 0 --audio-format best --extract-audio \
    --abort-on-error --no-playlist \
    -o "$d/00,%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id | tee "$HOME/%/ytdl/$t"
