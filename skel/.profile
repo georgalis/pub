@@ -21,7 +21,6 @@ ulimit -c 1 # one byte core files memorialize their creation
 
 case "$OS" in
 Darwin)
-#[ "$TERM" = "tmux-256color" ] && export TERM='xterm-new'
  export LSCOLORS='xefxcxdxbxegedabagacad' # invert directory color
  alias   l='ls -GFr'
  alias  lr='ls -GF'
@@ -329,10 +328,8 @@ rm $key_in ;}
 #	&& { printf "Logout: " && kill $2 && echo $(hostname) $0 [$4] killed ssh-agent $2 \
 #		|| { echo $(hostname) ssh-agent already died? 2>/dev/stderr ; exit 1 ;} ;}
 
-siffx    "$HOME/.profile.local" "~/.profile (63b8877f)" || { return 2 ; exit 3 ;}
-chktrue  "$HOME/.profile.local (63b8877f)"
-siffx -n "$HOME/.profile"       "~/.profile (642a7466)" || { return 2 ; exit 3 ;}
-chktrue  "$HOME/.profile (642a7466)"
+siffx "$HOME/.profile.local" "~/.profile (63b8877f)" && chktrue "$_ $HOME/.profile.local" || { return 2 ; exit 3 ;}
+siffx -n "$HOME/.profile"    "~/.profile (642a7466)" && chktrue "$_ $HOME/.profile" || { return 2 ; exit 3 ;}
 
 tput dim
 echo "User ${USER}@${HOSTNAME}: "
