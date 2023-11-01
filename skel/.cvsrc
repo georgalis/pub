@@ -1,0 +1,16 @@
+# https://cdn.NetBSD.org/pub/pkgsrc/
+# https://cdn.netbsd.org/pub/pkgsrc/current/pkgsrc.tar.gz
+# https://cdn.netbsd.org/pub/NetBSD/NetBSD-current/tar_files/src.tar.gz
+# https://cdn.netbsd.org/pub/NetBSD/iso/9.3/NetBSD-9.3-amd64.iso
+# https://cdn.netbsd.org/pub/NetBSD/install-images/9.3/NetBSD-9.3-amd64.iso
+# https://www.netbsd.org/docs/pkgsrc/getting.html
+# https://www.pkgsrc.org/quarterly/
+# https://www.pkgsrc.org/is-a-freeze-on/
+# https://pkgsrc.se/devel/cvsutils
+# recommended CVS configuration file from the pkgsrc guide
+cvs -q
+checkout -P
+update -dP
+diff -upN -U0
+rdiff -u
+release -d
