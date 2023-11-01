@@ -133,9 +133,9 @@ validfn () { #:> validate function, compare unit hash vs operation env hash
 #
 # then run validfn on that data to report if the functions have ever change
 # print help if hash unit does not match hash from env --insecure
-test "$(declare -f validfn 2>/dev/null)" || { echo "$0 : validfn not defined" 1>&2 ; _help_sub ; return 1 ;}
+test "$(declare -f validfn 2>/dev/null)" || { echo "$0 : validfn not defined (6542c8ca)" 1>&2 ; _help_sub ; return 1 ;}
 while IFS= read a ; do
-        validfn $a && true || { echo "validfn error : $a" 1>&2 ; _help_skel ; break 1 ;}
+        validfn $a && true || { echo "validfn error : $a (6542c8d6)" 1>&2 ; _help_skel ; break 1 ;}
         done <<EOF
 devnul 216e1370 0000001d
 stderr 7ccc5704 00000037
@@ -154,7 +154,7 @@ EOF
 fnhash () { # gen validfn data from env and fn names in file (arg1), for repo commit comments
     # search for expected hash from repo log and find matching function revision
     local f="$1" a=''
-    test -e "$f" || { chkwrn "${FUNCNAME}: no file '$f'" && return 0 || return $? ;}
+    test -e "$f" || { chkwrn "${FUNCNAME}: no file '$f' (6542c8b8)" && return 0 || return $? ;}
     # no fn match no fail...
     # helpful for 'git commit -m "bugfix $(fnhash file)" file'
     printf "\n\n%s\n" "# $(git rev-parse --show-prefix "$f" | tr -d '\n' ; echo)"
@@ -253,7 +253,7 @@ ts () { # timestamp lowres and pass through args
       # 64c47688 20230728 1916 Fri 28 Jul PDT
 
 which tmux >/dev/null 2>&1 && \
-tmu() { # tmux intuitive wrapper
+tmu () { # tmux intuitive wrapper
     [ "$1" = "-h" -o "$1" = "--help" ] && {
     echo 'List sessions, attach last, or create session 0,
   exit with signal and list remaining sessions."
@@ -319,10 +319,10 @@ ct () { #:> on terminal output, truncate lines to width
 _youtube_video_list () {
   local id="$1" d="$2"
   [ "$id" ] || read -p "youtube id: " id
-  [ "$id" ] || { chkerr "no id?" ; return 1 ;}
+  [ "$id" ] || { chkerr "6542c9fc : no id? (6542ca44)" ; return 1 ;}
   [ "$d" ]  || read -p "directory: " d
   [ -d "$d" ] || d="$(pwd -P)"
-  [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d'" ; return 1 ;}
+  [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d' (6542c62a)" ; return 1 ;}
   [ "$ytdl" ] || ytdl="youtube-dl"
   "$ytdl" --abort-on-error --yes-playlist \
    --write-info-json --write-comments --write-sub --write-auto-sub --sub-lang en --write-thumbnail \
@@ -338,10 +338,10 @@ _youtube_video_list () {
 _youtube_video () {
   local id="$1" d="$2"
   [ "$id" ] || read -p "youtube id: " id
-  [ "$id" ] || { chkerr "no id?" ; return 1 ;}
+  [ "$id" ] || { chkerr "$FUNCNAME : no id? (6542c9fc)" ; return 1 ;}
   [ "$d" ]  || read -p "directory: " d
   [ -d "$d" ] || d="$(pwd -P)"
-  [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d'" ; return 1 ;}
+  [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d' (6542c61e)" ; return 1 ;}
   [ "$ytdl" ] || ytdl="youtube-dl"
   "$ytdl" --write-info-json --write-comments --write-sub --write-auto-sub --sub-lang en --write-thumbnail \
    --restrict-filenames --audio-quality 0 --audio-format best \
@@ -356,10 +356,10 @@ _youtube_video () {
 _youtube_list () {
   local id="$1" d="$2"
   [ "$id" ] || read -p "youtube id: " id
-  [ "$id" ] || { chkerr "no id?" ; return 1 ;}
+  [ "$id" ] || { chkerr "$FUNCNAME : no id? (6542c9f0)" ; return 1 ;}
   [ "$d" ]  || read -p "directory: " d
   [ -d "$d" ] || d="$(pwd -P)"
-  [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d'" ; return 1 ;}
+  [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d' (6542c9e4)" ; return 1 ;}
   [ "$ytdl" ] || ytdl="youtube-dl"
   "$ytdl" --abort-on-error --yes-playlist \
    --write-info-json --write-comments --write-sub --write-auto-sub --sub-lang en --write-thumbnail \
@@ -371,12 +371,12 @@ _youtube_list () {
 _youtube () {
   local id="$1" d="$2"
   [ "$id" ] || read -p "youtube id: " id
-  [ "$id" ] || { chkerr "no id?" ; return 1 ;}
+  [ "$id" ] || { chkerr "$FUNCNAME : no id? (6542c9d2)" ; return 1 ;}
   id=$(sed 's/?.*//' <<<"$id") # squash trackers from url
   [ "$d" ]  || read -p "directory: " d
   [ "$d" ]  || d='.'
   [ -d "$d" ] || { [ -d "${links}/$d" ] && d="${links}/$d" ;}
-  [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d'" ; return 1 ;}
+  [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d' (6542c606)" ; return 1 ;}
   #[ "$ua" ] && uac="--user-agent '$ua'" || uac=''
   [ "$ytdl" ] || ytdl="youtube-dl"
   local t=$(mkdir -p "$HOME/%/ytdl" && cd "$HOME/%/ytdl" && mktemp ytdl-XXXX)
@@ -389,12 +389,12 @@ _youtube () {
    --abort-on-error --no-playlist \
    -o "$d/00,%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id | tee "$HOME/%/ytdl/$t"
   _youtube_json2txt $(sed -e '/as JSON to/!d' -e 's/.*to: //' <"$HOME/%/ytdl/$t") && rm -f "$HOME/%/ytdl/$t" \
-    || { chkwrn "failed: _youtube_json2txt $HOME/%/ytdl/$t" ; return 1 ;}
+    || { chkwrn "failed: _youtube_json2txt '$HOME/%/ytdl/$t' (6542c5ee)" ; return 1 ;}
   } # _youtube 20220516
 
 _youtube_json2txt () { # fixup youtube .info.json to yaml txt and sort files
-  [ -f "${1}" ]     || { chkerr "$FUNCNAME : not a file : ${1}" ; return 1 ;}
-  [ -f "${1}.txt" ] && { chkerr "$FUNCNAME : exists ${1}.txt" ; return 1 ;}
+  [ -f "${1}" ]     || { chkerr "$FUNCNAME : not a file : ${1} (6542c870)" ; return 1 ;}
+  [ -f "${1}.txt" ] && { chkerr "$FUNCNAME : exists ${1}.txt (6542c86a)" ; return 1 ;}
   local inpath='' _fout="_^$(jq --ascii-output --raw-output '(.id, .acodec)' "$1" \
     | tr -d '"' | tr '\n' '.' | sed 's/\.$//')"
   expr "$1" : ".*/" >/dev/null && inpath="${1%/*}" || inpath="."
@@ -414,7 +414,7 @@ _youtube_json2txt () { # fixup youtube .info.json to yaml txt and sort files
 # { set -x
     ln -f "$inpath"/*${_fout} "$inpath"/@/${_fout}
     mv -f "$inpath"/*${_fout} "$inpath/orig"
-    mv -f "$1" "$inpath"/*${_fout%%.*}.webp "$inpath"'/@/meta'
+    mv -f "$1" "$inpath"/*${_fout%%.*}.webp "$inpath"/*${_fout%%.*}*.vtt "$inpath"'/@/meta'
 #   set +x ;}
   echo "${1}.txt"
   } # _youtube_json2txt 20220516
@@ -452,7 +452,7 @@ hms2sec () { # passthrough seconds or convert hh:mm:ss to seconds
     # must provide ss which may be ss.nn, hh: and hh:mm: are optional
     # a number must proceed every colin
   { # remove trailing 0 from seconds decimal
-  [[ $1 == *:*:*:* ]] && { chkerr "too many ':' in $1" ; return 1 ;}
+  [[ $1 == *:*:*:* ]] && { chkerr "too many ':' in '$1' (6542c9ba)" ; return 1 ;}
   [[ $1 == *:*:* ]] && { echo $1 | sed -e 's/:/ 0/g' \
         | awk '{print "3 k "$1" 60 60 * * "$2" 60 * "$3" + + p"}' | dc && return 0 ;}
   [[ $1 == *:* ]] && echo $1 | sed -e 's/:/ 0/g' \
@@ -462,8 +462,8 @@ hms2sec () { # passthrough seconds or convert hh:mm:ss to seconds
 prependf () {
   local basefp="$1"
   local title="$2"
-  [ -z "$basefp" ] && { chkerr "prependf: base filepath (arg1) not set $@" ; return 1 ;}
-  [ -f "$basefp" ] || { chkerr "prependf: base filepath (arg1) not a file $@" ; return 1 ;}
+  [ -z "$basefp" ] && { chkerr "prependf: base filepath (arg1) not set $@ (6542c852)" ; return 1 ;}
+  [ -f "$basefp" ] || { chkerr "prependf: base filepath (arg1) not a file $@ (6542c84c)" ; return 1 ;}
   [ "$title" ] || return 0 # no operation
   local basefn="$(basename "$basefp")"
   ( cd $(dirname "$basefp") && mv -f "$basefn" "${title}${basefn}" )
@@ -492,9 +492,9 @@ prependf ac39e52a 000001b2
 EOF
   which rubberband-r3 >/dev/null 2>&1 && [ "$c" = "r3" ] && [ -z "$rb" ] && { rb=rubberband-r3 ;}
   which rubberband-r3 >/dev/null 2>&1 && [ -z "$c" ] && [ -z "$rb" ] && { rb=rubberband-r3 c=r3 ;}
-  [ -x "$(which "$rb")"  ] || { chkerr "$FUNCNAME : env rb not set to rubberband executable" ; return 1 ;}
-  [ -x "$(which ffmpeg)" ] || { chkerr "$FUNCNAME : ffmpeg not in path" ; return 1 ;}
-  [ -x "$(which sox)"    ] || { chkerr "$FUNCNAME : sox not in path" ; return 1 ;}
+  [ -x "$(which "$rb")"  ] || { chkerr "$FUNCNAME : env rb not set to rubberband executable (6542c828)" ; return 1 ;}
+  [ -x "$(which ffmpeg)" ] || { chkerr "$FUNCNAME : ffmpeg not in path (6542c82e)" ; return 1 ;}
+  [ -x "$(which sox)"    ] || { chkerr "$FUNCNAME : sox not in path (6542c83a)" ; return 1 ;}
   # success valid env
   [ "$1" = "help" ] && { # a function to adjust audio file tempo and pitch independently
     # depends on ffmpeg, rubberband and sox
@@ -530,7 +530,7 @@ EOF
     return 0
     } # help
   [    "$1" ] || { f2rb2mp3 help ; return 1 ;}
-  [ -f "$1" ] || { f2rb2mp3 help ; chkerr "no input flle $1" ; return 1 ;}
+  [ -f "$1" ] || { f2rb2mp3 help ; chkerr "no input flle '$1' (6542c99c)" ; return 1 ;}
   local  verb="${verb:=chkwrn}"
   local verb2="${verb2:=devnul}"
   local verb3="${verb3:=devnul}"
@@ -555,7 +555,7 @@ EOF
   local hrn3="compand 0.08,0.3 -74,-80,-50,-46,-18,-18,-0,-6                -1 -68 0"    # peaky horn
   local cps1="compand 0.07,0.25 -70,-84,-50,-45,-32,-33,-0,-21               3 -71 0.07" # high compress
   local parc="compand 0.09,0.25 -97,-106,-85,-89,-73,-73,-57,-61,-40,-49,-21,-37,0,-25                           11 -95 0.08" # parabolic standard
-  local pard="compand 0.09,0.25 -84.4,-110.7,-74.4,-89.1,-64.4,-71.0,-54.4,-56.3,-39.7,-46.3,-21.7,-36.3,0,-26.3 14 -95 0.08" # parabolic-d
+  local pard="compand 0.09,0.25 -84.4,-110.7,-74.4,-89.1,-64.4,-71.0,-54.4,-56.3,-39.7,-46.3,-21.7,-36.3,0,-26.3 13.5 -95 0.08" # parabolic-d
   local par2="compand 0.09,0.25 -100,-116,-88,-97,-80,-80,-63,-72,-54,-60,-23,-48,0,-36        19 -95 0.08" # parabolic extra
   local par4="compand 0.13,0.16 -72,-97,-68,-84,-64,-73,-56,-65,-55,-61,-32,-57,-17,-53,0,-49  25 -55 0.12" # parabolic squared
   [ "$cmp" = "hrn" -o "$cmp" = "hrn1" ] && cmpn="hrn3" cmpc="$hrn3"
@@ -646,9 +646,9 @@ EOF
   local cc='' cn=''
   # as per the evolution of rubberband features...
   [ "$c" = "r3" ] && cc='--fine' cn='-r3'
-  [ "$c" -a -z "$cc" ] && { expr "$c" : '^[0123456]$' >/dev/null || { chkerr "$FUNCNAME parm invalid : c=$c" ; return 1 ;} ;}
+  [ "$c" -a -z "$cc" ] && { expr "$c" : '^[0123456]$' >/dev/null || { chkerr "$FUNCNAME parm invalid : c='$c' (6542c90c)" ; return 1 ;} ;}
   [ "$c" -a -z "$cc" ] && { cc="--crisp $c" cn="-c${c}" ;} || true
-  expr "$t" : '^-' >/dev/null && { chkerr "$FUNCNAME parm invalid : t=$t" ; return 1 ;} || true
+  expr "$t" : '^-' >/dev/null && { chkerr "$FUNCNAME parm invalid : t='$t' (6542c924)" ; return 1 ;} || true
   expr "$p" : '^-[[:digit:]]*$' >/dev/null && p="${p}.0" || true # fixup negative integers, least test fail... -bash: [: -3: unary operator expected
   expr "$f" : '^-[[:digit:]]*$' >/dev/null && f="${f}.0" || true # fixup negative integers, least test fail
   # [ "" -o "-3" -o "" ] yields error on native mac bash https://discussions.apple.com/thread/254233125
@@ -661,7 +661,7 @@ EOF
         $verb2 $rb -q $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav~"
              { $rb -q $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav~" 2>&1 \
                  | while IFS= read a ; do ${verb} "$a" ; done ;} || { chkerr \
-               $rb                      $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav~" ; return 1 ;}
+               $rb                      $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav~" '(6542c978)'; return 1 ;}
         mv -f "${inpath}/tmp/${out}.wav~" "${inpath}/tmp/${out}.wav"
         } # final master, sans sox volume
       # apply volume and make an mp3 --- hopefully the input is not clipped already!
@@ -860,7 +860,7 @@ formfilestats () { # accept dir(s) as args, report unique formfile time and pitc
  #     mkdir -p "./png"
  #     set $( formfile "${in##*/}" | sed -e 's/.*f2rb2mp3//' )
  #     local orig=$1 pass=$2
- #     [ -e "$orig" ] || { chkwrn "$orig not found" ; return 1 ;}
+ #     [ -e "$orig" ] || { chkwrn "$orig not found (6542c564)" ; return 1 ;}
  #     echo -n "sox $orig -n remix - trim "
  #     set $(formfile "${in##*/}" | sed -e 's/f2rb2mp3.*//' )
  #     #dc -e "$ss 1-p $ss 3+p $to 3-p $to 1+p" | tr '\n' ' ' | sed -e 's/^/=/' -e 's/ / =/g' -e  's/=$//'
@@ -871,7 +871,7 @@ formfilestats () { # accept dir(s) as args, report unique formfile time and pitc
 
 masterlink () {
 verb2=chkwrn
-  [ "$1" ] && local hash="$1" || { chkerr "$FUNCNAME : no hash" ; return 1 ;}
+  [ "$1" ] && local hash="$1" || { chkerr "$FUNCNAME : no hash (6542c7e0)" ; return 1 ;}
   [ "$2" ] || local dir="$links/_ln" && local dir="$2"
   dot4find "$hash" \
     | grep -vE '(.vtt$|.json$)' | ckstat | sort -k5 | head -n1 \
@@ -1100,7 +1100,7 @@ numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" 
         | while IFS= read a ; do set $a # {orig} {numlist}0{seq},{name}
             dst="$2"
             # when we add a dry-run switch we can remove the echo...
-            [ "$1" = "$dst" ] || { [ -e "$dst" ] && chkwrn "$FUNCNAME collision : $dst" || echo "mv '$1' '$dst'" ;}
+            [ "$1" = "$dst" ] || { [ -e "$dst" ] && chkwrn "$FUNCNAME collision : $dst (6542c52e)" || echo "mv '$1' '$dst'" ;}
             done
     } # numlist 632ca5d3 20220922
 
@@ -1120,7 +1120,7 @@ numlistdst () { # distribute filenames across base 32 major (alnum lower sans 'i
             done \
         | while IFS= read a ; do set $a # {orig} {dist-major}{seq},{name}
             local src="$1" dst="$2"
-            [ "$src" = "$dst" ] || [ -e "$dst" ] && chkwrn "$FUNCNAME collision : $dst" || echo "mv \"$src\" \"$dst\"";
+            [ "$src" = "$dst" ] || [ -e "$dst" ] && chkwrn "$FUNCNAME collision : $dst (6542c540)" || echo "mv \"$src\" \"$dst\"";
             done
     } # numlistdst
 
@@ -1137,7 +1137,7 @@ mp3range () { # mp3 listing limiter
     local verb="${verb:=devnul}"
     $verb2 for expr "${stop}" : "${start}"
     [ "$stop" ] && { expr "${stop}" : "${start}" >/dev/null \
-            && chkwrn "$FUNCNAME : unintended consequences : $start $stop"
+            && chkwrn "$FUNCNAME : unintended consequences : $start $stop (6542c510)"
         stop="/^${stop}/" ;} \
         || stop="0"
     start="/^${start}/"
@@ -1156,43 +1156,49 @@ mp3range () { # mp3 listing limiter
             [ "$a" = "$opwd" ] && prefix="" || prefix="$PWD/"
             # drop and warn about filenames with '%' in them??
             ls | awk ${start},${stop} | sed -e '/.mp3$/!d' -e "s%^%$prefix%"
-            } || chkwrn "not a dir with mp3 files : '$a'" ) # subshell for $OLDPWD
+            } || chkwrn "not a dir with mp3 files : '$a' (6542c455)" ) # subshell for $OLDPWD
         done
     } # mp3range 20220803
 
-mp3loop () ( # derive start (arg1) to end, and loop from beginning (optional: first cd to arg2), send list to playffr
-    [ "$2" -a -d "$2" ] && { cd "$2" || { chkwrn "$FUNCNAME : arg2 not a dir '$2' (64e3c5f4)" ; return 1 ;} ;}
-    local local start='' startn='' a='' mp3s="$(ls *.mp3 2>/dev/null)"
-    [ "$mp3s" ] || [ -e "$HOME/0/v/playffr" ] && { # if pwd has no mp3s use last playffr dir
-        cd "$(awk 'NR==2 { print }' "$HOME/0/v/playffr" | sed 's=\(.*\)/.*=\1=' )" && mp3s="$(ls *.mp3)" ;} \
-        || { chkwrn "$FUNCNAME no mp3 found (64e3ca7b)" ; return 1 ;}
-    [ "$1" ] && start="$1" # derive start if not provided as arg1
-    [ "$start" ] || { [ -e "$HOME/0/v/playffr" ] && start="$(awk 'NR==1 {sub(/,.*/,//) ;print}' "$HOME/0/v/playffr")" ;}
-    startn=$(while IFS= read a ; do expr "$start" '<' "$a" && cat >/dev/null ; done <<<"$mp3s" | wc -l) # slow but works
-    { awk -vstartn="$startn" 'NR>=startn { print }' <<<"$mp3s"
-      awk -vstartn="$startn" 'NR< startn { print }' <<<"$mp3s"
-    } | playffr
-    ) # mp3loop 64e3caf9 20230821
+mp3loop () { # play arg1 or following mp3 (or default selection), loop remaining mp3 and from beginning.
+    # arg1 is simply a sort token considered together with found {dirname arg1}/*mp3 files
+    # drop 0*mp3 and y*mp3 per local convention, and a stray blank. Then add the input fpath (dirname)
+    # and pipe the result to playffr for loop play.
+    local fpath='' rfile='' start="$1" mark='' fs=''
+    # default start is the sequence per ./0/v/playff and the path of ./0/v/mp3loop
+    [ "$start" ] || start=$(awk "/\/$(sed -e 's=.*/==' -e 's/,.*//' <"$HOME/0/v/playff"),/,0"' {print}' "$HOME/0/v/mp3loop" \
+                              | head -n2 | tail -n1)
+    [ "$start" ] || { chkerr "$FUNCNAME : no start parameter, arg1 (653ea9d8)" ; exit 1 ;}
+    expr "$start" : ".*/" >/dev/null && fpath="${start%/*}" || fpath="." ; # start dirname
+    start="$(cd "${fpath}" ; pwd -P)/${start##*/}"                         # start realpath
+    mark="${start%,*}" ; mark="${mark##*/}"                                # start seq
+    mkdir -p "$HOME/0/v/"
+    # awk to set p and advance on match; print post-match; buffer pre-match; on END, print buffer
+    ( cd "$fpath" ; echo "./$mark" ; find . -mindepth 1 -maxdepth 1 -name \*mp3 ) \
+      | sort | sed -e 's=^\./==' \
+      | awk "/^${mark##*/}$/"' {p=1;next} p{print} !p{b=b $0 ORS} END{print b}' \
+      | sed -E -e '/(^0|^y)/d' -e '/^$/d' -e "s:^:${fpath}/:" >"$HOME/0/v/mp3loop"
+    playffr <"$HOME/0/v/mp3loop"
+    } # mp3loop 64e3caf9 20230821
 
 playffr () { # for files (args or stdin), continuously repeat invocations of ffplay, without display
-    local f fs
+    local v f fs
     [ $# -gt 0 ] && { fs="$1" ; shift ;}
     [ "$fs" = '-volume' -o "$fs" = '-v' ] && { local v="$1" ; shift ; fs="$1" ; shift ;}
-    [ "$v" ] && local v="-volume $v" || local v="-volume 100"
+    [ "$v" ] && v="-volume $v" || v="-volume 100"
     while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
     mkdir -p "$HOME/0/v/"
+    # while :; do ...TODO identify/resolve inability to ctrl-c
     while IFS= read f; do
         [ -f "$f" ] && {
           tput bold
           chktrue "$f"
           chktrue sec $(hms2sec $(ffprobe -hide_banner  -loglevel info "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')) vol ${v##* }
           tput sgr0
-          echo "${f##*/}" >"$HOME/0/v/playffr"
-          expr "$f" : ".*/" >/dev/null && fpath="${f%/*}" || fpath="." ;  # f dirname
-          echo "$(cd "${fpath}" ; pwd -P)/${f##*/}" >>"$HOME/0/v/playffr" # realpath f
+          echo "$f" >"$HOME/0/v/playff" # not optimal without full path inputs, meh
           ffplay -hide_banner -stats -autoexit -loglevel error -nodisp "$f" || return 1
-          } || chkwrn "$0 : not a file : '$f'"
+          } || { chkwrn "$0 : not a file : '$f' (6542c3b6)" ; sleep 2 ;}
         done <<<"$fs"
     } # playffr
 
@@ -1204,14 +1210,13 @@ playff () { # for files (args or stdin), continuously repeat invocations of ffpl
     [ "$v" ] && v="-volume $v" || v="-volume 100"
     while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
+    mkdir -p "$HOME/0/v/"
     echo "$fs" | while IFS= read f; do
-       [ -f "$f" ] && {
-        tput bold
-         chktrue "$f"
+       [ -f "$f" ] && { tput bold ; chktrue "$f" ; tput sgr0
          chktrue sec $(hms2sec $(ffprobe -hide_banner  -loglevel info "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')) vol ${v##* }
-        tput sgr0
+         echo "$f" >"$HOME/0/v/playff" # not optimal without full path inputs, meh
          ffplay -hide_banner -stats -autoexit -loglevel error -top 52 -x 1088 -y 280 $v "$f" || return 1
-         } || chkwrn "$0 : not a file : '$f'"
+         } || chkwrn "$0 : not a file : '$f' (6542c3df)"
         done
     } # playff
 
@@ -1237,7 +1242,7 @@ playffend () { # Play the ending of files (args or stdin), always "no display"
             chktrue probsec $(hms2sec $(ffprobe -hide_banner -loglevel info "$_file" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')) vol: ${v##* };
             ffplay -ss $end -hide_banner -stats -autoexit -loglevel error -nodisp "$_file" || return 1
             touch -a "$_file"
-        } || chkwrn "$0 : not a file : '$_file'";
+        } || chkwrn "$0 : not a file : '$_file' (6542c40a)";
     done
 } # playffend 64d51e6d 20230810
 
@@ -1336,9 +1341,9 @@ base () { # convert {decimal} arg2 to {base} arg1
     [ "$#" -gt 2 ] && { $FUNCNAME --help ; return 1 ;}
     [ "$base" -a "$x" ] || {
         $FUNCNAME --help
-        chkerr "$FUNCNAME : must provide output {base} arg1, and input {decimal} arg2 : arg1='$1' arg2='$2'" ; return 1 ;}
-    [[ "$base" =~ ^-?[0-9]+$ ]] || { chkerr "$FUNCNAME : arg1 (output base) must be an integer : arg1='$1'" ; return 1 ;}
-    [[ "$x"    =~ ^-?[0-9]+$ ]] || { chkerr "$FUNCNAME : arg2 (decimal input) must be an integer : arg2='$2'" ; return 1 ;}
+        chkerr "$FUNCNAME : must provide output {base} arg1, and input {decimal} arg2 : arg1='$1' arg2='$2' (6542c792)" ; return 1 ;}
+    [[ "$base" =~ ^-?[0-9]+$ ]] || { chkerr "$FUNCNAME : arg1 (output base) must be an integer : arg1='$1' (6542c768)" ; return 1 ;}
+    [[ "$x"    =~ ^-?[0-9]+$ ]] || { chkerr "$FUNCNAME : arg2 (decimal input) must be an integer : arg2='$2' (6542c774)" ; return 1 ;}
     [ $x -lt 0 ] && sign='-' || { [ $x = 0 ] && { echo 0 ; return 0 ;} ;}
     x=$(( x * "${sign}1" ))
     while [ $x -gt 0 ] ; do
