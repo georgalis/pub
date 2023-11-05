@@ -59,7 +59,7 @@ ps | grep "^[ ]*$$ " | grep bash >/dev/null 2>&1 \
                     SSH_AGENT_ENV="$SSH_AGENT_ENV" \
                     verb="$verb" verb1="$verb1" verb2="$verb2" \
                     "$bash_path" -l ;} # replace, BASH_VERSINFO doesn't match
-          } && { echo "<>< $bash_path" ;} || return 1 # exec failed...
+          } && { echo "<>< $bash_path ${BASH_VERSINFO[0]}.${BASH_VERSINFO[1]}.${BASH_VERSINFO[2]}(${BASH_VERSINFO[3]})-${BASH_VERSINFO[4]}" ;} || return 1 # exec failed...
      } || true # not bash, OR bash_path unavailable OR same version
 
 # earlier and we would normally see it twice...
@@ -244,7 +244,7 @@ ts () { # timestamp lowres and pass through args
     local a="$*"
     [ "$(which tai64n)" -a "$(which tai64nlocal)" ] \
       && { set $(echo | tai64n | sed -e 's/^\(@4[0]*\)\([[:xdigit:]]\{8\}\)\([[:xdigit:]]\{8\}\)\(.*\)/\1\2\3\4 \2/')
-            { echo $2    ; tai64nlocal <<<$1 | sed -e 's/-//g' -e 's/:\([^:]*\)$//' 
+            { echo $2    ; tai64nlocal <<<$1 | sed -e 's/-//g' -e 's/:\([^:]*\)$//'
               date -j -r $((0x$2)) "+%a %e %b %Z" ;} | tr '\n' ' ' ;} \
       || { set $(date +%s | awk '{printf "@4%015x%08d  %8x %08d\n",$1,0,$1,0}')
            { echo $2 ; date -j -r $((0x$2)) "+%Y%m%d %H:%M %a %e %b %Z" ;} | tr '\n' ' ' ;}
@@ -487,8 +487,8 @@ stderr 7ccc5704 00000037
 chkwrn 2683d3d3 0000005c
 chkerr 4f18299d 0000005b
 # pub/sub/fn.bash 20220105
-hms2sec e7a0bc8b 000001d6
-prependf ac39e52a 000001b2
+hms2sec aea30e0e 000001e3
+prependf a38214fb 000001c8
 EOF
   which rubberband-r3 >/dev/null 2>&1 && [ "$c" = "r3" ] && [ -z "$rb" ] && { rb=rubberband-r3 ;}
   which rubberband-r3 >/dev/null 2>&1 && [ -z "$c" ] && [ -z "$rb" ] && { rb=rubberband-r3 c=r3 ;}
@@ -1164,60 +1164,75 @@ mp3loop () { # play arg1 or following mp3 (or default selection), loop remaining
     # arg1 is simply a sort token considered together with found {dirname arg1}/*mp3 files
     # drop 0*mp3 and y*mp3 per local convention, and a stray blank. Then add the input fpath (dirname)
     # and pipe the result to playffr for loop play.
-    local fpath='' rfile='' start="$1" mark='' fs=''
+    # -vol to set volume {0..100}, default is last, or 88 if invalid provided
+    local fpath='' rfile='' start='' mark='' fs=''
+    local playff_dat="$HOME/0/v/playff"  playff_dat_vol="${playff_dat}_vol" vol=''
+    local mp3loop_dat="$HOME/0/v/mp3loop"
+    [ "$1" = '-vol' -a $# -ge 2 ] && { vol="$2" ; shift 2 ;}
+    [ "$vol" ] || vol="$(< "$playff_dat_vol")"
+    [ "$vol" -a "$vol" -eq "$vol" ] || { chkwrn "$FUNCNAME : invalid volume (0..100) '$vol' (6546998d)" ; vol=88 ;}
+    mkdir -p "${playff_dat%/*}" "${mp3loop_dat%/*}"
+    cat >"$playff_dat_vol" <<<"$vol"
+    start="$1"
+    # iff start fullpath not provided, apply mark (basename start) to dirname of playff_dat
+    [ "${start::1}" = "/" ] || start="$(sed 's:[^/]*$::' <"${playff_dat}")/${start##*/}"
     # default start is the sequence per ./0/v/playff and the path of ./0/v/mp3loop
-    [ "$start" ] || start=$(awk "/\/$(sed -e 's=.*/==' -e 's/,.*//' <"$HOME/0/v/playff"),/,0"' {print}' "$HOME/0/v/mp3loop" \
+    [ "$start" ] || start=$(awk "/\/$(sed -e 's=.*/==' -e 's/,.*//' <"$playff_dat"),/,0"' {print}' "$mp3loop_dat" \
                               | head -n2 | tail -n1)
     [ "$start" ] || { chkerr "$FUNCNAME : no start parameter, arg1 (653ea9d8)" ; exit 1 ;}
     expr "$start" : ".*/" >/dev/null && fpath="${start%/*}" || fpath="." ; # start dirname
     start="$(cd "${fpath}" ; pwd -P)/${start##*/}"                         # start realpath
     mark="${start%,*}" ; mark="${mark##*/}"                                # start seq
-    mkdir -p "$HOME/0/v/"
     # awk to set p and advance on match; print post-match; buffer pre-match; on END, print buffer
     ( cd "$fpath" ; echo "./$mark" ; find . -mindepth 1 -maxdepth 1 -name \*mp3 ) \
       | sort | sed -e 's=^\./==' \
       | awk "/^${mark##*/}$/"' {p=1;next} p{print} !p{b=b $0 ORS} END{print b}' \
-      | sed -E -e '/(^0|^y)/d' -e '/^$/d' -e "s:^:${fpath}/:" >"$HOME/0/v/mp3loop"
-    playffr <"$HOME/0/v/mp3loop"
+      | sed -E -e '/(^0|^y)/d' -e '/^$/d' -e "s:^:${fpath}/:" >"$mp3loop_dat"
+    playffr <"$mp3loop_dat"
     } # mp3loop 64e3caf9 20230821
 
 playffr () { # for files (args or stdin), continuously repeat invocations of ffplay, without display
-    local v f fs
+    local playff_dat="$HOME/0/v/playff"  playff_dat_vol="${playff_dat}_vol" vol='' f='' fs=''
+    [ "$1" = '-vol' -a $# -ge 2 ] && { vol="$2" ; shift 2 ;}
+    [ "$vol" ] || vol="$(< "$playff_dat_vol")"
+    [ "$vol" -a "$vol" -eq "$vol" ] || { chkwrn "$FUNCNAME : invalid volume (0..100) '$vol' (65468ec9)" ; vol=88 ;}
+    mkdir -p "${playff_dat%/*}"
+    cat >"$playff_dat_vol" <<<"$vol"
     [ $# -gt 0 ] && { fs="$1" ; shift ;}
-    [ "$fs" = '-volume' -o "$fs" = '-v' ] && { local v="$1" ; shift ; fs="$1" ; shift ;}
-    [ "$v" ] && v="-volume $v" || v="-volume 100"
     while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
-    mkdir -p "$HOME/0/v/"
     # while :; do ...TODO identify/resolve inability to ctrl-c
+    # -vol to set volume {0..100}, default is last, or 88 if invalid provided
     while IFS= read f; do
-        [ -f "$f" ] && {
-          tput bold
-          chktrue "$f"
-          chktrue sec $(hms2sec $(ffprobe -hide_banner  -loglevel info "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')) vol ${v##* }
-          tput sgr0
-          echo "$f" >"$HOME/0/v/playff" # not optimal without full path inputs, meh
-          ffplay -hide_banner -stats -autoexit -loglevel error -nodisp "$f" || return 1
-          } || { chkwrn "$0 : not a file : '$f' (6542c3b6)" ; sleep 2 ;}
-        done <<<"$fs"
+      [ -f "$f" ] && { tput bold ; chktrue "$f" ; tput sgr0
+        echo "$f" >"$playff_dat" # not optimal without full path inputs, meh
+        vol="$(< "$playff_dat_vol")" # read per song...
+        chktrue sec $(hms2sec $(ffprobe -hide_banner  -loglevel info "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')) vol $vol
+        ffplay -hide_banner -stats -autoexit -loglevel error -nodisp -volume $vol "$f" || return 1
+        } || { chkwrn "$0 : not a file : '$f' (6542c3b6)" ; sleep 2 ;}
+      done <<<"$fs"
     } # playffr
 
 playff () { # for files (args or stdin), continuously repeat invocations of ffplay, with display
-    # -v or -volume to set volume, default is 100
-    local f='' fs='' v=''
+    local var_dat="$HOME/0/v/playff"  var_dat_vol="${var_dat}_vol" vol='' f='' fs=''
+    [ "$1" = '-vol' -a $# -ge 2 ] && { vol="$2" ; shift 2 ;}
+    [ "$vol" ] || vol="$(< "$playff_dat_vol")"
+    [ "$vol" -a "$vol" -eq "$vol" ] || { chkwrn "$FUNCNAME : invalid volume (0..100) '$vol' (65469ac0)" ; vol=88 ;}
+    mkdir -p "${var_dat%/*}"
+    cat >"$var_dat_vol" <<<"$vol"
     [ $# -gt 0 ] && { fs="$1" ; shift ;}
-    [ "$fs" = '-volume' ] && { v="$1" ; shift ; fs="$1" ; shift ;}
-    [ "$v" ] && v="-volume $v" || v="-volume 100"
     while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
-    mkdir -p "$HOME/0/v/"
+    # while :; do ...TODO identify/resolve inability to ctrl-c
+    # -vol to set volume {0..100}, default is last, or 88 if invalid provided
     echo "$fs" | while IFS= read f; do
-       [ -f "$f" ] && { tput bold ; chktrue "$f" ; tput sgr0
-         chktrue sec $(hms2sec $(ffprobe -hide_banner  -loglevel info "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')) vol ${v##* }
-         echo "$f" >"$HOME/0/v/playff" # not optimal without full path inputs, meh
-         ffplay -hide_banner -stats -autoexit -loglevel error -top 52 -x 1088 -y 280 $v "$f" || return 1
+      [ -f "$f" ] && { tput bold ; chktrue "$f" ; tput sgr0
+         echo "$f" >"$var_dat" # not optimal without full path inputs, meh
+         vol="$(< "$var_dat_vol")" # read per song...
+         chktrue sec $(hms2sec $(ffprobe -hide_banner  -loglevel info "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')) vol $vol
+         ffplay -hide_banner -stats -autoexit -loglevel error -top 52 -x 1088 -y 280 -volume $vol "$f" || return 1
          } || chkwrn "$0 : not a file : '$f' (6542c3df)"
-        done
+      done
     } # playff
 
 playffend () { # Play the ending of files (args or stdin), always "no display"
@@ -1271,7 +1286,7 @@ rotatefile () { #P> keep at least n backups, and delete files older than m secon
         rotatefile_secs="$((18 * 60 * 60 * 24 ))" rotatefile_keep="7"'
     declare -f chkerr >/dev/null 2>&1  || { echo "$FUNCNAME : chkerr unavailable (630bacd0)" 1>&2 ; return 1 ;}
     declare -f validfn >/dev/null 2>&1 || { echo "$FUNCNAME : validfn unavailable (630c4002)" 1>&2 ; return 1 ;}
-    validfn ckstat 4fe96539 000003ae   || { chkerr "$FUNCNAME : unexpected ckstat (630bab5c)" ; return 1 ;}
+    validfn ckstat c44370c9 000003ac   || { chkerr "$FUNCNAME : unexpected ckstat (630bab5c)" ; return 1 ;}
     which tai64n >/dev/null            || { chkerr "$FUNCNAME : tai64n not in path (630bb522)" ; return 1 ;}
     xs () { echo | tai64n | sed -e 's/^@4[0]*//' -e 's/.\{9\}$//' ;}
     term_pleft () { local str= char='-'
