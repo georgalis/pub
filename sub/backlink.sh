@@ -70,7 +70,7 @@ EOL
 
 pushsnap () {
 cat >"/tmp/${NOW}-${op}" <<EOL
-RSYNC_OPT="$RSYNC_OPTS" $0 $op $HOST $ORIG $PREFIX
+RSYNC_OPTS="$RSYNC_OPTS" $0 $op $HOST $ORIG $PREFIX
 ## ${hostname}:rsync $rsync_opt --link-dest="$LAST/$ORIG" $ORIG/ ${HOST}:$PREFIX/0/$NOW/$ORIG/
 EOL
  ssh $HOST "mkdir -p '$LAST/$ORIG' '$PREFIX/0/$NOW/$ORIG/'"
