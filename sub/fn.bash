@@ -1165,21 +1165,22 @@ mp3loop () { # play arg1 or following mp3 (or default selection), loop remaining
     # drop 0*mp3 and y*mp3 per local convention, and a stray blank. Then add the input fpath (dirname)
     # and pipe the result to playffr for loop play.
     # -vol to set volume {0..100}, default is last, or 88 if invalid provided
+    local mp3loop_file="$HOME/0/v/mp3loop" playff_file="$HOME/0/v/playff"
+    local playff_vol_file="${playff_file}_vol" vol=''
     local fpath='' rfile='' start='' mark='' fs=''
-    local playff_dat="$HOME/0/v/playff"  playff_dat_vol="${playff_dat}_vol" vol=''
-    local mp3loop_dat="$HOME/0/v/mp3loop"
-    [ "$1" = '-vol' -a $# -ge 2 ] && { vol="$2" ; shift 2 ;}
-    [ "$vol" ] || vol="$(< "$playff_dat_vol")"
+    [ "$1" = '-vol' -a $# -ge 2 ] && { vol="$2" ; shift 2 ;} || vol="$(< "$playff_vol_file")"
     [ "$vol" -a "$vol" -eq "$vol" ] || { chkwrn "$FUNCNAME : invalid volume (0..100) '$vol' (6546998d)" ; vol=88 ;}
-    mkdir -p "${playff_dat%/*}" "${mp3loop_dat%/*}"
-    cat >"$playff_dat_vol" <<<"$vol"
+    mkdir -p "${playff_file%/*}" "${mp3loop_file%/*}"
+    cat >"$playff_vol_file" <<<"$vol"
     start="$1"
-    # iff start fullpath not provided, apply mark (basename start) to dirname of playff_dat
-    [ "${start::1}" = "/" ] || start="$(sed 's:[^/]*$::' <"${playff_dat}")/${start##*/}"
-    # default start is the sequence per ./0/v/playff and the path of ./0/v/mp3loop
-    [ "$start" ] || start=$(awk "/\/$(sed -e 's=.*/==' -e 's/,.*//' <"$playff_dat"),/,0"' {print}' "$mp3loop_dat" \
+#   [ "$start" ] || start=$(<$playff_file)
+#   # iff start fullpath not provided, apply dirname of playff_file to mark (basename start) 
+#   [ "${start::1}" = "/" ] || start="$(sed -e 's:[^/]*::' <$playff_file)$(sed -e 's:.*/::' <<<"$start")"
+#chkerr start $start
+    # default start is the sequence per playff_file and the path of mp3loop_file
+    [ -f "$start" ] || start=$(awk "/\/$(sed -e 's=.*/==' -e 's/,.*//' <"$playff_file"),/,0"' {print}' "$mp3loop_file" \
                               | head -n2 | tail -n1)
-    [ "$start" ] || { chkerr "$FUNCNAME : no start parameter, arg1 (653ea9d8)" ; exit 1 ;}
+#   [ "$start" ] || { chkerr "$FUNCNAME : no start parameter, arg1 (653ea9d8)" ; exit 1 ;}
     expr "$start" : ".*/" >/dev/null && fpath="${start%/*}" || fpath="." ; # start dirname
     start="$(cd "${fpath}" ; pwd -P)/${start##*/}"                         # start realpath
     mark="${start%,*}" ; mark="${mark##*/}"                                # start seq
@@ -1187,17 +1188,96 @@ mp3loop () { # play arg1 or following mp3 (or default selection), loop remaining
     ( cd "$fpath" ; echo "./$mark" ; find . -mindepth 1 -maxdepth 1 -name \*mp3 ) \
       | sort | sed -e 's=^\./==' \
       | awk "/^${mark##*/}$/"' {p=1;next} p{print} !p{b=b $0 ORS} END{print b}' \
-      | sed -E -e '/(^0|^y)/d' -e '/^$/d' -e "s:^:${fpath}/:" >"$mp3loop_dat"
-    playffr <"$mp3loop_dat"
+      | sed -E -e '/(^0|^y)/d' -e '/^$/d' -e "s:^:${fpath}/:" >"$mp3loop_file"
+    playffr <"$mp3loop_file"
     } # mp3loop 64e3caf9 20230821
+mp3loop () { # used genai to develop doc, revised doc, but genai couldn't code it... 
+#   mp3loop requirement:
+#   should play a loop of mp3 files in a directory starting from a lexicographic position
+#   may take a -vol option to store the volume (1-100)
+#   if the stored value is not between 1-100, a default volume should be stored
+#   store the mp3 file list to loop
+#   skip files starting with 0 or y
+#   input of an existing filename in current or relative directory, should be taken as starting point in that directory
+#   if no slash (eg ./) is in the input, the stored playffr directory should be used to locate mp3 files for the loop
+#   input of filename fragment represents the lexicographic position of the anchored fragment within the identified directory
+#
+#   primitive environment:
+#   playffr function is provided and plays a list of mp3 files read from stdin
+#   playffr will read a stored volume before playing each mp3
+#   if the stored value is 0 playffr will stop with signal 0
+#   playffr will store the input file and PWD prior to playing each mp3
+#
+#   environment specification:
+#   mp3loop will store generated mp3 list in HOME/0/v/mp3loop
+#   playffr will store the input, followed by space, folowed by PWD in $HOME/0/v/playff
+#   playffr reads the vol from $HOME/0/v/playff_vol
+    local mp3loop_file="$HOME/0/v/mp3loop" playff_file="$HOME/0/v/playff";
+    local playff_vol_file="${playff_file}_vol" vol='';
+    local dir='' mark=''
+    local verbb=chkwrn
+    [ "$1" = '-vol' -a $# -ge 2 ] && { vol="$2"; shift 2 ;}
+    [ "$vol" ] || vol="$(< "$playff_vol_file")"
+    [ "$vol" -a "$vol" -eq "$vol" ] || { chkwrn "$FUNCNAME : invalid volume '$vol' using '88' (6546998d)"; vol=88 ;}
+    mkdir -p "${playff_file%/*}" "${mp3loop_file%/*}";
+    echo "$vol" >"$playff_vol_file"
+#   [ "$1" ] && { $verbb consider arg1 in construction
+    [ -f "$1" ] && { $verbb input is a file use arg1 as start point
+        dir="$(cd "${1%/*}" ; pwd)" ; mark="${1##*/}"
+      } || { $verbb input not a file, OR NULL, use {playff directory}/{basename arg1} as start point
+        playff_data="$(<"$playff_file")" $verbb "load playff data"
+        [ "${playff_data::1}" = "/" ] && { $verbb playff data is full path, use {dirname playff data}
+            dir="${playff_data% *}" ; dir="${dir%/*}" # dirname of first arg of playff data
+            [ "$1" ] && { $verbb "use basename of arg1 (file) as mark"
+              mark="${1##*/}"
+              } || { $verbb "basename of playff data as mark"
+             mark="${playff_data% *}" ; mark="${mark##*/}" # mark={dirive basename of first arg in playff data}
+             }
+           } || { $verbb "playff_data not full path! punt, if arg1 null construct from relitative playff file path, else construct with basename arg"
+                mark="${1##*/}"
+                [ "$mark" ] && { $verbb "construct {playff path/file basename}/mark dir=dirname and use mark" 
+                        dir="${playff_data##* }/${playff_data% *}" # prior filepath
+                        dir="$(cd "${dir%/*}" ; pwd )" # full path dirname 
+                    } || { $verbb "construct {playff path/file} dir=dirname and mark=basename"
+                        dir="${playff_data##* }/${playff_data% *}" # prior filepath
+                        mark="${dir##*/}" # basename dir
+                        dir="$(cd "${dir%/*}" ; pwd )" # full path dirname 
+                    }
+             }
+         }
+#   } || { $verbb no arg1 provided, 
+#       true
+#       }
+    mark="${mark%,*}" # always reduce mark to seq data (least mark data contain regex data)
+chkwrn "dir=$dir mark=$mark"      
+    ( cd "$dir"; echo "./$mark"; find . -mindepth 1 -maxdepth 1 -name \*mp3 ) \
+        | sort -u | sed -E -e 's=^\./==' -e '/(^0|^y)/d' \
+        | awk "/^${mark##*/}$/"' {p=1;next} p{print} !p{b=b $0 ORS} END{print b}' | sed -e '/^$/d' -e "s:^:${dir}/:" \
+        | tee "$mp3loop_file" | playffr
+cat <<'eof'
+# playff_file="$HOME/0/v/playff" ; playff_data="$(<"$playff_file")"
+# "${playff_data##* }"                                  # second element (pwd)
+# "${playff_data% *}"                                   # first element
+# "${playff_data##* }/${playff_data% *}"                # constructed full filepath 
+# "${var##*/}"                                          # basename of var
+#    expr "$start" : ".*/" >/dev/null && fpath="${start%/*}" || fpath="."
+#    start="$(cd "${fpath}"; pwd -P)/${start##*/}"
+#    mark="${start##*/}";
+#    mark="${mark%,*}";
+head -n2 "/dev/null" "$mp3loop_file" 
+head -n3 "$HOME/0/v/mp3loop" "$HOME/0/v/playff" "$HOME/0/v/playff_vol"
+eof
+}
+
+
 
 playffr () { # for files (args or stdin), continuously repeat invocations of ffplay, without display
-    local playff_dat="$HOME/0/v/playff"  playff_dat_vol="${playff_dat}_vol" vol='' f='' fs=''
-    [ "$1" = '-vol' -a $# -ge 2 ] && { vol="$2" ; shift 2 ;}
-    [ "$vol" ] || vol="$(< "$playff_dat_vol")"
+    local playff_file="$HOME/0/v/playff"
+    local playff_vol_file="${playff_file}_vol" vol='' f='' fs=''
+    [ "$1" = '-vol' -a $# -ge 2 ] && { vol="$2" ; shift 2 ;} || vol="$(< "$playff_vol_file")"
     [ "$vol" -a "$vol" -eq "$vol" ] || { chkwrn "$FUNCNAME : invalid volume (0..100) '$vol' (65468ec9)" ; vol=88 ;}
-    mkdir -p "${playff_dat%/*}"
-    cat >"$playff_dat_vol" <<<"$vol"
+    mkdir -p "${playff_file%/*}"
+    cat >"$playff_vol_file" <<<"$vol"
     [ $# -gt 0 ] && { fs="$1" ; shift ;}
     while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
@@ -1205,18 +1285,19 @@ playffr () { # for files (args or stdin), continuously repeat invocations of ffp
     # -vol to set volume {0..100}, default is last, or 88 if invalid provided
     while IFS= read f; do
       [ -f "$f" ] && { tput bold ; chktrue "$f" ; tput sgr0
-        echo "$f" >"$playff_dat" # not optimal without full path inputs, meh
-        vol="$(< "$playff_dat_vol")" # read per song...
+        echo "$f $PWD" >"$playff_file" # store PWD, least $f is relative
+        vol="$(< "$playff_vol_file")" # read per song...
         chktrue sec $(hms2sec $(ffprobe -hide_banner  -loglevel info "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')) vol $vol
         ffplay -hide_banner -stats -autoexit -loglevel error -nodisp -volume $vol "$f" || return 1
-        } || { chkwrn "$0 : not a file : '$f' (6542c3b6)" ; sleep 2 ;}
+        } || { chkwrn "$FUNCNAME : not a file : '$f' (6542c3b6)" ; sleep 2 ;}
       done <<<"$fs"
     } # playffr
 
 playff () { # for files (args or stdin), continuously repeat invocations of ffplay, with display
-    local var_dat="$HOME/0/v/playff"  var_dat_vol="${var_dat}_vol" vol='' f='' fs=''
+    local playff_file="$HOME/0/v/playff"
+    local playff_vol_file="${playff_file}_vol" vol='' f='' fs=''
     [ "$1" = '-vol' -a $# -ge 2 ] && { vol="$2" ; shift 2 ;}
-    [ "$vol" ] || vol="$(< "$playff_dat_vol")"
+    [ "$vol" ] || vol="$(< "$playff_vol_file")"
     [ "$vol" -a "$vol" -eq "$vol" ] || { chkwrn "$FUNCNAME : invalid volume (0..100) '$vol' (65469ac0)" ; vol=88 ;}
     mkdir -p "${var_dat%/*}"
     cat >"$var_dat_vol" <<<"$vol"
