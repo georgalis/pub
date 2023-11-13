@@ -101,6 +101,9 @@ mv -f "0,~" "0,"
 exit 0
 
 cat >/dev/null <<eof
+><> base32 = "0123456789abcdefghjkmnpqrstuvxyz"
+><> (sans "ilow")
+
 compost guide, null comma files:
 
 0, prepare
@@ -121,10 +124,13 @@ e, reunion
 f, juxtapose
 g, reminiscence
 h, reverence
+i, * gone
 j, astonish
 k, sustain
+l, * late
 m, root
 n, old
+o, * outside
 p, spirit
 q, ring
 r, persue
@@ -132,6 +138,7 @@ s, modest
 t, simple
 u, personal
 v, tentative
+w, * wide
 x, extra
 y, exclude
 z, end
