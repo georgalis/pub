@@ -1159,8 +1159,7 @@ mp3range () { # mp3 listing limiter
         done
     } # mp3range 20220803
 
-
-mp3loop () { # genai develop doc, revised doc, genai code flops...
+mp3loop () { # genai developed doc from code, manual revised doc, genai code from doc flops, but helps...
 #   mp3loop requirement:
 #   play a loop of mp3 files in a directory starting from a lexicographic position
 #   take a -v option to store the volume (1-100)
@@ -1185,7 +1184,6 @@ mp3loop () { # genai develop doc, revised doc, genai code flops...
     local playff_vol_file="${playff_file}_vol"
     local dir='' mark='' vol=''
     local verbb=devnul
-#head -n3 "$HOME/0/v/mp3loop" "$HOME/0/v/playff" | sed 's/^/<< /' | awk -v cols="$(($(tput cols)))" 'length > cols{$0=substr($0,0,cols)""}1' >&2
     mkdir -p "${playff_file%/*}" "${mp3loop_file%/*}";
     [ "$1" = '-v' -a $# -ge 2 ] && { vol="$2"; shift 2 ;}
     [ "$vol" ] || vol="$(< "$playff_vol_file")"
@@ -1201,12 +1199,12 @@ mp3loop () { # genai develop doc, revised doc, genai code flops...
                 dir="$(cd "${1%/*}" ; pwd -P)" mark="${1##*/}" ; $verbb "dir='$dir' mark='$mark'" ;} \
           || { $verbb 'input has no slash, use realpath playff data and arg1 mark'
               [ "$1" = '-n' ] && { $verbb 'input is next flag (-n), determin next from playff data' ;
-                    return 3 ;} \
-                || { $verbb 'use realpath playff data and arg1 mark' 
+                    $verbb "section incomplete!" ; return 3 ;} \
+                || { $verbb 'use realpath playff data and arg1 mark'
                     dir="$( cd "${playff_data##* }" ; dir="${playff_data% *}" ; cd "${dir%/*}" ; pwd -P)" mark="$1" ;}
               }
-        } || { $verbb 'arg1 is not set, algo over' ;} 
-    $verbb "arg/data parsed dir='$dir' mark='$mark'" 
+        } || { $verbb 'arg1 is not set, algo over' ;}
+    $verbb "arg/data parsed dir='$dir' mark='$mark'"
     [ -z "$dir" -o -z "$mark" ] && { $verbb "dir or mark is null, load playff_file data"
       [ -f "$playff_file" ] && { read playff_data <"$playff_file" ; $verbb "load playff_data" ;}
       $verbb "default dir and mark, per realpath construction of playff data"
@@ -1220,8 +1218,9 @@ mp3loop () { # genai develop doc, revised doc, genai code flops...
       }
       $verbb "per algo and arg,    dir='$dir' mark='$mark'"
     mark="${mark%,*}" ; $verbb 'always reduce mark to seq data (least mark data contain regex data)'
-    # put a mark in the file list, buffer the lines before, skip the mark, print lines after, print buffer
-    # fixup so the list is fullpath sans (0|y) files
+    # put a mark in the file list, sort, check for and skip the mark (next),
+    # buffer the lines before the mark (!p), #print lines after (p),
+    # print buffer (END); fixup so the list is fullpath sans (0|y) files
     ( cd "$dir"; echo "./$mark"; find . -mindepth 1 -maxdepth 1 -name \*mp3 ) \
         | sort | awk -v mark="${mark}" '
             $0 ~ "./"mark && !p {p=1;next}
@@ -1230,48 +1229,50 @@ mp3loop () { # genai develop doc, revised doc, genai code flops...
                             END {print b}' \
         | sed -e '/^$/d' -e 's=./==' -e '/^0/d' -e '/^y/d' -e "s:^:${dir}/:" \
         | tee "$mp3loop_file" | playffr
-#   $FUNCNAME "$dir/$mark"
 } # mp3loop 64e3caf9 20230821
 
 playffr () { # for files (args or stdin), continuously repeat invocations of ffplay, without display
     local playff_file="$HOME/0/v/playff"
     local playff_vol_file="${playff_file}_vol" vol='' f='' fs=''
-    [ $# -ge 2 ] && [ "$1" = '-vol' -o "$1" = '-v' ] && { vol="$2" ; shift 2 ;} || vol="$(< "$playff_vol_file")"
-    [ "$vol" -a "$vol" -eq "$vol" ] || { chkwrn "$FUNCNAME : invalid volume (0..100) '$vol' (65468ec9)" ; vol=88 ;}
+    [ "$1" = '-v' -a $# -ge 2 ] && { vol="$2"; shift 2 ;}
+    [ "$vol" ] || vol="$(< "$playff_vol_file")"
+    [ "$vol" -a "$vol" -eq "$vol" ] || { chkwrn "$FUNCNAME : invalid volume '$vol' using '88' (6546998d)"; vol=88 ;}
     mkdir -p "${playff_file%/*}"
     cat >"$playff_vol_file" <<<"$vol"
     [ $# -gt 0 ] && { fs="$1" ; shift ;}
     while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
-    # while :; do ...TODO identify/resolve inability to ctrl-c
-    # -vol to set volume {0..100}, default is last, or 88 if invalid provided
+    # while :; do ...TODO identify/resolve inability to ctrl-c when nput has no valid file
     while IFS= read f; do
       [ -f "$f" ] && { tput bold ; chktrue "$f" ; tput sgr0
         echo "$f $PWD" >"$playff_file" # store PWD, least $f is relative
         vol="$(< "$playff_vol_file")" # read per song...
         chktrue sec $(hms2sec $(ffprobe -hide_banner  -loglevel info "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')) vol $vol
+        # and touch since mac does not update atime, cf APFS_FEATURE_STRICTATIME
+        touch -a "$f"
         ffplay -hide_banner -stats -autoexit -loglevel error -nodisp -volume $vol "$f" || return 1
         } || { chkwrn "$FUNCNAME : not a file : '$f' (6542c3b6)" ; sleep 2 ;}
       done <<<"$fs"
     } # playffr
 
-playff () { # for files (args or stdin), continuously repeat invocations of ffplay, with display
+playff () { # for files (args or stdin), invoke ffplay with display
     local playff_file="$HOME/0/v/playff"
     local playff_vol_file="${playff_file}_vol" vol='' f='' fs=''
-    [ $# -ge 2 ] && [ "$1" = '-vol' -o "$1" = '-v' ] && { vol="$2" ; shift 2 ;} || vol="$(< "$playff_vol_file")"
-    [ "$vol" -a "$vol" -eq "$vol" ] || { chkwrn "$FUNCNAME : invalid volume (0..100) '$vol' (65468ec9)" ; vol=88 ;}
+    [ "$1" = '-v' -a $# -ge 2 ] && { vol="$2"; shift 2 ;}
+    [ "$vol" ] || vol="$(< "$playff_vol_file")"
+    [ "$vol" -a "$vol" -eq "$vol" ] || { chkwrn "$FUNCNAME : invalid volume '$vol' using '88' (65468ec9)"; vol=88 ;}
     mkdir -p "${playff_file%/*}"
     cat >"$playff_vol_file" <<<"$vol"
     [ $# -gt 0 ] && { fs="$1" ; shift ;}
     while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
-    # while :; do ...TODO identify/resolve inability to ctrl-c
-    # -vol to set volume {0..100}, default is last, or 88 if invalid provided
     while IFS= read f; do
       [ -f "$f" ] && { tput bold ; chktrue "$f" ; tput sgr0
         echo "$f $PWD" >"$playff_file" # store PWD, least $f is relative
         vol="$(< "$playff_vol_file")" # read per song...
         chktrue sec $(hms2sec $(ffprobe -hide_banner  -loglevel info "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')) vol $vol
+        # and touch since mac does not update atime, cf APFS_FEATURE_STRICTATIME
+        touch -a "$f"
         ffplay -hide_banner -stats -autoexit -loglevel error -top 52 -x 1088 -y 280 -volume $vol "$f" || return 1
         } || { chkwrn "$FUNCNAME : not a file : '$f' (6542c3b6)" ; sleep 2 ;}
       done <<<"$fs"
@@ -1283,22 +1284,29 @@ playffend () { # Play the ending of files (args or stdin), always "no display"
     # https://developer.apple.com/support/downloads/Apple-File-System-Reference.pdf#page=67&zoom=auto,-62,145
     # typical invoke for review of recent file endings
     # find . -maxdepth 1 -name \*mp3 -mtime +1 -mtime -40 -atime +1 | sort | playffend
-    local _file='' _files='' _v='' end='';
-    [ $# -gt 0 ] && { _files="$1"; shift ;}
-    [ "$_files" = '-volume' -o "$_files" = "-v" ] && { _v="$1"; shift; _files="$1"; shift ;}
-    [ "$_v" ] && _v="-volume $v" || _v="-volume 100";
-    while [ $# -gt 0 ]; do _files="$(printf "%s\n%s\n" "$_files" "$1")"; shift; done;
-    [ "$_files" ] || _files="$(cat)";
-    echo "$_files" | while IFS= read _file; do
-        [ -f "$_file" ] && {
-            tput bold;
-            formfile $_file
-            tput sgr0;
-            end=$( dc -e "$(hms2sec $(ffprobe -hide_banner -loglevel info "$_file" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')) 15 - p" )
-            chktrue "ffplay -ss $end -hide_banner -stats -autoexit -loglevel error -top 52 -x 1088 -y 280 $_v $_file";
-            chktrue probsec $(hms2sec $(ffprobe -hide_banner -loglevel info "$_file" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')) vol: ${v##* };
-            ffplay -ss $end -hide_banner -stats -autoexit -loglevel error -nodisp "$_file" || return 1
-            touch -a "$_file"
+    local playff_file="$HOME/0/v/playff"
+    local playff_vol_file="${playff_file}_vol" vol='' f='' fs='' end=''
+    [ "$1" = '-v' -a $# -ge 2 ] && { vol="$2"; shift 2 ;}
+    [ "$vol" ] || vol="$(< "$playff_vol_file")"
+    [ "$vol" -a "$vol" -eq "$vol" ] || { chkwrn "$FUNCNAME : invalid volume '$vol' using '88' (65468ec9)"; vol=88 ;}
+    mkdir -p "${playff_file%/*}"
+    cat >"$playff_vol_file" <<<"$vol"
+    [ $# -gt 0 ] && { fs="$1" ; shift ;}
+    while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
+    [ "$fs" ] || fs="$(cat)"
+    echo "$fs" | while IFS= read f; do
+        [ -f "$f" ] && { tput bold ; chktrue "$f" ; tput sgr0
+            vol="$(< "$playff_vol_file")" # read per song...
+            end=$( dc -e "$(hms2sec $(ffprobe -hide_banner -loglevel info "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')) 25 - p" )
+            chktrue probsec $(hms2sec $(ffprobe -hide_banner -loglevel info "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')) vol: $vol;
+            echo "$f $PWD" >"$playff_file" & # store PWD, least $f is relative
+            touch -a "$f"
+            chkwrn formfile "$f"
+            chktrue "ffplay -t  10    -hide_banner -stats -autoexit -loglevel error -top 52 -x 1088 -y 280 -volume $vol '$f'";
+            chktrue "ffplay -ss $end  -hide_banner -stats -autoexit -loglevel error -top 52 -x 1088 -y 280 -volume $vol '$f'";
+                     ffplay -t  10    -hide_banner -stats -autoexit -loglevel error -top 52 -x 1088 -y 280 -volume $vol "$f" || return 1
+                     ffplay -ss $end  -hide_banner -stats -autoexit -loglevel error -top 52 -x 1088 -y 280 -volume $vol "$f" || return 1
+#                    ffplay -ss $end  -hide_banner -stats -autoexit -loglevel error -nodisp                -volume $vol "$f" || return 1
         } || chkwrn "$0 : not a file : '$_file' (6542c40a)";
     done
 } # playffend 64d51e6d 20230810
