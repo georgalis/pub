@@ -7,7 +7,7 @@
 # png files, only the largest svn files per icon, a txt index and html
 # swatch. Runtime is about 30 seconds, after the download completes.
 # 
-# Unlimited use with this notice. (C) 2021 George Georgalis <george@galis.org>
+# (C) 2021-2022 George Georgalis <george@galis.org> unlimited use with this notice
 
 set -e
 mkdir -p tmp
