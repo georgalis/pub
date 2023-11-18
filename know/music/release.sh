@@ -31,11 +31,11 @@ EOF
 while IFS= read a ; do
     validfn $a && true || { echo "$0 : validfn error : $a" 1>&2 ; dep_help_sub ; exit 1 ;}
     done <<EOF
-formfilestats fa92ede0 000004dc
 spin2 1263edf2 00000180
 ckstat c44370c9 000003ac
 ckstatsum 464f5378 00000406
 formfile b646d543 00000fe1
+formfilestats c8598f5f 00000389
 EOF
 
 [ -e $HOME/sub/markdown.awk ] || { echo "$0 : markdown.awk not found" 1>&2 ; dep_help_sub ; exit 1 ;}
@@ -94,14 +94,15 @@ gen_index () { # in pwd, for "$links/$name/"
 #   touch -r "$wdp/${name}.list" "$wdp/%/$t/${name}.tab"
 #   mv "$wdp/%/$t/${name}.tab" "$wdp/$name"
 
-    $verb ${name}.stat.time ; $verb2 tmp "$wdp/%/$t/${name}.stat.time"
+    $verb ${name}/stat.time.list ; $verb2 tmp "$wdp/%/$t/${name}.stat.time"
     formfilestats "$links/$name" >"$wdp/%/$t/${name}.stat.time"
     $verb ${name}.stat.pitch ; $verb2 tmp "$wdp/%/$t/${name}.stat.pitch"
-    sort -n -t '=' -k 3 "$wdp/%/$t/${name}.stat.time" >"$wdp/%/$t/${name}.stat.pitch"
+    sort -n -t '=' -k 2 "$wdp/%/$t/${name}.stat.time" >"$wdp/%/$t/${name}.stat.pitch"
     touch -r "$wdp/${name}.list" "$wdp/%/$t/${name}.stat.time" "$wdp/%/$t/${name}.stat.pitch"
-    mv "$wdp/%/$t/${name}.stat.time" "$wdp/%/$t/${name}.stat.pitch" "$wdp/$name/"
-    find . -name "$wdp/$name/${name}.stat.pitch" -empty -exec rm \{\} \;
-    find . -name "$wdp/$name/${name}.stat.time"  -empty -exec rm \{\} \;
+    mv "$wdp/%/$t/${name}.stat.time" "$wdp/$name/stat.time.list"
+    mv "$wdp/%/$t/${name}.stat.pitch" "$wdp/$name/stat.pitch.list"
+    find "$wdp/$name"  -name stat.time.list -empty -exec rm \{\} \;
+    find "$wdp/$name"  -name stat.pitch.list -empty -exec rm \{\} \;
 
     $verb ${name}.ckstat ; $verb2 tmp "$wdp/%/$t/${name}.ckstat"
     cat "$wdp/${name}.list" | while IFS= read a ; do
@@ -246,6 +247,14 @@ vols="$(awk '!/^$/ {print $1}' <<<"$volumes")"
 
 chktrue "Volumes:"
 awk '!/^$/' <<<"$volumes" | awk '{print " ",NR,$0}'
+
+chktrue "$music/{stat.time.list,stat.pitch.list,stats.list}"
+formfilestats $( sed "s:^:$links/:" <<<"$vols") >"$wdp/%/$t/vols.stat.time"
+sort -n -t '=' -k 3 "$wdp/%/$t/vols.stat.time" >"$wdp/%/$t/vols.stat.pitch"
+sort -n <"$wdp/%/$t/vols.stat.time" >"$wdp/%/$t/vols.stats"
+mv "$wdp/%/$t/vols.stat.time" "$wdp/stat.time.list"
+mv "$wdp/%/$t/vols.stat.pitch" "$wdp/stat.pitch.list"
+mv "$wdp/%/$t/vols.stats" "$wdp/stats.list"
 
 # if the first arg is sync, note that for after gen_index
 _sync=n

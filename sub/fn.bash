@@ -807,49 +807,43 @@ formfile () { # create a f2rb2mp3 command to render the file, given the input fi
     } # formfile 64d36229 20230809
 
 formfilestats () { # accept dir(s) as args, report unique formfile time and pitch stats from @ dir/*mp3
-  local dir a b
-  for dir in $@ ; do
-    [ -d "$dir" ] && {
-      for b in "$dir"/*mp3 ; do
-        a="${b##*/}"
-        ext="$( sed -e 's/[^.]*.//' -e 's/-.*//' <<<"^${a##*^}" )"
-        sed -E -e "
-            # start with block from formfile
-            s/.*\.${ext}//
-            s/.mp3$//
-            s/-(ckb|hrn|cps|par)/ cmp=\1/
-            s/-(bhz|chz)/ f=\1/
-            s/-rev/ rev=y/
-            s/-ss/ ss=/
-            s/-to/ to=/
-            s/-t/ t=/
-            s/-p/ p=/
-            s/-f/ f=/
-            s/-F/ F=y/
-            s/-cf/ cf=y/
-            s/-r3/ c=r3/
-            s/-c/ c=/
-            s/-v/ v=/
-            s/-ln//
-            s/-off/ off=/
-            s/-tp/ tp=/
-            s/-lra/ lra=/
-            s/-i/ i=/
-            # squash to tempo and pitch parameters
-            s/[ ](cmp|rev|ss|to|F|cf|c|v|off|tp|lra|i)=[^ ]*//g
-            /^$/d
-            # fixup odd case
-            s/^ p/ t=1 p/
-            / t=1 p=0$/d
-          " <<<"^${a##*^}" \
-          | awk '{printf "%- 11s %- 11s %s %s %s\n",$1,$2,$3,$4,$5}'
-        spin2
-        done # b in "$dir"/*mp3
-        spin2 0
-        } || true # $dir
-       done | sort -n -t '=' -k 2 | uniq -c # sort result and count uniq
-  } #
-
+  find $@ -maxdepth 1 -type f -name \*mp3 -not -name 0\* -not -name \*y \
+    | sed -E -e "
+      # for now delete volumes with old filename formats
+      /5d50-kindle-class/d
+      /5fb3-deja-muse/d
+      # flatten to time and pitch parameters
+      s/.*_\^[^.]*[^-]*-/-/
+      s/.mp3$//
+      s/-(ckb|hrn|cps|par)/ cmp=\1/
+      s/-(bhz|chz)/ f=\1/
+      s/-rev/ rev=y/
+      s/-ss/ ss=/
+      s/-to/ to=/
+      s/-t/ t=/
+      s/-p/ p=/
+      s/-f/ f=/
+      s/-F/ F=y/
+      s/-cf/ cf=y/
+      s/-r3/ c=r3/
+      s/-c/ c=/
+      s/-v/ v=/
+      s/-ln//
+      s/-off/ off=/
+      s/-tp/ tp=/
+      s/-lra/ lra=/
+      s/-i/ i=/
+      # squash to tempo and pitch parameters
+      s/[ ](cmp|rev|ss|to|F|cf|c|v|off|tp|lra|i)=[^ ]*/ /g
+      /^$/d
+      # fixup odd case
+      /t=/!s/^/t=1 /
+      /p=/!s/ f/ p=0 f/
+      /p=/!s/$/ p=0/
+    " \
+    | column -t \
+    | sort -n -t '=' -k 2 | uniq -c # sort result and count uniq
+  } # formfilestats 61ef60e8-20220124_183054
 
 # export c=100 ; rm -rf png/* ; for a in *Couperin-kbd*mp3 ; do b=$(sed -e 's/.*,//' <<<$a) ; echo $b ; done | sort | while read b ; do a=$(ls *$b) ; c=$(( ++c )) ; sox $a -n remix - trim 0 =3 -3 spectrogram -o png/${c},${a}.png ; echo -n .  ; done
 
