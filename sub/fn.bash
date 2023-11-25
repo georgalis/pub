@@ -306,7 +306,8 @@ cf () { #:> on terminal output, fold long lines on words
     } # cf formally catfold
 ct () { #:> on terminal output, truncate lines to width
     [ -t 1 ] && {
-        local cols="$(tput cols)";
+        local cols
+        read cols < <(tput cols);
         awk -v cols="$((cols))" 'length > cols{$0=substr($0,0,cols)""}1'
         } || cat
     } # ct formally cattrunc
@@ -398,12 +399,12 @@ _youtube_json2txt () { # fixup youtube .info.json to yaml txt and sort files
   local inpath='' _fout="_^$(jq --ascii-output --raw-output '(.id, .acodec)' "$1" \
     | tr -d '"' | tr '\n' '.' | sed 's/\.$//')"
   expr "$1" : ".*/" >/dev/null && inpath="${1%/*}" || inpath="."
-  printf "%s\n" "ss= ; export verb=chkwrn ss= to= t= p= f= c=r3 F= CF= off= tp= lra= i= cmp=pard v=3db" >"${1}.txt"
-  printf "%s\n" "ss= ; export verb=chkwrn _f=@/${_fout}" | tr -d '"' >>"${1}.txt"
+  printf "\n%s\n" "ss= ; export verb=chkwrn ss= to= t= p= f= c=r3 F= CF= off= tp= lra= i= cmp=pard v=3db" >"${1}.txt"
+  printf   "%s\n" "ss= ; export _f=@/${_fout}" | tr -d '"' >>"${1}.txt"
   { jq --ascii-output --raw-output '(.fulltitle)' "$1" \
         | tr -d '"' ; printf '\n' "" ;} \
-        | sed -e 's,\\u0332,,g' -e 's,\\u2013,-,g' -e 's,\\u00d7,-,g' \
-        | awk '{print "\n_a="$0"\n_r=\n"$0"\n\n"$0"\n\n"}' >>"${1}.txt"
+        | sed -e 's,\\u0332,,g' -e 's,\\u2013,-,g' -e 's,\\u00d7,-,g' -e 's,\\u2022,-,g' \
+        | awk 'P=$0{printf "\n_a=%s\n_r=%s\n\n",P,P}' >>"${1}.txt"
   printf ' ss= to= f2rb2mp3 $_f ooo,${_a}-Trak_Title-${_r}\n' >>"${1}.txt"
   jq --ascii-output --raw-output '(.duration_string)' "$1" | tr -d '"' >>"${1}.txt"
   yes | tr -d 'y' | head -n 2 >>"${1}.txt"
@@ -1056,7 +1057,7 @@ numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" 
     # Prepend output filenames with "$numlist" string, if set;
     # Initialize base 32 sequence with 0 major for input files that have no sequence;
     # For name changes, without collisions, generate mv commands for review or "| sh"
-    local f fs p c b a src dst;
+    local f='' fs='' p='' c='' b='' a='' src='' dst='';
     while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
     [ "$fs" ] || fs="$(cat)"
     fs="$(sed -e 's/^\.\///' <<<"$fs" | while IFS= read f ; do [ -f "${f%%/*}" ] && echo "${f%%/*}" || true ; done)"
@@ -1387,7 +1388,7 @@ base () { # convert {decimal} arg2 to {base} arg1
     # digs = string.digits + string.ascii_letters
     # digs = "0123456789abcdefghijklmnpqrstuvwxyz"
     # shift out characters "ilow" for visual acuity
-    #      "0123456789abcdefghijklnpqrstuvwxyz"
+    #        "0123456789abcdefghjkmnpqrstuvxyz"
   # local digs=$(echo {0..9} {a..z} | tr -d ' ilow\n')
     expr "$1" : "-[-]*h" >/dev/null && { # support --help and -h
         chktrue "$FUNCNAME : convert {decimal} arg2 to {base} arg1"
@@ -1412,6 +1413,34 @@ base () { # convert {decimal} arg2 to {base} arg1
         done
     echo "${sign}${out}"
     } # base 20221013 6348728e
+
+base10from () { # convert to decimal the value (arg2), in base (arg1, b32 max, and sans 'ilow')
+    # digs = string.digits + string.ascii_letters
+    # digs = "0123456789abcdefghijklmnpqrstuvwxyz"
+    # shift out characters "ilow" for visual acuity
+    #        "0123456789abcdefghjknpqrstuvxyz"
+  # local digs=$(echo {0..9} {a..z} | tr -d ' ilow\n')
+  expr "$1" : "-[-]*h" >/dev/null && { # support --help and -h
+        chktrue "$FUNCNAME : convert value (arg2) to decimal, from base (arg1)"
+        chktrue "base and output are integers, base <= 32   "
+        chktrue 'base32 = "0123456789abcdefghjkmnpqrstuvxyz"'
+        chktrue '(sans "ilow")'
+        return 2 ;}
+  local base="$1" x="$2"
+  [ "$base" -a "$x" ] || { $FUNCNAME --help
+    chkerr "$FUNCNAME : requires input base (arg1), and input value (arg2) : arg1='$1' arg2='$2' (65615a6c)" ; return 1 ;}
+  [[ "$x" =~ ^-?[0123456789abcdefghjkmnpqrstuvxyz]+$ ]] || { chkerr "$FUNCNAME : arg2 (input value) must be [[:alnum:]]+ sans 'ilow' : arg2='$2' (65615a78)" ; return 1 ;}
+  [[ "$base" =~ ^[0-9]+$ && "$base" -ge 2 && "$base" -le 32 ]] \
+    || { chkerr "$FUNCNAME : arg1 must a positive integer 2=<{base}<=32 : arg1='$1' (65615a72)" ; return 1 ;}
+  awk -v b="$base" '{
+    while (length($1)>0) {
+      c = substr($1,length($1),1)
+      digit = index("0123456789abcdefghjkmnpqrstuvxyz",c)-1
+      n += digit*(b^i)
+      i++
+      $1 = substr($1,1,length($1)-1)
+    } print n }' <<<"$x"
+    } # 656121d3-20231124_142057
 
 diffenv () { # create an env file, report diff iff file exists
     local d_file="$HOME/0/v/diffenv" d_env="$(declare -p | sort)"
