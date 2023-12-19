@@ -83,6 +83,7 @@ for p in "${provided[@]}"; do
   [ $found -eq 0 ] && { chkerr "$0 : No script provides $p (6536c080)" ; exit 1 ;}
   [ $found -gt 1 ] && { chkerr "$0 : Multiple scripts provide $p (6536c0c8)" ; exit 1 ;}
 done
+
 # verb
 for i in ${!required[@]}; do
   $verb "required[$i] = ${required[$i]}"
@@ -133,7 +134,7 @@ tsorted=()
   } # With BEFORE dependencies
 $verb "sorted scripts ${tsorted[@]}"
 
-# Print sorted scripts in reverse order
+# Print sorted scripts in reverse, dependencies first, order
 for ((i=${#tsorted[@]}-1; i>=0; i--)); do
  echo "${tsorted[$i]}"
  done

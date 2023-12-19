@@ -10,6 +10,7 @@
 " :e! ++enc=ascii
 
 set timeout timeoutlen=3000 ttimeoutlen=100
+set timeout timeoutlen=1000 ttimeoutlen=100
 "set noesckeys
 
 " https://linuxhandbook.com/vim-auto-complete/

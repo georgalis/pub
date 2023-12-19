@@ -318,7 +318,7 @@ ct () { #:> on terminal output, truncate lines to width
 # cf https://github.com/ytdl-org/youtube-dl/issues/29326#issuecomment-894619419
 
 _youtube_video_list () {
-  local id="$1" d="$2"
+  local id="$1" d="$2" xs=$(xs)
   [ "$id" ] || read -p "youtube id: " id
   [ "$id" ] || { chkerr "6542c9fc : no id? (6542ca44)" ; return 1 ;}
   [ "$d" ]  || read -p "directory: " d
@@ -329,29 +329,30 @@ _youtube_video_list () {
    --write-info-json --write-comments --write-sub --write-auto-sub --sub-lang en --write-thumbnail \
    --restrict-filenames --audio-quality 0 --audio-format best \
    --playlist-start 1 \
-   -o "$d/%(playlist_title)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+   -o "$d/${xs}%(playlist_title)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   "$ytdl" --abort-on-error --yes-playlist \
    --restrict-filenames --audio-quality 0 --audio-format best --extract-audio --keep-video \
    --playlist-start 1 \
-   -o "$d/%(playlist_title)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+   -o "$d/${xs}%(playlist_title)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   } # _youtube_video_list 20220516
 
 _youtube_video () {
-  local id="$1" d="$2"
+  local id="$1" d="$2" xs=$(xs)
   [ "$id" ] || read -p "youtube id: " id
   [ "$id" ] || { chkerr "$FUNCNAME : no id? (6542c9fc)" ; return 1 ;}
   [ "$d" ]  || read -p "directory: " d
+  id=$(sed 's/si=.*//' <<<"$id") # squash trackers from url
   [ -d "$d" ] || d="$(pwd -P)"
   [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d' (6542c61e)" ; return 1 ;}
   [ "$ytdl" ] || ytdl="youtube-dl"
   "$ytdl" --write-info-json --write-comments --write-sub --write-auto-sub --sub-lang en --write-thumbnail \
    --restrict-filenames --audio-quality 0 --audio-format best \
    --abort-on-error --no-playlist \
-   -o "$d/00,%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+   -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   "$ytdl" \
    --restrict-filenames --audio-quality 0 --audio-format best --extract-audio --keep-video \
    --abort-on-error --no-playlist \
-   -o "$d/00,%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+   -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   } # _youtube_video 20220516
 
 _youtube_list () {
@@ -366,7 +367,7 @@ _youtube_list () {
    --write-info-json --write-comments --write-sub --write-auto-sub --sub-lang en --write-thumbnail \
    --restrict-filenames --audio-quality 0 --audio-format best --extract-audio \
    --playlist-start 1 \
-   -o "$d/%(playlist_title)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+   -o "$d/00$(xs)%(playlist_title)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   } # _youtube_list 20220516
 
 _youtube () {
@@ -388,12 +389,17 @@ _youtube () {
   $ytdl --write-info-json --write-comments --write-sub --write-auto-sub --sub-lang en --write-thumbnail \
    --restrict-filenames --audio-quality 0 --audio-format best --extract-audio \
    --abort-on-error --no-playlist \
-   -o "$d/00,%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id | tee "$HOME/%/ytdl/$t"
+   -o "$d/00$(xs),%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id | tee "$HOME/%/ytdl/$t"
+  # prompt with filing indices and catagories
+  find $links -mindepth 1 -maxdepth 1 -type d \( -name 5\* -o -name 6\* \) -exec basename \{\} \; \
+    | sort -r | rs -tz -w$(( $(tput cols)*100 /137))
+  grep '^[[:alnum:]],' $music/comma_mp3.sh | rs -tz -c"\n" -w$(( $(tput cols)*100 /137))
   _youtube_json2txt $(sed -e '/as JSON to/!d' -e 's/.*to: //' <"$HOME/%/ytdl/$t") && rm -f "$HOME/%/ytdl/$t" \
     || { chkwrn "failed: _youtube_json2txt '$HOME/%/ytdl/$t' (6542c5ee)" ; return 1 ;}
   } # _youtube 20220516
 
 _youtube_json2txt () { # fixup youtube .info.json to yaml txt and sort files
+  local a
   [ -f "${1}" ]     || { chkerr "$FUNCNAME : not a file : ${1} (6542c870)" ; return 1 ;}
   [ -f "${1}.txt" ] && { chkerr "$FUNCNAME : exists ${1}.txt (6542c86a)" ; return 1 ;}
   local inpath='' _fout="_^$(jq --ascii-output --raw-output '(.id, .acodec)' "$1" \
@@ -411,12 +417,14 @@ _youtube_json2txt () { # fixup youtube .info.json to yaml txt and sort files
   jq --compact-output 'del(.formats, .thumbnail, .thumbnails, .downloader_options, .http_headers,
         .webpage_url_basename, .author_thumbnail, .playable_in_embed, .live_status, .automatic_captions,
         .extractor, .is_live, .was_live )' "$1" | yq --yaml-output | tr -cd '[ -~]\n' >>"${1}.txt"
-  mkdir -p "$inpath/@/meta" "$inpath/orig"
-# { set -x
-    ln -f "$inpath"/*${_fout} "$inpath"/@/${_fout}
-    mv -f "$inpath"/*${_fout} "$inpath/orig"
-    mv -f "$1" "$inpath"/*${_fout%%.*}.webp "$inpath"/*${_fout%%.*}*.vtt "$inpath"'/@/meta'
-#   set +x ;}
+  # sorting these files is a side effect of calling this function,
+  # but this function may be called when there are no files to sort,
+  # so only do the side effect if the files are there...
+  [ -f "$inpath"/*"${_fout}" ] && mkdir -p "$inpath/@"    && ln -f "$inpath"/*${_fout} "$inpath"/@/${_fout}
+  [ -f "$inpath"/*"${_fout}" ] && mkdir -p "$inpath/orig" && mv -f "$inpath"/*${_fout} "$inpath/orig" 
+  [ -f "$1" -o -f "$inpath"/*${_fout%%.*}.webp -o -f "$inpath"/*${_fout%%.*}*.vtt ] && mkdir -p "$inpath"'/@/meta' \
+    && for a in "$1" "$inpath/"*${_fout%%.*}.webp "$inpath"/*${_fout%%.*}*.vtt ; do
+        [ -f "$a" ] && mv "$a" "$inpath"'/@/meta' ; done
   echo "${1}.txt"
   } # _youtube_json2txt 20220516
 
@@ -1196,7 +1204,9 @@ mp3loop () { # genai developed doc from code, manual revised doc, genai code fro
               [ "$1" = '-n' ] && { $verbb 'input is next flag (-n), determin next from playff data' ;
                     $verbb "section incomplete!" ; return 3 ;} \
                 || { $verbb 'use realpath playff data and arg1 mark'
-                    dir="$( cd "${playff_data##* }" ; dir="${playff_data% *}" ; cd "${dir%/*}" ; pwd -P)" mark="$1" ;}
+                    [ -f "$playff_file" ] && { read playff_data <"$playff_file" ; $verbb "load playff_data" ;} && \
+                      dir="$( cd "${playff_data##* }" ; dir="${playff_data% *}" ; cd "${dir%/*}" ; pwd -P)"
+                      mark="$1" ;}
               }
         } || { $verbb 'arg1 is not set, algo over' ;}
     $verbb "arg/data parsed dir='$dir' mark='$mark'"
