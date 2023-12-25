@@ -169,6 +169,7 @@ alias   gdf='git diff --name-only'
 alias gdiff='git diff --minimal -U0'
 alias  gadd='git add'
 alias  gcom='git commit'
+alias gamend='git commit --amend --no-edit'
 alias gpush='git push'
 alias gpull='git pull'
 alias   gbr='git branch'
@@ -1135,7 +1136,8 @@ mp3range () { # mp3 listing limiter
     # file fullpath of two directories, sorted by filepath...
     # mp3range 2 3 ../ . | ckstat | sort -k6 | awk '{print $6}'
     #
-    local start="$1" stop="$2" dirs= a= opwd="$PWD" prefix=
+    local start="$1" stop="$2" dirs= a= opwd="$PWD" prefix= mp3range_file="$HOME/0/v/mp3range"
+    mkdir "${mp3range_file%/*}";
     local verb="${verb:=devnul}"
     $verb2 for expr "${stop}" : "${start}"
     [ "$stop" ] && { expr "${stop}" : "${start}" >/dev/null \
@@ -1157,10 +1159,41 @@ mp3range () { # mp3 listing limiter
             cd "$a"
             [ "$a" = "$opwd" ] && prefix="" || prefix="$PWD/"
             # drop and warn about filenames with '%' in them??
-            ls | awk ${start},${stop} | sed -e '/.mp3$/!d' -e "s%^%$prefix%"
+            ls | awk ${start},${stop} | sed -e '/.mp3$/!d' -e "s%^%$prefix%" | tee "$mp3range_file"
             } || chkwrn "not a dir with mp3 files : '$a' (6542c455)" ) # subshell for $OLDPWD
         done
-    } # mp3range 20220803
+    } # mp3range 62ea1cfa-20220803_000000
+
+aplayff () { playff < <(mp3atime "$1") ;} # 658238f5
+aplayffr () { playffr < <(mp3atime "$1") ;} # 658238ef
+mp3atime () { # list mp3 in dir (arg1) by atime, sans 0*mp3 and y*mp3
+    local a="$1" mp3atime_file="$HOME/0/v/mp3atime"
+    mkdir -p "${mp3atime_file%/*}";
+    [ -d "$a" ] || { devnul "$FUNCNAME : arg1 not a dir '$a' using '$link' (6581e36c)" ; a="$link" ;}
+    [ -d "$a" ] || { chkerr "$FUNCNAME : not a dir '$a' (6581e360)" ; return 1 ;}
+    ls -rtu $(find "$a" -maxdepth 1 -type f -name \*mp3 \! -name 0\* \! -name y\* ) | tee "$mp3atime_file"
+    } # mp3atime 6581e2a0-20231219_103606
+
+alexplayff () { playff < <(mp3atimelex "$1") ;} # 658238e3
+alexplayffr () { playffr < <(mp3atimelex "$1") ;} # 658238d7
+mp3atimelex () { # list mp3 in dir (arg1) by lex, starting from oldest atime, sans 0* and y*
+    local aoldest= mark= dir= mp3atimelex_file="$HOME/0/v/mp3atimelex"
+    mkdir -p "${mp3atimelex_file%/*}"
+    read aoldest < <(head -n1 < <(mp3atime "$1"))
+    dir="${aoldest%/*}"
+    mark="${aoldest##*/}" ; mark="${mark%,*}" # always reduce mark to seq data (least mark data contain regex data)
+    # put a mark in the file list, sort, check for and skip the mark (next),
+    # buffer the lines before the mark (!p), #print lines after (p),
+    # print buffer (END); fixup so the list is fullpath sans (0|y) files
+    ( cd "$dir"; echo "./$mark"; find . -mindepth 1 -maxdepth 1 -name \*mp3 ) \
+        | sort | awk -v mark="$mark" '
+            $0 ~ "./"mark && !p {p=1;next}
+                              p {print}
+                             !p {b=b $0 ORS}
+                            END {print b}' \
+        | sed -e '/^$/d' -e 's=./==' -e '/^0/d' -e '/^y/d' -e "s:^:${dir}/:" \
+        | tee "$mp3atimelex_file"
+    } # mp3atimeplayff 6581ff2d-20231219_123755
 
 mp3loop () { # genai developed doc from code, manual revised doc, genai code from doc flops, but helps...
 #   mp3loop requirement:
@@ -1234,7 +1267,7 @@ mp3loop () { # genai developed doc from code, manual revised doc, genai code fro
                             END {print b}' \
         | sed -e '/^$/d' -e 's=./==' -e '/^0/d' -e '/^y/d' -e "s:^:${dir}/:" \
         | tee "$mp3loop_file" | playffr
-} # mp3loop 64e3caf9 20230821
+} # mp3loop 64e3caf9-20230821_133703
 
 playffr () { # for files (args or stdin), continuously repeat invocations of ffplay, without display
     local playff_file="$HOME/0/v/playff"
@@ -1253,12 +1286,11 @@ playffr () { # for files (args or stdin), continuously repeat invocations of ffp
         echo "$f $PWD" >"$playff_file" # store PWD, least $f is relative
         vol="$(< "$playff_vol_file")" # read per song...
         chktrue sec $(hms2sec $(ffprobe -hide_banner  -loglevel info "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')) vol $vol
-        # and touch since mac does not update atime, cf APFS_FEATURE_STRICTATIME
-        touch -a "$f"
+        touch -a "$f" # since mac does not update atime, cf APFS_FEATURE_STRICTATIME
         ffplay -hide_banner -stats -autoexit -loglevel error -nodisp -volume $vol "$f" || return 1
-        } || { chkwrn "$FUNCNAME : not a file : '$f' (6542c3b6)" ; sleep 2 ;}
+        } || { chkwrn "$FUNCNAME : not a file : '$f' (6542c3b8)" ; sleep 2 ;}
       done <<<"$fs"
-    } # playffr
+    } # playffr 6542c3b7-20231101_143125
 
 playff () { # for files (args or stdin), invoke ffplay with display
     local playff_file="$HOME/0/v/playff"
@@ -1276,12 +1308,11 @@ playff () { # for files (args or stdin), invoke ffplay with display
         echo "$f $PWD" >"$playff_file" # store PWD, least $f is relative
         vol="$(< "$playff_vol_file")" # read per song...
         chktrue sec $(hms2sec $(ffprobe -hide_banner  -loglevel info "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')) vol $vol
-        # and touch since mac does not update atime, cf APFS_FEATURE_STRICTATIME
-        touch -a "$f"
+        touch -a "$f" # since mac does not update atime, cf APFS_FEATURE_STRICTATIME
         ffplay -hide_banner -stats -autoexit -loglevel error -top 52 -x 1088 -y 280 -volume $vol "$f" || return 1
         } || { chkwrn "$FUNCNAME : not a file : '$f' (6542c3b6)" ; sleep 2 ;}
       done <<<"$fs"
-    } # playff
+    } # playff 6542c3b5-20231101_143123
 
 playffend () { # Play the ending of files (args or stdin), always "no display"
     # -v or -volume to set volume, default is 100
@@ -1314,7 +1345,7 @@ playffend () { # Play the ending of files (args or stdin), always "no display"
 #                    ffplay -ss $end  -hide_banner -stats -autoexit -loglevel error -nodisp                -volume $vol "$f" || return 1
         } || chkwrn "$0 : not a file : '$_file' (6542c40a)";
     done
-} # playffend 64d51e6d 20230810
+} # playffend 64d51e6d-20230810_102907
 
 probeff () { # use ffprobe to extract duration of files (args OR stdin filename per line)
     local f fs
