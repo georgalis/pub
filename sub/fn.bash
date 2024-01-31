@@ -169,12 +169,11 @@ alias   gdf='git diff --name-only'
 alias gdiff='git diff --minimal -U0'
 alias  gadd='git add'
 alias  gcom='git commit'
-alias gamend='git commit --amend --no-edit'
+alias gamend='git commit --amend --force-with-lease' # --no-edit may be prefered
 alias gpush='git push'
 alias gpull='git pull'
 alias   gbr='git branch'
 alias   gco='git checkout'
-alias  grst='git reset'
 #alias  gmv='git mv' # it can get messy, do it manually
 alias  glog='git log'
 alias  gref='git reflog'
@@ -322,6 +321,7 @@ _youtube_video_list () {
   local id="$1" d="$2" xs=$(xs)
   [ "$id" ] || read -p "youtube id: " id
   [ "$id" ] || { chkerr "6542c9fc : no id? (6542ca44)" ; return 1 ;}
+  read id < <(sed "s/\([?&]\)si=................[&]*/\1/" <<<"$id") # squash trackers from url
   [ "$d" ]  || read -p "directory: " d
   [ -d "$d" ] || d="$(pwd -P)"
   [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d' (6542c62a)" ; return 1 ;}
@@ -342,7 +342,8 @@ _youtube_video () {
   [ "$id" ] || read -p "youtube id: " id
   [ "$id" ] || { chkerr "$FUNCNAME : no id? (6542c9fc)" ; return 1 ;}
   [ "$d" ]  || read -p "directory: " d
-  id=$(sed 's/si=.*//' <<<"$id") # squash trackers from url
+  read id < <(sed "s/\([?&]\)si=................[&]*/\1/" <<<"$id") # squash trackers from url
+  #id=$(sed 's/si=.*//' <<<"$id") # squash trackers from url
   [ -d "$d" ] || d="$(pwd -P)"
   [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d' (6542c61e)" ; return 1 ;}
   [ "$ytdl" ] || ytdl="youtube-dl"
@@ -360,6 +361,7 @@ _youtube_list () {
   local id="$1" d="$2"
   [ "$id" ] || read -p "youtube id: " id
   [ "$id" ] || { chkerr "$FUNCNAME : no id? (6542c9f0)" ; return 1 ;}
+  read id < <(sed "s/\([?&]\)si=................[&]*/\1/" <<<"$id") # squash trackers from url
   [ "$d" ]  || read -p "directory: " d
   [ -d "$d" ] || d="$(pwd -P)"
   [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d' (6542c9e4)" ; return 1 ;}
@@ -368,14 +370,14 @@ _youtube_list () {
    --write-info-json --write-comments --write-sub --write-auto-sub --sub-lang en --write-thumbnail \
    --restrict-filenames --audio-quality 0 --audio-format best --extract-audio \
    --playlist-start 1 \
-   -o "$d/00$(xs)%(playlist_title)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+   -o "$d/00$(xs),%(playlist_title)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   } # _youtube_list 20220516
 
 _youtube () {
   local id="$1" d="$2"
   [ "$id" ] || read -p "youtube id: " id
   [ "$id" ] || { chkerr "$FUNCNAME : no id? (6542c9d2)" ; return 1 ;}
-  id=$(sed 's/?.*//' <<<"$id") # squash trackers from url
+  read id < <(sed "s/\([?&]\)si=................[&]*/\1/" <<<"$id") # squash trackers from url
   [ "$d" ]  || read -p "directory: " d
   [ "$d" ]  || d='.'
   [ -d "$d" ] || { [ -d "${links}/$d" ] && d="${links}/$d" ;}
@@ -392,6 +394,7 @@ _youtube () {
    --abort-on-error --no-playlist \
    -o "$d/00$(xs),%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id | tee "$HOME/%/ytdl/$t"
   # prompt with filing indices and catagories
+  echo $links
   find $links -mindepth 1 -maxdepth 1 -type d \( -name 5\* -o -name 6\* \) -exec basename \{\} \; \
     | sort -r | rs -tz -w$(( $(tput cols)*100 /137))
   grep '^[[:alnum:]],' $music/comma_mp3.sh | rs -tz -c"\n" -w$(( $(tput cols)*100 /137))
@@ -422,7 +425,7 @@ _youtube_json2txt () { # fixup youtube .info.json to yaml txt and sort files
   # but this function may be called when there are no files to sort,
   # so only do the side effect if the files are there...
   [ -f "$inpath"/*"${_fout}" ] && mkdir -p "$inpath/@"    && ln -f "$inpath"/*${_fout} "$inpath"/@/${_fout}
-  [ -f "$inpath"/*"${_fout}" ] && mkdir -p "$inpath/orig" && mv -f "$inpath"/*${_fout} "$inpath/orig" 
+  [ -f "$inpath"/*"${_fout}" ] && mkdir -p "$inpath/orig" && mv -f "$inpath"/*${_fout} "$inpath/orig"
   [ -f "$1" -o -f "$inpath"/*${_fout%%.*}.webp -o -f "$inpath"/*${_fout%%.*}*.vtt ] && mkdir -p "$inpath"'/@/meta' \
     && for a in "$1" "$inpath/"*${_fout%%.*}.webp "$inpath"/*${_fout%%.*}*.vtt ; do
         [ -f "$a" ] && mv "$a" "$inpath"'/@/meta' ; done
@@ -506,7 +509,7 @@ EOF
   [ -x "$(which ffmpeg)" ] || { chkerr "$FUNCNAME : ffmpeg not in path (6542c82e)" ; return 1 ;}
   [ -x "$(which sox)"    ] || { chkerr "$FUNCNAME : sox not in path (6542c83a)" ; return 1 ;}
   # success valid env
-  [ "$1" = "help" ] && { # a function to adjust audio file tempo and pitch independently
+  [ "$1" = "help" -o "$1" = "-h" ] && { # a function to adjust audio file tempo and pitch independently
     # depends on ffmpeg, rubberband and sox
     # https://hg.sr.ht/~breakfastquay/rubberband
     # https://github.com/breakfastquay/rubberband
@@ -534,7 +537,7 @@ EOF
 #   echo "# crisp:  0=mushy 1=piano 2=smooth 3=MULTITIMBRAL 4=two-sources 5=standard 6=percussive "
     echo "# Formant y/''  CenterFocus y/'' vol 0db/'' frequency (bhz|chz|N)/'' reverse y/''"
     echo "# cmp= $(declare -f $FUNCNAME | sed -e '/compand/!d' -e '/sed/d' -e 's/=.*//' -e 's/local//' | tr -s ' \n' '|')"
-    declare -f $FUNCNAME | sed -e '/compand/!d' -e '/sed/d' | while IFS= read a ; do ${verb2} "$a" ; done
+#   declare -f $FUNCNAME | sed -e '/compand/!d' -e '/sed/d' | while IFS= read a ; do ${verb2} "$a" ; done
     echo "# ss= to= t= p= f= c= F= CF= off= tp= lra= i= cmp= v= f2rb2mp3 {file-in} {prepend-out}"
     echo "# ss=$ss to=$to t=$t p=$p f=$f c=$c F=$F CF=$CF off=$off tp=$tp lra=$lra i=$i cmp=$cmp v=$v f2rb2mp3 {file-in} {prepend-out}"
     return 0
@@ -556,6 +559,7 @@ EOF
   local tc='' tn='' ; [ "$t" ] && tc="--time $t"  tn="-t${t}" || true
   local pc='' pn='' ; [ "$p" ] && pc="--pitch $p" pn="-p${p}" || true
   local fhzc='' fhzn=''
+  [ "$f" ] && { fhzc="-f $f" ; fhzn="-f$f" ;}
   [ "$f" = "bhz" ] && { fhzc="-f 0.98181818181818" ; fhzn="-bhz" ;} || true # baroque 432 hz tuning, from classical 440
   [ "$f" = "chz" ] && { fhzc="-f 1.01851851851851" ; fhzn="-chz" ;} || true # classical 440 hz tuning, from baroque 432
   local cmpn='' cmpc=''
@@ -590,18 +594,18 @@ EOF
   [ "$cmpn" ] && vn="-$cmpn" vc="$cmpc" || true # sox compand is basically a volume adjustment...
   [ "$v" ] && { vn="${vn}-v${v}" vc="${vc} vol ${v} dither" ;} || true # set vol name (vn) and vol command (vc) if needed
   [ "$rev" = "y" ] && vn="${vn}-rev" vc="$vc reverse"
-  local secc='' secn='' ssec='' tsec=''
-  [ "$ss" = 0 ] && local ss= || { ssec=$(hms2sec ${ss}) ;} # ss is 0 if unspecified, probe "to" if unspecified
+  [ "$ss" ] || local ss="0" # if null ss=0 is default, and ss=0 is unspecified in filename, probe "to" if unspecified
   [ "$to" ] || local to="$(ffprobe -hide_banner -loglevel info "$infilep" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')"
-  [ "$to" ] && { tsec=$(hms2sec ${to}) ;}
-  [ -z "$ss" -a "$to" ] && secc="-to $tsec"           secn="-to$tsec"
-  [    "$ss" -a "$to" ] && secc="-ss $ssec -to $tsec" secn="-ss${ssec}-to${tsec}"
-  $verb "$(hms2sec $(ffprobe -hide_banner -loglevel info "$infilep" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //') \
-                                                        | awk '{printf "%9.3f sec gross",$1}')"
-  $verb "$(awk '{ print $1 - $2 }' <<<"${tsec} ${ssec}" | awk '{printf "%9.3f sec request",$1}')"
+  local secc='' secn='' ssec='' tsec=''
+  ssec=$(hms2sec ${ss})
+  tsec=$(hms2sec ${to})
+                            secc="-ss $ssec -to $tsec" secn="-ss${ssec}-to${tsec}" # typical
+  [ "$ss" = 0 -a "$to" ] && secc="-to $tsec"           secn="-to$tsec" # unspecify ss
+  local gsec=$(hms2sec $(ffprobe -hide_banner -loglevel info "$infilep" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //'))
+  $verb "$(awk '{$1=$1 + 0;printf "%1.3f sec, %1.1f%% of %1.3f sec %s",$2-$1,(100*($2-$1))/$3,$3,$4 }' <<<"${ssec} ${tsec} ${gsec} ${infilep}")"
+  chkerr "$(awk '$1 >= $2 {print $3 ": invalid duration , ss="$1" to="$2}' <<<"${ssec} ${tsec} $FUNCNAME")" || exit 1
   $verb "${inpath}/tmp/${infile}${secn}.meas"
   [ -f "${inpath}/tmp/${infile}${secn}.meas" ] || { # measure for EBU R128 loudness normalization
-    # XXX check ss -lt to etc
       { echo "# ${infile}${secn}.meas infile secn meas flac"
       ffmpeg -hide_banner -loglevel info -benchmark -y $secc -i "$infilep" \
         -af "loudnorm=print_format=json" \
@@ -697,7 +701,7 @@ EOF
     mkdir -p "./loss"
     mv -f "${inpath}/tmp/${out}${vn}.mp3" "./loss/${prependt}${out}${vn}.mp3" \
       && rm -f "${inpath}/tmp/$null" \
-      && $verb "$(hms2sec $(ffprobe -hide_banner -loglevel info "./loss/${prependt}${out}${vn}.mp3" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //') ) seconds mp3" \
+      && $verb "$(hms2sec $(ffprobe -hide_banner -loglevel info "./loss/${prependt}${out}${vn}.mp3" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //') ) mp3 seconds" \
       && echo "./loss/${prependt}${out}${vn}.mp3"
 # extract audio from video
 # for a in *Caprices_For_FLUTE*webm ; do ext=$(ffprobe -hide_banner  -loglevel info $a 2>&1 | sed -e '/Audio/!d' -e 's/.*Audio: //' -e 's/,.*//'); name=$(sed "s/[^.]*$/$ext/" <<<$a) ; ffmpeg -i $a -q:a 0 -map a -acodec copy $name ; done
@@ -1137,7 +1141,7 @@ mp3range () { # mp3 listing limiter
     # mp3range 2 3 ../ . | ckstat | sort -k6 | awk '{print $6}'
     #
     local start="$1" stop="$2" dirs= a= opwd="$PWD" prefix= mp3range_file="$HOME/0/v/mp3range"
-    mkdir "${mp3range_file%/*}";
+    mkdir -p "${mp3range_file%/*}";
     local verb="${verb:=devnul}"
     $verb2 for expr "${stop}" : "${start}"
     [ "$stop" ] && { expr "${stop}" : "${start}" >/dev/null \
@@ -1285,7 +1289,7 @@ playffr () { # for files (args or stdin), continuously repeat invocations of ffp
       [ -f "$f" ] && { tput bold ; chktrue "$f" ; tput sgr0
         echo "$f $PWD" >"$playff_file" # store PWD, least $f is relative
         vol="$(< "$playff_vol_file")" # read per song...
-        chktrue sec $(hms2sec $(ffprobe -hide_banner  -loglevel info "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')) vol $vol
+        echo " "$(hms2sec $(ffprobe -hide_banner  -loglevel info "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')) sec, vol $vol
         touch -a "$f" # since mac does not update atime, cf APFS_FEATURE_STRICTATIME
         ffplay -hide_banner -stats -autoexit -loglevel error -nodisp -volume $vol "$f" || return 1
         } || { chkwrn "$FUNCNAME : not a file : '$f' (6542c3b8)" ; sleep 2 ;}
@@ -1307,13 +1311,33 @@ playff () { # for files (args or stdin), invoke ffplay with display
       [ -f "$f" ] && { tput bold ; chktrue "$f" ; tput sgr0
         echo "$f $PWD" >"$playff_file" # store PWD, least $f is relative
         vol="$(< "$playff_vol_file")" # read per song...
-        chktrue sec $(hms2sec $(ffprobe -hide_banner  -loglevel info "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')) vol $vol
+        echo " "$(hms2sec $(ffprobe -hide_banner  -loglevel info "$f" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')) sec, vol $vol
         touch -a "$f" # since mac does not update atime, cf APFS_FEATURE_STRICTATIME
         ffplay -hide_banner -stats -autoexit -loglevel error -top 52 -x 1088 -y 280 -volume $vol "$f" || return 1
         } || { chkwrn "$FUNCNAME : not a file : '$f' (6542c3b6)" ; sleep 2 ;}
       done <<<"$fs"
     } # playff 6542c3b5-20231101_143123
 
+playffrends () { # review mp3 and prepare to re-transcode
+    # accept stdin mp3 filenames
+    # read cmd (prompt current file)
+    # on cmd
+    #   space) play current beg and end
+    #   b) play current beg
+    #   B) read bc expression, edit 'ss=' value, f, transcode beg, play beg
+    #   E) read bc expression, edit 'to=' value, invoke b
+    #   e) play current end
+    #   n) advance next file
+    #   t) transcode beg and end (sans time/pitch)
+    #   f) formfile orig, and formfile with edits
+    #   number) set v*4 seconds
+    #   # presence, compression, delay,
+    # universal quality of quality, regardless of genera is an
+    # indication by time/pitch of fourthcoming time/pitch.
+    # this quality can be masked and unmasked by normalizing,
+    # compression and time/pitch shifting.
+    true
+    }
 playffend () { # Play the ending of files (args or stdin), always "no display"
     # -v or -volume to set volume, default is 100
     # and touch since mac does not update atime, cf APFS_FEATURE_STRICTATIME

@@ -1,7 +1,7 @@
 63e8-jazzmore/0, prepare for never ending delight
 643c4f8b 20230416 1241 Sun 16 Apr PDT 
 
-\\ 607 files: 211812 sec (2 d 10 h 50 m 12 s)
+\\ 683 files: 234146 sec (2 d 17 h 2 m 26 s)
 
 63e8-jazzmore/1, hook are you ready
 643c4f8b 20230416 1241 Sun 16 Apr PDT 
@@ -28,12 +28,12 @@ Kenny_Clarke__Francy_Boland_Big_Band  15 files  4166 sec (1 h 9 m 26 s)
 63e8-jazzmore/3, bold
 643c4f8b 20230416 1241 Sun 16 Apr PDT 
 
-                                 \3\  47 files: 16069 sec (4 h 27 m 49 s)
+                                 \3\  48 files: 16374 sec (4 h 32 m 54 s)
                        Bobby_Timmons  15 files  4873 sec (1 h 21 m 13 s)
 Booker_Ervin__Pony_Poindexter__Larry_Young  16 files  4537 sec (1 h 15 m 37 s)
                      Freddie_Hubbard   7 files  3195 sec (53 m 15 s)
                     Illinois_Jacquet   4 files  1585 sec (26 m 25 s)
-                       Blue_Mitchell   3 files  1253 sec (20 m 53 s)
+                       Blue_Mitchell   4 files  1558 sec (25 m 58 s)
                       Gerry_Mulligan   1 file   313 sec (5 m 13 s)
                        Sonny_Fortune   1 file   312 sec (5 m 12 s)
 
@@ -88,10 +88,12 @@ Booker_Ervin__Pony_Poindexter__Larry_Young  16 files  4537 sec (1 h 15 m 37 s)
 63e8-jazzmore/8, essential
 6456c733 20230506 1431 Sat  6 May PDT 
 
-                                 \8\  25 files: 10724 sec (2 h 58 m 44 s)
+                                 \8\  34 files: 13691 sec (3 h 48 m 11 s)
         Wilbur_Harden__John_Coltrane  19 files  8649 sec (2 h 24 m 9 s)
+                       Jackie_McLean   7 files  2274 sec (37 m 54 s)
                         Kenny_Dorham   3 files  1075 sec (17 m 55 s)
                         Dave_Brubeck   3 files  1000 sec (16 m 40 s)
+                        Lester_Young   2 files  692 sec (11 m 32 s)
 
 63e8-jazzmore/9, next
 651e54a7 20231004 23:15 Wed  4 Oct PDT 
@@ -115,15 +117,16 @@ Booker_Ervin__Pony_Poindexter__Larry_Young  16 files  4537 sec (1 h 15 m 37 s)
 63e8-jazzmore/b, run
 6524061c 20231009 06:54 Mon  9 Oct PDT 
 
-                                 \b\  12 files: 5580 sec (1 h 33 m)
+                                 \b\  13 files: 5853 sec (1 h 37 m 33 s)
                           Lee_Morgan   6 files  2350 sec (39 m 10 s)
                                 From   3 files  2021 sec (33 m 41 s)
                        Sonny_Fortune   3 files  1209 sec (20 m 9 s)
+                         Gary_Burton   1 file   273 sec (4 m 33 s)
 
 63e8-jazzmore/c, lounge
 64751264 20230529 1400 Mon 29 May PDT 
 
-                                 \c\  62 files: 24476 sec (6 h 47 m 56 s)
+                                 \c\  80 files: 28872 sec (8 h 1 m 12 s)
           Miles_Davis__John_Coltrane   8 files  5155 sec (1 h 25 m 55 s)
                      Steve_Kuhn_Trio   7 files  2891 sec (48 m 11 s)
                          Harold_Land   5 files  2694 sec (44 m 54 s)
@@ -131,29 +134,36 @@ Booker_Ervin__Pony_Poindexter__Larry_Young  16 files  4537 sec (1 h 15 m 37 s)
                          Tubby_Hayes   9 files  2578 sec (42 m 58 s)
                        Horace_Parlan   6 files  2419 sec (40 m 19 s)
                    Barry_Harris_Trio   5 files  1989 sec (33 m 9 s)
+                  Frank_Wess_Quintet   7 files  1483 sec (24 m 43 s)
                  Oscar_Peterson_Trio   7 files  1278 sec (21 m 18 s)
+                   Frank_Wess_Sextet   5 files  1129 sec (18 m 49 s)
               Julian_Priester_Sextet   3 files  881 sec (14 m 41 s)
+       Gerry_Mulligan__Johnny_Hodges   3 files  848 sec (14 m 8 s)
                          Waymon_Reed   2 files  810 sec (13 m 30 s)
                          Jimmy_Heath   3 files  751 sec (12 m 31 s)
+     Howard_McGhee__Illinois_Jacquet   2 files  621 sec (10 m 21 s)
                         Lester_Young   1 file   425 sec (7 m 5 s)
+                  Thad_Jones_Quintet   1 file   314 sec (5 m 14 s)
 
 63e8-jazzmore/d, emotion
 643c4f8c 20230416 1241 Sun 16 Apr PDT 
 
-                                 \d\  30 files: 9787 sec (2 h 43 m 7 s)
-                       Sweets_Edison   4 files  1690 sec (28 m 10 s)
+                                 \d\  52 files: 16544 sec (4 h 35 m 44 s)
+                       Sweets_Edison  11 files  4197 sec (1 h 9 m 57 s)
+                        Roy_Hargrove  13 files  2964 sec (49 m 24 s)
+        Milt_Jackson__Wes_Montgomery   5 files  1819 sec (30 m 19 s)
+                                 fix   4 files  1505 sec (25 m 5 s)
            Lee_Morgan__Wayne_Shorter   4 files  1418 sec (23 m 38 s)
-        Milt_Jackson__Wes_Montgomery   4 files  1404 sec (23 m 24 s)
                         Duke_Pearson   3 files  1054 sec (17 m 34 s)
                  Modern_Jazz_Quartet   3 files  657 sec (10 m 57 s)
                   Eddie_Higgins_Trio   2 files  656 sec (10 m 56 s)
              Bill_Evans__Don_Elliott   2 files  607 sec (10 m 7 s)
+                             fix_end   1 file   556 sec (9 m 16 s)
                      Coleman_Hawkins   1 file   550 sec (9 m 10 s)
-                        Roy_Hargrove   2 files  534 sec (8 m 54 s)
                    Teddy_Wilson_Trio   2 files  513 sec (8 m 33 s)
+      Sweets_Edison__George_Gershwin   1 file   332 sec (5 m 32 s)
               Gerry_Mulligan_Quartet   1 file   330 sec (5 m 30 s)
                      Dizzy_Gillespie   1 file   272 sec (4 m 32 s)
-                                 fix   1 file   101 sec (1 m 41 s)
 
 63e8-jazzmore/e, reunion
 6524061d 20231009 06:54 Mon  9 Oct PDT 
@@ -175,8 +185,9 @@ Booker_Ervin__Pony_Poindexter__Larry_Young  16 files  4537 sec (1 h 15 m 37 s)
 63e8-jazzmore/g, reminiscence
 652b9114 20231015 00:13 Sun 15 Oct PDT 
 
-                                 \g\   3 files: 1835 sec (30 m 35 s)
+                                 \g\   6 files: 3365 sec (56 m 5 s)
            Chet_Baker__Dick_Twardzik   3 files  1835 sec (30 m 35 s)
+                         Sonny_Stitt   3 files  1530 sec (25 m 30 s)
 
 63e8-jazzmore/h, reverence
 65814d5e 20231218 23:59 Mon 18 Dec PST 
@@ -217,10 +228,11 @@ Booker_Ervin__Pony_Poindexter__Larry_Young  16 files  4537 sec (1 h 15 m 37 s)
 63e8-jazzmore/n, old
 64ee25e8 20230829 1007 Tue 29 Aug PDT 
 
-                                 \n\  37 files: 12442 sec (3 h 27 m 22 s)
+                                 \n\  38 files: 12867 sec (3 h 34 m 27 s)
                          Jimmy_Smith  24 files  8224 sec (2 h 17 m 4 s)
                        Jackie_McLean   6 files  2722 sec (45 m 22 s)
                       Charlie_Parker   5 files  1129 sec (18 m 49 s)
+        Lester_Young__Oscar_Peterson   1 file   425 sec (7 m 5 s)
                      Dizzy_Gillespie   2 files  366 sec (6 m 6 s)
 
 63e8-jazzmore/p, spirit
@@ -233,9 +245,12 @@ Joe_Newman__Billy_Byers_Sextet__Gene_Quill  10 files  2937 sec (48 m 57 s)
 63e8-jazzmore/q, ring
 65352e25 20231022 07:13 Sun 22 Oct PDT 
 
-                                 \q\  16 files: 5021 sec (1 h 23 m 41 s)
+                                 \q\  28 files: 8670 sec (2 h 24 m 30 s)
                          Donald_Byrd   6 files  2515 sec (41 m 55 s)
                           Joe_Newman  10 files  2506 sec (41 m 46 s)
+                       Freddie_Roach   7 files  1646 sec (27 m 26 s)
+                        Paul_Desmond   4 files  1528 sec (25 m 28 s)
+                       Lou_Donaldson   1 file   474 sec (7 m 54 s)
 
 63e8-jazzmore/r, persue
 64ee15ed 20230829 0859 Tue 29 Aug PDT 
@@ -253,9 +268,10 @@ Joe_Newman__Billy_Byers_Sextet__Gene_Quill  10 files  2937 sec (48 m 57 s)
 63e8-jazzmore/t, simple
 6526027e 20231010 19:03 Tue 10 Oct PDT 
 
-                                 \t\  22 files: 6835 sec (1 h 53 m 55 s)
+                                 \t\  31 files: 8868 sec (2 h 27 m 48 s)
                            Zoot_Sims  14 files  3711 sec (1 h 1 m 51 s)
                           Lee_Morgan   6 files  2290 sec (38 m 10 s)
+                         Moe_Koffman   9 files  2032 sec (33 m 52 s)
                       Johnny_Griffin   2 files  834 sec (13 m 54 s)
 
 63e8-jazzmore/x, extra
