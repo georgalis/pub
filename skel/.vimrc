@@ -8,6 +8,8 @@
 "set termencoding=utf8
 " :e! ++enc=utf8
 " :e! ++enc=ascii
+" iconv -f utf-8 -t ascii//TRANSLIT
+" iconv -f utf-8 -t ascii//IGNORE
 
 set timeout timeoutlen=3000 ttimeoutlen=100
 set timeout timeoutlen=1000 ttimeoutlen=100
