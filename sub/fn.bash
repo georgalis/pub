@@ -568,10 +568,10 @@ EOF
   local ckb3="compand 0.2,0.8  -60,-99,-50,-56,-38,-32,-23,-18,0,-4         -2 -60 0.2" # piano old analog master
   local hrn3="compand 0.08,0.3 -74,-80,-50,-46,-18,-18,-0,-6                -1 -68 0"    # peaky horn
   local cps1="compand 0.07,0.25 -70,-84,-50,-45,-32,-33,-0,-21               3 -71 0.07" # high compress
-  local parc="compand 0.09,0.25 -97,-106,-85,-89,-73,-73,-57,-61,-40,-49,-21,-37,0,-25                           11 -95 0.08" # parabolic standard
-  local pard="compand 0.09,0.25 -84.4,-110.7,-74.4,-89.1,-64.4,-71.0,-54.4,-56.3,-39.7,-46.3,-21.7,-36.3,0,-26.3 13.5 -95 0.08" # parabolic-d
   local par2="compand 0.09,0.25 -100,-116,-88,-97,-80,-80,-63,-72,-54,-60,-23,-48,0,-36        19 -95 0.08" # parabolic extra
   local par4="compand 0.13,0.16 -72,-97,-68,-84,-64,-73,-56,-65,-55,-61,-32,-57,-17,-53,0,-49  25 -55 0.12" # parabolic squared
+  local parc="compand 0.09,0.25 -97,-106,-85,-89,-73,-73,-57,-61,-40,-49,-21,-37,0,-25                           11   -13 0.08" # parabolic standard
+  local pard="compand 0.09,0.25 -84.4,-110.7,-74.4,-89.1,-64.4,-71.0,-54.4,-56.3,-39.7,-46.3,-21.7,-36.3,0,-26.3 13.5 -13 0.091" # parabolic-d
   [ "$cmp" = "hrn" -o "$cmp" = "hrn1" ] && cmpn="hrn3" cmpc="$hrn3"
   [ "$cmp" = "cps" ]  && cmpn="pard" cmpc="$pard"
   [ "$cmp" = "ckb" ]  && cmpn="$cmp" cmpc="$ckb0"
