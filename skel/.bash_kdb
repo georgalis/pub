@@ -1,15 +1,49 @@
 #!/usr/bin/env bash
 
-# kdb mvp 631d 20220910
+# kdb mvp edition 660f 20240404
 #
-# Copyright (C) 2015-2022 George Georgalis <george@galis.org>
-# All rights reserved. No use or redistribution allowed.
-# Including but not limited to algorithms, format, procedures
-# and data process function(s). Managed data remains under
-# respective copyright of the owners.
+# Benevolent Collaboration and Professional Use (BCPU) License
 #
-# Licensing: https://ko-fi.com/dot4space
-# Questions: George Georgalis <george@galis.org>
+# Copyright (C) 2015-2024 George Georgalis <george@galis.org>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to use, copy, modify, and/or merge copies of the Software for either
+# personal use or to enhance their performance at their place of employment,
+# subject to the following conditions:
+#
+#     1) The above copyright notice and this permission notice
+#     shall be included in all copies, substantial portions, or
+#     redistributions of the Software, as well as any derived
+#     algorithms, data structures, workflows, user interfaces,
+#     or functional components.
+#
+#     2) This license does not apply to any data managed by
+#     the Software, which remains under the copyright of its
+#     respective owners.
+#
+#     3) If the Software is deployed as a service or if multiple
+#     users share the same data store, a multi-user license must
+#     be obtained from the copyright holder.
+#
+#     4) The Software will enter the public domain 10 years
+#     after the date of its last revision, at which point
+#     this license will no longer apply, and the Software
+#     may be used, modified, and distributed freely without
+#     restriction.
+#
+# A separate collaboration license is available free of charge, and includes
+# documentation, and update notifications. Multi-user licenses for commercial
+# use are commission-based. Request a license from the copyright holder.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+
 
 #ks knowledge motive curation query cache pointer db
 # 5b9402df %ks curation database cdb (kdb lql) spec
@@ -26,107 +60,64 @@
 
 export LC_ALL="C"
 export LANG="en_US.US-ASCII"
+export   verb="${verb:=chkwrn}"
+export  vverb="${vverb:=devnul}"
+export vvverb="${vvverb:=devnull}"
+export verbb=devnul
+export   kdb_verb="${verb?=devnul}"
+export  kdb_verbb="${verbb?=devnul}"
+export kdb_verbbb='echo "${FUNCNAME[@}"'
 export base32re="[$(seq 0 31 | while read a ; do base 32 $a ; done | tr -d '\n')]"
 export base32rep="[/.$(seq 0 31 | while read a ; do base 32 $a ; done | tr -d '\n')]"
-export kdb_pool='0'    
-export  kdb_log=','
-export  kdb_tmp='%'
+export    kdb_log=','
+export    kdb_tmp='%'
+export    kdb_var='v'
+export   kdb_pool="p/${USER}"
 export  kdb_cache='c'
-export  kdb_var='v'
-export k4_ht_strftime="+%Y%m%d %H%M %Z %z %a"
 export k4_ht_strftime="+%Y%m%d %a %H%M %Z %z"
-export k4_search='^%(ks|kt|kk|km)\ '
-export  k4_graph='^%(kb|kc|kj|kl|km|kp|kr)\ '
+export k4_search='^%(ks|kd|kt|kk|km)\ '
+export  k4_graph='^%(kb|kc|kj|kl|km|kp|kr|kk)\ '
 export  k4_value='^%(ke|ki|km|kq|kv|kx|kz)\ '
-export  k4_topic="^%(ks|kt|kk)\ "
+export  k4_topic="^%(ks|kd|kt|kk)\ "
 export kdb_vptr="k4mi"
+export kdb_locksleep="3"
+export kdbeph_mask=5
+export kdblog="kdblog"
+export kdblog2="devnul"
+export kdbo="${USER}@$(hostname -s):$(sed "s;^$HOME/;;" <<<$kdb)"
+export k4_ko="${USER}@$(hostname -s)"
 [ "$(which "$EDITOR" 2>/dev/null)" ] || export EDITOR="vi"
-export kdblog="devnul"      
-export kdblog="logwrn"      
-export kdblog="kdblog"      
-export kdblog2="devnul"     
-export kdblog2="kdblog"     
-test -d "$HOME/k" && export kdb="$_"
-export kdbo="${USER}@$(hostname -s):$(sed "s;^$HOME/;;" <<<$kdb)" 
-k ()
+[ "$OS" ] || export OS="$(uname)"
+export _kdb_fn_trace='_kdb_fn_trace'
+export _kdb_fn_entry='_kdb_log'
+export _kdb_fn_error='_kdb_logerr'
+export _kdb_fn_warn='_kdb_logwrn'
+export _kdb_fn_exit='_kdb_nil'
+export _kdb_log='_kdb_log'
+_kdb_0_lock ()
 {
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "U> $invoke";
-    local k="$1";
-    test "$k" || k=0;
-    set $(kdb_pool_ptr "$k") || {
-        chkerr "$invoke : cannot retrive '$k' (bfd7c86)";
-        return 1
-    };
-    export k4="$1";
-    export xss="$2";
-    export knx="$3";
-    $EDITOR "$k4";
-    kdb_rcs "$k4" "$invoke : edit";
-    kdb_valid_k4 "$k4" || {
-        chkerr "$FUNCNAME : editor returned invalid $k4 (6102d15c)";
-        return 1
-    };
-    kdb_k4_head_seq "$k4";
-    kdb_rcs "$k4" "$invoke : sequence";
-    kdb_pool_add "$k4" || {
-        chkerr "$invoke ; kdb_pool_add $k4 (62ee088e)";
-        return 1
-    };
-    kdb_cache_meta "$k4" || {
-        chkerr "$invoke ; kdb_cache_meta $k4 (62ee088f)";
-        return 1
-    };
-    kdb_term_hline '~';
-    kdb_term_hline '-';
-    kdb_k4_synopsis "$k4";
-    kdb_term_hline '~';
-    $kdblog "U< $invoke"
-}
-k4db_xss_ddiff ()
-{
-    local v t0="${1}.0" t1="${1}.1";
-    [ -e "$t0" -a -e "$t1" ] || {
-        chkerr "$FUNCNAME $1 : Invalid input $t0 $t1 bc4dcae";
-        return 1
-    };
-    shift;
-    local pass="$*";
-    set $(sed -e 's/_/ /' "$t1" "$t0"         | awk '{print  $1,$2}' | tr ' ' '\n'         | while read v ; do printf '%d\n' "0x$v" ; done         | tr '\n' ' ');
-    dc -e "4k $1 $3 - $2 $4 - 1006632959 / + n";
-    echo -n " $pass"
-}
-kdb_0_flaten_filename ()
-{
-    local n=;
-    [ "$*" ] && n="$(awk 'NR==1' <<<"$*")" || IFS= read n;
-    local s="$(cksum <<<"$n")";
-    tr -c '[:alnum:]-' '_' <<< "_${n}_${s}" | tr '[:upper:]' '[:lower:]'
-}
-kdb_0_lock ()
-{
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "0> $invoke";
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
     local fn="$(kdb_0_flaten_filename "$*")";
     local vn="${kdb}/0/v/${fn}";
     local arg="${vn}.arg";
     local lock="${vn}.pid";
     find "${kdb}/0/v" -type f -name \*.pid -mtime +1 2> /dev/null | while IFS= read a; do
-        $kdblog "$FUNCNAME : stale $a (62f16771)";
+        $_kdb_log "$FUNCNAME : stale $a (62f16771)";
     done;
     [ -e "$lock" ] && {
-        $kdblog "0x : $invoke";
+        $_kdb_fn_error "x : $invoke";
         return 1
     } || {
         echo "$*" > "$arg";
         echo "$$" > "$lock"
-    };
-    $kdblog "0< $invoke"
+    }
 }
-kdb_0_lockun ()
+_kdb_0_lockun ()
 {
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "0> $invoke";
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    kdbflow $invoke ${BASH_SOURCE[0]} 660c8981;
     local fn="$(kdb_0_flaten_filename "$*")";
     local vn="${kdb}/0/v/${fn}";
     local arg="${vn}.arg";
@@ -134,139 +125,53 @@ kdb_0_lockun ()
     rm -i -f "$lock";
     local e="$?";
     echo "$*" > "$arg";
-    $kdblog "0< $invoke";
     return "$e"
 }
-kdb_0_lockwait ()
+_kdb_0_lockwait ()
 {
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "0> $invoke";
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
     local fn="$(kdb_0_flaten_filename "$*")";
     local vn="${kdb}/0/v/${fn}";
     local arg="${vn}.arg";
     local lock="${vn}.pid";
     while [ -e "$lock" ]; do
-        find "$lock" -mmin +4 -exec rm \{\} \; 2> /dev/null && $kdblog "0x $lock : $invoke" || true;
-        $kdblog "0= $lock : $invoke";
-        sleep 3;
+        chkwrn "$lock";
+        find "$lock" -mmin +2 -exec rm \{\} \; 2> /dev/null && $_kdb_log "x $invoke : lock sleep 2min $lock" || true;
+        $_kdb_log "= $invoke : (6563f474) lock $lock";
+        sleep "$kdb_locksleep";
     done;
-    kdb_0_lock $@ || {
+    _kdb_0_lock $@ || {
         sleep 2;
         $FUNCNAME $@
-    };
-    $kdblog "0< $invoke"
-}
-kdb_argn ()
-{
-    n="$1";
-    [ "$n" -gt 0 ] || {
-        chkwrn "$FUNCNAME irregular nth unexpected nth (60fb6ccb)";
-        return 1
-    };
-    shift;
-    {
-        [ "$*" ] && echo "$*" || cat
-    } | awk -v n="$n" '{printf "%s\n",$n}'
-}
-kdb_cache_meta ()
-{
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "0> $invoke";
-    kdb_0_lockwait "$FUNCNAME";
-    local k4s k4;
-    local cache_dir="${kdb}/0/${kdb_cache}";
-    kdb_valid_dir "$cache_dir" || {
-        chkerr "$FUNCNAME : irregular dir : "$cache_dir" (62eda81e)";
-        return 1
-    };
-    local cache_5_km="$cache_dir/k4_meta_$( tr -d '[)(% ^\\]' <<<"^%km\ "    | tr '|' '\n' | sort -u | tr '\n' ',')";
-    local cache_6_search="$cache_dir/k4_meta_$( tr -d '[)(% ^\\]' <<<"$k4_search"| tr '|' '\n' | sort -u | tr '\n' ',')";
-    local cache_7_graph="$cache_dir/k4_meta_$( tr -d '[)(% ^\\]' <<<"$k4_graph" | tr '|' '\n' | sort -u | tr '\n' ',')";
-    local cache_8_value="$cache_dir/k4_meta_$( tr -d '[)(% ^\\]' <<<"$k4_value" | tr '|' '\n' | sort -u | tr '\n' ',')";
-    local cache_9_topic="$cache_dir/k4_meta_$( tr -d '[)(% ^\\]' <<<"$k4_topic" | tr '|' '\n' | sort -u | tr '\n' ',')";
-    [ -e "${cache_5_km}%" ] && {
-        chkwrn "$FUNCNAME : cache locked "${cache_5_km}%" (62eda9a9)";
-        return 1
-    };
-    [ -e "${cache_6_search}%" ] && {
-        chkwrn "$FUNCNAME : cache locked "${cache_6_search}%" (62eda9aa)";
-        return 1
-    };
-    [ -e "${cache_7_graph}%" ] && {
-        chkwrn "$FUNCNAME : cache locked "${cache_7_graph}%" (62eda9ab)";
-        return 1
-    };
-    [ -e "${cache_8_value}%" ] && {
-        chkwrn "$FUNCNAME : cache locked "${cache_8_value}%" (62eda9ac)";
-        return 1
-    };
-    [ -e "${cache_9_topic}%" ] && {
-        chkwrn "$FUNCNAME : cache locked "${cache_9_topic}%" (62eda9ad)";
-        return 1
-    };
-    exec 5>> "${cache_5_km}%" 6>> "${cache_6_search}%" 7>> "${cache_7_graph}%" 8>> "${cache_8_value}%" 9>> "${cache_9_topic}%";
-    [ $# -gt 0 ] && {
-        k4s="$1";
-        shift
-    };
-    while [ $# -gt 0 ]; do
-        k4s="$(printf "%s\n%s\n" "$k4s" "$1")";
-        shift;
-    done;
-    {
-        [ "$k4s" ] && echo "$k4s" || kdb_k4_list
-    } | while IFS= read k4; do
-        local k4h="$(kdb_file_headg . "$k4")";
-        grep '^%km ' <<< "$k4h" | awk -v k4="$k4" 'END{printf "%s %s %s ",$6,$2,k4}' | multitee 0-5,6,7,8,9;
-        {
-            grep -E "^%km\ " <<< "$k4h" | tr '\n' ' ';
-            echo
-        } 1>&5;
-        {
-            grep -E "$k4_search" <<< "$k4h" | tr '\n' ' ';
-            echo
-        } 1>&6;
-        {
-            grep -E "$k4_graph" <<< "$k4h" | tr '\n' ' ';
-            echo
-        } 1>&7;
-        {
-            grep -E "$k4_value" <<< "$k4h" | tr '\n' ' ';
-            echo
-        } 1>&8;
-        {
-            grep -E "$k4_topic" <<< "$k4h" | tr '\n' ' ';
-            echo
-        } 1>&9;
-    done;
-    exec 5>&- 6>&- 7>&- 8>&- 9>&-;
-    [ "$k4s" ] && {
-        cat "${cache_5_km}%" >> "${cache_5_km}";
-        cat "${cache_6_search}%" >> "${cache_6_search}";
-        cat "${cache_7_graph}%" >> "${cache_7_graph}";
-        cat "${cache_8_value}%" >> "${cache_8_value}";
-        cat "${cache_9_topic}%" >> "${cache_9_topic}";
-        rm -i -f "${cache_5_km}%" "${cache_6_search}%" "${cache_7_graph}%" "${cache_8_value}%" "${cache_9_topic}%"
-    } || {
-        mv -i -f "${cache_5_km}%" "${cache_5_km}";
-        mv -i -f "${cache_6_search}%" "${cache_6_search}";
-        mv -i -f "${cache_7_graph}%" "${cache_7_graph}";
-        mv -i -f "${cache_8_value}%" "${cache_8_value}";
-        mv -i -f "${cache_9_topic}%" "${cache_9_topic}"
-    };
-    touch "${cache_dir}/nulltime";
-    kdb_0_lockun "$FUNCNAME";
-    $kdblog "0< $invoke"
-}
-kdb_decs2touchfmt ()
-{
-    [ "$1" ] && {
-        awk '{ printf "%x",$1 }' <<< "$1" | kdb_xs2touchfmt
-    } || {
-        awk '{ printf "%x",$1 }' | kdb_xs2touchfmt
     }
 }
-kdb_file_headg ()
+_kdb_chkerr ()
+{
+    [ "$*" ] && {
+        _kdb_stderr ">>> $*";
+        return $?
+    } || true
+}
+_kdb_chkstd ()
+{
+    [ "$*" ] && echo "$*" || true
+}
+_kdb_chktrue ()
+{
+    [ "$*" ] && {
+        _kdb_stderr "><> $*";
+        true
+    } || return 2
+}
+_kdb_chkwrn ()
+{
+    [ "$*" ] && {
+        _kdb_stderr "^^^ $*";
+        return $?
+    } || true
+}
+_kdb_file_headg ()
 {
     local e="$1" f fs a _k4;
     shift || true;
@@ -281,237 +186,38 @@ kdb_file_headg ()
         awk 'NR==1,/^$/' "$_k4" | awk '!/^$/' | grep -E "$e";
     done
 }
-kdb_file_headv ()
+_kdb_file_headv ()
 {
     local e="$1" k4="$2";
     awk 'NR==1,/^$/' "$k4" | awk '!/^$/' | grep -vE "$e"
 }
-kdb_find_kj ()
+_kdb_fn ()
 {
-    local _k4 f fs a inpath;
-    [ $# -gt 0 ] && {
-        fs="$1";
-        shift
-    };
-    while [ $# -gt 0 ]; do
-        fs="$(printf "%s\n%s\n" "$fs" "$1")";
-        shift;
-    done;
-    [ "$fs" ] || fs="$(cat)";
-    echo "$fs" | while IFS= read _k4; do
-        kdb_valid_k4 "$_k4" || {
-            chkerr "$FUNCNAME : not valid k4 from arg1 or stdin : '$_k4' (62b1405e)";
-            return 1
-        };
-        inpath="${_k4%/*}";
-        find "$inpath" -mindepth 2 -type f -name \*.kdb | kdb_file_headg '%km ' | awk '{print $6}' | sort -u;
-    done | sort -u
+    _kdb_chktrue "fn:${FUNCNAME[1]}@${BASH_SOURCE[1]}:${BASH_LINENO[0]}"
 }
-kdb_find_kl ()
+_kdb_fn_stack ()
 {
-    local _k4 f fs a inpath eph;
-    [ $# -gt 0 ] && {
-        fs="$1";
-        shift
-    };
-    while [ $# -gt 0 ]; do
-        fs="$(printf "%s\n%s\n" "$fs" "$1")";
-        shift;
-    done;
-    [ "$fs" ] || fs="$(cat)";
-    echo "$fs" | while IFS= read _k4; do
-        kdb_valid_k4 "$_k4" || {
-            chkerr "$FUNCNAME : not valid k4 from arg1 or stdin : '$_k4' (62b1405f)";
-            return 1
-        };
-        inpath="${_k4%/*}";
-        find "$inpath" -mindepth 1 -maxdepth 1 -type f -name \*.kdb | grep -v "$_k4" | kdb_file_headg '%km ' | awk '{print $6}' | sort -u;
-    done | sort -u
+    sed "s/^$FUNCNAME /fn: /" <<< "${FUNCNAME[@]}"
 }
-kdb_find_kp ()
+_kdb_fn_trace ()
 {
-    local _k4 f fs a inpath;
-    [ $# -gt 0 ] && {
-        fs="$1";
-        shift
-    };
-    while [ $# -gt 0 ]; do
-        fs="$(printf "%s\n%s\n" "$fs" "$1")";
-        shift;
-    done;
-    [ "$fs" ] || fs="$(cat)";
-    echo "$fs" | while IFS= read _k4; do
-        kdb_valid_k4 "$_k4" || {
-            chkerr "$FUNCNAME : not valid k4 from arg1 or stdin : '$_k4' (62b12359)";
-            return 1
-        };
-        inpath="${_k4%/*}";
-        inpath="${inpath%/*}";
-        while [ -d "$inpath" ]; do
-            find "$inpath" -maxdepth 1 -type f -name \*.kdb | kdb_file_headg '%km ' | awk '{print $6}';
-            inpath="${inpath%/*}";
-        done;
-    done | sort -u
-}
-kdb_help ()
-{
-    kdb_term_pcenter "kdb help" '=';
-    cat  <<EOF
-# assured record, arbitrary discrete elements of subject matter
-#   novel date based directory for file directories and metadata markdown
-#   revision tracking
-# quick indexed searches
-# short key identifiers
-# results pool manuliplation
-#   filter, associate, re-value
-# intuitative knoledge connections, discover
-#   tags, super-ordinates, sub-ordinates, matrix, serial, value, interval alignment, class, definition, identity, initilization, expiration, begin, end
-# trivial metadata connection expansion
-# parameterized search and element reporting
-EOF
-
-    kdb_term_pcenter 'Glossary';
-    cat  <<EOF
-# knx     index id of pool record, usually 2 or 3 characters
-# eph     epzch meta value of directory
-# xs      0x unix seconds
-# ss      0x unix subseconds
-# xss     0s unix seconds and subseconds
-# ref     pool reference {knx|k4|xs|xss}
-EOF
-
-    kdb_term_pleft 'Basic Functions';
-    cat  <<EOF
-
-# kj regex        regex cache to pool
-# kjt regex       regex cache kt ks to pool
-# ks arg*         new k4 with subj (squashed) args
-# kl              list pool by acquisition
-# klr             list pool by reverse acquisition
-# kt              list pool by modification
-# ktr             list pool by reverse modification
-# kg regex        grep regex from pool
-# kv regex        grep -v regex from pool
-# k ref           edit k4 (default last)
-# krst {args}     delete current pool, set defaults  iff args then follow with kj args
-
-EOF
-
-    kdb_term_pleft 'Complex Functions';
-    cat  <<EOF
-# kn arg1           matter end newer epzch, 0x{epoch) or 0d{unix}
-# ka arg1           matter begin after epzch, 0x{epoch) or 0d{unix}
-# ksp ref           matter aspell
-# kk {mtime}        find matter -mtime {arg1}
-# kq {atime}        find matter -atime {arg1}
-# kh {n}            show {number} lines of command history
-# kp {pool}         use pool, list pools on null
-# kpt {tag}         add tags to all k4 in pool pool tag, list pool tags on null
-# kpv {vptr}        iff vptr arg1 supported, assign all ptr in pool and backstore ptr type, else list supported vptr
-# kz  {pool}        iff arg@ is a valid pool, combine with current
-# krst              reset (delete pool and kdb_init) current pool
-# kd {nx|epzch|xss} graph linked, super and related
-# kw {name}         name current pool, mv 0/p/{kdb_pool} to 0/p/{name} and set kdb_pool={name}'
-# kdb_pool_knx  re-knx pool from xssptr with kdb_pool_add
-EOF
-
-    cat > /dev/null  <<EOF
-
-# @@ ## ### ##### ######## Extract
-# k_ {days}             k4 mod k4since days to ^pool
-# k__ {hours}           k4 mod k4since hours to ^pool
-# @@ ## ### ##### ######## Refine
-# @@ ## ### ##### ######## Pools
-# @@ ## ### ##### ######## Misc
-# k4k       {nx|xs|xss}    extract k4 link(s) default ^pool
-# kh        {nx|xs|xss}    k4 head (default 0), limit to k4_search
-# kc        {nx|xs|xss}    k4 cat (default 0) to {PAGER} or stdout to pipe
-#,khx regex {nx|xs|xss}    k4 headx (default k4_search)
-#,km        {nx|xs|xss}    k4 markdown (default 0) to {PAGER} or stdout to pipe
-# kjq regex             quiet beckground k4db regex to ^pool
-#,kjtq regex            quiet background tags regex to ^pool
-# @@ ## ### ##### ######## Edge
-#,ke  depth {nx|xs|xss}    k4 edge walk depth (diagram?)
-#,kel depth {nx|xs|xss}    k4 link walk depth
-#,kep depth {nx|xs|xss}    k4 super walk depth
-#,ker depth {nx|xs|xss}    k4 related walk depth
-
-# future feature
-# present catagorial tags, per selection, present sub catagorial tags, kwds
-# optionally present existing catagorial tag tree
-# kdb in half-octal
-# port to python
-# port to lua
-
-EOF
-
-    kdb_term_pleft 'root files';
-    kdb_term_pcenter "" "-";
-    kdb_term_pleft "Configuration $kdb_conf_bash";
-    cat $kdb_conf_bash;
-    kdb_term_pleft "$vkdb/kdb.*.fn.bash";
-    find "$vkdb" -maxdepth 1 -type f -name kdb\.\*fn\.bash -exec grep '()' \{\} \; | grep -Ev '^[# ]' | sed -e 's/^/ /' -e 's/ was:.*//' | column -s'{' -t;
-    kdb_term_pleft "$kdb_init_bash";
-    grep '()' "$kdb_init_bash" | grep -v '^[# ]' | sed -e 's/^/ /' -e 's/ was:.*//' | column -s'{' -t;
-    kdb_term_pcenter "k4 Header Types";
-    declare -f kdb_k4_head_seq | grep '^# %';
-    kdb_term_pleft "$vkdb/kdb.U.fn.bash";
-    grep '()' "$vkdb/kdb.U.fn.bash" | grep -v '^[# ]' | sed -e 's/^/ /' -e 's/ was:.*//' | column -s'{' -t;
-    local types="
-#B> Beta development
-#V> Validation action
-#L> Log action
-#N> Numeric processing
-#K> k4 manipulation
-#0> Internal functions
-#P> POSIX action
-#X> Text processing
-#T> Time function
-#U> User command
-";
-    kdb_term_pcenter "Function Types";
-    echo "$types";
-    tre="^%($(echo "$types" | sed -e '/^$/d' | awk '{printf "%s",$1"|"}' | sed -e 's/%//g' -e 's/|$//'))\\ ";
-    order="$(echo "$types" | sed -e '/^$/d' | awk '{print $1}')";
-    for kind in $order;
+    local a;
+    for ((a=1; a<${#FUNCNAME[@]}; a++ ))
     do
-        kdb_term_pleft "$(echo "$types" | grep "$kind")";
-        grep --no-filename "().*$kind" "$vkdb/"*.bash | grep -v '^ ' | sed -e 's/^/ /' -e 's/ was:.*//' | column -s'{' -t | sort;
-    done;
-    $kdblog "fin $$ : $invoke"
+        _kdb_chktrue ${FUNCNAME[$a]}@${BASH_SOURCE[$a]}:${BASH_LINENO[$a-1]};
+    done
 }
-kdb_init_pool ()
+_kdb_help_skel ()
 {
-    [ "$kdb_pool" ] || kdb_pool="0";
-    [ "$kdb_vptr" ] || kdb_vptr="k4mi";
-    [ "$kdb_tmp" ] || kdb_tmp="%";
-    [ "$kdb_log" ] || kdb_log=",";
-    local a b pool="${kdb}/0/p/${kdb_pool}";
-    for a in xss knx;
-    do
-        for b in ptr hln;
-        do
-            mkdir -p "${pool}/${a}${b}" || {
-                chkerr "$FUNCNAME cannot create pool : ${pool}/${a}${b} (d49f583)";
-                return 1
-            };
-        done;
-    done;
-    mkdir -p "${pool}/${kdb_tmp}" || {
-        chkerr "$FUNCNAME cannot create tmp : ${pool}/${kdb_tmp} (6111b0eb)";
-        return 1
-    };
-    echo "$kdb_vptr" > "${pool}/vptr" || {
-        chkerr "$FUNCNAME cannot create vptr : ${pool}/"${pool}/vptr" (611ffc62)";
-        return 1
-    }
+    echo ' eval "$(curl -fsSL --insecure https://raw.githubusercontent.com/georgalis/pub/master/skel/.profile)"' 1>&2;
+    echo ' export -f devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue chkexit logexit siff siffx validfn' 1>&2
 }
-kdb_k4_body ()
+_kdb_help_sub ()
 {
-    local k4="$1";
-    awk '/^$/,0' "$k4"
+    echo ' eval "$(curl -fsSL --insecure https://raw.githubusercontent.com/georgalis/pub/master/sub/fn.bash)"' 1>&2;
+    echo 'export -f spin2 base ct ' 1>&2
 }
-kdb_k4_default_squash ()
+_kdb_k4_default_squash ()
 {
     sed -E -e '
         s/%%.*//
@@ -547,19 +253,1031 @@ kdb_k4_default_squash ()
         s/ 00be 00000000 # value key #$//
         '
 }
+_kdb_log ()
+{
+    local a= lines_in= lines_f="${kdb}/0/${kdb_log}/log";
+    read a < <(find "$lines_f" -size +100k -o -mtime +3 2> /dev/null) || true;
+    test "$a" && {
+        mv -i "$lines_f" "${lines_f}."$(xss);
+        ls -d "${lines_f}."* | sed -n -e :a -e '$q;N;2,20ba' -e 'P;D' | while read a; do
+            find "$a" -maxdepth 0 -mtime +9 -exec rm \{\} \;;
+        done
+    };
+    [ $# -gt 0 ] && lines_in="$*" || read -d '' lines_in < <(cat) || true;
+    [ "$lines_in" ] && {
+        tai64n <<< "$lines_in" >> "${lines_f}";
+        $verbb "${FUNCNAME[@]} \ $*"
+    } || {
+        _kdb_fn_trace;
+        return 1
+    }
+}
+_kdb_logerr ()
+{
+    local a='' logf='';
+    read logf < <(sed -E "s:^(.{4}).*:${kdb}/0/${kdb_log}/\1.log:" < <(kdbtx));
+    [ "$*" ] && {
+        tai64n >> "${logf}" <<< "$* fn:${FUNCNAME[1]}@${BASH_SOURCE[1]}:${BASH_LINENO[0]}";
+        kdbflow "$* fn:${FUNCNAME[1]}@${BASH_SOURCE[1]}:${BASH_LINENO[0]}";
+        _kdb_fn_trace;
+        _kdb_fn_stack;
+        _kdb_chkerr "$*"
+    } || {
+        while IFS= read a; do
+            $FUNCNAME "$a";
+        done
+    }
+}
+_kdb_logwrn ()
+{
+    local a='' logf='';
+    read logf < <(sed -E "s:^(.{4}).*:${kdb}/0/${kdb_log}/\1.log:" < <(kdbtx));
+    [ "$*" ] && {
+        tai64n >> "${logf}" <<< "$* fn:${FUNCNAME[1]}@${BASH_SOURCE[1]}:${BASH_LINENO[0]}";
+        _kdb_chkwrn "$*";
+        kdbflow "$*"
+    } || {
+        while IFS= read a; do
+            $FUNCNAME "$a";
+        done
+    }
+}
+_kdb_nil ()
+{
+    return 0
+}
+_kdb_pools_size ()
+{
+    awk 'END{print NR}' < <(find "${kdb}/0/p/$USER/_/xssptr" -type f)
+}
+_kdb_squeeze ()
+{
+    tr -s '\r\n\t' ' ' | sed -e 's/ [ ]*/ /g' -e 's/[ ]*$//'
+}
+_kdb_stderr ()
+{
+    [ "$*" ] && echo "$*" 1>&2 || true
+}
+_kdb_term_hline ()
+{
+    local char="${1::1}";
+    [ "$char" ] || char="-";
+    [ -t 1 ] && {
+        local cols="$(tput cols)";
+        tput bold;
+        printf "%*s\n" "$cols" '' | tr ' ' "$char";
+        tput sgr0
+    } || true
+}
+_kdb_term_pcenter ()
+{
+    local str="$1" char="${2::1}";
+    strn="${#str}";
+    [ "$char" ] || char="-";
+    [ -t 1 ] && {
+        local cols="$(tput cols)";
+        local lstrn="$(( 2 + strn / 2 ))";
+        local rstrn="$(( 2 + strn - lstrn ))";
+        local lcols="$(( cols / 2 - lstrn ))";
+        local rcols="$(( cols - lcols - lstrn - rstrn ))";
+        tput bold;
+        printf "%*s" "$lcols" '' | tr ' ' "$char";
+        echo -n " $str ";
+        printf "%*s\n" "$rcols" '' | tr ' ' "$char";
+        tput sgr0
+    } || true
+}
+_kdb_term_pleft ()
+{
+    local str="$1" char="${2::1}";
+    strn="${#str}";
+    [ "$char" ] || char="-";
+    [ -t 1 ] && {
+        local cols="$(( $(tput cols) - strn - 4 ))";
+        tput bold;
+        echo -n "$char$char $str ";
+        printf "%*s\n" "$cols" '' | tr ' ' "$char";
+        tput sgr0
+    } || true
+}
+_kdb_term_pright ()
+{
+    local str="$1" char="${2::1}";
+    strn="${#str}";
+    [ "$char" ] || char="-";
+    [ -t 1 ] && {
+        local cols="$(( $(tput cols) - strn - 4 ))";
+        tput dim;
+        printf "%*s" "$cols" '' | tr ' ' "$char";
+        echo " $str $char$char";
+        tput sgr0
+    } || true
+}
+_kdb_valid_k4 ()
+{
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    local k4="$1";
+    test -f "$k4" > /dev/null 2>&1 || {
+        $_kdb_fn_error "x $invoke : not a regular file '$k4' (5bda5b1f)";
+        return 1
+    };
+    expr "$k4" : "^/.*" > /dev/null || {
+        $_kdb_fn_error "x $invoke : not full path (611bf112)";
+        return 1
+    };
+    local k4m=;
+    IFS= read -d '' k4m < <(awk 'NR==1,/^$/{if(length)print}' "$k4");
+    awk '/^%ks / {a += 1}; END{if (a != 1) exit 1}' <<< "$k4m" || {
+        $_kdb_fn_error "x $invoke : Invalid k4 %ks line count '$k4' (62ef284c)";
+        return 1
+    };
+    awk '/^%kk / {a += 1}; END{if (a != 1) exit 1}' <<< "$k4m" || {
+        $_kdb_fn_error "x $invoke : Invalid k4 %kk line count '$k4' (64cae9c5)";
+        return 1
+    };
+    awk '/^%km / {a += 1}; END{if (a != 1) exit 1}' <<< "$k4m" || {
+        $_kdb_fn_error "x $invoke : Invalid k4 %km line count '$k4' (62ef284d)";
+        return 1
+    };
+    awk '/^%ki / {a += 1}; END{if (a != 1) exit 1}' <<< "$k4m" || {
+        $_kdb_fn_error "x $invoke : Invalid k4 %ki line count '$k4' (6326110f)";
+        return 1
+    };
+    awk '/^%km / {a = $6}; /^%kk / {b=$2}; END{ if (a = b) exit 0 ; print a,b } ' <<< "$k4m" 1>&2 || {
+        $_kdb_fn_error "x $invoke : Invalid k4 %kk %km epoch mismatch '$k4' (65149a5b)";
+        return 1
+    };
+    read a < <(awk '/^%km /' <<< "$k4m");
+    [[ "$a" =~ ^%km\ [[:xdigit:]]+\ [[:xdigit:]]+\ [[:xdigit:]]+\  ]] || {
+        $_kdb_fn_error "x $invoke unexpected %km timestamp '$k4' (658328fb)";
+        return 1
+    };
+    $_kdb_fn_exit "< $invoke"
+}
+_kdb_valid_pool ()
+{
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    kdbflow $invoke ${BASH_SOURCE[0]} 660c8f89;
+    [ "$1" ] || {
+        $_kdb_fn_error "x $invoke : no pool (arg1) provided (65635457)";
+        return 1
+    };
+    local pools="${kdb}/0/p/${USER}" pool="$1";
+    local poolpath="${pools}/${pool}";
+    [ -d "${poolpath}" ] || {
+        $_kdb_fn_error "x $invoke not a pool : pp='$poolpath' (62f1552e)";
+        return 1
+    };
+    [[ "$pool" =~ ^[A-Za-z0-9_]+[A-Za-z0-9_-]*$ ]] || {
+        $_kdb_fn_error "x $invoke : irregular pool name '$pool' =~ ^[A-Za-z0-9_]+[A-Za-z0-9_.+=-]*$ (65641126)";
+        return 1
+    };
+    local a b c n;
+    read n < <(awk 'END{print NR}' < <(find "$poolpath/knxptr" -type f -not -name 0));
+    for a in xss knx;
+    do
+        for b in ptr hln;
+        do
+            kdb_valid_dir "${poolpath}/${a}${b}" || {
+                $_kdb_fn_error "x $invoke irregular pool dir : ${poolpath}/${a}${b} (62f1550a)";
+                return 1
+            };
+            read c < <(awk 'END{print NR}' < <(find "$poolpath/${a}${b}" -type f -not -name 0));
+            [ "$n" -eq "$c" ] || {
+                $_kdb_fn_error "x $invoke ${pool} irregular count $n/knxptr:$c/${a}${b} (610867e2)";
+                return 1
+            };
+        done;
+    done;
+    kdb_valid_dir "${poolpath}/${kdb_tmp}";
+    kdb_valid_dir "${poolpath}/${kdb_var}";
+    $_kdb_fn_exit "< $invoke"
+}
+_kdb_valid_vptr ()
+{
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    kdbflow $invoke ${BASH_SOURCE[0]} 660c8f93;
+    local pat=;
+    read pat < <(declare -f kdb_pool_vptr_xssptr | grep ')$' | tr -dc '[[:alpha:]]\n' | tr '\n' '|' | sed -e 's/||/)/' -e 's/^/(/'
+echo);
+    [[ "$1" =~ $pat ]] || {
+        $_kdb_fn_error "x $invoke arg1 not a vptr '$1' (65634f7d) ";
+        return 1
+    };
+    $_kdb_fn_exit "< $invoke"
+}
+_kdb_xss_sec_diff ()
+{
+    local b="${1}" m="${2}";
+    local t0="${b}.0" t1="${b}.1";
+    [ "$m" = "0" ] && {
+        xssdaysec > "$t0";
+        return 0
+    };
+    [ "$m" = "1" ] && {
+        xssdaysec > "$t1";
+        return 0
+    };
+    [ -e "$t0" -a -e "$t1" ] || {
+        chkerr "$FUNCNAME $1 : Invalid input $t0 $t1 (5bc4dcae)";
+        return 1
+    };
+    shift;
+    local pass="$*" v;
+    set $(sed -e 's/_/ /' "$t1" "$t0" | awk '{print  $1,$2}' | tr ' ' '\n' | while read v; do
+    printf '%d\n' "0x$v";
+done | tr '\n' ' ');
+    dc -e "4k $1 $3 - $2 $4 - 1006632959 / + n";
+    echo -n " $pass"
+}
+argn ()
+{
+    [ "$1" -a "$1" -gt 0 ] || {
+        $_kdb_fn_error "x $FUNCNAME : expected positive integer arg1, '$1' (660dfd69)";
+        return 1
+    };
+    awk '{printf "%s\n",'$1'}' < <([ "$*" ] && echo "$*" || cat)
+}
+dropf ()
+{
+    awk -vn="$1" '{for(i=n;i<=NF;i++)printf("%s%s",(i==n)?"":" ",$i);print""}'
+}
+k ()
+{
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    kdbflow $invoke ${BASH_SOURCE[0]} 660c881c;
+    local k="$1";
+    test "$k" || k=0;
+    set $(kdb_pool_ptr "$k") || {
+        chkerr "$invoke : cannot retrive '$k' (bfd7c86)";
+        return 1
+    };
+    export k4="$1";
+    export xss="$2";
+    export knx="$3";
+    kdbflow $EDITOR "$k4" 660c8d1f;
+    $EDITOR "$k4";
+    kdb_rcs "$k4" "$invoke : edit";
+    _kdb_valid_k4 "$k4" || {
+        chkerr "$FUNCNAME : editor returned invalid $k4 (6102d15c)";
+        return 1
+    };
+    kdbflow kdb_k4_head_seq $k4 660c8d29;
+    kdb_k4_head_seq "$k4";
+    kdb_k4_to_active_pool "$k4" || {
+        chkerr "$invoke ; kdb_k4_to_active_pool $k4 (62ee088e)";
+        return 1
+    };
+    kdb_cache_upd "$k4" || {
+        chkerr "$invoke ; kdb_cache_upd $k4 (62ee088f)";
+        return 1
+    };
+    _kdb_term_hline '~';
+    _kdb_term_hline '-';
+    kdb_k4_synopsis "$k4";
+    _kdb_term_hline '~';
+    $_kdb_fn_exit "< $invoke"
+}
+kcd ()
+{
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    kdbflow $invoke ${BASH_SOURCE[0]} 660c867f;
+    cd "$(kdb_pool_ptr "$1" | sed 's:/[^/]*$::')" || {
+        ckkerr "$FUNCNAME : cannot cd to pool ptr '$1' (652ec04c)";
+        return 1
+    }
+}
+kd ()
+{
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    kdbflow $invoke ${BASH_SOURCE[0]} 660c8632;
+    local k4d="$1";
+    [ "$k4d" ] || k4d='.';
+    [ -d "$k4d" ] || mkdir "$k4d" || {
+        chkerr "$FUNCNAME : cannot create directory '$k4d' from '$(pwd -P)' (6525da29)";
+        return 1
+    };
+    local k="$(find "$k4d" -maxdepth 1 -type f -name \.\*\.kdb 2> /dev/null)";
+    local count=$(wc -l <<< "$k");
+    case "${count##* }" in
+        0)
+            chktrue "no existing, make new k4 in $k4d";
+            set $(kdbtx);
+            export xs=$1 ss=$2;
+            local cache_dir="${kdb}/0/${kdb_cache}";
+            local cache_km="${cache_dir}/k4db_km,"
+        ;;
+        1)
+            chktrue "use $k in $k4d";
+            kdb_pool_ptr "$k"
+        ;;
+        *)
+            chkerr "$FUNCNAME : multiple k4 found in '$k4d'"
+        ;;
+    esac;
+    $_kdb_fn_exit "< $invoke"
+}
+kdb_0_flaten_filename ()
+{
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    local n= s=;
+    [ "$*" ] && {
+        read n <<< "$*"
+    } || IFS= read n;
+    read s < <(cksum <<< "$n");
+    tr '[:upper:]' '[:lower:]' < <(tr -c '[:alnum:]-' '_' <<< "_${n}_${s}")
+}
+kdb_argn ()
+{
+    [ "$1" -a "$1" -gt 0 ] || {
+        $_kdb_fn_error "x $FUNCNAME : expected positive integer arg1, '$1' (60fb6ccb)";
+        return 1
+    };
+    shift;
+    awk -v n="$1" '{printf "%s\n",$n}' < <([ "$*" ] && echo "$*" || cat)
+}
+kdb_cache_upd ()
+{
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    kdbflow $invoke ${BASH_SOURCE[0]} 660c8903;
+    _kdb_0_lockwait "$FUNCNAME";
+    local k4s='' k4='';
+    local cache_dir="${kdb}/0/${kdb_cache}";
+    kdb_valid_dir "$cache_dir" || {
+        $_kdb_fn_error "x $invoke : irregular cache dir '$cache_dir' (62eda81e)";
+        return 1
+    };
+    local cache_4_kk="$cache_dir/k4db_$(tr -d '[)(% ^\\]' <<< "^%kk\ " | tr '|' '\n' | sort -u | tr '\n' ',')";
+    local cache_5_km="$cache_dir/k4db_$(tr -d '[)(% ^\\]' <<< "^%km\ " | tr '|' '\n' | sort -u | tr '\n' ',')";
+    local cache_6_search="$cache_dir/k4db_$(tr -d '[)(% ^\\]' <<< "$k4_search" | tr '|' '\n' | sort -u | tr '\n' ',')";
+    local cache_7_graph="$cache_dir/k4db_$(tr -d '[)(% ^\\]' <<< "$k4_graph" | tr '|' '\n' | sort -u | tr '\n' ',')";
+    local cache_8_value="$cache_dir/k4db_$(tr -d '[)(% ^\\]' <<< "$k4_value" | tr '|' '\n' | sort -u | tr '\n' ',')";
+    local cache_9_topic="$cache_dir/k4db_$(tr -d '[)(% ^\\]' <<< "$k4_topic" | tr '|' '\n' | sort -u | tr '\n' ',')";
+    [ -e "${cache_4_kk}%" ] && {
+        chkwrn "$FUNCNAME : cache locked "${cache_4_kk}%" (6525e1af)";
+        return 1
+    };
+    [ -e "${cache_5_km}%" ] && {
+        chkwrn "$FUNCNAME : cache locked "${cache_5_km}%" (62eda9a9)";
+        return 1
+    };
+    [ -e "${cache_6_search}%" ] && {
+        chkwrn "$FUNCNAME : cache locked "${cache_6_search}%" (62eda9aa)";
+        return 1
+    };
+    [ -e "${cache_7_graph}%" ] && {
+        chkwrn "$FUNCNAME : cache locked "${cache_7_graph}%" (62eda9ab)";
+        return 1
+    };
+    [ -e "${cache_8_value}%" ] && {
+        chkwrn "$FUNCNAME : cache locked "${cache_8_value}%" (62eda9ac)";
+        return 1
+    };
+    [ -e "${cache_9_topic}%" ] && {
+        chkwrn "$FUNCNAME : cache locked "${cache_9_topic}%" (62eda9ad)";
+        return 1
+    };
+    exec 4>> "${cache_4_kk}%" 5>> "${cache_5_km}%" 6>> "${cache_6_search}%" 7>> "${cache_7_graph}%" 8>> "${cache_8_value}%" 9>> "${cache_9_topic}%";
+    [ $# -gt 0 ] && {
+        k4s="$1";
+        shift
+    };
+    while [ $# -gt 0 ]; do
+        k4s="$(printf "%s\n%s\n" "$k4s" "$1")";
+        shift;
+    done;
+    {
+        [ "$k4s" ] && echo "$k4s" || kdb_find_k4
+    } | while IFS= read k4; do
+        local k4h="$(awk 'NR==1,/^$/ {if (length) print}' "${k4}")";
+        grep '^%km ' <<< "$k4h" | awk -v k4="$k4" 'END{printf "%s %s ",$6,k4}' | multitee 0,4,5,6,7,8,9;
+        {
+            grep -E "^%kk\ " <<< "$k4h" | tr '\n' ' ';
+            echo
+        } 1>&4;
+        {
+            grep -E "^%km\ " <<< "$k4h" | tr '\n' ' ';
+            echo
+        } 1>&5;
+        {
+            grep -E "$k4_search" <<< "$k4h" | tr '\n' ' ';
+            echo
+        } 1>&6;
+        {
+            grep -E "$k4_graph" <<< "$k4h" | tr '\n' ' ';
+            echo
+        } 1>&7;
+        {
+            grep -E "$k4_value" <<< "$k4h" | tr '\n' ' ';
+            echo
+        } 1>&8;
+        {
+            grep -E "$k4_topic" <<< "$k4h" | tr '\n' ' ';
+            echo
+        } 1>&9;
+    done;
+    exec 4>&- 5>&- 6>&- 7>&- 8>&- 9>&-;
+    [ "$k4s" ] && {
+        cat "${cache_4_kk}%" >> "${cache_4_kk}";
+        cat "${cache_5_km}%" >> "${cache_5_km}";
+        cat "${cache_6_search}%" >> "${cache_6_search}";
+        cat "${cache_7_graph}%" >> "${cache_7_graph}";
+        cat "${cache_8_value}%" >> "${cache_8_value}";
+        cat "${cache_9_topic}%" >> "${cache_9_topic}";
+        rm -i -f "${cache_4_kk}%" "${cache_5_km}%" "${cache_6_search}%" "${cache_7_graph}%" "${cache_8_value}%" "${cache_9_topic}%"
+    } || {
+        mv -i -f "${cache_4_kk}%" "${cache_4_kk}";
+        mv -i -f "${cache_5_km}%" "${cache_5_km}";
+        mv -i -f "${cache_6_search}%" "${cache_6_search}";
+        mv -i -f "${cache_7_graph}%" "${cache_7_graph}";
+        mv -i -f "${cache_8_value}%" "${cache_8_value}";
+        mv -i -f "${cache_9_topic}%" "${cache_9_topic}"
+    };
+    touch "${cache_dir}/nulltime";
+    _kdb_0_lockun "$FUNCNAME";
+    $_kdb_fn_exit "< $invoke"
+}
+kdb_decs2touchfmt ()
+{
+    [ "$1" ] && {
+        awk '{ printf "%x",$1 }' <<< "$1" | kdb_xs2touchfmt
+    } || {
+        awk '{ printf "%x",$1 }' | kdb_xs2touchfmt
+    }
+}
+kdb_epoch ()
+{
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    kdbflow $invoke ${BASH_SOURCE[0]} 660c891f;
+    test "$1" && local kdb="$1" || local kdb="${kdb}";
+    shift || true;
+    local xs="$1" ss="$2";
+    shift 2 || shift || true;
+    local pass="$*";
+    [ "${xs}" ] || {
+        set $(kdbtx);
+        xs=$1;
+        ss=$2
+    };
+    local cache_dir="${kdb}/0/${kdb_cache}";
+    local cache_km="${cache_dir}/k4db_km,";
+    local res="$(sed -e 's:.*/.:&/:' -e 's://$:/z:' <<< "/${xs}${ss}")";
+    local a mask="${kdb_epoch_mask:=4}";
+    for a in $(seq 2 $mask);
+    do
+        res="$(sed -e 's:.*/.:&/:' -e 's://$:/z:' <<< "$res")";
+    done;
+    while grep "^$(sed -e 's:/::g' <<< "${res%/*}") " "$cache_km" > /dev/null; do
+        res="$(sed -e 's:.*/.:&/:' -e 's://$:/z:' <<< "$res")";
+        mask=$(( mask + 1 ));
+    done;
+    while [ -d "${kdb}/${res%/*}" ]; do
+        res="$(sed -e 's:.*/.:&/:' -e 's://$:/z:' <<< "$res")";
+        mask=$(( mask + 1 ));
+    done;
+    while grep "^$(sed -e 's:/::g' <<< "${res%/*}") " "$cache_km" > /dev/null; do
+        res="$(sed -e 's:.*/.:&/:' -e 's://$:/z:' <<< "$res")";
+        mask=$(( mask + 1 ));
+    done;
+    local dir=$(sed -e 's:/[^/]*$:/v:' <<< "${kdb}/${res}");
+    local eph="$(sed -e 's:/::g' <<< "${res%/*}")";
+    local span="${res##*/}";
+    maskx="$(printf %0x $mask)";
+    echo "$dir" "$xs" "$ss" "$eph" "$span" "$maskx" "$pass"
+}
+kdb_find_k4 ()
+{
+    $_kdb_log "find \"${kdb}\" \\( -path \"${kdb}/0\" -o -path \"${kdb}.*/.git\" \\) -prune -false -o -type f -name \\.\\*\\.kdb \$@";
+    kdbflow "($FUNCNAME $@)";
+    kdbflow "find \"${kdb}\" \\( -path \"${kdb}/0\" -o -path \"${kdb}.*/.git\" \\) -prune -false -o -type f -name \\.\\*\\.kdb \$@";
+    find "${kdb}" \( -path "${kdb}/0" -o -path "${kdb}.*/.git" \) -prune -false -o -type f -name \.\*\.kdb $@
+}
+kdb_find_kj ()
+{
+    local _k4 f fs a inpath;
+    [ $# -gt 0 ] && {
+        fs="$1";
+        shift
+    };
+    while [ $# -gt 0 ]; do
+        fs="$(printf "%s\n%s\n" "$fs" "$1")";
+        shift;
+    done;
+    [ "$fs" ] || fs="$(cat)";
+    echo "$fs" | while IFS= read _k4; do
+        _kdb_valid_k4 "$_k4" || {
+            $_kdb_fn_error "x $invoke : not valid k4 from arg1 or stdin : '$_k4' (62b1405e)";
+            return 1
+        };
+        inpath="${_k4%/*}";
+        find "$inpath" -mindepth 2 -type f -name \*.kdb | _kdb_file_headg '%km ' | awk '{print $6}' | sort -u;
+    done | sort -u
+}
+kdb_find_kl ()
+{
+    local _k4 f fs a inpath eph;
+    [ $# -gt 0 ] && {
+        fs="$1";
+        shift
+    };
+    while [ $# -gt 0 ]; do
+        fs="$(printf "%s\n%s\n" "$fs" "$1")";
+        shift;
+    done;
+    [ "$fs" ] || fs="$(cat)";
+    echo "$fs" | while IFS= read _k4; do
+        _kdb_valid_k4 "$_k4" || {
+            $_kdb_fn_error "x $invoke : not valid k4 from arg1 or stdin : '$_k4' (62b1405f)";
+            return 1
+        };
+        inpath="${_k4%/*}";
+        find "$inpath" -mindepth 1 -maxdepth 1 -type f -name \*.kdb | grep -v "$_k4" | _kdb_file_headg '%km ' | awk '{print $6}' | sort -u;
+    done | sort -u
+}
+kdb_find_kp ()
+{
+    local _k4 f fs a inpath;
+    [ $# -gt 0 ] && {
+        fs="$1";
+        shift
+    };
+    while [ $# -gt 0 ]; do
+        fs="$(printf "%s\n%s\n" "$fs" "$1")";
+        shift;
+    done;
+    [ "$fs" ] || fs="$(cat)";
+    echo "$fs" | while IFS= read _k4; do
+        _kdb_valid_k4 "$_k4" || {
+            chkerr "x $invoke : not valid k4 from arg1 or stdin : '$_k4' (62b12359)";
+            return 1
+        };
+        inpath="${_k4%/*}";
+        inpath="${inpath%/*}";
+        while [ -d "$inpath" ]; do
+            find "$inpath" -maxdepth 1 -type f -name \*.kdb | _kdb_file_headg '%km ' | awk '{print $6}';
+            inpath="${inpath%/*}";
+        done;
+    done | sort -u
+}
+kdb_help ()
+{
+    _kdb_term_pcenter "kdb help" '=';
+    cat <<EOF
+# assured record, arbitrary discrete elements of subject matter
+#   novel date based directory for file directories and metadata markdown
+#   revision tracking
+# quick indexed searches
+# short key identifiers
+# results pool manuliplation
+#   filter, associate, re-value
+# intuitative knoledge connections, discover
+#   tags, super-ordinates, sub-ordinates, matrix, serial, value, interval alignment, class, definition, identity, initilization, expiration, begin, end
+# trivial metadata connection expansion
+# parameterized search and element reporting
+EOF
+    _kdb_term_pcenter 'Glossary';
+    cat <<EOF
+# knx     index id of pool record, usually 2 or 3 characters
+# eph     epzch meta value of directory
+# xs      0x unix seconds
+# ss      0x unix subseconds
+# xss     0s unix seconds and subseconds
+# ref     pool reference {knx|k4|xs|xss}
+EOF
+    _kdb_term_pleft 'Basic Functions';
+    cat <<EOF
+# kj regex        regex cache to pool
+# kjt regex       regex cache kt ks to pool
+# ks arg*         new k4 with subj (squashed) args
+# kl              list pool by acquisition
+# klr             list pool by reverse acquisition
+# kt              list pool by modification
+# ktr             list pool by reverse modification
+# kg regex        grep regex from pool
+# kv regex        grep -v regex from pool
+# k ref           edit k4 (default last)
+# krst {args}     delete current pool, set defaults  iff args then follow with kj args
+EOF
+    _kdb_term_pleft 'Complex Functions';
+    cat <<EOF
+# kn arg1           matter end newer epzch, 0x{epoch) or 0d{unix}
+# ka arg1           matter begin after epzch, 0x{epoch) or 0d{unix}
+# ksp ref           matter aspell
+# kk {mtime}        find matter -mtime {arg1}
+# kq {atime}        find matter -atime {arg1}
+# kh {n}            show {number} lines of command history
+# kp {pool}         use pool, list pools on null
+# kpt {tag}         add tags to all k4 in pool pool tag, list pool tags on null
+# kpv {vptr}        iff vptr arg1 supported, assign all ptr in pool and backstore ptr type, else list supported vptr
+# kz  {pool}        iff arg@ is a valid pool, combine with current
+# krst              reset (delete pool and kdb_init) current pool
+# kd {nx|epzch|xss} graph linked, super and related
+# kw {name}         name current pool, mv 0/p/{kdb_pool} to 0/p/{name} and set kdb_pool={name}'
+# kdb_pool_knx  re-knx pool from xssptr with kdb_k4_to_active_pool
+EOF
+    cat > /dev/null <<EOF
+# @@ ## ### ##### ######## Extract
+# k_ {days}             k4 mod k4since days to ^pool
+# k__ {hours}           k4 mod k4since hours to ^pool
+# @@ ## ### ##### ######## Refine
+# @@ ## ### ##### ######## Pools
+# @@ ## ### ##### ######## Misc
+# k4k       {nx|xs|xss}    extract k4 link(s) default ^pool
+# kh        {nx|xs|xss}    k4 head (default 0), limit to k4_search
+# kc        {nx|xs|xss}    k4 cat (default 0) to {PAGER} or stdout to pipe
+#,khx regex {nx|xs|xss}    k4 headx (default k4_search)
+#,km        {nx|xs|xss}    k4 markdown (default 0) to {PAGER} or stdout to pipe
+# kjq regex             quiet beckground k4db regex to ^pool
+#,kjtq regex            quiet background tags regex to ^pool
+# @@ ## ### ##### ######## Edge
+#,ke  depth {nx|xs|xss}    k4 edge walk depth (diagram?)
+#,kel depth {nx|xs|xss}    k4 link walk depth
+#,kep depth {nx|xs|xss}    k4 super walk depth
+#,ker depth {nx|xs|xss}    k4 related walk depth
+# future feature
+# present catagorial tags, per selection, present sub catagorial tags, kwds
+# optionally present existing catagorial tag tree
+# kdb in half-octal
+# port to python
+# port to lua
+EOF
+    cat > /dev/null <<EOF
+pool listing runthrough...
+#export kdb_vptr="k4mi"        # default vptr setting, kdb_init
+${kdb}/0/p/$USER/$pool/.vptr  # active vptr backstore
+#kpv {vptr}      # iff vptr arg1 supported, assign all ptr and backstore, else list
+#kpv xs          # on supported, assign vptr arg1 to all ptr and backstore
+kl  klr          # list pool by xss (kdb_topic: kll kllr ; k4_search klll klllr)
+klt kltr         # list pool by mod
+#klv klvr         # list pool by vptr
+ knx and %ks are always displayed
+        arg1     # expands addl %k fields in listing, v in arg1 expands vptr value
+double and tripple l applies kdb_topic and k4_search as arg1
+kll == kl tkjm
+klll == tkrpjlnomcdviez
+kpv #U> checks and sets arg1 vptr OR lists supported
+    kdb_pool_vptr ()        #0> Set the pool ptr mtime and vptrf, per type from arg1
+    kdb_pool_ptr_vset ()    #0> Set vptr arg1 on ptr arg2
+    kdb_print_vxssptr ()    #0> render vptr arg1 for xssptr arg2
+kpv -> kdb_pool_vptr ->> kdb_pool_ptr_vset
+klv ->> kdb_print_vxssptr
+EOF
+    _kdb_term_pleft 'root files';
+    _kdb_term_pcenter "" "-";
+    _kdb_term_pleft "Configuration $kdb_conf_bash";
+    cat $kdb_conf_bash;
+    _kdb_term_pleft "$vkdb/kdb.*.fn.bash";
+    find "$vkdb" -maxdepth 1 -type f -name kdb\.\*fn\.bash -exec sed -e '/^[_[:alpha:]][_[:alnum:]]* () /!d' -e 's/ was:.*//' -e 's/\ ()\ {/ () `/' \{\} \; | sort | column -s'`' -t;
+    _kdb_term_pleft "$kdb_init_bash";
+    find "$vkdb" -maxdepth 1 -type f -name "$kdb_init_bash" -exec sed -e '/^[_[:alpha:]][_[:alnum:]]* () /!d' -e 's/ was:.*//' -e 's/\ ()\ {/ () `/' \{\} \; | sort | column -s'`' -t;
+    _kdb_term_pcenter "k4 Header Types";
+    declare -f kdb_k4_head_seq | grep '^# %';
+    local types="
+#B> Beta development
+#V> Validation action
+#L> Log action
+#N> Numeric processing
+#K> k4 manipulation
+#0> Internal functions
+#P> POSIX action
+#X> Text processing
+#T> Time function
+#U> User command
+";
+    _kdb_term_pcenter "Function Types";
+    echo "$types";
+    tre="^%($(echo "$types" | sed -e '/^$/d' | awk '{printf "%s",$1"|"}' | sed -e 's/%//g' -e 's/|$//'))\\ ";
+    order="$(echo "$types" | sed -e '/^$/d' | awk '{print $1}')";
+    for kind in $order;
+    do
+        _kdb_term_pleft "$(echo "$types" | grep "$kind")";
+        grep --no-filename "^[_[:alpha:]][_[:alnum:]]* () .*$kind" "$vkdb/"*.bash | sed -e 's/ was:.*//' -e 's/\ ()\ {/ () `/' | sort | column -s'`' -t;
+    done;
+    $_kdb_fn_exit "< $invoke"
+}
+kdb_init_k4db ()
+{
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    _kdb_0_lockwait "$FUNCNAME";
+    kdbflow valid posix bin 66046b94;
+    ps | grep "^[ ]*$$ " | grep -q bash 2> /dev/null || {
+        $_kdb_fn_error "x $invoke : Not bash shell (fc4768) <<<" 1>&2;
+        return 1
+    };
+    which ci > /dev/null || {
+        $_kdb_fn_error "x $invoke : ci (rcs) : not in path (6108e185)";
+        return 1
+    };
+    which find > /dev/null || {
+        $_kdb_fn_error "x $invoke : find : not in path (61083eb5)";
+        return 1
+    };
+    strings $(which find) | grep -q BSD || {
+        chkwrn "x $invoke : find not BSD (61083f5c)"
+    };
+    which lua5.4 > /dev/null || {
+        $_kdb_fn_error "x $invoke : lua5.4 : not in path (655bda5a)";
+        return 1
+    };
+    which nawk > /dev/null || {
+        $_kdb_fn_error "x $invoke : nawk : not in path (655bd5cc)";
+        return 1
+    };
+    strings $(which nawk) | grep -q POSIXLY_CORRECT || {
+        chkwrn "x $invoke : unexpected nawk (655bd5cd)"
+    };
+    which tai64n > /dev/null || {
+        $_kdb_fn_error "x $invoke : tai64n not in path (657f4e46)";
+        return 1
+    };
+    $_kdb_log ": $invoke : prerequisites";
+    local a;
+    kdbflow valid posix fn 66046bd3;
+    test "$(declare -f validfn 2> /dev/null)" || {
+        echo "$0 : validfn not defined" 1>&2;
+        _kdb_help_skel;
+        return 1
+    };
+    while IFS= read a; do
+        validfn $a && true || {
+            echo "$0 : validfn error : $a" 1>&2;
+            _kdb_help_skel;
+            return 1
+        };
+    done <<EOF
+devnul 216e1370 0000001d
+stderr 7ccc5704 00000037
+chkstd ee4aa465 00000032
+chkwrn 2683d3d3 0000005c
+logwrn f279f00e 0000005f
+chkerr 4f18299d 0000005b
+logerr 2db98372 0000005e
+chktrue 1f11f91d 0000005c
+validfn 6fcde5cc 0000046d
+EOF
+    while IFS= read a; do
+        validfn $a && true || {
+            echo "$0 : validfn error : $a" 1>&2;
+            _kdb_help_sub;
+            return 1
+        };
+    done <<EOF
+base 05e712a8 0000050a
+spin2 1263edf2 00000180
+ct 272b9275 000000ab
+EOF
+    $_kdb_log ": $invoke validfn";
+    kdbflow valid sundry env 66046c0b;
+    [ "${kdb}" = "$HOME/kdb" ] || {
+        $_kdb_fn_err "x $invoke : unexpected k4db : '${kdb}' : (5bc11a93)";
+        return 1
+    };
+    kdb_valid_dir "${kdb}" || {
+        $_kdb_fn_err "x $invoke : irregular \${kdb} : '${kdb}' (5d1a0a1d)";
+        return 1
+    };
+    $_kdb_log ": $invoke {kdb}";
+    [ "$LC_ALL" = "C" ] || {
+        $_kdb_fn_err "x $invoke : irregular env LC_ALL='$LC_ALL' (62aed4e9)";
+        return 1
+    };
+    [ "$LANG" = "en_US.US-ASCII" ] || {
+        $_kdb_fn_err "x $invoke : irregular env LANG='$LANG' (62aed4d1)";
+        return 1
+    };
+    $_kdb_log ": $invoke locale";
+    [ "$OS" = "Darwin" -o "$OS" = "NetBSD" -o "$OS" = "Linux" ] || {
+        $_kdb_fn_err "x $invoke : irregular env OS='$OS' (6325b4d6)";
+        return 1
+    };
+    local cksum="$(_kdb_file_headg "${k4_search}" ${kdb}/5/c/4/e/1/a/v/.5c4e1acc.03453244.kdb | cksum)";
+    [ "$cksum" = "2549266757 281" ] || {
+        $_kdb_fn_err "x $invoke : failed k4_search cksum (62aed4bf)"
+    };
+    $_kdb_log ": $invoke ad hoc";
+    export k4_unlong='k4db_fold';
+    export k4_unlong='kdb_stdin_fold';
+    export k4_unlong='ct';
+    export k4case='-i';
+    expr "$kdb_locksleep" : '^[[:digit:]]*$' > /dev/null || {
+        $_kdb_fn_err "x $invoke : not an integer kdb_locksleep='$kdb_locksleep' (63222222)";
+        return 1
+    };
+    $_kdb_log ": $invoke misc env";
+    $_kdb_log ": $invoke : create $kdb/0/v/emptydir 660f14b9";
+    kdbflow $kdb/0/v/emptydir 660c79dc;
+    ( set +m;
+    {
+        find "${kdb}" -path "${kdb}/0/${kdb_pool}" -prune -false -o \( -name ${kdb_tmp} -o -name ${kdb_log} -o -name ${kdb_var} \) -false -o -type d -empty | sort > $kdb/0/v/emptydir
+    } & );
+    [ "$kdb_log" ] || kdb_log=',';
+    [ "$kdb_tmp" ] || kdb_tmp='%';
+    [ "$kdb_var" ] || kdb_var='v';
+    [ "$kdb_cache" ] || kdb_cache='c';
+    [ "$kdb_pool" ] || kdb_pool="p/$USER";
+    $_kdb_log ": $invoke : fix unset dir names";
+    export kdb_log kdb_tmp kdb_var kdb_pool kdb_cache;
+    $_kdb_log ": $invoke : export dir names";
+    local log="${kdb}/0/${kdb_log}";
+    local tmp="${kdb}/0/${kdb_tmp}";
+    local var="${kdb}/0/${kdb_var}";
+    local cache="${kdb}/0/${kdb_cache}";
+    local pools="${kdb}/0/${kdb_pool}";
+    $_kdb_log ": $invoke example set local dir paths";
+    for a in "$log" "$tmp" "$var" "$pools" "$cache";
+    do
+        mkdir -p "$a" || {
+            $_kdb_fn_error "x $invoke : cannot create dir : '$a' (6113f207)";
+            return 1
+        };
+        kdb_valid_dir "$a" || {
+            $_kdb_fn_error "x $invoke : irregular dir : '$a' (6101d7cf)";
+            return 1
+        };
+    done;
+    $_kdb_log ": $invoke : create and valid dirs";
+    $_kdb_log ": $invoke : lockup read only names";
+    kdbflow readonly kdb_log kdb_tmp kdb_var kdb_pool kdb_cache 660c7bf8;
+    readonly kdb_log kdb_tmp kdb_var kdb_pool kdb_cache;
+    readonly _kdb_eot;
+    kdb_init_pool '_' || {
+        $_kdb_fn_error "x $invoke : cannot init pool : '_' (6113f230)";
+        return 1
+    };
+    _kdb_valid_pool '_' || {
+        $_kdb_fn_error "x $invoke : irregular pool : '_' (6101d811)";
+        return 1
+    };
+    $_kdb_log ": $invoke init and valid _ (user pool)";
+    touch -t 201508060000 "${tmp}/nulltime";
+    touch "${tmp}/lasttime";
+    $_kdb_log ": $invoke : mark timestamps";
+    local cache_dir="${kdb}/0/${kdb_cache}";
+    local cache_km="${cache_dir}/k4db_km,";
+    [ "$(find "$cache_km" -type f -mtime -1 2> /dev/null)" ] || kdb_cache_upd & _kdb_0_lockun "$FUNCNAME";
+    $_kdb_fn_exit "< $invoke"
+}
+kdb_init_kstat ()
+{
+    [ "$OS" ] || local OS="$(uname)";
+    case "$OS" in
+        Linux)
+            function kdb_os_stat ()
+            {
+                printf --printf=%08x\ %02x\ .\ %8x\ %08x\ %08x\  < <(stat -c %h\ %i\ %s\ %Y\ %X "$1");
+                ls -dF "$1"
+            };
+            function kdb_os_stat_mtime ()
+            {
+                printf --printf="%08x\n" < <(stat -c %Y "$1")
+            };
+            function kdb_os_stat_atime ()
+            {
+                printf --printf="%08x\n" < <(stat -c %X "$1")
+            }
+        ;;
+        Darwin | NetBSD)
+            function kdb_os_stat ()
+            {
+                stat -n -f %08Xi\ %02Xl\ .\ %8Xz\ %08Xm\ %08Xa\  "$1";
+                ls -dF "$1"
+            };
+            function kdb_os_stat_mtime ()
+            {
+                stat -f %08Xm "$1"
+            };
+            function kdb_os_stat_atime ()
+            {
+                stat -f %08Xa "$1"
+            }
+        ;;
+    esac;
+    function kdb_os_statsum ()
+    {
+        local s;
+        IFS= read -d '' s < <(awk '{printf "%08x",$1}' < <(cksum "$1"));
+        awk -vs="$s" '{$3=s;$4=sprintf("%8s",$4);print}' < <(kdb_os_stat "$1")
+    };
+    function kstat ()
+    {
+        local f= fs=;
+        [ $# -gt 0 ] && {
+            fs="$1";
+            shift || true
+        };
+        while [ $# -gt 0 ]; do
+            read -d '' fs < <(printf "%s\n%s\n" "$fs" "$1") || true;
+            shift || true;
+        done;
+        [ "$fs" ] || fs="$(cat)";
+        while IFS= read f; do
+            [ -e "$f" ] && {
+                kdb_os_stat "$f"
+            } || {
+                $_kdb_fn_error "x $FUNCNAME : does not exist '$f' (660e6310)";
+                return 1
+            };
+        done <<< "$fs"
+    };
+    function kstatsum ()
+    {
+        local f= fs=;
+        [ $# -gt 0 ] && {
+            fs="$1";
+            shift || true
+        };
+        while [ $# -gt 0 ]; do
+            read -d '' fs < <(printf "%s\n%s\n" "$fs" "$1") || true;
+            shift || true;
+        done;
+        [ "$fs" ] || fs="$(cat)";
+        while IFS= read f; do
+            [ -e "$f" ] && {
+                kdb_os_statsum "$f"
+            } || {
+                $_kdb_fn_error "x $FUNCNAME : does not exist '$f' (660ee98b)";
+                return 1
+            };
+        done <<< "$fs"
+    }
+}
+kdb_init_pool ()
+{
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    local pools="${kdb}/0/${kdb_pool}" pool="$1" a='' b='';
+    [ "$pool" ] || pool="_";
+    [[ "$pool" =~ ^[A-Za-z0-9_]+[A-Za-z0-9_=-]*$ ]] || {
+        $_kdb_fn_error "x $invoke : fail pool match : '$pool' =~ '^[A-Za-z0-9_]+[A-Za-z0-9_.+=-]*$' (65621f16)";
+        return 1
+    };
+    local poolpath="${pools}/${pool}";
+    [ "$kdb_tmp" ] || kdb_tmp="%";
+    [ "$kdb_var" ] || kdb_var="v";
+    [ "$kdb_vptr" ] || kdb_vptr="k4mi";
+    _kdb_valid_vptr "$kdb_vptr" || {
+        $_kdb_fn_error "x $invoke : unusable kdb_vptr '$kdb_vptr' (6562384f)";
+        return 1
+    };
+    mkdir -p "${poolpath}/${kdb_tmp}" || {
+        $_kdb_fn_error "x $invoke : cannot create '${poolpath}/${kdb_tmp}' (6111b0ec)";
+        return 1
+    };
+    mkdir -p "${poolpath}/${kdb_var}" || {
+        $_kdb_fn_error "x $invoke : cannot create '${poolpath}/${kdb_var}' (656527df)";
+        return 1
+    };
+    for a in xss knx;
+    do
+        for b in ptr hln;
+        do
+            mkdir -p "${poolpath}/${a}${b}" || {
+                $_kdb_fn_error "x $invoke : cannot create pool dir : ${poolpath}/${a}${b} (d49f583)";
+                return 1
+            };
+        done;
+    done;
+    echo "$kdb_vptr" > "${poolpath}/.vptr" || {
+        $_kdb_fn_error "x $invoke : cannot create '${poolpath}/vptr' (611ffc62)";
+        return 1
+    };
+    echo "$pool" > "${pools}/.active" || {
+        $_kdb_fn_error "x $invoke : cannot create '${pools}/.active' for '$pool' (655e3ade)";
+        return 1
+    };
+    $_kdb_fn_exit "< $invoke"
+}
+kdb_k4_body ()
+{
+    local k4="$1";
+    awk '/^$/,0' "$k4"
+}
 kdb_k4_fortify ()
 {
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    kdbflow $invoke ${BASH_SOURCE[0]} 660c88d9;
     test -f "$1" || {
-        chkerr "$FUNCNAME : arg1 must be a regular file (62bb5de5)";
+        $_kdb_fn_error "x $invoke : arg1 must be a regular file (62bb5de5)";
         return 1
     };
     expr "$1" : ".*\.kdb$" > /dev/null || {
-        chkerr "$FUNCNAME : k4 (arg1) filename does not have .kdb extension (62bb6691)";
+        $_kdb_fn_error "x $invoke : k4 (arg1) filename does not have .kdb extension (62bb6691)";
         return 1
     };
     local k4="$1" p=;
     local k4x="$(mktemp "${k4}-XXXX")";
-    local m=$(kdb_file_headg '^%km ' "$k4");
+    local m=$(_kdb_file_headg '^%km ' "$k4");
     set $m;
     [ "$1" = "%km" -a "$2" = "62ad8685" ] && chktrue km ok $k4;
     test "$3$4" = "$5$8" && p=true;
@@ -573,75 +1291,82 @@ kdb_k4_fortify ()
     };
     set $(kdbdf "$kdb" "$xs" "$ss");
     local k4="$1";
-    shift || chkerr "$FUNCNAME internal error (62bb5ac0)";
-    echo "%km $* $(kdb_file_headv '^%km ' "$k4" | sed 's/^%km /%m /' )" >> "${r}/$k4x"
+    shift || $_kdb_fn_error "x $invoke : internal error (62bb5ac0)";
+    echo "%km $* $(_kdb_file_headv '^%km ' "$k4" | sed 's/^%km /%m /')" >> "${r}/$k4x"
 }
 kdb_k4_head_seq ()
 {
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "0> $invoke";
-    kdb_0_lockwait "k4";
-    local k4=$1;
-    kdb_valid_k4 "$k4" || {
-        chkerr "$invoke";
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    kdbflow "$invoke ${BASH_SOURCE[0]}";
+    _kdb_0_lockwait "k4";
+    local k4="$1";
+    _kdb_valid_k4 "$k4" || {
+        $kdblog "x $invoke : unexpected k4 '$k4'";
         return 1
     };
     local k4d="${k4%/*}";
-    local k4x="$(mktemp ${k4d}/__tmp.kdb-XXXX)";
-    local k4h="$(kdb_file_headg . "$k4")";
+    local k4x="${k4}~";
     local kinds="
-# %ks # subject matter  string
-# %kt # tag list        words
-# %kk # entry keyord    {eph}_{label}
-# %kr # matrix reason   ^kk 0x %% (why)
-# %kp # hier superord   ^kk 0x %% (superior)
-# %kj # motive subord   ^kk 0x %% (subordinate)
-# %kl # like link       ^kk 0x %% (similar)
-# %kb # better k4       ^kk 0x %% (better)
-# %kc # topic class     ^kk 0x %% (^type)
-# %kq # value relative  ^kk 0x %% (value for)
-# %ko # origin owner    (email|pubkey|^kk|^k4|etc)
-# %km # meta hash       xa xs ss eph pw hash span hdate (see: kdbdf)
-# %kd # file data       (./index.md|https://s3.aws.com/|etc)
+# %ks # subject matter  {string}
+# %kd # subject desc    {string}
+# %kt # tag list        {words}
+# %kk # epoch list      {eph} {class} {cat} {name}
+# %kr # matrix reason   {kdbo:}eph {...}       %% (why)
+# %kp # perord hier     {kdbo:}eph {...}       %% (superior)
+# %kj # subord motive   {kdbo:}eph {...}       %% (subordinate)
+# %kl # like link       {kdbo:}eph {...}       %% (similar)
+# %kb # better link     {kdbo:}eph {...}       %% (better)
+# %kq # value relative  0x/{kdbo:}eph {...}    %% (value for)
+# %ko # origin owner    (@%024x|email|pubkey|fingerprint|etc)
+# %km # meta hash       xa xs ss kdbo eph span maskx hdate %% see kdbdf
 # %kn # interval align  {kn} %d {knfd} %x {knfx}
-# %kv # value key       0x
-# %kx # k4 expire       xs
-# %ki # review interval xs
-# %ke # event begin     xs
-# %kz # event end       xs
+# %kc # checksum        auto_dgst_sha3_384 %% execute if fn is in env
+# %kv # value key       %05x xv
+# %ki # review interval %07x xi
+# %kx # k4 expire       %08x xs
+# %ke # event begin     %08x xs
+# %kz # event end       %08x xs
 ";
-    local kre="$(awk '{printf "%s",$2"|"}' <<<"$kinds" | sed -e 's/%k//g' -e 's/^|/^%k(/' -e 's/||$/)\\ /')";
-    local order=$(awk '{print $2}' <<<"$kinds");
-    local kind=;
+    local kre="$(awk '{printf "%s",$2"|"}' <<< "$kinds" | sed -e 's/%k//g' -e 's/^|/^%k(/' -e 's/||$/)\\ /')";
+    local order=$(awk '{print $2}' <<< "$kinds");
+    [ -e "$k4x" -o -e "${k4}-node~" ] && {
+        $kdblog "x $invoke : tmp exists, '$k4x' or '${k4}-node~' (652434e0)";
+        return 1
+    };
+    kdb_rcs "$k4" "$FUNCNAME : beg";
+    mv -i "${k4}" "${k4}-node~";
+    local k4h="$(awk 'NR==1,/^$/ {if (length) print}' "${k4}-node~")";
+    local kind='';
     for kind in $order;
     do
         grep -E "^${kind}\ " <<< "$k4h" >> "$k4x";
     done;
     grep -Ev "$kre" <<< "$k4h" >> "$k4x";
-    kdb_k4_body "$k4" >> "$k4x";
-    mv -i -f "$k4x" "$k4";
-    kdb_rcs "$k4";
-    chkwrn "$FUNCNAME unimplemented pool rm knx ; pool add";
-    $kdblog "$FUNCNAME unimplemented pool rm knx ; pool add";
-    kdb_0_lockun "k4";
-    $kdblog "0< $invoke"
+    awk '/^$/,0' "${k4}-node~" >> "$k4x";
+    cat "$k4x" > "${k4}-node~";
+    mv -i "${k4}-node~" "${k4}";
+    kdb_rcs "$k4" "$FUNCNAME : fin";
+    rm -i -f "$k4x";
+    _kdb_0_lockun "k4";
+    $kdblog "<0 $invoke"
 }
 kdb_k4_inventory ()
 {
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "0> $invoke";
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
     local k4="$1";
     local p="${k4%/*}" k="${k4##*/}";
     local not_find="-not ( -name "${k},v" -o -name "$k" -o -name _ )";
-    find "$p" -mindepth 1 -prune -type f -name "$k" -exec printf "        K4 %s \n" \{\} \; | cattrunc;
-    find "$p" -mindepth 1 -prune -type d $not_find -exec printf "       DIR %s/\n" \{\} \; | sort | cattrunc;
-    find "$p" -mindepth 1 -prune -type f $not_find -exec printf "      FILE %s \n" \{\} \; | sort | cattrunc;
+    find "$p" -mindepth 1 -prune -type f -name "$k" -exec printf "        K4 %s \n" \{\} \; | ct;
+    find "$p" -mindepth 1 -prune -type d $not_find -exec printf "       DIR %s/\n" \{\} \; | sort | ct;
+    find "$p" -mindepth 1 -prune -type f $not_find -exec printf "      FILE %s \n" \{\} \; | sort | ct;
     {
         find "$p" -mindepth 1 -prune -type f $not_find | awk 'END{printf "(%d/",FNR}';
         find "$p" -type f $not_find | awk 'END{printf "%d) ",FNR}';
         du -sh "$p/"
     } | awk '{printf "%-10s %s %s\n%-10s %s\n","     TOTAL",$1,$2,"      ROOT",$3 }';
-    $kdblog "0< $invoke"
+    $_kdb_fn_exit "< $invoke"
 }
 kdb_k4_kk_hint ()
 {
@@ -652,251 +1377,121 @@ kdb_k4_kk_hint ()
         chkerr "$invoke : k4 arg1 not provided (6119903b)";
         return 1
     };
-    kdb_valid_k4 "$k4" || {
+    _kdb_valid_k4 "$k4" || {
         chkerr "$invoke : cannot use '$k4' (6136a617)";
         return 1
     };
     {
-        kdb_file_headg '^%km\ ' "$k4" | awk '{print $5}';
-        kdb_file_headg "$filter" "$k4" | kdb_k4_default_squash | sed -E "s/$filter//"
+        _kdb_file_headg '^%km\ ' "$k4" | awk '{print $5}';
+        _kdb_file_headg "$filter" "$k4" | _kdb_k4_default_squash | sed -E "s/$filter//"
     } | tr -C '[:alnum:]' ' ' | tr ' ' '\n' | sort -u | tr '\n' ' ' | kdb_stdin_fold
 }
 kdb_k4_list ()
 {
-    $kdblog "find \"${kdb}\" \( -regex \"${kdb}/0\" -prune -type f \) -o -type f -name \.\*\.kdb 2>/dev/null";
-    find "${kdb}" \( -regex "${kdb}/0" -prune -type f \) -o -type f -name \.\*\.kdb 2> /dev/null
-}
-kdb_k4_rewrite_km ()
-{
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "fn> $invoke";
-    kdb_init_k4db;
-    kdb_0_lockwait "k4";
-    local r a p m k4 k4x xs ss xa;
-    r="${kdb}/%/zz-$(date "+%Y%m%d")";
-    kdb_k4_list | while IFS= read a; do
-        kdb_valid_k4 $a 2> /dev/null && printf '+' || {
-            printf '-';
-            p=;
-            m=$(kdb_file_headg '^%km ' $a);
-            set $m;
-            expr "${2}" : "^6101f795$" > /dev/null && {
-                kdb_k4_head_seq "$a";
-                kdb_file_headg '^%ks ' $a;
-                echo $a $m;
-                xs=$3 ss=$4;
-                set $(kdbdf $kdb $xs $ss);
-                newk4=$1;
-                shift;
-                newkm=$@;
-                kdb_file_headg '.' $a | sed -e "/^%km /s/^/%km $newkm /" -e 's/ %km / %m /';
-                echo;
-                echo $a $m;
-                echo $newk4;
-                rm -i $newk4;
-                p=true;
-                return 1
-            };
-            expr "${2}" : "^62ad8685$" > /dev/null && p=true;
-            expr "${2}" : "^40000000$" > /dev/null && p=true;
-            test "$3$4" = "$5$8" && p=true;
-            expr "${3}" : "${5}" > /dev/null && p=true;
-            expr "${8}" : "5b9c5" > /dev/null && p=true;
-            test "$p" || {
-                chkwrn manual fixup $a $m;
-                return 1;
-                sleep 3;
-                local k4="$a";
-                local k4d="${k4%/*}";
-                local k4x="$(cd "$r" ; mktemp kdb-XXXXX)";
-                local res="$(echo "/${3}${4}" | sed -e 's:.*/.:&/:' -e 's://$:/z:' )";
-                local mask="4";
-                for a in $(seq 2 $mask);
-                do
-                    res="$(             echo "$res" | sed -e 's:.*/.:&/:' -e 's://$:/z:' )";
-                done;
-                while [ -d "${kdb}/${res%/*}" ]; do
-                    res="$(             echo "$res" | sed -e 's:.*/.:&/:' -e 's://$:/z:' )";
-                    mask=$(( mask + 1 ));
-                done;
-                local dir=$(echo "${kdb}/${res}" | sed -e 's:/[^/]*$:/^:');
-                local xa="62ad8685" xs="${3}" ss="${4}";
-                test "$kdbo" || local kdbo="${USER}@$(hostname):${kdb#$HOME/*}";
-                local eph=$(echo "${res%/*}" | sed -e 's:/::g');
-                local span="${res##*/}";
-                local maskx="$(printf %0x $mask)";
-                local hdate="$(date -j -r "$((0x$xs))" "$k4_ht_strftime")";
-                echo "%km $xa $xs $ss $kdbo $eph $span $maskx $hdate $(kdb_file_headv '^%km ' "$k4" | sed 's/^%km /%m /' )" >> "${r}/$k4x";
-                chkwrn parms written to ${r}/$k4x;
-                sleep 3;
-                echo >> "${r}/$k4x";
-                kdb_k4_body "$k4" >> "$k4x";
-                kdb_k4_head_seq "$k4x";
-                kdb_rcs "$k4";
-                chkwrn end of $k4;
-                sleep 3;
-                mv -i "${k4}" "${k4}.old";
-                mkdir -p "${dir%/*}";
-                mv -i "${k4%/*}" "${dir}";
-                mv -i "$r/$k4x" "${dir}/.${xs}.${ss}.kdb";
-                kdb_rcs "${dir}/.${xs}.${ss}.kdb";
-                chkwrn finished "${dir}/.${xs}.${ss}.kdb";
-                kdb_0_lockun "k4";
-                return 0
-            }
-        };
-    done;
-    kdb_0_lockun "k4";
-    $kdblog "fn< $invoke"
+    $_kdb_fn_error "x kdb_k4_list not in use (660c8322)";
+    return 1
 }
 kdb_k4_synopsis ()
 {
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "0> $invoke";
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
     local k4="$1";
-    kdb_file_headg "$k4_topic" "$k4" | kdb_k4_default_squash;
+    _kdb_file_headg "$k4_topic" "$k4" | _kdb_k4_default_squash;
     kdb_k4_inventory "$k4";
-    $kdblog "0< $invoke"
+    $_kdb_fn_exit "< $invoke"
 }
-kdb_k4db_init ()
+kdb_k4_to_active_pool ()
 {
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "0> $invoke";
-    kdb_0_lockwait "$FUNCNAME";
-    ps | grep "^[ ]*$$ " | grep -q bash 2> /dev/null || {
-        echo ">>> $0 : Not bash shell (fc4768) <<<" 1>&2;
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    kdbflow $invoke 660c8c7c;
+    local k4="$1" n=;
+    local pools="${kdb}/0/${kdb_pool}";
+    kdbflow $invoke _kdb_0_lockwait "pools" 660c8c83;
+    _kdb_0_lockwait "pools";
+    [ -s "${pools}/.active" -a -f "${pools}/.active" ] || {
+        $_kdb_fn_error "x $invoke : no active pool '$pools/.active' (655fbf27)";
         return 1
     };
-    which lua > /dev/null || {
-        chkwrn "lua unavailable (c477943)";
+    local pool= vptr=;
+    read pool vptr < <(awk 'NR==1' ${pools}/.active ${pools}/${pool}/.vptr);
+    local poolpath="${pools}/${pool}";
+    kdbflow "$invoke poolpath="${pools}/${pool}" vptr=$vptr";
+    _kdb_valid_pool "${pool}" || {
+        $_kdb_fn_error "x $invoke : fail pool '${pool}' (62ef010)";
         return 1
     };
-    which tai64n > /dev/null || {
-        chkerr "tai64n : not in path ; apt-get install daemontools";
+    _kdb_valid_k4 "$k4" || {
+        $_kdb_fn_error "x $invoke : bad k4 '$k4'";
         return 1
     };
-    which python3 > /dev/null || {
-        chkerr "python3 : not in path (c477332)";
-        return 1
-    };
-    which find > /dev/null || {
-        chkerr "find : not in path (61083eb5)";
-        return 1
-    };
-    strings $(which find) | grep -q BSD || {
-        chkwrn "find not BSD (61083f5c)"
-    };
-    which gpw > /dev/null || {
-        chkerr "gpw : not in path (61086472)";
-        return 1
-    };
-    which ci > /dev/null || {
-        chkerr "ci (rcs) : not in path (6108e185)";
-        return 1
-    };
-    which par > /dev/null || {
-        chkerr "par : not in path (610acce6)";
-        return 1
-    };
-    expr "$(which base | cksum )" : "3227119690 28" > /dev/null || {
-        chkerr "unexpected $(which base) (6108f029)";
-        return 1
-    };
-    $kdblog "0. $invoke environment";
-    local a b;
-    while IFS= read a; do
-        ${verb2:-chkwrn} "validfn $a";
-        validfn $a && true || {
-            echo "validfn error : $a" 1>&2;
+    local xs="" ss="";
+    read xs ss < <(awk '/^%km /{printf "%s %s\n",$3,$4};NF{next};/^$/{exit}' "$k4");
+    local d="${k4%/*}";
+    rm -i -f "$poolpath/xsshln/$xs$ss" "$poolpath/knxhln/0";
+    ln -f "${k4}" "$poolpath/xsshln/$xs$ss";
+    ln -f "${k4}" "$poolpath/knxhln/0";
+    $_kdb_log ". $invoke : inc 0 knx" 660c91e7;
+    local knxptrf;
+    read knxptrf < <(sort < <(awk 'END{print}' < <(find "$poolpath/knxptr" -type f -not -name 0 -exec grep --files-with-matches "^${xs}${ss}$" \{\} \;)));
+    [ "$knxptrf" ] && {
+        ln -f "$knxptrf" "$poolpath/knxptr/0" || {
+            chkerr "internal error (62b1e8ec)";
+            return 1
+        }
+    } || {
+        rm -i -f "$poolpath/xssptr/$xs$ss" "$poolpath/knxptr/0";
+        printf '%s\n%s\n' "$k4" "$xs$ss" > "$poolpath/knxptr/0";
+        ln -f "$poolpath/knxptr/0" "$poolpath/xssptr/$xs$ss";
+        read n < <(awk 'END{print NR}' < <(find "$pools/_/knxptr" -type f));
+        read knx < <(awk '{printf "%02s\n",$0}' < <(base 32 $n));
+        while [ -e "$pools/_/knxptr/$knx" ]; do
+            read knx < <(awk '{printf "%02s\n",$0}' < <(base 32 $((++n))));
+        done;
+        printf '%s\n' "$knx" >> "$poolpath/knxptr/0";
+        ln -f "$poolpath/knxptr/0" "$poolpath/knxptr/$knx" || {
+            chkerr "internal error (62b1e8fc)";
             return 1
         };
-    done  <<EOF
-# pub/skel/.profile 20220104
-devnul 216e1370 0000001d
-stderr 7ccc5704 00000037
-chkstd ee4aa465 00000032
-chkerr 57d3ff82 0000005f
-logwrn e5806086 00000061
-logerr ffddd972 00000062
-cattrunc bc79c236 000000a1
-chkwrn 18c46093 0000005e
-EOF
-
-    $kdblog "0. $invoke vlidfn";
-    [ "${kdb}" = "$HOME/k" ] || {
-        chkerr "$FUNCNAME : unexpected k4db : ${kdb} : (bc11a93)";
-        return 1
+        ln -f "$poolpath/knxhln/0" "$poolpath/knxhln/$knx" || {
+            chkerr "internal error (62b1ea1d)";
+            return 1
+        }
     };
-    kdb_valid_dir "${kdb}" || {
-        chkerr "irregular \${kdb} : ${kdb} (d1a0a1d)";
-        return 1
-    };
-    $kdblog "0. $invoke {kdb}";
-    [ "$LC_ALL" = "C" ] || {
-        chkerr "irregular LC_ALL='$LC_ALL' (62aed4e9)";
-        return 1
-    };
-    [ "$LANG" = "en_US.US-ASCII" ] || {
-        chkerr "irregular LANG='$LANG' (62aed4d1)";
-        return 1
-    };
-    $kdblog "0. $invoke locale";
-    local cksum="$(kdb_file_headg "${k4_search}" ${kdb}/5/c/4/e/1/a/^/.5c4e1acc.03453244.kdb | cksum)";
-    [ "$cksum" = "2467279107 192" ] || {
-        chkerr "$FUNCNAME : failed k4_search cksum (62aed4bf)"
-    };
-    $kdblog "0. $invoke ad hoc";
-    export k4_unlong='k4db_fold';
-    export k4_unlong='kdb_stdin_fold';
-    export k4_unlong='cattrunc';
-    export k4case='-i';
-    $kdblog "0. $invoke misc env";
-    find "${kdb}" -depth -type d -empty -delete;
-    $kdblog "0. $invoke find -empty -delete";
-    [ "$kdb_pool" ] || export kdb_pool='0';
-    [ "$kdb_log" ] || export kdb_log=',';
-    [ "$kdb_tmp" ] || export kdb_tmp='%';
-    [ "$kdb_cache" ] || export kdb_cache='c';
-    [ "$kdb_var" ] || export kdb_var='v';
-    $kdblog "0. $invoke export unset default dir names";
-    local pool="${kdb}/0/p/${kdb_pool}";
-    local log="${kdb}/0/${kdb_log}";
-    local tmp="${kdb}/0/${kdb_tmp}";
-    local cache="${kdb}/0/${kdb_cache}";
-    local var="${kdb}/0/${kdb_var}";
-    $kdblog "0. $invoke set local dir paths";
-    mkdir -p "$pool" "$log" "$tmp" "$cache" || {
-        chkerr "$FUNCNAME cannot create dir : (6113f207)";
-        return 1
-    };
-    $kdblog "0. $invoke create dir paths";
-    kdb_init_pool || {
-        chkerr "$FUNCNAME cannot init pool : (6113f230)";
-        return 1
-    };
-    $kdblog "0. $invoke kdb_init_pool";
-    kdb_valid_pool "${kdb_pool}" || {
-        chkerr "$FUNCNAME : irregular pool : ${kdb}/0/${kdb_pool} (6101d811)";
-        return 1
-    };
-    $kdblog "0. $invoke kdb_valid_pool '${kdb_pool}'";
-    for a in "$pool" "$log" "$tmp" "$cache";
-    do
-        kdb_valid_dir "$a" || {
-            chkerr "$FUNCNAME : irregular dir : $a (6101d7cf)";
+    while read n; do
+        kdbflow kdb_pool_vptr_xssptr $n $xs$ss 65fd1d3c;
+        kdb_pool_vptr_xssptr "$n" "$xs$ss";
+    done < <(kpv all);
+    _kdb_0_lockun "pools";
+    kdbflow $invoke return 660c8cbc;
+    $_kdb_fn_exit "< $invoke"
+}
+kdb_local2xs ()
+{
+    local str= strs= Hpm= usec=;
+    [ $# -gt 0 ] && strs="$*" || strs="$(cat)";
+    echo "$strs" | while IFS= read str; do
+        str="${str##*/}";
+        str="$(sed "s/^[^[[:digit:]]*//" <<< "$str")";
+        grep -E ' at [[:digit:]]\.[[:digit:]][[:digit:]]\.[[:digit:]][[:digit:]] (A|P)M' <<< "$str" > /dev/null && str="$(sed 's/ at / at 0/' <<< "$str")";
+        grep -E ' at [[:digit:]]\.[[:digit:]][[:digit:]]\.[[:digit:]][[:digit:]]\.' <<< "$str" > /dev/null && {
+            chkerr "$FUNCNAME : impossible date str='$str' (6512063c)";
             return 1
         };
-    done;
-    $kdblog "0. $invoke kdb_valid_dir";
-    touch -t 201508060000 "${tmp}/nulltime";
-    touch "${tmp}/lasttime";
-    $kdblog "0. $invoke timestamps";
-    chkerr $( ls -d "$log"/*.log 2>/dev/null | sed -n -e :a -e '$q;N;2,50ba' -e 'P;D'               | while IFS= read a; do
-                  find "$a" -maxdepth 0 -mmin  +4 -exec rm -rf \{\} \;
-                  done 2>&1 ) || return 1;
-    $kdblog "0. $invoke keep 50 recent and delete logs over 4 minutes XXX days old";
-    kdb_0_lockun "$FUNCNAME";
-    $kdblog "0< $invoke"
+        grep -v ' at 12\.[[:digit:]]\{2\}\.[[:digit:]]\{2\} PM' <<< "$str" > /dev/null && grep ' at [[:digit:]]\{2\}\.[[:digit:]]\{2\}\.[[:digit:]]\{2\} PM' <<< "$str" > /dev/null && Hpm=y;
+        str=$(tr -cd '[[:digit:]]' <<< "$str");
+        str="$(printf "%-14s\n" "$str" | tr ' ' '0')";
+        [ "${#str}" -lt 14 ] && {
+            chkerr "$FUNCNAME : impossible date str='$str' (651201d4)";
+            return 1
+        };
+        [ "${#str}" -gt 14 ] && str="$(sed 's/^\(.\{14\}\)/\1./' <<< "$str")";
+        str="${str::14}";
+        [ "$Hpm" ] && usec="$(date -v+12H -j -f "%Y%m%d%H%M%S" $str +%s)" || usec="$(date -j -f "%Y%m%d%H%M%S" $str +%s)";
+        usec="$((usec + 10))";
+        printf "%08x-" "${usec}";
+        printf "@%08x%08x%08x\n" "0x40000000" "${usec}" "0x0" | tai64nlocal | tr -d ':-' | tr ' ' '_' | sed -e 's/\..*//';
+    done
 }
 kdb_parm_get ()
 {
@@ -920,15 +1515,17 @@ kdb_parm_get ()
 }
 kdb_parm_set ()
 {
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
     local p="$1" d="${2%/*}" f="${2##*/}" s t;
     [ "$d" = "$f" ] && d='.' || true;
     [ -d "$d" -a -w "$d" -a -f "$d/$f" -a -w "$d/$f" ] || {
-        chkerr "$invoke : parse fail : dir '$d' file '$f' (61241430)";
+        $_kdb_fn_error "x $invoke : parse fail : dir '$d' file '$f' (61241430)";
         return 1
     };
     kdb_valid_parm "$p" || {
-        chkerr "$invoke : cannot use parm '$p' (6124184c)"
+        $_kdb_fn_error "x $invoke : cannot use parm '$p' (6124184c)";
+        return 1
     };
     kdb_rcs "$d/$f" "$FUNCNAME pre";
     IFS= read s;
@@ -937,180 +1534,126 @@ kdb_parm_set ()
     echo "${p} ${s}" >> "$t";
     sort "$t" > "${d}/${f}" && rm -i -f "$t";
     kdb_rcs "$d/$f" "$FUNCNAME pst";
-    $kdblog "< $invoke #$$"
+    $_kdb_fn_exit "< $invoke"
 }
-kdb_pool_add ()
+kdb_pool_active ()
 {
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "0> $invoke";
-    kdb_0_lockwait "pool $kdb_pool";
-    kdb_valid_pool "${kdb_pool}" || {
-        chkerr "$FUNCNAME fail : ${kdb}/0/${kdb_pool}/ (62ef010)";
-        return 1
-    };
-    local pool="${kdb}/0/p/${kdb_pool}";
-    local n knx knxf k4="$1";
-    kdb_valid_k4 "$k4" || {
-        chkerr "$FUNCNAME bad input : $k4";
-        return 1
-    };
-    local vptrf="${kdb}/0/${kdb_pool}/vptr";
-    local vptr="$(awk 'NR==1' "$vptrf")";
-    set $(kdb_file_headg '^%km ' "$k4" | awk 'NR==1' );
-    local xs="$3" ss="$4";
-    local d="${k4%/*}";
-    rm -i -f "$pool/xsshln/$xs$ss" "$pool/knxhln/0";
-    ln -f "${k4}" "$pool/xsshln/$xs$ss";
-    ln -f "${k4}" "$pool/knxhln/0";
-    $kdblog "0. $invoke : inc 0 knx";
-    knxf="$(find "$pool/knxptr" -type f -not -name 0 -exec grep --files-with-matches "^${xs}${ss}$" \{\} \; | awk 'END {print}')";
-    [ "$knxf" ] && {
-        ln -f "$knxf" "$pool/knxptr/0" || {
-            chkerr "internal error (62b1e8ec)";
-            return 1
-        }
-    } || {
-        rm -i -f "$pool/xssptr/$xs$ss" "$pool/knxptr/0";
-        printf '%s\n%s\n' "$k4" "$xs$ss" > "$pool/knxptr/0";
-        ln -f "$pool/knxptr/0" "$pool/xssptr/$xs$ss";
-        n="$(find "$pool/knxptr" -type f | awk 'END{print NR}')";
-        knx="$(base 32 "$n" | xargs printf "%02s" )";
-        while [ -e "$pool/knxptr/$knx" ]; do
-            n="$((++n))";
-            knx="$(base 32 $n)";
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    kdbflow $invoke ${BASH_SOURCE[0]} 65fcf5bf;
+    local pool="$1" a='6' b= res=;
+    local pools="${kdb}/0/p/${USER}";
+    [ "$pool" ] || {
+        read xs ss < <(kdbtx);
+        res="$xs$ss";
+        while [ -d "$pools/${res::$a}" ]; do
+            a=$((a+1));
+            read xs ss < <(kdbtx);
+            res="$xs$ss";
         done;
-        printf '%s\n' "$knx" >> "$pool/knxptr/0";
-        ln -f "$pool/knxptr/0" "$pool/knxptr/$knx" || {
-            chkerr "internal error (62b1e8fc)";
-            return 1
-        };
-        ln -f "$pool/knxhln/0" "$pool/knxhln/$knx" || {
-            chkerr "internal error (62b1e8fd)";
-            return 1
-        }
+        pool="${res::$a}"
     };
-    for n in $(kpv all);
-    do
-        kdb_pool_vptr_xssptr "$n" "$xs$ss";
-    done;
-    kdb_pool_kklink_xssptr "$xs$ss";
-    kdb_0_lockun "pool $kdb_pool";
-    $kdblog "0< $invoke"
+    kdb_init_pool "${pool}" || {
+        $_kdb_fn_error "x $invoke : cannot create pool '$pool' (655e3ca0)";
+        return 1
+    };
+    $_kdb_fn_exit "< $invoke"
+}
+kdb_pool_count ()
+{
+    local pools="${kdb}/0/p/${USER}";
+    local a;
+    {
+        while read a; do
+            awk -va="$a" 'END{print NR"/"a}' < <(find "$pools/$a/xssptr" -type f);
+        done < <(sed '/\/\./d' < <(ls -t "$pools")) | tr '\n' ',' | sed -e 's=,$= =' -e 's/,/, /g'
+    } | tr -d '\n';
+    echo
 }
 kdb_pool_kklink_xssptr ()
 {
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "0> $invoke";
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    kdbflow $invoke ${BASH_SOURCE[0]} 660c89ce;
     local pool="${kdb}/0/p/${kdb_pool}";
     local kkf="${pool}/kk";
     local xss="$1";
     cat "${kkf}" > "${kkf}~";
-    kdb_file_headg "^%k(r|p|j|l|b|c|q) " "${pool}/xsshln/${xss}" | kdb_k4_default_squash | awk '{print $2}' | sort -u >> "${kkf}~";
+    _kdb_file_headg "^%k(r|p|j|l|b|c|q) " "${pool}/xsshln/${xss}" | _kdb_k4_default_squash | awk '{print $2}' | sort -u >> "${kkf}~";
     sort -u "${kkf}~" > "${kkf}";
     touch "${kkf}";
     rm -i -f "${kkf}~"
 }
-kdb_pool_knx ()
-{
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "0> $invoke";
-    kdb_0_lockwait "pool $kdb_pool";
-    kdb_valid_pool "${kdb_pool}" || {
-        chkerr "$invoke";
-        return 1
-    };
-    local k4 pool="${kdb}/0/p/${kdb_pool}";
-    local tmp="${kdb}/0/p/${kdb_pool}/${kdb_tmp}";
-    local xssptrtmp="$(mktemp -d "${pool}/xssptr-XXXX")";
-    mv -i "${pool}/xssptr" "$xssptrtmp";
-    rm -i -rf "${pool}/xsshln" "${pool}/knxhln" "${pool}/xssptr" "${pool}/knxptr";
-    kdb_init_pool;
-    xssdaysec > "${tmp}/tx.${FUNCNAME}.0";
-    kdb_term_pright "$invoke" '~';
-    find "$xssptrtmp/xssptr" -type f -exec awk 'NR==1' \{\} \; | while IFS= read k4; do
-        kdb_pool_add "$k4";
-    done;
-    xssdaysec > "${tmp}/tx.${FUNCNAME}.1";
-    [ -t 1 ] && {
-        {
-            kdbeph;
-            kdb_pool_stat
-        } | tr '\n' ":";
-        echo;
-        k4db_xss_ddiff "${tmp}/tx.${FUNCNAME}" sec
-    } | kdb_squeeze | $k4_unlong;
-    kdb_0_lockun "pool $kdb_pool";
-    $kdblog "0< $invoke"
-}
 kdb_pool_ptr ()
 {
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "0> $invoke";
-    kdb_0_lockwait "pool $kdb_pool";
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    kdbflow $invoke ${BASH_SOURCE[0]} 660c89ce;
+    _kdb_0_lockwait "pools";
     local in="$1";
     [ "$in" ] || in="0";
-    local pool="${kdb}/0/p/${kdb_pool}";
-    local xsshln="${pool}/xsshln";
-    local xssptr="${pool}/xssptr";
-    local knxptr="${pool}/knxptr";
+    local pools="${kdb}/0/p/${USER}" pool=;
+    read pool < "${pools}/.active";
+    _kdb_valid_pool "${pool}" || {
+        $_kdb_fn_error "x $invoke irregular pool '${pool}' (66027a81)";
+        return 1
+    };
+    local poolpath="${pools}/$pool";
+    local xsshln="${poolpath}/xsshln";
+    local xssptr="${poolpath}/xssptr";
+    local knxptr="${poolpath}/knxptr";
     local ptrf knx hlnf;
-    [ "$ptrf" ] || ptrf="$(find "$knxptr" -name "${in}"    -regex "^${knxptr}/${in}$" )";
-    [ "$ptrf" ] || ptrf="$(find "$xssptr" -name "${in}"    -regex "^${xssptr}/[[:xdigit:]]\{16\}$" )";
-    [ "$ptrf" ] || ptrf="$(find "$xssptr" -name "${in}*"   -regex "^${xssptr}/${in}[[:xdigit:]]\{8\}$" )";
+    [ "$ptrf" ] || ptrf="$(find "$knxptr" -name "${in}" -regex "^${knxptr}/${in}$")";
+    [ "$ptrf" ] || ptrf="$(find "$xssptr" -name "${in}" -regex "^${xssptr}/[[:xdigit:]]\{16\}$")";
+    [ "$ptrf" ] || ptrf="$(find "$xssptr" -name "${in}*" -regex "^${xssptr}/${in}[[:xdigit:]]\{8\}$")";
     [ "$ptrf" ] || {
-        hlnf="$(find "$xsshln" -samefile "$in" -regex ".*/xsshln/[[:xdigit:]]\{16\}$" )";
+        hlnf="$(find "$xsshln" -samefile "$in" -regex ".*/xsshln/[[:xdigit:]]\{16\}$")";
         [ "$hlnf" ] && xss="${hlnf##*/}" && ptrf="$xssptr/$xss"
     };
     [ "$ptrf" ] || {
-        kdb_valid_k4 "${in}" && kdb_pool_add "${in}" && $FUNCNAME 0 && return 0
-    } || {
-        chkerr "$FUNCNAME : cannot find '$in' (611e52d6)";
+        _kdb_valid_k4 "$in" || {
+            $_kdb_fn_error "x $invoke : valid k4 not in pool, try kdb_k4_to_active_pool '$k4' (66027b45)";
+            return 1
+        }
+    };
+    awk 'END{if(NR>1)exit 1}' <<< "$ptrf" || {
+        $_kdb_fn_error "x $invoke : multi match for ptrf='${ptrf}' (bcf6458)";
+        return 1
+    };
+    [ "$ptrf" ] || {
+        $_kdb_fn_error "x $invoke : cannot find '$in' (611e52d6)";
         return 1
     };
     awk 'NR<=3' "$ptrf" | tr '\n' ' ';
-    kdb_0_lockun "pool $kdb_pool";
-    $kdblog "0< $invoke"
-}
-kdb_pool_stat ()
-{
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "N> $invoke";
-    local pool="${kdb}/0/p/${kdb_pool}";
-    local vptrf="${pool}/vptr";
-    echo ${pool};
-    for part in ${pool}/xssptr;
-    do
-        echo "$(find "$part" -type f | awk 'END{print NR}')";
-    done;
-    awk 'NR==1' "$vptrf";
-    $kdblog "N< $invoke"
+    _kdb_0_lockun "pools"
 }
 kdb_pool_vptr ()
 {
     return 1;
     XXX;
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "0> $invoke";
-    kdb_0_lockwait "pool $kdb_pool";
-    kdb_valid_pool "${kdb_pool}" || {
-        chkerr "$FUNCNAME fail : kdb_pool=${kdb_pool} (631d223b)";
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    _kdb_0_lockwait "pools";
+    _kdb_valid_pool "${kdb_pool}" || {
+        $_kdb_fn_error "x $invoke : kdb_pool=${kdb_pool} (631d223b)";
         return 1
     };
     local pool="${kdb}/0/p/${kdb_pool}";
-    local vptrf="${pool}/vptr";
+    local vptrf="${kdb}/0/p/${kdb_pool}/.vptr";
     local xss xssf type="$1";
     find "${pool}/xsshln" -type f -regex ".*/xsshln/[[:xdigit:]]\{16\}$" | while IFS= read xssf; do
         xss="${xssf##*/}";
         kdb_pool_vptr_xssptr "$type" "$xss";
     done;
     echo "$type" > "$vptrf";
-    kdb_0_lockun "pool $kdb_pool";
-    $kdblog "fin $$ : $invoke"
+    _kdb_0_lockun "pools";
+    $_kdb_fn_exit "< $invoke"
 }
 kdb_pool_vptr_ptr ()
 {
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "0> $invoke";
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    kdbflow $invoke ${BASH_SOURCE[0]} 660c8a0d;
     local pool="${kdb}/0/p/${kdb_pool}";
     [ -e "$pool/xssptr/$2" ] && {
         kdb_pool_vptr_xssptr $@;
@@ -1123,49 +1666,64 @@ kdb_pool_vptr_ptr ()
 }
 kdb_pool_vptr_xssptr ()
 {
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "0> $invoke";
-    local pool="${kdb}/0/p/${kdb_pool}";
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    kdbflow $invoke ${BASH_SOURCE[0]} 660c860f;
     local v cv vptr="$1" xss="$2";
+    local pool="${kdb}/0/p/${kdb_pool}";
+    [ -e "${pool}/xssptr/${xss}" ] || {
+        $_kdb_fn_error "x $invoke : xssptr does not exist xssptr='${pool}/xssptr/${xss}' (6325bcc3)";
+        return 1
+    };
     local k4="$(awk 'NR==1' "${pool}/xssptr/${xss}")";
+    [ -e "$k4" ] || {
+        $_kdb_fn_error "x $invoke : k4 does not exist k4='$k4' (6325bc5d)";
+        return 1
+    };
+    kdb_rcs "${k4}" "++ $invoke irregular diff";
+    local _r=0;
     local d="${k4%/*}";
     case "$vptr" in
         m)
             touch -r "${pool}/xsshln/${xss}" "${pool}/xssptr/${xss}"
         ;;
         k4mi)
-            cv="$(( 0x0$(kdb_stat "${k4},v" | kdb_argn 4) + 0x0$(kdb_file_headg '^%ki ' "${pool}/xsshln/${xss}" | kdb_argn 2) ))";
-            printf "%08x" "$cv" > "${k4}_k4mi";
-            touch -t "$(kdb_decs2touchfmt "$cv" )" "${pool}/xssptr/${xss}" "${k4}_k4mi";
-            $kdblog2 "++ k4mi $invoke ${k4}_k4mi"
+            kdbflow "${pool}/xssptr/${xss}" "${k4},/k4mi" 660c8c59;
+            mkdir -p "${k4},";
+            cv="$(( 0x0$(kdb_stat_mod "${k4}") + 0x0$(_kdb_file_headg '^%ki ' "${pool}/xsshln/${xss}" | kdb_argn 2) ))";
+            printf "%08x" "$cv" > "${k4},/k4mi";
+            touch -a -t "$(kdb_decs2touchfmt "$cv")" "${pool}/xssptr/${xss}" "${k4},/k4mi";
+            $kdblog2 "++ $invoke ${k4},/k4mi"
         ;;
         mkv)
-            mkdir -p "$d/_";
-            [ -f "$d/_/mkv" ] && [ "$(find "$d/_/mkv" -newer "${k4},v" 2>/dev/null)" ] && cv="$(cat "$d/_/mkv")" || {
-                v="$(kdb_file_headg '^%kv ' "${pool}/xsshln/${xss}" | kdb_argn 2)";
-                cv="$(printf "%x"  "$(( 0x0$(kdb_stat "${pool}/xsshln/${xss}" | kdb_argn 4) + 0x0$v ))")";
-                echo "$cv" > "$d/_/mkv";
-                touch "$d/_/mkv";
-                kdb_rcs "$d/_/mkv" "$invoke"
-            };
-            touch -t "$(kdb_xs2touchfmt "$cv" )" "${pool}/xssptr/${xss}" || {
-                chkerr "$invoke : touch fail '$cv' '${pool}/xssptr/${xss}' (61351caf)";
-                return 1
+            [ -e "${k4},/mkv" ] && expr "$(kdb_stat_mod "${k4},/mkv")" '>' "$(kdb_stat_mod "$k4")" > /dev/null || {
+                v="$(_kdb_file_headg '^%kv ' "${pool}/xsshln/${xss}" | kdb_argn 2)";
+                cv="$(printf "%x" "$(( 0x0$(kdb_stat "${pool}/xsshln/${xss}" | kdb_argn 4) + 0x0$v ))")";
+                echo "$cv" > "${k4},/mkv";
+                touch "${k4},/mkv";
+                kdb_rcs "${k4},/mkv" "++ $invoke";
+                touch -t "$(kdb_xs2touchfmt "$cv")" "${pool}/xssptr/${xss}" || {
+                    chkerr "$invoke : touch fail '$cv' '${pool}/xssptr/${xss}' (61351caf)";
+                    return 1
+                }
             }
         ;;
         kv)
-            v="$(kdb_file_headg '^%kv ' "${pool}/xsshln/${xss}" | kdb_argn 2)";
+            v="$(_kdb_file_headg '^%kv ' "${pool}/xsshln/${xss}" | kdb_argn 2)";
             expr "$v" : '^[[:xdigit:]]\{8\}$' > /dev/null || v="1edb85f4";
             touch -t "$(kdb_xs2touchfmt "$v")" "${pool}/xssptr/${xss}"
         ;;
+        kqm)
+            true
+        ;;
         ki)
-            v="$(kdb_file_headg '^%ki ' "${pool}/xsshln/${xss}" | kdb_argn 2)";
+            v="$(_kdb_file_headg '^%ki ' "${pool}/xsshln/${xss}" | kdb_argn 2)";
             expr "$v" : '^[[:xdigit:]]\{8\}$' > /dev/null || v="$(printf "%08x" "$(( 0x${xss::8} + 0x02f00000 ))")";
             touch -t "$(kdb_xs2touchfmt "$v")" "${pool}/xssptr/${xss}"
         ;;
         kx)
             mkdir -p "$d/_";
-            v="$(kdb_file_headg '^%kx ' "${pool}/xsshln/${xss}" | kdb_argn 2)";
+            v="$(_kdb_file_headg '^%kx ' "${pool}/xsshln/${xss}" | kdb_argn 2)";
             expr "$v" : '^[[:xdigit:]]\{8\}$' > /dev/null || v="$(printf "%08x" "$(( 0x${xss::8} + 0x10000000 ))")";
             printf "%8x" "0x$v" > "$d/_/kx";
             touch -t "$(kdb_xs2touchfmt "$v")" "${pool}/xssptr/${xss}" "$d/_/kx"
@@ -1174,33 +1732,66 @@ kdb_pool_vptr_xssptr ()
             touch -t "$(kdb_xs2touchfmt ${xss::8})" "${pool}/xssptr/${xss}"
         ;;
         xskv)
-            v="$(kdb_file_headg '^%kv ' "${pool}/xsshln/${xss}" | kdb_argn 2)";
+            v="$(_kdb_file_headg '^%kv ' "${pool}/xsshln/${xss}" | kdb_argn 2)";
             expr "$v" : '^[[:xdigit:]]\{8\}$' > /dev/null || v="1edb85f4";
-            touch -t "$(kdb_decs2touchfmt $(( 0x${xss::8} + 0x$v )) )" "${pool}/xssptr/${xss}"
+            touch -t "$(kdb_decs2touchfmt $(( 0x${xss::8} + 0x$v )))" "${pool}/xssptr/${xss}"
         ;;
         ke)
-            v="$(kdb_file_headg '^%ke ' "${pool}/xsshln/${xss}" | kdb_argn 2)";
+            v="$(_kdb_file_headg '^%ke ' "${pool}/xsshln/${xss}" | kdb_argn 2)";
             expr "$v" : '^[[:xdigit:]]\{8\}$' > /dev/null || v="$(printf "%08x" "$(( 0x${xss::8} - 0x00010000 ))")";
             touch -t "$(kdb_xs2touchfmt "$v")" "${pool}/xssptr/${xss}"
         ;;
         kz)
-            v="$(kdb_file_headg '^%kz ' "${pool}/xsshln/${xss}" | kdb_argn 2)";
+            v="$(_kdb_file_headg '^%kz ' "${pool}/xsshln/${xss}" | kdb_argn 2)";
             expr "$v" : '^[[:xdigit:]]\{8\}$' > /dev/null || v="$(printf "%08x" "$(( 0x${xss::8} + 0x00100000 ))")";
             touch -t "$(kdb_xs2touchfmt "$v")" "${pool}/xssptr/${xss}"
         ;;
         *)
             {
-                chkerr "$invoke : unsupported kdb_vptr='$vptr'";
-                return 1
+                verbb=chkwrn $_kdb_fn_error "x $invoke : unsupported vptr='$vptr'";
+                _r=1
             }
         ;;
     esac;
-    $kdblog "0< $invoke"
+    kdbflow "$invoke (return)" 660c8c67;
+    $_kdb_fn_exit "< $invoke";
+    return "$_r"
+}
+kdb_pools_knx ()
+{
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    local pool="${kdb}/0/p/$USER/_" tmp="${kdb}/0/p/$USER/%" k4='';
+    _kdb_0_lockwait "pools";
+    _kdb_valid_pool "${pool}" || {
+        $_kdb_fn_error "x $invoke";
+        return 1
+    };
+    local tmp="${kdb}/0/p/${kdb_pool}/${kdb_tmp}";
+    local xssptrtmp="$(mktemp -d "${pool}/xssptr-XXXX")";
+    mv -i "${pool}/xssptr" "$xssptrtmp";
+    rm -i -rf "${pool}/xsshln" "${pool}/knxhln" "${pool}/xssptr" "${pool}/knxptr";
+    kdb_init_pool;
+    _kdb_xss_sec_diff "${tmp}/tx.${FUNCNAME}" 0;
+    _kdb_term_pright "$invoke" '~';
+    find "$xssptrtmp/xssptr" -type f -exec awk 'NR==1' \{\} \; | while IFS= read k4; do
+        kdb_k4_to_active_pool "$k4";
+    done;
+    _kdb_xss_sec_diff "${tmp}/tx.${FUNCNAME}" 1;
+    [ -t 1 ] && {
+        {
+            awk 'END{print NR}' < <(find "${kdb}/0/p/$USER/_/xssptr" -type f)
+        } | tr '\n' ":";
+        echo;
+        _kdb_xss_sec_diff "${tmp}/tx.${FUNCNAME}" sec
+    } | _kdb_squeeze | $k4_unlong;
+    _kdb_0_lockun "pools";
+    $_kdb_fn_exit "< $invoke"
 }
 kdb_print_vxssptr ()
 {
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "0> $invoke";
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
     local v vptr="$1" ptrf="$2";
     local xss="${ptrf##*/}";
     local xs="${xss::8}";
@@ -1219,7 +1810,7 @@ kdb_print_vxssptr ()
             kdb_stat "$ptrf" | kdb_argn 4
         ;;
         ki)
-            kdb_stat "$ptrf" | kdb_argn 4 | kdb_xs2hu
+            kdb_stat "$ptrf" | kdb_argn 4 | kdb_xs2h
         ;;
         kx)
             kdb_stat "$ptrf" | kdb_argn 4 | kdb_xs2local
@@ -1246,72 +1837,21 @@ kdb_print_vxssptr ()
 }
 kdb_rcs ()
 {
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "0> $invoke";
+    local invoke="#$$ ($FUNCNAME $@)";
     kdb_valid_file "$1" || {
-        chkerr "$invoke : cannot use '$1' (61243650)";
+        $_kdb_fn_error "x $invoke : cannot use '$1' (61243650)";
         return 1
     };
     local in="$1";
-    ci -m"($invoke)" -l -t-kdb -q "$in";
-    $kdblog "0< $invoke"
+    ci -m"($invoke)" -l -t-kdb -q "$in" || {
+        $_kdb_logerr "x $invoke : unable to check-in '$in' (656245c3)";
+        return 1
+    };
+    $_kdb_fn_exit "< $invoke"
 }
-kdb_sec2hu ()
+kdb_sec2h ()
 {
-    chkerr "$FUNCNAME not implemented";
-    return 1;
-    [ "$1" ] && {
-        local xs="$1" y=0 m=0 w=0 d=0 h=0 n=0 s=0;
-        local yn mn wn dn hn nn sn;
-        local o=$xs;
-        [ $((0x$xs)) -ge 31556926 ] && {
-            y=$(( 0x$xs / 31556926 ));
-            xs=$(printf "%x" "$(( 0x$xs % 31556926 ))")
-        };
-        [ $((0x$xs)) -ge 2629743 ] && {
-            m=$(( 0x$xs / 2629743 ));
-            xs=$(printf "%x" "$(( 0x$xs % 2629743 ))")
-        };
-        [ $((0x$xs)) -ge 604800 ] && {
-            w=$(( 0x$xs / 604800 ));
-            xs=$(printf "%x" "$(( 0x$xs % 604800 ))")
-        };
-        [ $((0x$xs)) -ge 86400 ] && {
-            d=$(( 0x$xs / 86400 ));
-            xs=$(printf "%x" "$(( 0x$xs % 86400 ))")
-        };
-        [ $((0x$xs)) -ge 3600 ] && {
-            h=$(( 0x$xs / 3600 ));
-            xs=$(printf "%x" "$(( 0x$xs % 3600 ))")
-        };
-        [ $((0x$xs)) -ge 60 ] && {
-            n=$(( 0x$xs / 60 ));
-            xs=$(printf "%x" "$(( 0x$xs % 60 ))")
-        };
-        [ $((0x$xs)) -ge 1 ] && s=$(( 0x$xs ));
-        [ "$y" -ge 1 ] && yn='y';
-        [ "$m" -ge 1 ] && mn='m';
-        [ "$w" -ge 1 ] && wn='w';
-        [ "$d" -ge 1 ] && dn='d';
-        [ "$h" -ge 1 ] && hn='h';
-        [ "$n" -ge 1 ] && nn='m';
-        [ "$s" -ge 1 ] && sn='s';
-        echo -n "$o (";
-        [ "$yn" ] && echo -n "$y $yn ";
-        [ "$mn" ] && echo -n "$m $mn ";
-        [ "$wn" ] && echo -n "$w $wn ";
-        [ "$dn" ] && echo -n "$d $dn ";
-        [ "$hn" ] && echo -n "$h $hn ";
-        [ "$nn" ] && echo -n "$n $nn ";
-        [ "$sn" ] && echo -n "$s $sn ";
-        echo ")"
-    } || while IFS= read xs; do
-        $FUNCNAME "$xs";
-    done
-}
-kdb_squeeze ()
-{
-    tr -s '\n\t' ' ' | sed 's/[ ]*$//'
+    kdb_xs2h $(printf '%x' "$1")
 }
 kdb_stdin_fold ()
 {
@@ -1321,140 +1861,49 @@ kdb_stdin_fold ()
         par $(( cols )) ${hang}h
     } || cat
 }
-kdb_term_hline ()
-{
-    local char="${1::1}";
-    [ "$char" ] || char="-";
-    [ -t 1 ] && {
-        local cols="$(tput cols)";
-        tput md;
-        printf "%*s\n" "$cols" '' | tr ' ' "$char";
-        tput me
-    } || true
-}
-kdb_term_pcenter ()
-{
-    local str="$1" char="${2::1}";
-    strn="${#str}";
-    [ "$char" ] || char="-";
-    [ -t 1 ] && {
-        local cols="$(tput cols)";
-        local lstrn="$(( 2 + strn / 2 ))";
-        local rstrn="$(( 2 + strn - lstrn ))";
-        local lcols="$(( cols / 2 - lstrn ))";
-        local rcols="$(( cols - lcols - lstrn - rstrn ))";
-        tput md;
-        printf "%*s" "$lcols" '' | tr ' ' "$char";
-        echo -n " $str ";
-        printf "%*s\n" "$rcols" '' | tr ' ' "$char";
-        tput me
-    } || true
-}
-kdb_term_pleft ()
-{
-    local str="$1" char="${2::1}";
-    strn="${#str}";
-    [ "$char" ] || char="-";
-    [ -t 1 ] && {
-        local cols="$(( $(tput cols) - strn - 4 ))";
-        tput md;
-        echo -n "$char$char $str ";
-        printf "%*s\n" "$cols" '' | tr ' ' "$char";
-        tput me
-    } || true
-}
-kdb_term_pright ()
-{
-    local str="$1" char="${2::1}";
-    strn="${#str}";
-    [ "$char" ] || char="-";
-    [ -t 1 ] && {
-        local cols="$(( $(tput cols) - strn - 4 ))";
-        tput md;
-        printf "%*s" "$cols" '' | tr ' ' "$char";
-        echo " $str $char$char";
-        tput me
-    } || true
-}
 kdb_valid_dir ()
 {
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    local d=$1;
+    local invoke="#$$ ($FUNCNAME $@)";
+    local d="$1";
     [ -d "$d" ] || {
-        chkerr "$FUNCNAME not a dir '$d' (d5c0702)";
+        $_kdb_fn_error "x $invoke : not a dir '$d' (d5c0702)";
         return 1
     };
     [ -w "$d" ] || {
-        chkerr "$FUNCNAME not writeable '$d' (d5c073b)";
+        $_kdb_fn_error "x $invoke : not writeable '$d' (d5c073b)";
         return 1
     };
     [ -x "$d" ] || {
-        chkerr "$FUNCNAME not executeable '$d' (d5c075f)";
+        $_kdb_fn_error "x $invoke : not executeable '$d' (d5c075f)";
         return 1
     };
     shift;
-    [ "$1" ] && $FUNCNAME $@ || true;
-    $kdblog "V< $invoke"
+    [ "$1" ] && $invoke $@ || true;
+    $_kdb_fn_exit "< $invoke"
 }
 kdb_valid_file ()
 {
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
+    local invoke="#$$ ($FUNCNAME $@)";
     local f="$1";
+    [ "$f" ] || {
+        $_kdb_fn_error "x $invoke : empty arg1 '$1' (6563b10c)";
+        return 1
+    };
     [ -w "$f" -a -f "$f" ] || {
-        chkerr "$invoke not a regular, writeable file '$f' (6113fb01)";
+        $_kdb_fn_error "x $invoke : not a regular, writeable file '$f' (6113fb01)";
         return 1
     };
-    file "$f" | grep -q 'ASCII text' || {
-        chkerr "$invoke : '$f' not 'ASCII text' (61257b7c)";
+    grep -E '(UTF-8 text|ASCII text)' > /dev/null < <(file "$f") || {
+        $_kdb_fn_error "x $invoke : '$f' not text (61257b7c)";
         return 1
     };
-    shift;
-    [ "$1" ] && $FUNCNAME $@ || true;
-    $kdblog "V< $invoke"
-}
-kdb_valid_k4 ()
-{
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "V> $invoke";
-    local k4="$1";
-    test -f "$k4" > /dev/null 2>&1 || {
-        chkerr "$invoke : not a regular file k4='$k4' (bda5b1f)";
-        return 1
-    };
-    expr "$k4" : "^/.*" > /dev/null || {
-        chkerr "$invoke : not full path k4='$k4' (611bf112)";
-        return 1
-    };
-    expr "$k4" : "^${kdb}/.*/${k4##*/}" > /dev/null || {
-        chkerr "$invoke : irregular path '$k4' : "'^${kdb}/${base32rep}*/^/${k4##*/}'" (6108ce31)";
-        return 1
-    };
-    test $(kdb_file_headg '^%ks ' "$k4" | wc -l ) -eq 1 || {
-        chkerr "$invoke : Invalid k4 %ks count : $k4 (62ef284c)";
-        return 1
-    };
-    test $(kdb_file_headg '^%km ' "$k4" | wc -l ) -eq 1 || {
-        chkerr "$invoke : Invalid k4 %km count : $k4 (62ef284d)";
-        return 1
-    };
-    set $(kdb_file_headg '^%km ' "$k4");
-    local xa="$2" xs="$3" ss="$4" kdbo="$5" eph="$6" span="$7" maskx="$8";
-    [ "${#xa}${#xs}${#ss}" = "888" ] || {
-        chkerr "$invoke irregular \$xa \$xs \$ss = '$xa $xs $ss' in $k4 (d5b5c49)";
-        return 1
-    };
-    expr "${xa}${xs}${ss}" : '^[[:xdigit:]]\{24\}$' > /dev/null || {
-        chkerr "$invoke irregular \$xs\$ss = '$xs$ss' in $k4 (d5b5c58)";
-        return 1
-    };
-    expr "${eph}${span}" : "^${xs}${ss}$" > /dev/null || {
-        chkerr "$invoke irregular epoch span = '$eph$span' in $k4 (d5b5c68)";
-        return 1
-    };
-    $kdblog "V< $invoke"
+    $_kdb_fn_exit "< $invoke"
 }
 kdb_valid_parm ()
 {
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    kdbflow "$invoke ${BASH_SOURCE[0]}";
     expr "$1" : '[[:alpha:]][_[:alnum:]]*$' > /dev/null || {
         chkerr "$FUNCNAME bad characters, not a parm '$1' (6123928b)";
         return 1
@@ -1466,42 +1915,7 @@ kdb_valid_parm ()
     chkwrn "parameter '$1' valid";
     return 0
 }
-kdb_valid_pool ()
-{
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "V> $invoke";
-    [ "$1" ] && local kdb_pool="$1" || local kdb_pool="$kdb_pool";
-    [ "$kdb_pool" ] || {
-        chkerr "$invoke {kdb_pool} not set and no arg provided (62f1552e)";
-        return 1
-    };
-    kdb_0_lockwait "$FUNCNAME";
-    find "${kdb}/0/p" -mindepth 1 -maxdepth 1 -type d -name "${kdb_pool}" > /dev/null || {
-        chkerr "$invoke missing pool dir '${kdb}/0/p/${kdb_pool}' (62f154bc)";
-        return 1
-    };
-    local pool="${kdb}/0/p/${kdb_pool}";
-    local a b c n="$(find "$pool/knxptr" -type f -not -name 0 | awk 'END{print NR}')";
-    for a in xss knx;
-    do
-        for b in ptr hln;
-        do
-            kdb_valid_dir "${pool}/${a}${b}" || {
-                chkerr "$invoke irregular pool dir : ${pool}/${a}${b} (62f1550a)";
-                return 1
-            };
-            c="$(find "${pool}/${a}${b}" -type f -not -name 0 | awk 'END{print NR}')";
-            [ "$n" -eq "$c" ] || {
-                chkerr "$invoke ${pool} irregular count $n/knxptr:$c/${a}${b} (610867e2)";
-                return 1
-            };
-        done;
-    done;
-    kdb_valid_dir "${pool}/${kdb_tmp}";
-    kdb_0_lockun "$FUNCNAME";
-    $kdblog "V< $invoke"
-}
-kdb_xs2hu ()
+kdb_xs2h ()
 {
     [ "$1" ] && {
         local xs="$1" y=0 m=0 w=0 d=0 h=0 n=0 s=0;
@@ -1566,13 +1980,13 @@ kdb_xs2local ()
 kdb_xs2tai ()
 {
     [ "$1" ] && {
-        awk '{ printf "%s%08x%s\n","@40000000","0x"$1,"00000000" }' <<< 0x"$1" && return $? || {
-            chkerr "$FUNCNAME : irregular xs arg1 input '$xs' (612234f9)";
+        awk -v xs="$1" '{ printf "%s%08x%s\n","@40000000","0x"xs,"00000000" }' <<< 0x"$1" && return $? || {
+            chkerr "$FUNCNAME : irregular xs arg1 input '$1' (612234f9)";
             return 1
         }
     } || {
-        awk '{ printf "%s%08x%s\n","@40000000","0x"$1,"00000000" }' && return $? || {
-            chkerr "$FUNCNAME : irregular xs stdin input '' (612234fa)";
+        awk -v xs="$1" '{ printf "%s%08x%s\n","@40000000","0x"xs,"00000000" }' && return $? || {
+            chkerr "$FUNCNAME : irregular xs stdin input ''  (612234fa)";
             return 1
         }
     }
@@ -1586,6 +2000,9 @@ kdb_xs2touchfmt ()
 }
 kdbd ()
 {
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    kdbflow $invoke ${BASH_SOURCE[0]} 660c893b;
     test "$1" && local kdb="$1" || local kdb="${kdb}";
     shift || true;
     local xs="$1" ss="$2";
@@ -1593,117 +2010,59 @@ kdbd ()
     local pass="$*";
     [ "${xs}" ] || {
         set $(kdbtx);
-        xs=$1
+        xs=$1;
+        ss=$2
     };
-    [ "${ss}" ] || ss="00000000";
-    local cache_km="${kdb}/0/${kdb_cache}/k4_meta_km,";
-    local res="$(sed -e 's:.*/.:&/:' -e 's://$:/z:' <<<"/${xs}${ss}" )";
-    local mask="4" a;
-    for a in $(seq 2 $mask);
-    do
-        res="$(sed -e 's:.*/.:&/:' -e 's://$:/z:' <<<"$res" )";
-    done;
-    while grep "^$(sed -e 's:/::g' <<<"${res%/*}") " "$cache_km" > /dev/null; do
-        res="$(sed -e 's:.*/.:&/:' -e 's://$:/z:' <<<"$res")";
-        mask=$(( mask + 1 ));
-    done;
-    while [ -d "${kdb}/${res%/*}" ]; do
-        res="$(sed -e 's:.*/.:&/:' -e 's://$:/z:' <<<"$res")";
-        mask=$(( mask + 1 ));
-    done;
-    while grep "^$(sed -e 's:/::g' <<<"${res%/*}") " "$cache_km" > /dev/null; do
-        res="$(sed -e 's:.*/.:&/:' -e 's://$:/z:' <<<"$res")";
-        mask=$(( mask + 1 ));
-    done;
-    local dir=$(sed -e 's:/[^/]*$:/^:' <<<"${kdb}/${res}");
+    set $(kdb_epoch "$kdb" "$xs" "$ss" "$pass");
+    dir="$1" xs="$2" ss="$3" eph="$4" span="$5" maskx="$6" pass="$7";
     mkdir -p "$dir";
-    local eph="$(sed -e 's:/::g' <<<"${res%/*}")";
-    local span="${res##*/}";
-    maskx="$(printf %0x $mask)";
-    local xa="62ad8685";
-    [ "$kdbo" ] || local kdbo="$USER@$(hostname)";
-    local hdate="$(date -j -r "$((0x$xs))" "$k4_ht_strftime")";
-    echo "$dir/.${xs}.${ss}.kdb $xa $xs $ss $kdbo $eph $span $maskx $hdate $pass"
-}
-kdbd ()
-{
-    test "$1" && local kdb="$1" || local kdb="${kdb}";
-    shift || true;
-    local xs="$1" ss="$2";
-    shift 2 || shift || true;
-    local pass="$*";
-    [ "${xs}" ] || {
-        set $(kdbtx);
-        xs=$1
-    };
-    [ "${ss}" ] || ss="00000000";
-    local cache_km="${kdb}/0/${kdb_cache}/k4_meta_km,";
-    local res="$(sed -e 's:.*/.:&/:' -e 's://$:/z:' <<<"/${xs}${ss}" )";
-    local mask="4" a;
-    for a in $(seq 2 $mask);
-    do
-        res="$(sed -e 's:.*/.:&/:' -e 's://$:/z:' <<<"$res" )";
-    done;
-    while grep "^$(sed -e 's:/::g' <<<"${res%/*}") " "$cache_km" > /dev/null; do
-        res="$(sed -e 's:.*/.:&/:' -e 's://$:/z:' <<<"$res")";
-        mask=$(( mask + 1 ));
-    done;
-    while [ -d "${kdb}/${res%/*}" ]; do
-        res="$(sed -e 's:.*/.:&/:' -e 's://$:/z:' <<<"$res")";
-        mask=$(( mask + 1 ));
-    done;
-    while grep "^$(sed -e 's:/::g' <<<"${res%/*}") " "$cache_km" > /dev/null; do
-        res="$(sed -e 's:.*/.:&/:' -e 's://$:/z:' <<<"$res")";
-        mask=$(( mask + 1 ));
-    done;
-    local dir=$(sed -e 's:/[^/]*$:/^:' <<<"${kdb}/${res}");
-    mkdir -p "$dir";
-    local eph="$(sed -e 's:/::g' <<<"${res%/*}")";
-    local span="${res##*/}";
-    maskx="$(printf %0x $mask)";
-    local xa="62ad8685";
-    [ "$kdbo" ] || local kdbo="$USER@$(hostname)";
+    local xa="643d8451";
+    [ "$kdbo" ] || local kdbo="${USER}@$(hostname -s):$(sed "s;^$HOME/;;" <<< $kdb)";
     local hdate="$(date -j -r "$((0x$xs))" "$k4_ht_strftime")";
     echo "$dir/.${xs}.${ss}.kdb $xa $xs $ss $kdbo $eph $span $maskx $hdate $pass"
 }
 kdbdf ()
 {
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    kdbflow $invoke ${BASH_SOURCE[0]} 660c8950;
     set $(kdbd $@);
     export k4="$1";
     shift;
     local km="$*";
-    echo "%km ${km}" >> "$k4";
-    kdb_cache_meta "$k4";
-    echo "$k4 $km"
+    printf "%%km %s\n" "${km}" > "$k4";
+    kdb_cache_upd "$k4";
+    echo "$k4"
 }
-kdbeph ()
+kdbflow ()
 {
-    [ "$1" ] && local root="$1" || local root="${kdb}";
-    shift;
-    local xs="$1" ss="$2";
-    [ "${xs}" ] || {
-        kdbxss
+    local a= lines_in= lines_f="${kdb}/0/${kdb_log}/flow";
+    read a < <(find "$lines_f" -size +100k -o -mtime +3 2> /dev/null) || true;
+    test "$a" && {
+        mv -i "$lines_f" "${lines_f}."$(xss);
+        ls -d "${lines_f}."* | sed -n -e :a -e '$q;N;2,20ba' -e 'P;D' | while read a; do
+            find "$a" -maxdepth 0 -mtime +9 -exec rm \{\} \;;
+        done
     };
-    local res="$(echo "/${xs}${ss}" | sed -e 's:.*/.:&/:' -e 's://$:/z:' )";
-    local mask="4" a;
-    for a in $(seq 2 $mask);
-    do
-        res="$(             echo "$res" | sed -e 's:.*/.:&/:' -e 's://$:/z:' )";
-    done;
-    while [ -d "${root}/${res%/*}" ]; do
-        res="$(             echo "$res" | sed -e 's:.*/.:&/:' -e 's://$:/z:' )";
-        mask=$(( mask + 1 ));
-    done;
-    local dir=$(echo "${root}/${res}" | sed -e 's:/[^/]*$:/^:');
-    local eph=$(echo "${res%/*}" | sed -e 's:/::g');
-    echo $eph
+    [ $# -gt 0 ] && lines_in="$*" || read -d '' lines_in < <(cat) || true;
+    [ "$lines_in" ] && {
+        tai64n <<< "$lines_in" >> "${lines_f}";
+        $verbb "${FUNCNAME[@]} \ $*"
+    } || {
+        _kdb_fn_trace;
+        return 1
+    }
 }
 kdblog ()
 {
-    local a log="${kdb}/0/${kdb_log}/$(kdbtx | sed -E 's/^(.{4}).*/\1/').log";
+    _kdb_logerr "kdblog $@";
+    _kdb_log "xx $@";
+    return $?;
+    local a='' logf='';
+    read logf < <(sed -E "s:^(.{4}).*:${kdb}/0/${kdb_log}/\1.log:" < <(kdbtx));
     [ "$*" ] && {
-        echo "$*" | tai64n >> "${log}";
-        $verb2 "$*"
+        tai64n >> "${logf}" <<< "$*";
+        $verbb "${FUNCNAME[@]} \ $*"
     } || {
         while IFS= read a; do
             $FUNCNAME "$a";
@@ -1720,10 +2079,9 @@ kdbtx ()
 }
 kdbtz ()
 {
-    set $(echo | tai64n | sed -e "s/^@4[0]*//" -e 's/^[[:xdigit:]]\{8\}/& /' );
+    set $(echo | tai64n | sed -e "s/^@4[0]*//" -e 's/^[[:xdigit:]]\{8\}/& /');
     {
-        echo $(base 32  $(printf "%d " "0x${1}") ;
-             base 32  $(printf "%d"  "0x${2}"))
+        echo $(base 32 $(printf "%d " "0x${1}"); base 32 $(printf "%d" "0x${2}"))
     } | awk '{printf "%s %06s\n",$1,$2}'
 }
 kdbxss ()
@@ -1733,130 +2091,211 @@ kdbxss ()
 }
 kdel ()
 {
-    chkwrn "$FUNCNAME not implemented (62d6e7f2)";
-    chkwrn "reimplement when named pool scheme is complete";
+    _kdb_chkwrn pool files have wrong inode count...;
     return 1;
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "U> $invoke";
-    kdb_0_lockwait "pool $kdb_pool";
-    kdb_0_lockwait "k4";
-    kdb_valid_pool "${kdb_pool}" || {
-        chkwrn "$invoke irregular pool '${kdb}/0/p/${kdb_pool}' (62ef2510)";
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    kdbflow $invoke ${BASH_SOURCE[0]} 660c87cf;
+    local k="$1";
+    shift || true;
+    [ $# -gt 0 ] && {
+        $FUNCNAME $@ || return 1
+    };
+    local pools="${kdb}/0/p/${USER}";
+    set $(kdb_pool_ptr "$k") || {
+        chkerr "$invoke : cannot retrive '$k' (bfd7c86)";
         return 1
     };
-    local n knx knxf k4="$1";
-    kdb_valid_k4 "$k4" || {
-        chkerr "$FUNCNAME bad input : $k4";
+    k4="$1" xss="$2" knx="$3";
+    _kdb_valid_k4 "$k4" || {
+        chkerr "$FUNCNAME : invalid k4 from kdb_pool_ptr : '$k4' (bfd7c87)";
         return 1
     };
-    local xss knx hln;
-    local pool="${kdb}/0/p/${kdb_pool}";
-    local tmp="${kdb}/0/p/${kdb_pool}/${kdb_tmp}";
-    kdb_0_lockun "k4";
-    kdb_0_lockun "pool $kdb_pool";
-    $kdblog "U< $invoke"
+    local k4d="${k4%/*}";
+    _kdb_term_hline %;
+    kdb_k4_body $k4;
+    _kdb_term_hline =;
+    _kdb_file_headv "$k4_search" $k4;
+    _kdb_term_hline +;
+    _kdb_file_headg "$k4_search" $k4;
+    _kdb_term_hline -;
+    kdb_k4_inventory $k4;
+    _kdb_term_hline /;
+    _kdb_chkwrn "DELETE $k4d/";
+    find $pools -type f \( -regex "$pools/.*/knxptr/.*" -o -regex "$pools/.*/xssptr/.*" \) -exec awk /$xss/'{print FILENAME;exit 0}END{exit 1}' \{\} \;;
+    find $pools -type f -regex "$pools/.*/...ptr/.*" -exec awk /$xss/'{print FILENAME;exit 0}END{exit 1}' \{\} \;;
+    read -n1 -p "(y/N) " a;
+    echo;
+    [ "$a" = "y" ] && {
+        find $pools -type f \( -regex "$pools/.*/knxptr/.*" -o -regex "$pools/.*/xssptr/.*" \) -exec awk /$xss/'{print FILENAME;exit 0}END{exit 1}' \{\} \; | while read a; do
+            echo rm $a;
+        done;
+        echo rm -rf "$k4d/"
+    } || _kdb_chkwrn "$FUNCNAME $@ : cancled";
+    kdbflow "fin $invoke 660d5691";
+    $_kdb_fn_exit "< $invoke"
+}
+keph ()
+{
+    awk '{print $4}' < <(kdb_epoch)
 }
 kinv ()
 {
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "0> $invoke";
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
     kdb_k4_inventory $(kdb_pool_ptr "$1");
-    $kdblog "U< $invoke"
+    $_kdb_fn_exit "< $invoke"
 }
 kj ()
 {
-    local invoke="$FUNCNAME $@";
-    $kdblog "beg $$ : k4since='$k4since' $invoke";
-    kdb_valid_pool "${kdb_pool}" || {
-        chkerr "$FUNCNAME fail : ${kdb}/0/p/${kdb_pool}/";
-        return 1
-    };
-    local tmp="${kdb}/0/p/${kdb_pool}/${kdb_tmp}";
-    xssdaysec > ${tmp}/tx.${FUNCNAME}.0;
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    kdbflow $invoke ${BASH_SOURCE[0]} 660c86fd;
     [ "$#" = 0 ] && {
         chkerr "$invoke : no args, see k4_help";
         return 1
     };
-    local k4 no nx xs filter;
-    expr "$*" : '^(.*)$' > /dev/null && filter="$*" || {
-        [ "$#" -gt 0 ] && filter=$(echo -n '('
-                while [ $# -ne 0 ] ; do
-                  echo -n "$1" ; shift ; [ $# -ne 0 ] && echo -n '|'
-                  done ; echo ')' )
+    local tmp="${kdb}/0/p/$USER/${kdb_pool}/${kdb_tmp}";
+    local knx='' k4='' filter='' cache_dir="${kdb}/0/${kdb_cache}";
+    _kdb_0_lockwait "pools";
+    _kdb_xss_sec_diff "${tmp}/tx.${FUNCNAME}" 0;
+    [[ "$*" =~ '^(.*)$' ]] && filter="$*" || {
+        [ "$#" -gt 0 ] && filter="$(echo -n '('
+while [ $# -ne 0 ]; do
+    echo -n "$1"; shift; [ $# -ne 0 ] && echo -n '|';
+done; echo ')')"
     };
-    local _n4_;
-    local _nd_="$(k4_count_uidhln)";
-    k4db_valid_cmd || chkerr "$FUNCNAME : fail k4db_valid_cmd d3dde99" || return 1;
-    kdb_term_hline '\';
-    k4db_files | while read k4; do
-        kdb_file_headg "$k4_search" "$k4" | grep "$k4case" -qE "$filter" && {
-            _nd_="$(( _nd_ + 1 ))";
-            _n4_="$(base 4 "$_nd_")";
-            k4db_mk_idxptr "$_n4_" "$k4";
-            k4db_idxptr_ks "$_n4_"
-        };
+    kdb_valid_dir "$cache_dir" || {
+        chkerr "$FUNCNAME : irregular dir : "$cache_dir" (62eda81e)";
+        return 1
+    };
+    read cache < <(tr -d '[)(% ^\\]' <<< "$k4_search" | tr '|' '\n' | sort -u | tr '\n' ','; echo);
+    cache="$cache_dir/k4db_${cache}";
+    local pool="";
+    read pool < "${kdb}/0/p/$USER/.active";
+    pool="${kdb}/0/p/$USER/$pool";
+    [ "${pool##*/}" = "_" ] && _kdb_newpool || {
+        chkerr "$FUNCNAME : cannot create result pool (655e3d2a)";
+        return 1
+    };
+    _kdb_term_hline '\';
+    grep "$k4case" -E "$filter" "$cache" | awk '{print $2}' | while IFS= read k4; do
+        kdb_k4_to_active_pool "$k4";
+        read knx < <(awk 'NR=3' "${kdb}/0/p/$USER/${pool}/knxptr/0");
+        awk -vknx="$knx" '/^%ks /{printf "%3s %s\n",knx,$0};NF{next};/^$/{exit}' "$k4" | ct;
     done;
-    kdb_term_hline '/';
-    xssdaysec > ${tmp}/tx.${FUNCNAME}.1;
+    _kdb_term_hline '/';
+    _kdb_xss_sec_diff "${tmp}/tx.${FUNCNAME}" 1;
+    _kdb_0_lockun "pools";
     [ -t 1 ] && {
-        k4epoch ":";
-        k4db_linkcount ": k4since='$k4since' $FUNCNAME '$filter' : ";
-        k4db_xss_ddiff "${tmp}/tx.${FUNCNAME}" seconds
-    } | kdb_squeeze | tee -a "$k4db/$k4_hst/${FUNCNAME}.log" | $k4_unlong;
-    $k4db_logstd "end $$ : k4since='$k4since' $FUNCNAME $arg";
-    $kdblog "fin $$ : $invoke"
+        {
+            awk 'END{print NR}' < <(find "${kdb}/0/p/$USER/_/xssptr" -type f);
+            echo "${pool##*/}";
+            _kdb_xss_sec_diff "${tmp}/tx.${FUNCNAME}" sec
+        } | tr '\n' ":";
+        echo
+    };
+    $_kdb_fn_exit "< $invoke"
+}
+kj_ ()
+{
+    chkerr 'incomplete';
+    return 1
 }
 kk_hint ()
 {
-    local k4="$(kdb_pool_ptr "$in" | kdb_argn 1 )";
+    local k4="$(kdb_pool_ptr "$in" | kdb_argn 1)";
     kdb_k4_kk_hint "$k4"
 }
 kl ()
 {
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "U> $invoke";
-    kdb_0_lockwait "pool $kdb_pool";
-    kdb_valid_pool "${kdb_pool}" || {
-        chkwrn "$invoke irregular pool '${kdb}/0/${kdb_pool}'";
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    kdbflow $invoke ${BASH_SOURCE[0]} 660c8727;
+    _kdb_0_lockwait "pools";
+    local pools="${kdb}/0/p/${USER}";
+    local pool="";
+    read pool < "${pools}/.active";
+    local poolpath="${pools}/$pool";
+    _kdb_valid_pool "${pool}" || {
+        chkwrn "$invoke irregular pool '${pool}'";
         return 1
     };
     local xss knx hln;
-    local pool="${kdb}/0/p/${kdb_pool}";
-    local tmp="${kdb}/0/p/${kdb_pool}/${kdb_tmp}";
-    local addl="$1" addl_re;
+    local tmp="${poolpath}/${kdb_tmp}";
+    local addl="$1" addl_re='';
     [ "$addl" ] && addl_re="$(echo "$addl" | sed -e 's/s//g' -e 's/\(.\)/&|/g' -e 's/|$//' -e 's/^/^%k(/' -e 's/$/)\ /')" || addl_re="^$";
-    kdb_term_pright "$invoke" '\';
-    xssdaysec > "${tmp}/tx.${FUNCNAME}.0";
-    ls "${pool}/xsshln"/* 2> /dev/null | while IFS= read hln; do
+    _kdb_term_pright "$invoke" '\';
+    _kdb_xss_sec_diff "${tmp}/tx.${FUNCNAME}" 0;
+    ls "${poolpath}/xsshln"/* 2> /dev/null | while IFS= read hln; do
         xss="${hln##*/}";
-        knx="$(awk 'NR==3' "${pool}/xssptr/${xss}")";
+        knx="$(awk 'NR==3' "${poolpath}/xssptr/${xss}")";
         {
             printf '%3s ' "$knx";
-            kdb_file_headg "^%ks " "$hln";
+            _kdb_file_headg "^%ks " "$hln";
             [ "$addl_re" ] && {
-                kdb_file_headg "$addl_re" "$hln" | kdb_k4_default_squash | sed 's/^/    /'
+                _kdb_file_headg "$addl_re" "$hln" | _kdb_k4_default_squash | sed 's/^/    /'
             }
-        } | cattrunc;
+        } | ct;
     done;
-    kdb_term_pright "$invoke" '/';
-    xssdaysec > "${tmp}/tx.${FUNCNAME}.1";
+    _kdb_0_lockun "pools";
+    _kdb_term_pright "$invoke" '/';
+    _kdb_xss_sec_diff "${tmp}/tx.${FUNCNAME}" 1;
     [ -t 1 ] && {
-        {
-            kdbeph;
-            kdb_pool_stat
-        } | tr '\n' ":";
-        echo;
-        k4db_xss_ddiff "${tmp}/tx.${FUNCNAME}" sec
-    } | kdb_squeeze | $k4_unlong;
-    kdb_0_lockun "pool $kdb_pool";
-    $kdblog "U< $invoke"
+        tput dim;
+        echo '//';
+        _kdb_xss_sec_diff "${tmp}/tx.${FUNCNAME}" | awk '{printf " %1.4f sec ",$1}';
+        echo '( ';
+        kdb_pool_count;
+        echo ' ) vptr=';
+        cat "$pools/$pool/.vptr"
+    } | tr -ds '\n' ' ';
+    tput sgr0;
+    echo;
+    $_kdb_fn_exit "< $invoke"
+}
+kll ()
+{
+    kl "$(sed -e 's/\^%(k//' -e 's/)\\ //' -e 's/|k//g' <<< "$k4_topic")"
+}
+kllg ()
+{
+    kl "$(sed -e 's/\^%(k//' -e 's/)\\ //' -e 's/|k//g' <<< "$k4_graph")"
+}
+kllgr ()
+{
+    klr "$(sed -e 's/\^%(k//' -e 's/)\\ //' -e 's/|k//g' <<< "$k4_graph")"
+}
+klll ()
+{
+    kl "$(sed -e 's/\^%(k//' -e 's/)\\ //' -e 's/|k//g' <<< "$k4_search")"
+}
+klllr ()
+{
+    klr "$(sed -e 's/\^%(k//' -e 's/)\\ //' -e 's/|k//g' <<< "$k4_search")"
+}
+klllv ()
+{
+    klv "$1$(sed -e 's/\^%(k//' -e 's/)\\ //' -e 's/|k//g' <<< "$k4_search")"
+}
+kllr ()
+{
+    klr "$(sed -e 's/\^%(k//' -e 's/)\\ //' -e 's/|k//g' <<< "$k4_topic")"
+}
+kllv ()
+{
+    kl "$(sed -e 's/\^%(k//' -e 's/)\\ //' -e 's/|k//g' <<< "$k4_value")"
+}
+kllvr ()
+{
+    klr "$(sed -e 's/\^%(k//' -e 's/)\\ //' -e 's/|k//g' <<< "$k4_value")"
 }
 klr ()
 {
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "U> $invoke";
-    kdb_0_lockwait "pool $kdb_pool";
-    kdb_valid_pool "${kdb_pool}" || {
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    kdbflow $invoke ${BASH_SOURCE[0]} 660c8774;
+    _kdb_valid_pool "${kdb_pool}" || {
         chkwrn "$invoke irregular pool '${kdb}/0/${kdb_pool}'";
         return 1
     };
@@ -1865,81 +2304,83 @@ klr ()
     local tmp="${kdb}/0/p/${kdb_pool}/${kdb_tmp}";
     local addl="$1" addl_re;
     [ "$addl" ] && addl_re="$(echo "$addl" | sed -e 's/s//g' -e 's/\(.\)/&|/g' -e 's/|$//' -e 's/^/^%k(/' -e 's/$/)\ /')" || addl_re="^$";
-    kdb_term_pright "$invoke" '\';
-    xssdaysec > "${tmp}/tx.${FUNCNAME}.0";
+    _kdb_term_pright "$invoke" '\';
+    _kdb_xss_sec_diff "${tmp}/tx.${FUNCNAME}" 0;
     find "${pool}/xsshln" -type f -regex "${pool}/xsshln/[[:xdigit:]]\{16\}$" | sort -r | while IFS= read hln; do
         xss="${hln##*/}";
         knx="$(awk 'NR==3' "${pool}/xssptr/${xss}")";
         {
             printf '%3s ' "$knx";
-            kdb_file_headg "^%ks " "$hln"
-        } | cattrunc;
+            _kdb_file_headg "^%ks " "$hln"
+        } | ct;
         [ "$addl_re" ] && {
-            kdb_file_headg "$addl_re" "$hln" | kdb_k4_default_squash | sed 's/^/     /'
-        } | cattrunc;
+            _kdb_file_headg "$addl_re" "$hln" | _kdb_k4_default_squash | sed 's/^/     /'
+        } | ct;
     done;
-    kdb_term_pright "$invoke" '/';
-    xssdaysec > "${tmp}/tx.${FUNCNAME}.1";
+    _kdb_term_pright "$invoke" '/';
+    _kdb_xss_sec_diff "${tmp}/tx.${FUNCNAME}" 1;
     [ -t 1 ] && {
         {
-            kdbeph;
-            kdb_pool_stat
+            awk 'END{print NR,"/"}' < <(find "${kdb}/0/p/$USER/_/xssptr" -type f)
         } | tr '\n' ":";
         echo;
-        k4db_xss_ddiff "${tmp}/tx.${FUNCNAME}" sec
-    } | kdb_squeeze | $k4_unlong;
-    kdb_0_lockun "pool $kdb_pool";
-    $kdblog "fin $$ : $invoke"
+        _kdb_xss_sec_diff "${tmp}/tx.${FUNCNAME}" sec
+    } | _kdb_squeeze | $k4_unlong;
+    _kdb_0_lockun "pools";
+    $_kdb_fn_exit "< $invoke"
 }
 klv ()
 {
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "0> $invoke";
-    kdb_0_lockwait "pool $kdb_pool";
-    kdb_valid_pool "${kdb_pool}" || {
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    kdbflow $invoke ${BASH_SOURCE[0]} 660c8727;
+    _kdb_0_lockwait "pools";
+    _kdb_valid_pool "${kdb_pool}" || {
         chkwrn "$invoke irregular pool '${kdb}/0/${kdb_pool}'";
         return 1
     };
     local pool="${kdb}/0/p/${kdb_pool}";
+    local vptrf="${kdb}/0/p/${kdb_pool}/vptr";
     local tmp="${kdb}/0/p/${kdb_pool}/${kdb_tmp}";
     local addl="$1" addl_re;
     local xss knx ptr;
     [ "$addl" ] && addl_re="$(echo "$addl" | sed -e 's/s//g' -e 's/\(.\)/&|/g' -e 's/|$//' -e 's/^/^%k(/' -e 's/$/)\ /')" || addl_re="^$";
-    local vptrf="${kdb}/0/${kdb_pool}/vptr";
     local vptr="$(awk 'NR==1' "$vptrf")";
     local vptrfmt="$(printf "%7s" "$vptr")";
-    kdb_term_pright "$invoke" '\';
-    xssdaysec > "${tmp}/tx.${FUNCNAME}.0";
+    _kdb_term_pright "$invoke" '\';
+    _kdb_xss_sec_diff "${tmp}/tx.${FUNCNAME}" 0;
     ls -rt "${pool}/xssptr" | while IFS= read ptr; do
         xss="${ptr}";
         hln="${pool}/xsshln/${xss}";
         knx="$(awk 'NR==3' "${pool}/xssptr/${xss}")";
         {
             printf '%3s ' "$knx";
-            kdb_file_headg "^%ks " "$hln";
+            _kdb_file_headg "^%ks " "$hln";
             [ "$addl_re" ] && {
-                kdb_file_headg "$addl_re" "$hln" | kdb_k4_default_squash | sed 's/^/    /'
+                _kdb_file_headg "$addl_re" "$hln" | _kdb_k4_default_squash | sed 's/^/    /'
             };
             grep -q 'V' <<< "$addl_re" && kdb_print_vxssptr "$vptr" "${pool}/xssptr/${xss}" | sed "s/^/${vptrfmt} /"
-        } | cattrunc;
+        } | ct;
     done;
-    kdb_term_pright "$invoke" '/';
-    xssdaysec > "${tmp}/tx.${FUNCNAME}.1";
+    _kdb_term_pright "$invoke" '/';
+    _kdb_xss_sec_diff "${tmp}/tx.${FUNCNAME}" 1;
     [ -t 1 ] && {
         {
-            kdbeph;
-            kdb_pool_stat
+            awk 'END{print NR}' < <(find "${kdb}/0/p/$USER/_/xssptr" -type f)
         } | tr '\n' ":";
         echo;
-        k4db_xss_ddiff "${tmp}/tx.${FUNCNAME}" sec
-    } | kdb_squeeze | $k4_unlong;
-    kdb_0_lockun "pool $kdb_pool";
-    $kdblog "fin $$ : $invoke"
+        _kdb_xss_sec_diff "${tmp}/tx.${FUNCNAME}" sec
+    } | _kdb_squeeze | $k4_unlong;
+    _kdb_0_lockun "pools";
+    $_kdb_fn_exit "< $invoke"
 }
 knbb ()
 {
     local i _xs="$1";
-    for i in 86400 $( for i in 6 7 9 11 14 16 18 24 28 33 35 38 43 57 63 162 ; do echo $(( 86400 * i )) ; done | tr '\n' ' ' ) 31556952;
+    for i in 86400 $(for i in 6 7 9 11 14 16 18 24 28 33 35 38 43 57 63 162;
+do
+    echo $(( 86400 * i ));
+done | tr '\n' ' ') 31556952;
     do
         knbxs $i $xs;
         knnbxs $i $xs;
@@ -1973,12 +2414,36 @@ knnbxs ()
     local w=$(printf "%x" "$i" | awk '{ print length }');
     printf "%0${w}xx%0${w}x\n" "$(( 1 + ( 0x$_xs - ke ) % i ))" "$i"
 }
+kp ()
+{
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    kdbflow $invoke ${BASH_SOURCE[0]} 660c86e8;
+    local pools="${kdb}/0/p/${USER}" pool="$1" a='' b='';
+    [ "$pool" ] && {
+        [[ "$pool" =~ ^[A-Za-z0-9_]+[A-Za-z0-9_.+=-]*$ ]] || {
+            $_kdb_fn_error "$FUNCNAME : pool '$pool' must match '^[A-Za-z0-9]+[A-Za-z0-9_.+=-]*$' (6562ea6d)";
+            return 1
+        };
+        kdb_pool_active "$pool"
+    };
+    while read a; do
+        awk -va="$a" 'END{print a" "NR}' < <(find "$pools/$a/xssptr" -type f);
+    done < <(sed '/\/\./d' < <(ls -t "$pools")) | tr '\n' ',' | sed -e 's=,$= =' -e 's/,/, /g';
+    echo
+}
+kp_ ()
+{
+    chkerr 'incomplete';
+    return 1
+}
 kpv ()
 {
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "U> $invoke";
-    kdb_valid_pool "${kdb_pool}" || {
-        chkerr "$FUNCNAME fail : ${kdb}/0/${kdb_pool}/";
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    kdbflow $invoke ${BASH_SOURCE[0]} 660c87ac;
+    _kdb_valid_pool "${kdb_pool}" || {
+        _kdb_fn_error "$FUNCNAME fail : ${kdb}/0/${kdb_pool}/";
         return 1
     };
     local pool="${kdb}/0/p/${kdb_pool}";
@@ -1986,6 +2451,8 @@ kpv ()
     local tmp="${kdb}/0/p/${kdb_pool}/${kdb_tmp}";
     local type="$1" types="
 k4mi    xsd # review date
+";
+    local unsupported_types="
 mkv     0xv # mod sum kv
 xs      xsd # aquisition time
 xskv    0xv # xs sum value
@@ -1994,8 +2461,7 @@ kx      xsd # topic expire
 ki      0xs # topic review
 ke      xsd # event begin
 kz      xsd # event end
-";
-    local unsupported_types="
+#
 mvi     # mod time + kv * ki
 m       # mod time, find  k4 or k4,v
 k4_open # open time
@@ -2018,11 +2484,11 @@ ke_mod
 kz_mod
 ";
     [ "$type" ] || {
-        kdb_term_pright "unsupported types";
-        cattrunc <<< "$unsupported_types";
-        kdb_term_pright "supported types";
-        cattrunc <<< "$types";
-        kdb_term_pleft "$(cat "$vptrf")";
+        _kdb_term_pright "unsupported types";
+        ct <<< "$unsupported_types";
+        _kdb_\term_pright "supported types";
+        ct <<< "$types";
+        _kdb_term_pleft "$(cat "$vptrf")";
         return 0
     };
     [ "$type" = "all" ] && {
@@ -2037,125 +2503,112 @@ kz_mod
         chkerr "$invoke : unknown type '$type'";
         return 1
     };
-    xssdaysec > "${tmp}/tx.${FUNCNAME}.0";
-    kdb_term_pright "(${pool}:$(find "${pool}/xssptr" -type f | awk 'END{print NR}')) $invoke" '~';
+    _kdb_xss_sec_diff "${tmp}/tx.${FUNCNAME}" 0;
+    _kdb_term_pright "(${pool}:$(find "${pool}/xssptr" -type f | awk 'END{print NR}')) $invoke" '~';
     kdb_pool_vptr "$type" || {
         chkerr "$invoke : failed to set pool vptr type (611d9e27)";
         return 1
     };
-    xssdaysec > "${tmp}/tx.${FUNCNAME}.1";
+    _kdb_xss_sec_diff "${tmp}/tx.${FUNCNAME}" 1;
     [ -t 1 ] && {
         {
-            kdbeph;
-            kdb_pool_stat
+            awk 'END{print NR,"/"}' < <(find "${kdb}/0/p/$USER/_/xssptr" -type f)
         } | tr '\n' ":";
         echo;
-        k4db_xss_ddiff "${tmp}/tx.${FUNCNAME}" sec
-    } | kdb_squeeze | $k4_unlong;
-    $kdblog "fin $$ : $invoke"
+        _kdb_xss_sec_diff "${tmp}/tx.${FUNCNAME}" sec
+    } | _kdb_squeeze | $k4_unlong;
+    $_kdb_fn_exit "< $invoke"
 }
 krst ()
 {
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "U> $invoke";
-    kdb_0_lockwait "pool $kdb_pool";
-    kdb_valid_pool "${kdb_pool}" || {
-        chkwrn "$FUNCNAME invalid pool '${kdb}/0/${kdb_pool}'"
-    };
-    local pool="${kdb}/0/p/${kdb_pool}";
-    local tmp="${kdb}/0/p/${kdb_pool}/${kdb_tmp}";
-    rm -i -rf "${pool}/knxptr" "${pool}/knxhln" "${pool}/xsshln" "${pool}/xssptr";
-    rm -i -rf "${pool}/vptr" "${pool}/kk" "${tmp}";
-    [ "$(find "${kdb}/0/${kdb_pool}" -mindepth 1 | awk 'END{print NR}')" -eq 0 ] && rm -i -rf "${kdb}/0/${kdb_pool}" || {
-        chkerr "$invoke : extra pool elements found '${kdb}/0/${kdb_pool}' (6132cebd)";
-        return 1
-    };
-    kdb_init_pool;
-    $kdblog "beg $$ : $invoke : process args";
-    [ "$#" -gt 0 ] && k $@ || true;
-    kdb_0_lockun "pool $kdb_pool";
-    $kdblog "U< $invoke"
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    kdbflow $invoke ${BASH_SOURCE[0]} 660c86cc;
+    local pools="${kdb}/0/p/${USER}";
+    local poolnames=($@) pool='';
+    _kdb_0_lockwait "pools";
+    chkwrn 'shouldnt queue a krst...';
+    [ ${#poolnames[@]} -eq 0 ] && poolnames+=("_");
+    for pool in ${arr[@]};
+    do
+        _kdb_valid_pool "$pool" && rm -i -rf "$pools/$pool" || {
+            $_kdb_fn_error "x $invoke : cowardly returning error due to unexpected pool state '$pools/$pool' (656386a5)";
+            return 1
+        };
+        kdb_init_pool "$pool";
+    done;
+    _kdb_0_lockun "pools";
+    $_kdb_fn_exit "< $invoke"
 }
 ks ()
 {
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "U> $invoke";
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
+    kdbflow $invoke ${BASH_SOURCE[0]} 660c8694;
     local ks="$*";
     export k4="$(kdbdf "${kdb}" $(kdbtx) | awk 'END{print $1}')";
-    set $(kdb_file_headg '^%km ' "$k4" | awk 'END{print}');
+    set $(_kdb_file_headg '^%km ' "$k4" | awk 'END{print}');
     local xa=$2 o="$5" eph=$6 span=$7 maskx=$8;
     export xs=$3 ss=$4;
+    kdbflow k4=$k4 660c8d45;
+    kdbflow xa=$2 o="$5" eph=$6 span=$7 maskx=$8 xs=$3 ss=$4;
     local knd=$(nevernowd $xs);
     local knx=$(nevernowx $xs);
-    local knbb=$(knbb $xs);
-    local knbb2=$(knbb2 $xs);
-    cat >> "$k4"  <<EOF
+    cat >> "$k4" <<EOF
 %ks $ks
-%kt $eph
+%kd
+%kt
+%kk $eph %% (desc admin struct _class) (indiv corp noun verb _cat) _topic _div _name; eph class hier
 %kr %% matrix reason   (why)
-%kp %% hier superord   (superior)
-%kj %% motive subord   (subordinate)
-%kl %% like rank       (similar)
-%kb %% better subject  (better)
-%kc %% subject class   (^type)
+%kp %% perord hier     (superior)
+%kj %% subord motive   (subordinate)
+%kl %% like link       (similar)
+%kb %% better link     (better)
 %kq %% value relative  (value for)
 %kn $knd
 %kn $knx
-%kn $knbb
-%kn $knbb2
 EOF
-
     {
         echo "%kv $(printf '%08x' "$(( 0x$xs + 0x1edb85f4))") %% default value xs + 1edb85f4";
         echo "%ki $(printf "%08x" "$(( 86400 * 57 ))") %% default interval 57 day review";
-        echo "%ke $(printf '%08x' "$(( $((0x$xs)) - 86400 * 18 ))" ) %% default begin 18 days prior, 0017bb00";
+        echo "%ke $(printf '%08x' "$(( $((0x$xs)) - 86400 * 18 ))") %% default begin 18 days prior, 0017bb00";
         echo "%kx $(printf "%08x" "$(( 34 * 31556926 + 0x$xs ))") %% default expire 34 years";
         echo "%kz $xs %% default event end, now"
     } >> "$k4";
+    kdbflow kdb_k4_head_seq $k4 660c8d57;
     kdb_k4_head_seq "$k4" || {
         chkerr "$invoke ; kdb_k4_head_seq";
         return 1
     };
+    kdbflow kdb_rcs "$k4" 660c8d5f;
     kdb_rcs "$k4" "$invoke" || {
         chkerr "$invoke ; kdb_rcs";
         return 1
     };
-    kdb_cache_meta "$k4" || {
-        chkerr "$invoke ; kdb_cache_meta";
+    kdbflow kdb_cache_upd $k4 660c8d68;
+    kdb_cache_upd "$k4" || {
+        chkerr "$invoke ; kdb_cache_upd";
         return 1
     };
-    kdb_pool_add "$k4" || {
-        chkerr "$invoke ; kdb_pool_add";
+    kdbflow kdb_k4_to_active_pool $k4 660c8d72;
+    kdb_k4_to_active_pool "$k4" || {
+        chkerr "$invoke ; kdb_k4_to_active_pool";
         return 1
     };
+    kdbflow k ${xs}${ss} 660c8d7e;
     k ${xs}${ss} || {
         chkerr "$invoke ; k";
         return 1
     };
-    $kdblog "U< $invoke"
-}
-ksn ()
-{
-    local url="$1";
-    local _t="${kdb}/%/zz-$(date "+%Y%m%d")";
-    mkdir -p "$_t";
-    local _html="$( cd "$_t" && mktemp html-XXXXX )";
-    w3m -dump_source -o auto_uncompress=1 "$url" > "${_t}/${_html}";
-    echo;
-    echo "$url";
-    echo;
-    {
-        awk '/class="news-article__hero__info"/,/class="col-12"/' "${_t}/${_html}";
-        awk '/class="bodySection"/,/class="multi-search"/' "${_t}/${_html}"
-    } | w3m -T text/html -O UTF-8 -o display_link=1 -o display_link_number=1 -o document_root='https://www.science.org' | iconv -c --from-code=UTF-8 --to-code=ASCII//TRANSLIT | sed 's= file:///= https://www.science.org/=';
-    rm -i -f "${kdb}/%/zz-$(date "+%Y%m%d")/${_html}"
+    kdbflow return $invoke 660c8d8d;
+    $_kdb_fn_exit "< $invoke"
 }
 ksyn ()
 {
-    local invoke="$FUNCNAME $@ #$$ X$(xss)";
-    $kdblog "0> $invoke";
+    local invoke="#$$ ($FUNCNAME $@)";
+    $_kdb_fn_entry "> $invoke";
     kdb_k4_synopsis $(kdb_pool_ptr "$1");
-    $kdblog "U< $invoke"
+    $_kdb_fn_exit "< $invoke"
 }
 nevernowd ()
 {
@@ -2244,12 +2697,62 @@ nevernowz ()
     done;
     echo
 }
-w3md ()
+sec2hms ()
 {
-    local url="$1";
-    printf '\n%s\n\n' "%%/ $url";
-    w3m -T text/html -O UTF-8 "$url" -o auto_uncompress=1 -o display_link=1 -o display_link_number=1 | iconv -c --from-code=UTF-8 --to-code=ASCII//TRANSLIT;
-    printf '\n\n%s\n\n' "%%\\"
+    kdb_xs2h $(printf "%x" "$1") | sed -e 's/.*(//' -e 's/).*//'
+}
+sec2hu ()
+{
+    [ "$1" ] && {
+        local sec="$1" y=0 m=0 w=0 d=0 h=0 n=0 s=0;
+        local yn='' mn='' wn='' dn='' hn='' nn='' sn='';
+        test "$sec" -ge 0 || {
+            chkerr "Expected interger seconds greater than zero '$sec' (64fe10a0)";
+            return 1
+        };
+        [ $((sec)) -ge 31556926 ] && {
+            y=$(( sec / 31556926 ));
+            sec=$(( sec % 31556926 ))
+        };
+        [ $((sec)) -ge 2629743 ] && {
+            m=$(( sec / 2629743 ));
+            sec=$(( sec % 2629743 ))
+        };
+        [ $((sec)) -ge 604800 ] && {
+            w=$(( sec / 604800 ));
+            sec=$(( sec % 604800 ))
+        };
+        [ $((sec)) -ge 86400 ] && {
+            d=$(( sec / 86400 ));
+            sec=$(( sec % 86400 ))
+        };
+        [ $((sec)) -ge 3600 ] && {
+            h=$(( sec / 3600 ));
+            sec=$(( sec % 3600 ))
+        };
+        [ $((sec)) -ge 60 ] && {
+            n=$(( sec / 60 ));
+            sec=$(( sec % 60 ))
+        };
+        [ $((sec)) -ge 1 ] && s=$(( sec ));
+        [ "$y" -ge 1 ] && yn='y';
+        [ "$m" -ge 1 ] && mn='m';
+        [ "$w" -ge 1 ] && wn='w';
+        [ "$d" -ge 1 ] && dn='d';
+        [ "$h" -ge 1 ] && hn='h';
+        [ "$n" -ge 1 ] && nn='m';
+        [ "$s" -ge 1 ] && sn='s';
+        [ "$yn" ] && echo -n "$y $yn ";
+        [ "$mn" ] && echo -n "$m $mn ";
+        [ "$wn" ] && echo -n "$w $wn ";
+        [ "$dn" ] && echo -n "$d $dn ";
+        [ "$hn" ] && echo -n "$h $hn ";
+        [ "$nn" ] && echo -n "$n $nn ";
+        [ "$sn" ] && echo -n "$s $sn ";
+        echo
+    } || while IFS= read sec; do
+        $FUNCNAME "$sec";
+    done
 }
 xn2float ()
 {
@@ -2275,3 +2778,8 @@ xssdaysec ()
 {
     date "+%Y%m%d %H:%M:%S:%a:%s" | tai64n | sed -e "s/^@4[0]*//" -e 's/^[[:xdigit:]]\{8\}/&_/'
 }
+kdb_init_kstat || { $_kdb_fn_error "x $FUNCNAME : did not init kstat (660eeabf)" ; return 1 ;}
+declare -xf kstat kstatsum kdb_os_stat kdb_os_statsum kdb_os_stat_mtime kdb_os_stat_atime
+kdb_init_k4db && { export kdb_init_bash="$(kdbtx)"
+    $_kdb_fn_exit "< $FUNCNAME $@ #$$ : success! (65641d27)"
+    } || { $_kdb_fn_error "x kdb_init_k4db : (60b51e6c)" ; return 1 ;}
