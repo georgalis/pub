@@ -59,7 +59,8 @@ ps | grep "^[ ]*$$ " | grep bash >/dev/null 2>&1 \
                     SSH_AGENT_ENV="$SSH_AGENT_ENV" \
                     verb="$verb" verb1="$verb1" verb2="$verb2" \
                     "$bash_path" -l ;} # replace, BASH_VERSINFO doesn't match
-          } && { echo "<>< $bash_path ${BASH_VERSINFO[0]}.${BASH_VERSINFO[1]}.${BASH_VERSINFO[2]}(${BASH_VERSINFO[3]})-${BASH_VERSINFO[4]}" ;} || return 1 # exec failed...
+           } && { echo "<>< $bash_path ${BASH_VERSINFO[0]}.${BASH_VERSINFO[1]}.${BASH_VERSINFO[2]}(${BASH_VERSINFO[3]})-${BASH_VERSINFO[4]}" ;} \
+        || return 1 # exec failed...
      } || true # not bash, OR bash_path unavailable OR same version
 
 # earlier and we would normally see it twice...
@@ -377,7 +378,7 @@ _youtube () {
   local id="$1" d="$2"
   [ "$id" ] || read -p "youtube id: " id
   [ "$id" ] || { chkerr "$FUNCNAME : no id? (6542c9d2)" ; return 1 ;}
-  read id < <(sed "s/\([?&]\)si=................[&]*/\1/" <<<"$id") # squash trackers from url
+  read id < <(sed -e "s/\([?&]\)si=................[&]*/\1/" -e 's/\?$//' <<<"$id") # squash trackers from url
   [ "$d" ]  || read -p "directory: " d
   [ "$d" ]  || d='.'
   [ -d "$d" ] || { [ -d "${links}/$d" ] && d="${links}/$d" ;}
@@ -424,10 +425,9 @@ _youtube_json2txt () { # fixup youtube .info.json to yaml txt and sort files
   # sorting these files is a side effect of calling this function,
   # but this function may be called when there are no files to sort,
   # so only do the side effect if the files are there...
-  [ -f "$inpath"/*"${_fout}" ] && mkdir -p "$inpath/@"    && ln -f "$inpath"/*${_fout} "$inpath"/@/${_fout}
-  [ -f "$inpath"/*"${_fout}" ] && mkdir -p "$inpath/orig" && mv -f "$inpath"/*${_fout} "$inpath/orig"
-  [ -f "$1" -o -f "$inpath"/*${_fout%%.*}.webp -o -f "$inpath"/*${_fout%%.*}*.vtt ] && mkdir -p "$inpath"'/@/meta' \
-    && for a in "$1" "$inpath/"*${_fout%%.*}.webp "$inpath"/*${_fout%%.*}*.vtt ; do
+  [ -f "$inpath"/*"${_fout}" ] && mkdir -p "$inpath/@/meta" && ln -f "$inpath"/*${_fout} "$inpath"/@/${_fout}
+  [ -f "$inpath"/*"${_fout}" ] && mkdir -p "$inpath/orig"   && mv -f "$inpath"/*${_fout} "$inpath/orig"
+  for a in "$1" "$inpath/"*${_fout%%.*}.{webp,jpg,vtt} ; do
         [ -f "$a" ] && mv "$a" "$inpath"'/@/meta' ; done
   echo "${1}.txt"
   } # _youtube_json2txt 20220516
@@ -542,6 +542,8 @@ EOF
     echo "# ss=$ss to=$to t=$t p=$p f=$f c=$c F=$F CF=$CF off=$off tp=$tp lra=$lra i=$i cmp=$cmp v=$v f2rb2mp3 {file-in} {prepend-out}"
     return 0
     } # help
+  $verb "f2rb2mp3 $1 $2"
+  $verb ss=$ss to=$to t=$t p=$p f=$f c=$c F=$F CF=$CF off=$off tp=$tp lra=$lra i=$i cmp=$cmp v=$v
   [    "$1" ] || { f2rb2mp3 help ; return 1 ;}
   [ -f "$1" ] || { f2rb2mp3 help ; chkerr "no input flle '$1' (6542c99c)" ; return 1 ;}
   local  verb="${verb:=chkwrn}"
@@ -618,6 +620,8 @@ EOF
        } >"${inpath}/tmp/${infile}${secn}.meas~" \
          && mv -f "${inpath}/tmp/${infile}${secn}.flac~" "${inpath}/tmp/${infile}${secn}.flac" \
          && mv -f "${inpath}/tmp/${infile}${secn}.meas~" "${inpath}/tmp/${infile}${secn}.meas"
+      grep -E '(measured|out)' "${inpath}/tmp/${infile}${secn}.meas" \
+        | while IFS= read a ; do ${verb2} "$a" ; done
     } # have trimmed measured flac
   #   i   Set integrated loudness target. Range is -70.0 - -5.0. Default value is -24.0.
   #   lra Set loudness range target.      Range is   1.0 - 20.0. Default value is   7.0.
