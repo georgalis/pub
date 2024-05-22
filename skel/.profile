@@ -98,7 +98,8 @@ b() { cd "$OLDPWD" ;} # previous directory
 back() { cd "$OLDPWD" ;} # previous directory
 #cal() { cal -h $@ ;}
 
-# common functions for shell verbose management....
+# https://raw.githubusercontent.com/georgalis/pub/master/skel/.profile
+# common functions for shell verbose management.... 
 devnul() { return 0 ;}                                                 #:> drop args
 stderr() {  [ "$*" ] && echo "$*" 1>&2 || true ;}                      #:> args to stderr, or noop if null
 chkstd() {  [ "$*" ] && echo "$*"      || true ;}                      #:> args to stdout, or noop if null

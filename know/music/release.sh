@@ -285,6 +285,7 @@ readme2html2kind
 
 rm -rf "$wdp/%/$t/"
 $verb2 "eof"
+chktrue 'rm -rf /Volumes/CURATE/{.fseventsd,.Spotlight-V100,*.{LIB,PL,BMK}}'
 exit 0
 
 cat >/dev/null <<eof

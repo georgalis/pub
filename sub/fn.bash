@@ -26,14 +26,14 @@ declare -f chktrue >/dev/null || { _help_skel ; return 2 ; exit 3 ;}
 [ "${SHELL##*/}" = "bash" ] && { # alias, to restore login env, iff no active jobs.
     alias _env='tput sgr0 ; chkerr "$(jobs -l)" \
         && exec env -i TERM="$TERM" COLORTERM="$COLORTERM" \
-            HOME="$HOME" LOGNAME="$LOGNAME" USER="$USER" \
+            SHELL="$SHELL" HOME="$HOME" LOGNAME="$LOGNAME" USER="$USER" \
             SSH_AGENT_PID="$SSH_AGENT_PID" SSH_AUTH_SOCK="$SSH_AUTH_SOCK" \
             SSH_AGENT_ENV="$SSH_AGENT_ENV" \
             verb="$verb" verb1="$verb1" verb2="$verb2" \
             '"${SHELL} -l"
     alias _env_verb='tput sgr0 ; chkerr "$(jobs -l)" \
         && exec env -i TERM="$TERM" COLORTERM="$COLORTERM" \
-            HOME="$HOME" LOGNAME="$LOGNAME" USER="$USER" \
+            SHELL="$SHELL" HOME="$HOME" LOGNAME="$LOGNAME" USER="$USER" \
             SSH_AGENT_PID="$SSH_AGENT_PID" SSH_AUTH_SOCK="$SSH_AUTH_SOCK" \
             SSH_AGENT_ENV="$SSH_AGENT_ENV" \
             verb="chkwrn" verb1="chkwrn" verb2="chkwrn" \
@@ -54,7 +54,7 @@ ps | grep "^[ ]*$$ " | grep bash >/dev/null 2>&1 \
             : "GNU bash, version ${BASH_VERSINFO[0]}\.${BASH_VERSINFO[1]}\.${BASH_VERSINFO[2]}(${BASH_VERSINFO[3]})-${BASH_VERSINFO[4]} (${BASH_VERSINFO[5]})" >/dev/null \
             || { tput sgr0 ; chkerr "$(jobs -l)" \
                   && exec env -i TERM="$TERM" COLORTERM="$COLORTERM" \
-                    HOME="$HOME" LOGNAME="$LOGNAME" USER="$USER" \
+                    SHELL="${bash_path}" HOME="$HOME" LOGNAME="$LOGNAME" USER="$USER" \
                     SSH_AGENT_PID="$SSH_AGENT_PID" SSH_AUTH_SOCK="$SSH_AUTH_SOCK" \
                     SSH_AGENT_ENV="$SSH_AGENT_ENV" \
                     verb="$verb" verb1="$verb1" verb2="$verb2" \
@@ -253,6 +253,17 @@ ts () { # timestamp lowres and pass through args
       # 64c47437 20230728 1906 Fri 28 Jul PDT
       # 64c47688 20230728 1916 Fri 28 Jul PDT
 
+tj () { # journal timestamp, [tai sec]-yyyymmdd_hhmmss {args}
+    local a ; read a < <(tai64n <<<"$*")
+    sed -e 's/[-:]//g' -e 's/\.[^ ]*//' -e 's/ /_/' -e "s/^/${a:9:8}-/" < <(tai64nlocal <<<"$a")
+    } # 6625d27f-20240421_195901
+tjj () { # journal timestamp [tai sec]-yyyymmdd_hhmmss (hh:mm PM Sun dd mth PDT) {args}"
+    local a ; read a < <(tai64n <<<"$*")
+    read b < <(sed -e 's/[-:]//g' -e 's/\..*//' < <(tai64nlocal <<<"$a") )
+    read b < <(date -j -f "%Y%m%d %H%M%S" "$b" "+(%I:%M %p %a %e %b %Z)")
+    sed -e 's/[-:]//g' -e 's/\.[^ ]*//' -e 's/ /_/' -e "s/^/${a:9:8}-/" -e "s/ / $b /" < <(tai64nlocal <<<"$a")
+    } # 6625d8a4-20240421_202514 tjj
+
 which tmux >/dev/null 2>&1 && \
 tmu () { # tmux intuitive wrapper
     [ "$1" = "-h" -o "$1" = "--help" ] && {
@@ -395,10 +406,14 @@ _youtube () {
    --abort-on-error --no-playlist \
    -o "$d/00$(xs),%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id | tee "$HOME/%/ytdl/$t"
   # prompt with filing indices and catagories
-  echo $links
-  find $links -mindepth 1 -maxdepth 1 -type d \( -name 5\* -o -name 6\* \) -exec basename \{\} \; \
-    | sort -r | rs -tz -w$(( $(tput cols)*100 /137))
-  grep '^[[:alnum:]],' $music/comma_mp3.sh | rs -tz -c"\n" -w$(( $(tput cols)*100 /137))
+    local w= ; read -d '' w < <(awk '{ printf "%.0f", $1 * 0.89 }' < <(tput cols))
+    sed 's/^/  /' < <( # pad margin
+      echo "  $links"
+      ls -td $(find $links -mindepth 1 -maxdepth 1 -type d \( -name 5\* -o -name 6\* \) ) \
+        | while read a ; do echo "${a##*/}" ; done \
+        | rs -tz -w$w
+      echo "  $music"
+      grep '^[[:alnum:]],' $music/comma_mp3.sh | rs -tz -c"\n" -w$w )
   _youtube_json2txt $(sed -e '/as JSON to/!d' -e 's/.*to: //' <"$HOME/%/ytdl/$t") && rm -f "$HOME/%/ytdl/$t" \
     || { chkwrn "failed: _youtube_json2txt '$HOME/%/ytdl/$t' (6542c5ee)" ; return 1 ;}
   } # _youtube 20220516
@@ -427,8 +442,9 @@ _youtube_json2txt () { # fixup youtube .info.json to yaml txt and sort files
   # so only do the side effect if the files are there...
   [ -f "$inpath"/*"${_fout}" ] && mkdir -p "$inpath/@/meta" && ln -f "$inpath"/*${_fout} "$inpath"/@/${_fout}
   [ -f "$inpath"/*"${_fout}" ] && mkdir -p "$inpath/orig"   && mv -f "$inpath"/*${_fout} "$inpath/orig"
-  for a in "$1" "$inpath/"*${_fout%%.*}.{webp,jpg,vtt} ; do
-        [ -f "$a" ] && mv "$a" "$inpath"'/@/meta' ; done
+  find "$inpath" -maxdepth 1 -name \*${_fout%%.*}\* \
+    \( -name \*json -o -name \*webp -o -name \*jpg -o -name \*vtt \) \
+    -exec mv \{\} "$inpath"'/@/meta' \;
   echo "${1}.txt"
   } # _youtube_json2txt 20220516
 
@@ -444,6 +460,39 @@ _youtube_comment_unflatten () { # convert comment text from _youtube_json2txt to
         $s/"$//' | tr -d '\n' | awk '{gsub(/\\n/,"\n")}1'
     } # _youtube_comment_unflatten 20230323
 # $s means only match the last line of the file
+
+_youtube_comment_unflatten () { # convert comment text from _youtube_json2txt to ascii formatted
+    # $s means only match the last line of the file
+    # the second awk converts input string of Unicode mathematical alphanumeric symbols to regular Latin characters.
+      sed -e '
+        s/^[ ]*text: "//
+        s/^[ ]*//
+        s/\\$//
+        s/\\ / /g
+        s/\\"/"/g
+        s/\\t/	/g
+        s/\\r//g
+        $s/"$//' | tr -d '\n' | sed 'y/\r/\n/' \
+      | sed '
+    :loop
+    /\\U[0-9A-F]\{4\}/{ 
+        h
+        s/\\U\([0-9A-F]\{4\}\)/\1/
+        :inner
+            n
+            /^[0-9A-F]?$/!b inner
+            H
+            g
+            s/\(.\)\(.*\)/\2\1/
+        b inner
+        g
+        x
+        s/\(.\)\(.\)\(.\)\(.\)/printf %d "0x\1\2\3\4" | xxd -r -p
+    }
+    n
+    b loop
+    ' | awk '{gsub(/\\n/,"\n")}1'
+    } # _youtube_comment_unflatten 20230323
 
 span2ssto () { # start (arg1) span (arg2) and remaining args to f2rb2mp3
     # used to calculate ss= to= f2rb2mp3 parameters, given track lengths
@@ -574,12 +623,22 @@ EOF
   local par4="compand 0.13,0.16 -72,-97,-68,-84,-64,-73,-56,-65,-55,-61,-32,-57,-17,-53,0,-49  25 -55 0.12" # parabolic squared
   local parc="compand 0.09,0.25 -97,-106,-85,-89,-73,-73,-57,-61,-40,-49,-21,-37,0,-25                           11   -13 0.08" # parabolic standard
   local pard="compand 0.09,0.25 -84.4,-110.7,-74.4,-89.1,-64.4,-71.0,-54.4,-56.3,-39.7,-46.3,-21.7,-36.3,0,-26.3 13.5 -13 0.091" # parabolic-d
+  local para="sinc -16k compand 0.09,0.25 -7.9,-6,-22.6,-16,-40.7,-26,-50.7,-44.1,-60.7,-58.8 2 -20 -0.04" # for old analog, inverse pard
+  local para="sinc -16k compand 0.09,0.25 -64.7,-62.8,-54.7,-48.1,-44.7,-30,-26.6,-20,-11.9,-10 0 -20 0.091" # for old analog, inverse pard
+  local para="sinc -16k compand 0.09,0.25 -60.7,-58.8,-50.7,-44.1,-40.7,-26,-22.6,-16,-7.9,-6 -2.5 -20 0.03" # for old analog, inverse pard
+  local para="sinc -16k compand 0.09,0.25 -58.7,-56.8,-48.7,-42.1,-38.7,-24,-20.6,-14,-5.9,-4 -2 -20 0.1" # for old analog, inverse pard
+  local para="sinc -16k compand 0.09,0.25 -56.7,-54.8,-46.7,-40.1,-36.7,-22,-18.6,-12,-3.9,-2 -3 -20 0.1" # for old analog, inverse pard
+  local para="sinc -16k compand 0.09,0.25 -55.7,-53.8,-45.7,-39.1,-35.7,-21,-17.6,-11,-2.9,-1 -4 -20 0.13" # for old analog, inverse pard
+  local para="sinc -16k compand 0.087,0.12 -55.2,-53.3,-45.2,-38.6,-35.2,-20.5,-17.1,-10.5,-2.4,-0.5 -7.0 -20 0.089" # for old analog, inverse pard
+  local para="sinc -16k compand 0.087,1.78 -55.2,-53.3,-45.2,-38.6,-35.2,-20.5,-17.1,-10.5,-2.4,-0.5 -7.0 -20 0.0871" # for old analog, inverse pard
+  local para="compand 0.087,1.78 -55.2,-53.3,-45.2,-38.6,-35.2,-20.5,-17.1,-10.5,-2.4,-0.5 -7.0 -20 0.0871" # for old analog, inverse pard
   [ "$cmp" = "hrn" -o "$cmp" = "hrn1" ] && cmpn="hrn3" cmpc="$hrn3"
   [ "$cmp" = "cps" ]  && cmpn="pard" cmpc="$pard"
   [ "$cmp" = "ckb" ]  && cmpn="$cmp" cmpc="$ckb0"
   [ "$cmp" = "ckb2" ] && cmpn="$cmp" cmpc="$ckb2"
   [ "$cmp" = "ckb3" ] && cmpn="$cmp" cmpc="$ckb3"
   [ "$cmp" = "hrn3" ] && cmpn="$cmp" cmpc="$hrn3"
+  [ "$cmp" = "para" ] && cmpn="para" cmpc="$para"
   [ "$cmp" = "cps1" ] && cmpn="pard" cmpc="$pard"
   [ "$cmp" = "parc" ] && cmpn="pard" cmpc="$pard"
   [ "$cmp" = "pard" ] && cmpn="$cmp" cmpc="$pard"

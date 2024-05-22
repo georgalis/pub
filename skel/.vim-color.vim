@@ -12,6 +12,11 @@ let g:is_posix= 1
 " light background has less saturation...
 set background=dark
 
+" Treat .tex and .lst files as text files for spellchecking
+autocmd BufNewFile,BufRead *.tex,*.lst setlocal filetype=text
+" Syntax highlight .tex and .lst files as TeX
+autocmd BufNewFile,BufRead *.tex,*.lst setlocal syntax=tex
+
 " https://stackoverflow.com/questions/9464844/how-to-get-group-name-of-highlighting-under-cursor-in-vim/58244921#58244921
 function! SynStack ()
     for i1 in synstack(line("."), col("."))
@@ -22,6 +27,61 @@ function! SynStack ()
     endfor
 endfunction
 map gm :call SynStack()<CR>
+
+" 664ba544-20240520_123210 claude
+try
+  if exists("*ToggleReset")
+      delfunc ToggleReset
+  endif
+  let s:reset_sourced = 0
+  function! ToggleReset()
+      if s:reset_sourced
+        source $HOME/.vimrc
+        let s:reset_sourced = 0
+        " echom "Sourced default .vimrc"
+      else
+        if filereadable($HOME . "/.vimrc-reset")
+          source $HOME/.vimrc-reset
+          let s:reset_sourced = 1
+          " echom "Sourced .vimrc-reset"
+        else
+          echom ".vimrc-reset not found"
+        endif
+      endif
+  endfunction
+nnoremap <silent> gc :call ToggleReset()<CR>
+catch /^Vim\%((\a\+)\)\=:E/
+    echohl ErrorMsg
+    echo v:errmsg
+    echohl None
+endtry
+
+" " 664baac3-20240520_125537 claude
+" " Define a script-local function to toggle between .vimrc and .vimrc-reset
+" function! s:ToggleReset()
+"     if exists('s:reset_sourced') && s:reset_sourced
+"         source $HOME/.vimrc
+"         let s:reset_sourced = 0
+"         echom "Sourced default .vimrc"
+"     else
+"         if filereadable($HOME . "/.vimrc-reset")
+"             source $HOME/.vimrc-reset
+"             let s:reset_sourced = 1
+"             echom "Sourced .vimrc-reset"
+"         else
+"             echom ".vimrc-reset not found"
+"         endif
+"     endif
+" endfunction
+" " Initialize the script-local variable
+" let s:reset_sourced = 0
+" " Create the keybinding to call the script-local function
+" nnoremap <silent> gc :call <SID>ToggleReset()<CR>
+    
+" see also newsbody - Run a program on the body of a mail or news message
+map gt :w!<CR>:!aspell check %<CR>:e! %<CR>
+
+
 
 " :scriptnames all the files sourced in the configuratioon
 " :highlight (:hi) shows all highlight settings, with arg1 the settings for that highlight, otherwise sets arg1 settings
