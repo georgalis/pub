@@ -9,7 +9,7 @@
 
 Process Frameworks, Standards, and Templates
 
-* *The Controls Organization*: a <b><a href="./qual/ 664e77c4-20240522-The-Controls-Organization.pdf">Prototype Document</a></b>
+* *The Controls Organization*: a <b><a href="./control/qual/ 664e77c4-20240522-The-Controls-Organization.pdf">Prototype Document</a></b>
 is the beginning of our story
 
 #### Illustrative
