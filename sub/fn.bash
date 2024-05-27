@@ -227,9 +227,9 @@ gcfg () { # report all the git config and where it comes from, repo dir may be s
   cd "$d" || { chkerr "$FUNCNAME : cannot cd to '$d'" ; return 1 ;}
   read b < <(git rev-parse --show-toplevel)
   git config --list | sed -e 's/=.*//' | sort -u \
-  | while read a; do git config --show-origin --get $a \
+    | while read a; do git config --show-origin --get $a \
       | awk -va="$a" -vb="$b" '{sub(/file:.git/,b"/.git");sub(/^file:/,"");print $1" "a"="$2}'
-      done | sort -u;
+      done | sort
   cd "$e" ; cd "$p" # restore the working dir and the old working dir
   } # 665104f8-20240524_142150
 
