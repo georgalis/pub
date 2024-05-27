@@ -9,12 +9,11 @@
 
 Process Frameworks, Standards, and Templates
 
-* *The Controls Organization*: a <b><a href="./control/qual/ 664e77c4-20240522-The-Controls-Organization.pdf">Prototype Document</a></b>
+* *The Controls Organization* :
+a <b><a href="./control/qual/ 664e77c4-20240522-The-Controls-Organization.pdf">Prototype Document</a></b>
 is the beginning of our story
 
-#### Illustrative
-
-* <b>[Continuous Cheese and Onions](Operations.pdf)</b> Swiss Cheese Safety Model, meets a Continuous Deployment Onion, through GAMP-5, and OOAD loops.
+* Illustrative : <b>[Continuous Cheese and Onions](Operations.pdf)</b> Swiss Cheese Safety Model, meets a Continuous Deployment Onion, through GAMP-5, and OOAD loops.
 ```
     Adam Rosein, Implementing Continuous Deployment
     James Reason,"Swiss cheese" model of safety vulnerabilities
@@ -23,11 +22,30 @@ is the beginning of our story
 ```
 ![Continuous Loop](Operations-Framework-0.5.png)
 
-#### Prescriptive
 
-* <b>[ProOps](ProOps#README.md)</b> a framework for operational development, change control, quality and improvement.
+* Prescriptive :
+<b>[ProOps](ProOps#README.md)</b> a framework for operational development, change control, quality and improvement.
 
-#### Standards, and Templates
-
-* <b>[Historical Overview](overview.md)</b> introduction to historical and traditional process models.
-
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
