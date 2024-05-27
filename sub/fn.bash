@@ -219,6 +219,20 @@ gstat () { # find uncommitted changes to all repos below $@ (or current repo), s
   # reports files with <space> in name as irregular... ("read a" doesn't evaluate quotes inserted by git)
   gsta $@ | sed 's/^...//' | while IFS= read a ; do ckstat "$a" ; done \
     | sort -k5 | awk -F "\t" '{print $3}' ;}
+gcfg () { # report all the git config and where it comes from, repo dir may be specified as arg1
+  local a= b= d="$1" e="$OLDPWD" p=
+  [ "$d" ] || d='.'
+  [ -d "$d" ] || { chkerr "$FUNCNAME : '$d' not a dir" ; return 1 ;}
+  read p < <(pwd -P)
+  cd "$d" || { chkerr "$FUNCNAME : cannot cd to '$d'" ; return 1 ;}
+  read b < <(git rev-parse --show-toplevel)
+  git config --list | sed -e 's/=.*//' | sort -u \
+  | while read a; do git config --show-origin --get $a \
+      | awk -va="$a" -vb="$b" '{sub(/file:.git/,b"/.git");sub(/^file:/,"");print $1" "a"="$2}'
+      done | sort -u;
+  cd "$e" ; cd "$p" # restore the working dir and the old working dir
+  } # 665104f8-20240524_142150
+
 
 ## shell script fragments
 # local infile inpath infilep
