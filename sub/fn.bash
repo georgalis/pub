@@ -399,6 +399,46 @@ _youtube_list () {
    -o "$d/00$(xs),%(playlist_title)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   } # _youtube_list 20220516
 
+_youtube_txt () { # put youtube (arg1) json and captions in dir (arg2, original json and vtt stored in arg2/@)
+  local id="$1" d="$2"
+  [ "$id" ] || read -p "youtube id: " id
+  [ "$id" ] || { chkerr "$FUNCNAME : no id? (66749f30)" ; return 1 ;}
+  read id < <(sed -e "s/\([?&]\)si=................[&]*/\1/" -e 's/\?$//' <<<"$id") # squash trackers from url
+  [ "$d" ]  || read -p "directory: " d
+  [ "$d" ]  || d='.'
+  [ -d "$d/@" ] || mkdir -p "$d/@" || { chkerr "$FUNCNAME : unable to mkdir '$d/@' (66749f61)" ; return 1 ;}
+  [ "$ytdl" ] || ytdl="youtube-dl"
+ #local t= ; read t < <(mkdir -p "$HOME/%/ytdl" && cd "$HOME/%/ytdl" && mktemp ytdl-XXXX)
+ #[ -e "$HOME/%/ytdl/$t" ] || { chkerr "$FUNCNAME : could not set tmp file '$t' (6674ab6a)" ; return 1 ;}
+  local xs= ; read xs < <(sed -e 's/^@4[0]*//' -e 's/[[:xdigit:]]\{8\} $//' < <(tai64n <<<'')) \
+    || { chkerr "$FUNCNAME : failed to set xs (6674c2fd)" ; return 1 ;}
+  local ytdl_vtt= ytdl_json=
+  read ytdl_vtt ytdl_json < <(tr '\n' ' ' < <(sed -e '/^\[info\] Writing/!d' -e 's/.*: //' < <(# collect filenames from ytdl output
+    $ytdl --write-info-json --write-comments --write-sub --write-auto-sub --sub-lang en \
+        --restrict-filenames --skip-download --abort-on-error --no-playlist \
+        -o "$d/@/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" "$id" )))
+  $verb chkwrn "ytdl_vtt=$ytdl_vtt"
+  uniq < <(sed -e '/align:start position/d' -e 's/<[^>]*>//g' -e '/^ [ ]*$/d' -e '/^$/d' "$ytdl_vtt") >"${ytdl_vtt}.txt" \
+    && mv "${ytdl_vtt}.txt" "$d" || { chkerr "$FUNCNAME : could not create '$d/${ytdl_vtt}.txt' (6674c795)" ; return 1 ;}
+  chktrue "$d/${ytdl_vtt##*/}.txt"
+  $verb chkwrn "ytdl_json=$ytdl_json"
+  yq -y 'del(.formats, .thumbnails, .thumbnail, .age_limit, ._format_sort_fields,
+             .automatic_captions, .playable_in_embed, .is_live, .was_live, .tbr,
+             .format, .format_id, .format_note, .protocol,
+             .width, .height, .resolution, .fps, .vcodec, .vbr, .aspect_ratio )
+       | del(.comments[]? | (._time_text, .author_thumbnail, .author_is_verified))' "$ytdl_json" >"${ytdl_json}.yml" \
+    && mv "${ytdl_json}.yml" "$d" || { chkerr "$FUNCNAME : could not create '$d/${ytdl_json}.yml' (6674c7fe)" ; return 1 ;}
+  chktrue "$d/${ytdl_json##*/}.yml"
+# more deletes
+# .downloader_options, .http_headers, .webpage_url_basename, .author_thumbnail, .live_status,
+# .automatic_captions, .extractor,
+  ## get the id
+  #local f="$(find $links -name \*$($ytdl --dump-json $id | jq --ascii-output --raw-output '(.id)' | yq --yaml-output |head -n1)\* | grep -Ev '/(tmp|0)/' | sort)"
+  ## check if the id exists already, chance to abort...
+  #[ "$f" ] && { echo "$f" ; read -p "files found, continue (N/y) " f ; [ "$f" = 'y' ] || return 1 ;}
+  #_youtube_json2txt $(sed -e '/as JSON to/!d' -e 's/.*to: //' <"$HOME/%/ytdl/$t") && rm -f "$HOME/%/ytdl/$t" \
+  } # _youtube_txt 66749f14-20240620_142842
+
 _youtube () {
   local id="$1" d="$2"
   [ "$id" ] || read -p "youtube id: " id
@@ -408,8 +448,9 @@ _youtube () {
   [ "$d" ]  || d='.'
   [ -d "$d" ] || { [ -d "${links}/$d" ] && d="${links}/$d" ;}
   [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d' (6542c606)" ; return 1 ;}
-  #[ "$ua" ] && uac="--user-agent '$ua'" || uac=''
   [ "$ytdl" ] || ytdl="youtube-dl"
+  local xs= ; read xs < <(sed -e 's/^@4[0]*//' -e 's/[[:xdigit:]]\{8\} $//' < <(tai64n <<<'')) \
+    || { chkerr "$FUNCNAME : failed to set xs (6674c2fd)" ; return 1 ;}
   local t=$(mkdir -p "$HOME/%/ytdl" && cd "$HOME/%/ytdl" && mktemp ytdl-XXXX)
   # get the id
   local f="$(find $links -name \*$($ytdl --dump-json $id | jq --ascii-output --raw-output '(.id)' | yq --yaml-output |head -n1)\* | grep -Ev '/(tmp|0)/' | sort)"
@@ -418,7 +459,7 @@ _youtube () {
   $ytdl --write-info-json --write-comments --write-sub --write-auto-sub --sub-lang en --write-thumbnail \
    --restrict-filenames --audio-quality 0 --audio-format best --extract-audio \
    --abort-on-error --no-playlist \
-   -o "$d/00$(xs),%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id | tee "$HOME/%/ytdl/$t"
+   -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id | tee "$HOME/%/ytdl/$t"
   # prompt with filing indices and catagories
     local w= ; read -d '' w < <(awk '{ printf "%.0f", $1 * 0.89 }' < <(tput cols))
     sed 's/^/  /' < <( # pad margin
@@ -438,7 +479,8 @@ _youtube_json2txt () { # fixup youtube .info.json to yaml txt and sort files
   [ -f "${1}.txt" ] && { chkerr "$FUNCNAME : exists ${1}.txt (6542c86a)" ; return 1 ;}
   local inpath='' _fout="_^$(jq --ascii-output --raw-output '(.id, .acodec)' "$1" \
     | tr -d '"' | tr '\n' '.' | sed 's/\.$//')"
-  expr "$1" : ".*/" >/dev/null && inpath="${1%/*}" || inpath="."
+  #expr "$1" : ".*/" >/dev/null && inpath="${1%/*}" || inpath="."
+  [[ "$1" =~ / ]] && inpath="${1%/*}" || inpath="."
   printf "\n%s\n" "ss= ; export verb=chkwrn ss= to= t= p= f= c=r3 F= CF= off= tp= lra= i= cmp=pard v=3db" >"${1}.txt"
   printf   "%s\n" "ss= ; export _f=@/${_fout}" | tr -d '"' >>"${1}.txt"
   { jq --ascii-output --raw-output '(.fulltitle)' "$1" \
@@ -642,10 +684,10 @@ EOF
   local para="sinc -16k compand 0.09,0.25 -60.7,-58.8,-50.7,-44.1,-40.7,-26,-22.6,-16,-7.9,-6 -2.5 -20 0.03" # for old analog, inverse pard
   local para="sinc -16k compand 0.09,0.25 -58.7,-56.8,-48.7,-42.1,-38.7,-24,-20.6,-14,-5.9,-4 -2 -20 0.1" # for old analog, inverse pard
   local para="sinc -16k compand 0.09,0.25 -56.7,-54.8,-46.7,-40.1,-36.7,-22,-18.6,-12,-3.9,-2 -3 -20 0.1" # for old analog, inverse pard
-  local para="sinc -16k compand 0.09,0.25 -55.7,-53.8,-45.7,-39.1,-35.7,-21,-17.6,-11,-2.9,-1 -4 -20 0.13" # for old analog, inverse pard
-  local para="sinc -16k compand 0.087,0.12 -55.2,-53.3,-45.2,-38.6,-35.2,-20.5,-17.1,-10.5,-2.4,-0.5 -7.0 -20 0.089" # for old analog, inverse pard
-  local para="sinc -16k compand 0.087,1.78 -55.2,-53.3,-45.2,-38.6,-35.2,-20.5,-17.1,-10.5,-2.4,-0.5 -7.0 -20 0.0871" # for old analog, inverse pard
-  local para="compand 0.087,1.78 -55.2,-53.3,-45.2,-38.6,-35.2,-20.5,-17.1,-10.5,-2.4,-0.5 -7.0 -20 0.0871" # for old analog, inverse pard
+  local para="sinc -16k compand  0.09,0.25  -55.7,-53.8,-45.7,-39.1,-35.7,-21,-17.6,-11,-2.9,-1 -4 -20 0.13" # for old analog, inverse pard
+  local para="sinc -16k compand  0.087,0.12 -55.2,-53.3,-45.2,-38.6,-35.2,-20.5,-17.1,-10.5,-2.4,-0.5 -7.0 -20 0.089" # for old analog, inverse pard
+  local para="sinc -16k compand  0.087,1.78 -55.2,-53.3,-45.2,-38.6,-35.2,-20.5,-17.1,-10.5,-2.4,-0.5 -7.0 -20 0.0871" # for old analog, inverse pard
+  local para="sinc 6-22k compand 0.087,1.78 -55.2,-53.3,-45.2,-38.6,-35.2,-20.5,-17.1,-10.5,-2.4,-0.5 -7.0 -20 0.0871" # for old analog, inverse pard
   [ "$cmp" = "hrn" -o "$cmp" = "hrn1" ] && cmpn="hrn3" cmpc="$hrn3"
   [ "$cmp" = "cps" ]  && cmpn="pard" cmpc="$pard"
   [ "$cmp" = "ckb" ]  && cmpn="$cmp" cmpc="$ckb0"
@@ -670,7 +712,10 @@ EOF
   [ "$v" ] && { vn="${vn}-v${v}" vc="${vc} vol ${v} dither" ;} || true # set vol name (vn) and vol command (vc) if needed
   [ "$rev" = "y" ] && vn="${vn}-rev" vc="$vc reverse"
   [ "$ss" ] || local ss="0" # if null ss=0 is default, and ss=0 is unspecified in filename, probe "to" if unspecified
-  [ "$to" ] || local to="$(ffprobe -hide_banner -loglevel info "$infilep" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')"
+  [ "$to" ] || { local to= ; read to < <( # if empty, load var with Process Substitution and no subshel/Command Substitution
+        awk '{print($1==int($1))?$1:int($1)+1}' < <(# round up to an interger
+        ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 "$infilep")) ;} # probe file for duration
+        # https://trac.ffmpeg.org/wiki/FFprobeTips#Formatcontainerduration
   local secc='' secn='' ssec='' tsec=''
   ssec=$(hms2sec ${ss})
   tsec=$(hms2sec ${to})
@@ -682,19 +727,15 @@ EOF
   $verb "${inpath}/tmp/${infile}${secn}.meas"
   [ -f "${inpath}/tmp/${infile}${secn}.meas" ] || { # measure for EBU R128 loudness normalization
       { echo "# ${infile}${secn}.meas infile secn meas flac"
-      ffmpeg -hide_banner -loglevel info -benchmark -y $secc -i "$infilep" \
+      #$verb2 "loudnorm in: loudnorm=print_format=json... $secc -i $infilep > ${inpath}/tmp/${infile}${secn}.flac~" 
+      ffmpeg -hide_banner -loglevel info -y $secc -i "$infilep" \
         -af "loudnorm=print_format=json" \
-        -f flac "${inpath}/tmp/${infile}${secn}.flac~" 2>&1 \
-            | awk '/^{/,0' | jq --compact-output '
-                                 {measured_I:.input_i,measured_TP:.input_tp,measured_LRA:.input_lra,measured_thresh:.input_thresh},
-                                 {out_i_LUFS:.output_i,out_tp_dBTP:.output_tp,out_lra_LU:.output_lra,out_tr_LUFS:.output_thresh,offset_LU:.target_offset},
-                                 {linear:.linear}
-                                ' | tr -d '"{}' | tr ':' '=' | awk -F, '{printf "% 18s % 18s % 18s % 22s % 15s \n",$1,$2,$3,$4,$5}'
+        -f flac "${inpath}/tmp/${infile}${secn}.flac~" 2>&1 | awk '/^{/,0' \
+          | jq -r '. | "measured_I=\(.input_i) measured_TP=\(.input_tp) measured_LRA=\(.input_lra) measured_thresh=\(.input_thresh) linear=\(.linear)\nout_i_LUFS=\(.output_i) out_tp_dBTP=\(.output_tp)   out_lra_LU=\(.output_lra)     out_tr_LUFS=\(.output_thresh) offset_LU=\(.target_offset)"'
        } >"${inpath}/tmp/${infile}${secn}.meas~" \
          && mv -f "${inpath}/tmp/${infile}${secn}.flac~" "${inpath}/tmp/${infile}${secn}.flac" \
          && mv -f "${inpath}/tmp/${infile}${secn}.meas~" "${inpath}/tmp/${infile}${secn}.meas"
-      grep -E '(measured|out)' "${inpath}/tmp/${infile}${secn}.meas" \
-        | while IFS= read a ; do ${verb2} "$a" ; done
+       while IFS= read a ; do ${verb2} "loudnorm out: $a" ; done <"${inpath}/tmp/${infile}${secn}.meas"
     } # have trimmed measured flac
   #   i   Set integrated loudness target. Range is -70.0 - -5.0. Default value is -24.0.
   #   lra Set loudness range target.      Range is   1.0 - 20.0. Default value is   7.0.
@@ -704,13 +745,14 @@ EOF
   [ "$lra" ] && lran="-lra$lra"
   [ "$tp"  ] &&  tpn="-tp$tp"
   [ "$i"   ] &&   in="-i$i"
-  $verb2 "$(hms2sec $(ffprobe -hide_banner  -loglevel info  "${inpath}/tmp/${infile}${secn}.flac" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //') ) seconds flac"
+  local flac_sec= ; read flac_sec < <(awk '{printf "%.3f",$1}' < <(ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 "${inpath}/tmp/${infile}${secn}.flac" )) || true
+  $verb2 "$(hms2sec $flac_sec) seconds flac"
   [ "${offn}${lran}${tpn}${in}" ] && lnn="-ln${lran}${tpn}${in}${offn}" || lnn="-ln"
   $verb "${inpath}/tmp/${infile}${secn}${lnn}.{flac,meas}"
   [ -f "${inpath}/tmp/${infile}${secn}${lnn}.flac" ] || { # make loudnorm flac https://en.wikipedia.org/wiki/EBU_R_128
   # local off="${off:=0}" tp="${tp:=-2}"   lra="${lra:=7}" i="${i:=-24}" # assign unset parm to default values
   # local off="${off:=0}" tp="${tp:=-1}"   lra="${lra:=7}" i="${i:=-23}" # https://tech.ebu.ch/docs/r/r128.pdf revision 2020
-    local off="${off:=0}" tp="${tp:=-0.5}" lra="${lra:=7}" i="${i:=-23}" # assign unset parm to local defaults
+    local off="${off:=0}" tp="${tp:=-0.7}" lra="${lra:=7}" i="${i:=-23}" # assign unset parm to local defaults
     local $(grep measured "${inpath}/tmp/${infile}${secn}.meas")
     { echo "# ${infile}${secn}${lnn}.flac infile ln flac"
       ffmpeg -hide_banner -loglevel info -benchmark -y $secc -i "$infilep" \
@@ -718,17 +760,14 @@ EOF
                    :measured_I=${measured_I}:measured_TP=${measured_TP}
                    :measured_LRA=${measured_LRA}:measured_thresh=${measured_thresh}
                    :offset=${off}:i=${i}:tp=${tp}:lra=${lra}" \
-          -f flac "${inpath}/tmp/${infile}${secn}${lnn}.flac~" 2>&1 \
-            | awk '/^{/,0' | jq --compact-output '
-                                   {measured_I:.input_i,measured_TP:.input_tp,measured_LRA:.input_lra,measured_thresh:.input_thresh},
-                                   {out_i_LUFS:.output_i,out_tp_dBTP:.output_tp,out_lra_LU:.output_lra,out_tr_LUFS:.output_thresh,offset_LU:.target_offset},
-                                   {linear:.linear}
-                                  ' | tr -d '"{}' | tr ':' '=' | awk -F, '{printf "% 18s % 18s % 18s % 22s % 15s \n",$1,$2,$3,$4,$5}'
-    } >"${inpath}/tmp/${infile}${secn}${lnn}.meas~"
-    mv -f "${inpath}/tmp/${infile}${secn}${lnn}.flac~" "${inpath}/tmp/${infile}${secn}${lnn}.flac"
-    mv -f "${inpath}/tmp/${infile}${secn}${lnn}.meas~" "${inpath}/tmp/${infile}${secn}${lnn}.meas"
-    grep -E '(measured|out)' "${inpath}/tmp/${infile}${secn}${lnn}.meas" \
-        | while IFS= read a ; do ${verb2} "$a" ; done
+          -f flac "${inpath}/tmp/${infile}${secn}${lnn}.flac~" 2>&1 | awk '/^{/,0' \
+          | jq -r '. | "measured_I=\(.input_i) measured_TP=\(.input_tp) measured_LRA=\(.input_lra) measured_thresh=\(.input_thresh) linear=\(.linear)\nout_i_LUFS=\(.output_i) out_tp_dBTP=\(.output_tp)   out_lra_LU=\(.output_lra)     out_tr_LUFS=\(.output_thresh) offset_LU=\(.target_offset)"'
+    } >"${inpath}/tmp/${infile}${secn}${lnn}.meas~" \
+    && { # only rotate {flac,meas} on no error
+        mv -f "${inpath}/tmp/${infile}${secn}${lnn}.flac~" "${inpath}/tmp/${infile}${secn}${lnn}.flac"
+        mv -f "${inpath}/tmp/${infile}${secn}${lnn}.meas~" "${inpath}/tmp/${infile}${secn}${lnn}.meas"
+        while IFS= read a ; do ${verb2} "loudnorm post: $a" ; done <"${inpath}/tmp/${infile}${secn}${lnn}.meas"
+        } || { chkerr "$FUNCNAME : '${inpath}/tmp/${infile}${secn}${lnn}.{flac,meas}' (6675e2b2)"  ; return 1 ;}
   } # make loudnorm flac
   ##### begin rb section ######################################
   local out="${infile}${secn}${lnn}"
@@ -1450,19 +1489,20 @@ playffend () { # Play the ending of files (args or stdin), always "no display"
 
 probeff () { # use ffprobe to extract duration of files (args OR stdin filename per line)
     local f fs
-    [ $# -gt 0 ] && { fs="$1" ; shift ;}
-    while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
-    [ "$fs" ] || fs="$(cat)"
+    [ $# -gt 0 ] && { fs="$1" ; shift ; while [ $# -gt 0 ] ; do read -d '' fs < <(printf "%s\n%s\n" "$fs" "$1") || true ; shift ; done ;}
+    [ "$fs" ] || { read -d '' fs < <(cat) || true ;}
     echo "$fs" | while IFS= read f; do
         local inpath infile="${f##*/}" # basename
         expr "$f" : ".*/" >/dev/null && inpath="${f%/*}" || inpath="." # input dirname
-        local infilep="$(cd "${inpath}" ; pwd -P)/${infile}" # full filepath
+        local infilep ; read infilep < <(tr -d '\n' <( cd "${inpath}" ; pwd -P ; echo "/${infile}" )) || true # full filepath
         [ -f "$infilep" ] && {
-            d="$(ffprobe -hide_banner -loglevel info "$infilep" 2>&1 | sed -e '/Duration: N\/A, /d' -e '/Duration/!d' -e 's/,.*//' -e 's/.* //')"
+            read -d '' d < <(
+                sed -e '/Duration: N\/A, /d' -e '/Duration/!d' -e 's/,.*//' -e 's/.* //' < <(
+                ffprobe -hide_banner -loglevel info "$infilep" 2>&1 )) || true
             [ "$d" ] && echo "$d $infilep" || true
-        }
+        } || { chkwrn "$FUNCNAME : not a file '$infilep' (666f48ec)" ;}
         done
-    } # probeff
+    } # probeff 628322e1-20220516_212143
 
 rotatefile () { #P> keep at least n backups, and delete files older than m seconds
     local a= use="$FUNCNAME {file}"'
