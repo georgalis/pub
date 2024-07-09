@@ -1,0 +1,62 @@
+---
+file: fonts
+  type: yml2doc
+    h3: "True Type Fonts in TexLive"
+      p: |
+        Adding True Type Fonts to a Latex user environment is easy with the autoinst program,
+        from https://ctan.org/tex-archive/fonts/utilities/fontools/ and bundled with TexLive,
+        only a few manual steps are required. These instructions are for a
+        user env install (and the sudo root averse). The steps are
+        1) populating a directory with the (.ttf) font files,
+        2) running the autoinst command on the font files,
+        3) creating map config data,
+        4) running texhash and updmap, and
+        5) confirming available fonts, weights, and shapes, with a demo tex file.
+      p: |
+        Obtain your TTF files, typically distributed within a zip file.
+        Create a directory `{FontName}` and extract the TTF files into it.
+      p: |
+        A TeX and Metafont directory `texmf` is used to store fonts and styles.
+        On Darwin, `mkdir -p ~/Library/texmf/fonts/truetype`
+        other posix systems, use `mkdir -p ~/texmf/fonts/truetype`
+        Throughout this document the `./texmf` directory refers to the path on your system.
+        Move the `{FontName}` directory with the ttf files into the `./texmf/fonts/truetype` directory.
+      p: |
+        Use the autoinst command to install the font, there are many options but you are probably
+        only interested in -serif/-sanserif/-typewriter, group your fonts in these categories,
+        then use wildcards to install each group together with the corresponding option, eg
+        <pre>
+        autoinst -serif      ./texmf/fonts/truetype/{FontName}/*{serif}*.ttf
+        autoinst -sanserif   ./texmf/fonts/truetype/{FontName2}/*{sanserif}*.ttf
+        autoinst -typewriter ./texmf/fonts/truetype/{FontName3}/*{mono}*.ttf
+        </pre>
+        If you don't use this option autoinst may incorrectly guess the font type.
+      p: |
+        The next step is difficult to explain, but the script should take care of it.
+        Set the paths and create the dir, before writing a updmap.cfg file
+        with the map files created by autoinst.
+        <pre>
+        v="$(tlmgr --version | sed -e '/version/!d' -e 's/.*version //')"
+        case $(uname) in
+          Darwin) a="$HOME/Library/texmf/fonts/map" b="$HOME/Library/texlive/$v/texmf-config/web2c" ;;
+          Linux)  a="$HOME/texmf/fonts/map"         b="$HOME/.texlive/$v/texmf-config/web2c" ;;
+        esac
+        [ -d "$a" ] && { mkdir -p "$b"
+            find "$a" -type f -name \*map -exec basename \{\} \; \
+              | sed 's/^/Map /' >"$b/updmap.cfg" ;}
+        </pre>
+      p: |
+        Rebuild the ls-R filename databases with texhash, and 
+        configure the user env fonts (and administratively installed fonts)
+        with the updmap command, this step may take tens of seconds
+        (repeat this step in the future to add new administratively installed fonts).
+        <pre>
+        texhash ./texmf (Mac: texhash ~/Library/texmf)
+        updmap --user
+        </pre>
+      p: |
+         Use the font in your document, reference the style package file
+        (.sty) and use the respective font commands. For package name hints,
+        <pre>
+        find ./texmf/tex/latex/ -mtime -1 -name \*sty -exec grep ProvidesPackage \{\} \;
+        </pre>
