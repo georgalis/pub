@@ -73,7 +73,8 @@ esac # "$OS"
  #export LSCOLORS='xefxcxdxbxegedabagacad'
  #export CLICOLORS=$LSCOLORS
  # define reverse for directory color
- export LSCOLORS='x45x2x3x1x464301060203' # invert directory color
+ #export LSCOLORS='4x5x2x3x1x464301060203' # default, per man
+  export LSCOLORS='x45x2x3x1x464301060203' # invert directory color
  alias   l='colorls -FGr'
  alias  lr='colorls -FG'
  alias  ll='colorls -AFGTlr'
@@ -127,10 +128,10 @@ siffx() { local verb="${verb:-devnul}" s="$1" f='' b=''
 #verb3="${verb3:=devnul}"
 
 path_append() { # append $1 if not already in path
- echo $PATH | grep -E "(:$1$|^$1$|^$1:|:$1:)" 2>&1 >/dev/null \
+ echo "$PATH" | grep -E "(:$1$|^$1$|^$1:|:$1:)" 2>&1 >/dev/null \
   || export PATH="${PATH}:${1}" ;}
 path_prepend() { # prepend $1 if not already in path
- echo $PATH | grep -E "(^$1:|^$1$)" 2>&1 >/dev/null \
+ echo "$PATH" | grep -E "(^$1:|^$1$)" 2>&1 >/dev/null \
   || export PATH="${1}:${PATH}" ;}
 
 ckstat() { # return sortable stat data for args (OR stdin file list)
