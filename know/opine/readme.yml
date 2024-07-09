@@ -1,0 +1,316 @@
+
+data: |
+  someday I'll digitally sign these comments
+  for now, they are collected here because I care
+  and they are otherwise hard to search for
+  also sometimes youtubers DELETE my careful opinions!
+
+---
+# cf yaml-schema.yml
+comment:
+    data: |
+ Is AI Actually Useful?
+ Patrick Boyle
+ 676K subscribers
+ Feb 24, 2024
+
+https://www.youtube.com/watch?v=FTs35x-xUg4&lc=UgykdTHRlUlJSS78IrR4AaABAg
+@GeorgeGeorgalis
+0 seconds ago
+AlphaGo demonstrated the power of deep learning systems specialized to a specific domain through tailored training data and objectives. This contrasts with general purpose AI, and hints at the future potential of bespoke specialized training. As insight from pioneering thinker Alan Kay coined "Computer Science an Oxymoron," rather than comparing available solutions, specialized domain engineering is used to achieve maximum impact.
+
+Rather than general purpose training, bespoke training is tooling specialized resources to the problem at hand. More effective training is task-specific data, biased with objectives and success criteria around the intended application. For example, much enthusiasm for generative AI arises from models trained on diverse contemporary opinionated datasets, capturing modern cultural patterns. Redit and Twitter inputs, popular (engaging) concepts out. The ability to curate custom training sets opens possibilities to develop assistants, finely tuned for specialized domains.
+
+Imagine a training set encompassing the great works filling university shelves - Bacon, Shakespeare, Montaigne; seminal publishers like Taylor & Francis Group, Penguin, Oxford, Harvard, and Stanford. By steeping machine learning models in a domain's knowledge foundations, the resulting AI agent may excel at bridging ideas within that discipline. It could enhance human creativity through unusual associations most scholars would dismiss as too disparate across eras or fields.
+
+General AI systems are most useful for tasks like filtering and ranking outputs. When prompting generalized models with challenging questions, machine-generated responses often lack relevance. However, the one-in-ten creative, unexpected or serendipitous suggestion can profoundly augment human creativity and productivity. AI's gift for recombining concepts for novel solutions can elucidate promising connections that human experts would implicitly rule out as too unconventional. Likewise AI is unable to distinguish the ridiculous or absurd from truly useful interpretations of training. The really wild responses are typically parameterized off, or safety guardrailed out of responses, a necessary, albeit heavy handed, artifact of quality control.
+
+
+AI summarization engines are improving in distilling accurate key insights from highly complex, multidimensional prompts. While AI-generated code or text often contains easily rectified flaws, the quality of AI generated text and programming algorithms is often better than 95% of humans capable of solving the task, natural because presumably the training corpus is the gold standard. The important difference is that human may require 3 or 6 hours, while AI responds with a solution representing a strategic grasp of the gold standards, in as many seconds. Our machine counterparts display complementary gifts to uniquely human strengths like discernment and quality judgement. Naturally, low skill knowledgeworkers would stand to gain the most from this tool. Wise integration of both human and artificial intelligence unlocks new planes of understanding and progress. It most certainly will frame the foundation of tomorrow's consensus of what intelligence is, if there ever would be such a thing.
+
+The television cameras pointing at televisions analogy sounds like it could be from Douglas Hofstadter's book Godel, Escher, Bach &#58; an Eternal Golden Braid, and the concept "Turtles All the Way Down" an infinite regress; there is no "reality" except in the mind of one character, God, the author. No matter how far up or down you go, you can't get out.
+
+(AI was used to focus and clarify my ideas in this comment!) 
+
+    data: |
+ Trump fake elector in Wisconsin describes how he says he was tricked
+ 60 Minutes
+ 2.73M subscribers
+ 1,365,141 views
+ Feb 19, 2024
+
+https://www.youtube.com/watch?v=e3guirxwrXc&lc=Ugz0OzI3JBnOKINrS-p4AaABAg
+@GeorgeGeorgalis
+3 days ago
+When suffering tempts us to embrace dishonest leaders, we must recall that integrity in leadership is essential for real progress. Dishonest tactics erode civic trust and breed cynicism. But leaders of character build trust by their honest conduct. They lead by inspiring our desire for justice, not exploiting desperation. Honorable leaders check abuses of power and unify people across differences. They focus policy on the common good, with wisdom and ethical insight. Though integrity in leadership demands hard work, it is the sole path to lasting solutions. For it taps our shared hopes and brings out the best in us all.
+
+While desperate times tempt us to excuse dishonorable leaders, we must demand integrity, which unlocks our spirit and collective wisdom for achieving true and lasting progress. 
+
+    data: |
+ OpenAI's "AGI Pieces" SHOCK the Entire Industry! AGI in 7 Months! | GPT, AI Agents, Sora & Search
+ Wes Roth
+ 149K subscribers
+ 301,743 views
+ Feb 19, 2024
+
+https://www.youtube.com/watch?v=q05kiN7P-eY&lc=UgypRbKe-twfpn8g_cl4AaABAg
+@GeorgeGeorgalis
+4 days ago
+What about the collective Google? I mean Google has been defining the answer to most of the questions for most of the people most of the time for over 20 years now. We complain of AI shortcoming in innovation at the same time we dismiss hallucinations as a shortcoming. Actually our idea of utility is changing, yet it has been millennia since we've had a consensus. If we measure AGI in terms of general influence, hasn't it already arrived in a massive scale? Ironically, leveraging AI against all our training data is already perceived as the new Holy Grail. Maybe we should be thinking of AGI as a measure of our own shortcoming? Fostering identity, originality, purpose, and connection, altogether while maintaining the docility to adapt to all forms of diversity, contention, and the myriad of challenges created by the human condition might be a more valued intelligence than an entirely general one.
+
+    data: |
+ Adventures in machining sound
+ Cylo's Garage
+ 9.53K subscribers
+ 4,228 views
+ Dec 22, 2023
+
+https://www.youtube.com/watch?v=ayr7azl-rrE&lc=Ugylck8f2Koh5mUiDDl4AaABAg.9yf4b5xh87yA01O5MKeQcC
+@GeorgeGeorgalis
+4 days ago
+a frequency sweep can be generated with sox, conveniently determine the expected frequency with time, and it might be a better indicator of musical frequency response... yes awesome project! 
+
+    data: |
+  AI Generated Videos Just Changed Forever
+  Marques Brownlee
+  18.5M subscribers
+  7,216,235 views
+  Feb 15, 2024
+
+https://www.youtube.com/watch?v=NXpdyAWLDas&lc=UgwoycBJfaRQBnw97Z14AaABAg.A-vQMZr3zuOA-w0XQx_DBf
+  @GeorgeGeorgalis
+  7 days ago
+   @us3rG  interesting observation, actually in classic western cinema one noted hallmark is the expertise no longer exists. To make a sequel today would be impossible, because reproducing the horsemanship, the documented skills on film, no longer exist. Sure people ride horses but there are no bare back Indians in full gallop rustling a team of horses or cowboys jumping off a bridge into a river... as needs changed, we have lost the vocations along with the skills, and mentors. However with AI there may be comeback! after all horses don't have hands
+
+
+ Wait, so comparisons in floating point only just KINDA work? What DOES work?
+ SimonDev
+ 170K subscribers
+ 229,619 views
+ Oct 5, 2021
+ Data Structures & Optimization
+ 
+ https://www.youtube.com/watch?v=Oo89kOv9pVk&lc=Ugz-zF--pVwvQE3MELJ4AaABAg
+@GeorgeGeorgalis
+7 days ago
+Wow, thanks! I've known about scientific notation, binary, integers, and significant digits for a while; even supported scientific compute where these problems come up; but with the underlying algebra you have shown us exactly why, no more blind attribution to intuitive real and binary conversion errors... 
+
+
+@trulshenriksson2848
+11 months ago
+My favorite floating point hack is that 7/3 - 4/3 - 1 will always give you machine epsilon. I don't quite remember how, but I found a comment in the depths of stackoverflow that claimed it worked regardless of programming language, OS and computer. As long as it's using the IEEE standard it works.
+@simondev758
+11 months ago
+Super cool! I found a reference for it here, problem 3: http://rstudio-pubs-static.s3.amazonaws.com/13303_daf1916bee714161ac78d3318de808a9.html 
+@volbla
+11 months ago (edited)
+Oh, that makes sense! A third is like the perfect middle step between powers of 2, so the mantissa is all ones. But 7/3 has a one greater exponent than 4/3, so it's "missing" a decimal digit that's presumably rounded up. The difference between them cancels out everything except 1 and the least significant digit of 4/3, making it 1 + ulp.
+
+What a cool trick. 
+
+data : |
+ AI Generated Videos Just Changed Forever
+ Marques Brownlee
+ 18.5M subscribers
+ 7,217,054 views
+ Feb 15, 2024
+ Reminder: It?s only been 1 YEAR since the Will Smith eating spaghetti video
+ https://www.youtube.com/watch?v=NXpdyAWLDas&lc=Ugx4UkPMb6iIoClAz954AaABAg
+@GeorgeGeorgalis
+8 days ago
+Awh, just give it 10 days... seriously 100... but the non-corporeal handicap keeps showing up. 3, 5, or 7 wolf pups playing together, same difference per training; or the way the antiqued font matches the wriggly window pane frame... a lot of the generated code I get has problems like dyslexia processing arrays, but I just prompt for a correction, manually repair some minors, and a really complicated algorithm can be fixed up in the span of a coffee break... cannot wait for innovation. 
+
+data:
+ Critical documents expected to arrive in mail just vanish
+ CBS Chicago
+ 392K subscribers
+ 156,742 views
+ Feb 13, 2024
+
+@GeorgeGeorgalis
+9 days ago
+Bank: rest assured your check has been sent. Recipient: where is the check? USPS: only the sender can file a missing mail report... ? 
+
+https://www.reddit.com/r/SpaceXLounge/comments/1aqxubm/apparently_the_heat_tiles_on_the_space_shuttle/
+https://www.reddit.com/r/SpaceXLounge/comments/1ape7r8/comment/kqevfq6/
+https://www.youtube.com/watch?v=SI7mpjHGiFU
+Video has since been put on private and can't be accessed. 
+It was a video from the channel "Breaking taps". It showed the differences between SpaceX and NASA thermal tiles.
+Logo for YouTube
+YouTube
+Thanks for the breakdown, great chemistry! I would love a feature on carbon felt, maybe as a short? Why does it work so well to resist heat, and why is it not used in space craft?
+Commented on a private video
+Details
+event
+February 12 at 9:12 PM
+
+
+data:
+   Scarlatti by Marcelle Meyer - 58 Keyboard Sonatas, K 380 .. NEW MASTERING (recording of the Century)
+   Classical Music/ /Reference Recording
+   304K subscribers
+   191,800 views
+   Jan 19, 2021
+
+
+   @GeorgeGeorgalis
+   3 weeks ago (edited)
+   CMRR, Thank you so much for including both albums! It is an amazing opportunity to study Meyer's interpretation and development! I indexed the tracks for A/B comparison and wanted to share my observation. While her maturity in form, technical detail, and inclusion of composer repeats, complement the higher quality recording of album 1, a softer and more graceful execution makes some of album 2 more pleasing in my ear.
+
+   1:54:01 D_Scarlatti-Kk064-Sonate_re_min-Dmin-Allegro-Meyer vs 23:53
+   1:49:46 D_Scarlatti-Kk114-Sonate_la_maj-Amaj-Spirito_e_presto-Meyer vs 34:25 (corrected)
+   2:45:15 D_Scarlatti-Kk377-Sonate_si_min-Bmin-Allegrissimo-Meyer vs 1:26:43
+
+   Notably the last one, while probably much less technically accurate, the older recording is much more pleasing to listen to. 
+
+
+
+ CppCon 2018: Matt Godbolt ?The Bits Between the Bits: How We Get to main()?
+ CppCon
+ 143K subscribers
+ 168,622 views
+ Nov 11, 2018
+ CppCon 2018
+https://www.youtube.com/watch?v=dOfucXtyEsU&lc=UgxFwTq-Bo0eRRTIpmV4AaABAg
+@GeorgeGeorgalis
+1 month ago
+53:09 there must be application of this technique in LLM, eg (for CPU w/o GPU...) load from model into cpu cache (or RAM) all the tokens 2 or 3 nodes deeper than context, before evaluation... 
+
+
+https://www.youtube.com/watch?v=eivfTa4YpNA&lc=UgyClI2p3HeNlPk734J4AaABAg.9yXuXkwEvbg9yXyleIf4Dz
+Answers to some questions: 1) I've been using (stacks of computer system engineering) tools that accelerate tasks by 1,000x or more for years, the consequence is creative design advantages, robust solutions, and problem remediation that was previously impossible. However, the absence of the previously impossible is rarely a value factor, the tool is never of value, only the yield, if and when the tool implementation is desired. The tool is a hard sell. 2) Self education with AI has rekindled my sense of purpose and achievement, through previously impossible software development, communications, and focused recapitulation of aspirations, diary, cv, etc, in seconds, for any context. 3) I don't choose for a "needs met" scenario, rather that bliss inspires unbound creativity.
+Replied to a comment on Integrated AI - The sky is comforting (2023 AI retrospective) - Alan D. Thompson - LifeArchitect.ai
+27:33
+Details
+event
+Dec 20, 2023 at 1:27 AM
+
+
+https://www.youtube.com/watch?v=eivfTa4YpNA&lc=UgyClI2p3HeNlPk734J4AaABAg
+AI policy? As humans we should have a higher bar, transparency and references. Simply disclosing how AI was used, along with other sources, adds credibility to compositions, well at least it makes me feel more human and honest. I loath speaking with human customer service agents which are clearly reading (exactly and only) from an AI teleprompter prompted by my speech. In my view the most important must have with AI is accountability. Answer the question, by what authority? This is compelling for cryptographic signatures, and the ring of trust model. If we must re-learn to verify what we hear, the least we can do is empower our audience to do so.
+Commented on Integrated AI - The sky is comforting (2023 AI retrospective) - Alan D. Thompson - LifeArchitect.ai
+27:33
+Details
+event
+Dec 20, 2023 at 12:50 AM
+
+https://www.youtube.com/watch?v=ryVG5LHRMJ4&lc=UgwhECg3DplhKz3LIi94AaABAg.9w0TvYfUn0H9y3tgtWkwZ1
+tichtby sounds like a term I read of in a scholarly book about russian formalism. the russian word, as described, was used (colloquially?) to indicate the speaker was about to add physical contact, a caress, to a personal conversation. "Prepare yourself, this poetry is about to transition to embrace," as it were. I was shocked, this gentleness in russian culture was unfamiliar to me. didn't write it down, and to this day, nobody seems to know the term. Phonetically til-litch-titch is how I remember the term.
+Replied to a comment on Dutch & German dialogue that sounds like English
+20:38
+Details
+event
+Dec 8, 2023 at 9:06 AM
+
+
+ "Godfather of AI" Geoffrey Hinton: The 60 Minutes Interview
+ 60 Minutes
+ 2.73M subscribers
+ 1,531,194 views  Oct 9, 2023  #AI #artificialintelligence #news
+ https://www.youtube.com/watch?v=qrvK_KuIeJk&lc=Ugw7Pr_TOdMEHMeW4yx4AaABAg
+ @GeorgeGeorgalis
+ 4 months ago
+ Maybe AI understands incorporeal things, unfortunately the most important corporeal thing, is not part of AI training because it has not yet been written---for humans without consensus. It is absurd to anticipate superior corporeal intelligence from AI, and frighteningly real to anticipate humans inability to distinguish between the types of epistemology... 
+
+
+https://www.youtube.com/watch?v=pCg-SNOteQQ&lc=Ugx5rPoJHNO8KmDJ1yd4AaABAg
+Excellent reference. thanks for the timestamps and sources, too! I'm so curious, what didn't make the list and why?
+Commented on Every Logical Fallacy Explained in 11 Minutes
+Dec 30, 2023 at 9:54 PM
+
+
+ The Agate Mystery: Why We Can't Synthesize This Common Gem
+ Alexis Dahl
+ 51.1K subscribers
+ 159,197 views
+ Jun 17, 2022  #lakesuperior #agates
+https://www.youtube.com/watch?v=g4itrfoVacg&lc=UgzvsN_kH88lLRLtQh94AaABAg
+@GeorgeGeorgalis
+1 year ago
+My not very scientific research suggests most commercially available petrified wood came from geologic events around Arizona 225 million years ago, or Indonesia 20 million years ago. Apparently, it only takes a few hundred years to make petrified wood, but there have been no geologic events that come close to these events, with regard to creating the proper conditions, and quantity of petrified wood produced. Not sure where I read "takes a few hundred years to make petrified wood" but perhaps the world of dendrochronology and petrified wood can provide some insights to agate formation? 
+
+ The Recent Megaeruption in California; The Rockland Caldera
+ GeologyHub
+ 285K subscribers
+ 253,449 views  Feb 10, 2022
+https://www.youtube.com/watch?v=sTvAs6VPfIE&lc=UgySVd1djD8G9Na6yUd4AaABAg
+@GeorgeGeorgalis
+2 years ago
+My not very scientific research suggests most commercially available petrified wood came from geologic events around Arizona 225 million years ago, or Indonesia 20 million years ago. Apparently, it only takes a few hundred years to make petrified wood, but there have been no geologic events that come close to these, with regard to creating the proper conditions and quantity of petrified wood produced. Can you discuss the significance of these events? 
+
+
+ What is Happening to The Internet Archive?
+ All Things Lost
+ 132K subscribers
+ 951,768 views
+ Apr 27, 2023
+ #lawsuit #copyright #internetarchive
+https://www.youtube.com/watch?v=bp2aowF0jUw&lc=UgxBCJkY8Wc14YjIiH54AaABAg
+@GeorgeGeorgalis
+@GeorgeGeorgalis
+9 months ago
+Books?!?! I have avoided them ever since electronic text became a thing. What is available electronically largely dictates what I read, what I know, what I teach, what is true! What about progress in science and useful arts? Progress is a very valuable asset and it should not be obstructed or impeded! Perhaps Congress could recognize progress as a national interest, before there is deficit in that. 
+
+ What is the Riemann Hypothesis REALLY about?
+ HexagonVideos
+ 14.2K subscribers
+ 504,151 views  Dec 12, 2022
+ https://www.youtube.com/watch?v=e4kOh7qlsM4&lc=Ugyvw4TDuveS2TRhibZ4AaABAg
+ @GeorgeGeorgalis
+ @GeorgeGeorgalis
+ 8 months ago
+ Fascinating! Looking forward to revisits to wrap my head around more details. One glaring question, aren't the zeros a function of the base, not the value of a number? Primes are not contingent on the base of representation; so, how are primes related to a property that is an exclusively a base 10 representation of the value (zeros)? Recently, some informatics experimentation led me to compare octal, hex, and base 32, to base 10, in the use of interval calculations (seconds) and the indexing of data points. I found that the value of a number has nothing to do with the base it is represented in (duh). The utility of higher bases is a shorter string to index many records; also, octal, hex, and b32 conveniently indicate divisibility of a power of 2 (aka zeros in base 10). So, I convert integers to b32 to index a large number of records (for human transposition), and stick with base 10, or hex, for records and calculations because of the performance benefits of printf and other calculators written in C. (Fun fact, in a private journal, this entry is 6496, which is the four most significant characters of unix time in hex...) 
+@Transyst
+7 months ago
+Log here seems to be ln, the natural logarithm, which has the base e, the Euler number. 
+
+
+
+ I'm leaving Sweden
+ Verdant Vanille
+ 69.5K subscribers
+ 424,479 views
+ Mar 10, 2022
+https://www.youtube.com/watch?v=aqIOIMF6F44&lc=UgzOUDvuZJQjGXVMzQB4AaABAg
+@GeorgeGeorgalis
+1 year ago
+I lived in a van for 3 years, the first 18 months I traveled all around the USA, 35 states. I spent most of my time in National Forest. When I left, I thought I would find peace in the wilderness. I discovered certain problems came with me, only I had no one to blame but myself. Identifying that hypocrisy was a great lesson of the journey, the other lesson was vitality of connection for clarity and inspiration. 
+
+
+ Rare 18th Century Black Forest Flute Clock with Black Bird Automata Circa 1770 Flotenuhr
+ Justin Miller
+ 1.76K subscribers
+ 55,406 views
+ Sep 24, 2014
+https://www.youtube.com/watch?v=Bqn6DZ5pHPY&lc=UgxAvEV2BqqUUQqSd8x4AaABAg
+@GeorgeGeorgalis
+3 years ago
+@Flotenuhr welcome to youtube!! 
+
+
+ The Ingenious Way Williams Designed The Dual Bonus Units In 1976's Grand Prix Pinball Machine
+ Joe's Classic Video Games
+ 60.8K subscribers
+ 6,887 views  Jan 28, 2022
+https://www.youtube.com/watch?v=jpSzfKx4WpI&lc=UgzD2Xa8asWDEdlSVQ54AaABAg.9XkWl4qXmkJ9XoZ772p3we
+
+https://www.youtube.com/watch?v=jpSzfKx4WpI&lc=UgzSlVX1uCMOwScnz054AaABAg
+@GeorgeGeorgalis
+2 years ago
+Oh Yeah! This was my favorite game around '76 at Yellowstone Bus Company (deli), Cardiff-by-the-Sea, CA. Amazing thing, I remember all the scoring and chimes even. Thanks for refreshing all those memories, may all your scores be double bonus! 
+
+https://www.youtube.com/watch?v=jpSzfKx4WpI&lc=UgzD2Xa8asWDEdlSVQ54AaABAg.9XkWl4qXmkJ9XoZ772p3we
+@GeorgeGeorgalis
+2 years ago
+Heh, I think I had to stand on a crate to play this one too! 
+
+
+ Claude AI Explained. How Constitutional AI Works?
+ Anastasi In Tech
+ 160K subscribers
+ 66,683 views  Jan 31, 2023
+ Google has invested about $400M in Anthropic AI startup.
+https://www.youtube.com/watch?v=KB5r9xmrQBY&lc=Ugwq45iHxPxjA_w6IGl4AaABAg
+@GeorgeGeorgalis
+1 year ago
+Thanks for sharing about Claude, I like that I can accept your assessment and review with trust and without doubt! The advancement in training doesn't seem new though. Isn't that how Deep Blue and DeepMind learned chess and go---by playing against its own algorithm for model improvement? Even with Claude, there seems a problematic dichotomy between training and operation, though. A critical advancement will be when operations can leverage simultaneous training. Is this purely a limitation of resources or are there more technical barriers? Even if a user could switch the mode of a model from operation to training (and 1000x resource consumption), the ability to do so must be a tremendous advantage, vs switching to an entire new training model or version? 
