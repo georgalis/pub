@@ -233,6 +233,81 @@ gcfg () { # report all the git config and where it comes from, repo dir may be s
   cd "$e" ; cd "$p" # restore the working dir and the old working dir
   } # 665104f8-20240524_142150
 
+which ci >/dev/null 2>&1 && {
+_rcs () { # local rcs function
+    # unfortunatly rcs predates modern documentation...
+    # this wrapper handles basic "capture a file revision"
+    #   _rcs {filename} "{message}"
+    # 
+    # Show changes since last checkin revision
+    #   rcsdiff {filename}
+    #
+    # Review revision information for filename1:
+    #   rlog filename1
+    # 
+    # Restoring revision2 of filename1 to filename3
+    #   co -p -r"revision2" "filename1" > "filename3"
+    # 
+    # rlog Options
+    #   -L  : Ignore RCS files with no locks set
+    #   -R  : Print only the name of the RCS file
+    #   -h  : Print only the header of the RCS file
+    #   -t  : Print the descriptive text
+    #   -b  : Print information about all branches
+    #   -d[date] : Select revisions within date range
+    #   -l[login] : Select revisions checked in by specified user
+    #   -r[rev] : Select revisions based on revision number
+    #   -s[state] : Select revisions based on state
+    #   -w[login] : Select revisions checked in by specified user
+    # co (Checkout) Options
+    #   -l  : Lock the checked-out revision
+    #   -u  : Unlock the checked-out revision
+    #   -p  : Print the revision to standard output
+    #   -q  : Quiet mode; suppress normal output
+    #   -f[rev] : Force overwrite of working file
+    #   -r[rev] : Retrieve specified revision
+    #   -M  : Set the modification time to the date of the retrieved revision
+    #   -ksubst : Specify keyword substitution mode
+    #   -d[date] : Retrieve the latest revision no later than date
+    #   -s[state] : Retrieve revision with specified state
+    #   -w[login] : Retrieve revision checked in by specified user
+    # ci (Checkin) Options
+    #   -l      : Locks the file after check-in. This allows you to continue editing.
+    #   -u      : Unlocks the file after check-in. This is the default behavior.
+    #   -r[rev] : Specifies the revision number to assign to the new revision.
+    #   -f[rev] : Forces a check-in even if there are no changes.
+    #   -k      : Suppresses expansion of keywords in the file.
+    #   -m[msg] : Specifies a log message for the revision.
+    #   -t[txtfile] : Uses the contents of txtfile as the descriptive text.
+    #   -q      : Runs in quiet mode, suppressing normal output.
+    #   -d[date] : Uses the specified date for the check-in date.
+    #   -w[login] : Uses the specified login name as the author.
+    #   -nname  : Assigns a symbolic name to the revision.
+    # Additional RCS (Revision Control System) Commands
+    #   rcs       : Creates RCS files or changes their attributes
+    #   rcsdiff   : Compares RCS revisions
+    #   rcsmerge  : Merges RCS revisions
+    #   ident     : Identifies RCS keyword strings in files
+    #   rcsclean  : Removes working files that are unchanged
+    #   rcsbind   : Associates RCS revisions with symbolic names
+    #   rcsfreeze : Freezes a configuration of versions
+    #   merge     : Three-way file merge (not RCS-specific, but often used with RCS)
+    #   rcsinfo   : Extracts RCS information
+    #   rcsparse  : Parses RCS files
+    #   rcsrev    : Extracts RCS revision information
+    local invoke="$FUNCNAME $*"
+    local orig_mode= os= ; read os < <(uname)
+    test -f "$1" || { chkerr "$invoke : cannot use '$1' (66833375)"; return 1 ;}
+    case "$os" in
+        Linux)  read orig_mode < <(stat -c %a    "$1");;
+        Darwin) read orig_mode < <(stat -f "%Lp" "$1");;
+        esac # better test that because OS could be another...
+    [[ ${#orig_mode} == 3 || ${#orig_mode} == 4 ]] && [[ $orig_mode =~ ^[0-7]+$ ]] \
+        || { chkerr "$invoke : mode probe, '$orig_mode' not sane for file '$orig_mode' (66837150)"; return 1 ;}
+    ci -m"$invoke" -l -t-$FUNCNAME -q "$1" || { chkerr "$invoke : unable to check-in '$1' (6683351a)"; return 1 ;}
+    chmod "$orig_mode" "$1" # the ci -l will reset modes
+    } # 66834066-20240701_164844
+} # only if rcs is installed
 
 ## shell script fragments
 # local infile inpath infilep
@@ -282,23 +357,26 @@ which tmux >/dev/null 2>&1 && \
 tmu () { # tmux intuitive wrapper
     [ "$1" = "-h" -o "$1" = "--help" ] && {
     echo 'List sessions, attach last, or create session 0,
-  exit with signal and list remaining sessions."
-  * Use "se" or "sessions" as arg for report of running sessions
-  * Use "at" or "attach" to attach to most recent active session
+  exit with signal and list remaining sessions.
+  * Use "-s" or "--sessions" as arg for report of running sessions
+  * Use "-a" or "--attach" to attach to most recent active session
   * Use "{name}" to create and/or attach to named session
   * Default session (no args) is "0"'
   return 0 ;}
-    local args sig
-    _tmu_active_sessions() {
-        tmux list-sessions -F '#{session_name} #{session_activity}' 2>/dev/null | column -t | sort -k2n \
+    _active_tmu() { local a=
+        tmux list-sessions -F '#{session_name} #{session_activity}' 2>/dev/null \
+            | column -t | sort -k2n \
             | while IFS= read -r a ; do set $a ; echo -n "$1 " ; date -r $2 ; done \
             | awk '{printf "%8s : %s %s %s %s %s %s\n",$1,$2,$3,$4,$5,$6,$7}' ;}
-    [ "$@" ] && args=$@
-    [ "$args" = "at" -o "$args" = "attach" -o -z "$args" ] && args="$( _tmu_active_sessions | awk 'END {print $1}')"
-    [ "$args" = "se" -o "$args" = "sessions" ] && { _tmu_active_sessions ; return $? ;}
+    local sig= args=
+    [ "$@" ] && local args=$@
+    [ "$1" = "-a" -o "$1" = "--attach" -o -z "$args" ] \
+        && args="$( _active_tmu | awk 'END {print $1}')"
+    [ "$1" = "-s" -o "$1" = "--sessions" ] \
+        && { _active_tmu ; return $? ;}
     [ "$args" ] || args=0
     tmux new -A -s $args ; sig=$?
-    _tmu_active_sessions
+    _active_tmu
     return $sig
     } || true # 6429e6a6 20230402 1333 Sun 2 Apr PDT
 
@@ -679,15 +757,7 @@ EOF
   local par4="compand 0.13,0.16 -72,-97,-68,-84,-64,-73,-56,-65,-55,-61,-32,-57,-17,-53,0,-49  25 -55 0.12" # parabolic squared
   local parc="compand 0.09,0.25 -97,-106,-85,-89,-73,-73,-57,-61,-40,-49,-21,-37,0,-25                           11   -13 0.08" # parabolic standard
   local pard="compand 0.09,0.25 -84.4,-110.7,-74.4,-89.1,-64.4,-71.0,-54.4,-56.3,-39.7,-46.3,-21.7,-36.3,0,-26.3 13.5 -13 0.091" # parabolic-d
-  local para="sinc -16k compand 0.09,0.25 -7.9,-6,-22.6,-16,-40.7,-26,-50.7,-44.1,-60.7,-58.8 2 -20 -0.04" # for old analog, inverse pard
-  local para="sinc -16k compand 0.09,0.25 -64.7,-62.8,-54.7,-48.1,-44.7,-30,-26.6,-20,-11.9,-10 0 -20 0.091" # for old analog, inverse pard
-  local para="sinc -16k compand 0.09,0.25 -60.7,-58.8,-50.7,-44.1,-40.7,-26,-22.6,-16,-7.9,-6 -2.5 -20 0.03" # for old analog, inverse pard
-  local para="sinc -16k compand 0.09,0.25 -58.7,-56.8,-48.7,-42.1,-38.7,-24,-20.6,-14,-5.9,-4 -2 -20 0.1" # for old analog, inverse pard
-  local para="sinc -16k compand 0.09,0.25 -56.7,-54.8,-46.7,-40.1,-36.7,-22,-18.6,-12,-3.9,-2 -3 -20 0.1" # for old analog, inverse pard
-  local para="sinc -16k compand  0.09,0.25  -55.7,-53.8,-45.7,-39.1,-35.7,-21,-17.6,-11,-2.9,-1 -4 -20 0.13" # for old analog, inverse pard
-  local para="sinc -16k compand  0.087,0.12 -55.2,-53.3,-45.2,-38.6,-35.2,-20.5,-17.1,-10.5,-2.4,-0.5 -7.0 -20 0.089" # for old analog, inverse pard
-  local para="sinc -16k compand  0.087,1.78 -55.2,-53.3,-45.2,-38.6,-35.2,-20.5,-17.1,-10.5,-2.4,-0.5 -7.0 -20 0.0871" # for old analog, inverse pard
-  local para="sinc 6-22k compand 0.087,1.78 -55.2,-53.3,-45.2,-38.6,-35.2,-20.5,-17.1,-10.5,-2.4,-0.5 -7.0 -20 0.0871" # for old analog, inverse pard
+  local para="sinc 6-22k compand 0.087,1.78 -64.6,-63,-54.6,-48,-44.7,-30,-26.6,-20,-11.9,-10 -7.0 -20 0.0875" # for old analog, inverse pard
   [ "$cmp" = "hrn" -o "$cmp" = "hrn1" ] && cmpn="hrn3" cmpc="$hrn3"
   [ "$cmp" = "cps" ]  && cmpn="pard" cmpc="$pard"
   [ "$cmp" = "ckb" ]  && cmpn="$cmp" cmpc="$ckb0"
@@ -724,18 +794,23 @@ EOF
   local gsec=$(hms2sec $(ffprobe -hide_banner -loglevel info "$infilep" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //'))
   $verb "$(awk '{$1=$1 + 0;printf "%1.3f sec, %1.1f%% of %1.3f sec %s",$2-$1,(100*($2-$1))/$3,$3,$4 }' <<<"${ssec} ${tsec} ${gsec} ${infilep}")"
   chkerr "$(awk '$1 >= $2 {print $3 ": invalid duration , ss="$1" to="$2}' <<<"${ssec} ${tsec} $FUNCNAME")" || exit 1
-  $verb "${inpath}/tmp/${infile}${secn}.meas"
-  [ -f "${inpath}/tmp/${infile}${secn}.meas" ] || { # measure for EBU R128 loudness normalization
-      { echo "# ${infile}${secn}.meas infile secn meas flac"
-      #$verb2 "loudnorm in: loudnorm=print_format=json... $secc -i $infilep > ${inpath}/tmp/${infile}${secn}.flac~" 
-      ffmpeg -hide_banner -loglevel info -y $secc -i "$infilep" \
-        -af "loudnorm=print_format=json" \
-        -f flac "${inpath}/tmp/${infile}${secn}.flac~" 2>&1 | awk '/^{/,0' \
-          | jq -r '. | "measured_I=\(.input_i) measured_TP=\(.input_tp) measured_LRA=\(.input_lra) measured_thresh=\(.input_thresh) linear=\(.linear)\nout_i_LUFS=\(.output_i) out_tp_dBTP=\(.output_tp)   out_lra_LU=\(.output_lra)     out_tr_LUFS=\(.output_thresh) offset_LU=\(.target_offset)"'
-       } >"${inpath}/tmp/${infile}${secn}.meas~" \
-         && mv -f "${inpath}/tmp/${infile}${secn}.flac~" "${inpath}/tmp/${infile}${secn}.flac" \
-         && mv -f "${inpath}/tmp/${infile}${secn}.meas~" "${inpath}/tmp/${infile}${secn}.meas"
-       while IFS= read a ; do ${verb2} "loudnorm out: $a" ; done <"${inpath}/tmp/${infile}${secn}.meas"
+  $verb "${inpath}/tmp/${infile}${secn}.{meas,flac}"
+  [ -f "${inpath}/tmp/${infile}${secn}.meas" -a -f  "${inpath}/tmp/${infile}${secn}.flac" ] \
+    || { # measure for EBU R128 loudness normalization
+        { echo "# ${infile}${secn}.meas infile secn meas flac"
+          #$verb2 "loudnorm in: loudnorm=print_format=json... $secc -i $infilep > ${inpath}/tmp/${infile}${secn}.flac~" 
+          $verb2 @ffmpeg -hide_banner -loglevel info -y $secc -i "$infilep" 
+          ffmpeg -hide_banner -loglevel info -y $secc -i "$infilep" \
+            -af "highpass=f=6:p=2, lowpass=f=22000:p=2, aresample=48000,
+                 loudnorm=print_format=json" \
+            -ar 48000 -f flac "${inpath}/tmp/${infile}${secn}.flac~" 2>&1 | awk '/^{/,0' \
+            | jq -r '. | "measured_I=\(.input_i) measured_TP=\(.input_tp) measured_LRA=\(.input_lra) measured_thresh=\(.input_thresh) linear=\(.linear)\nout_i_LUFS=\(.output_i) out_tp_dBTP=\(.output_tp)   out_lra_LU=\(.output_lra)     out_tr_LUFS=\(.output_thresh) offset_LU=\(.target_offset)"'
+        } >"${inpath}/tmp/${infile}${secn}.meas~" \
+       && {
+            mv -f "${inpath}/tmp/${infile}${secn}.flac~" "${inpath}/tmp/${infile}${secn}.flac"
+            mv -f "${inpath}/tmp/${infile}${secn}.meas~" "${inpath}/tmp/${infile}${secn}.meas"
+            while IFS= read a ; do ${verb2} "$a" ; done <"${inpath}/tmp/${infile}${secn}.meas"
+          } || {                     chkerr "$FUNCNAME : '${inpath}/tmp/${infile}${secn}.{meas,flac}' (6675e5b4)" ; return 1 ;}
     } # have trimmed measured flac
   #   i   Set integrated loudness target. Range is -70.0 - -5.0. Default value is -24.0.
   #   lra Set loudness range target.      Range is   1.0 - 20.0. Default value is   7.0.
@@ -748,27 +823,34 @@ EOF
   local flac_sec= ; read flac_sec < <(awk '{printf "%.3f",$1}' < <(ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 "${inpath}/tmp/${infile}${secn}.flac" )) || true
   $verb2 "$(hms2sec $flac_sec) seconds flac"
   [ "${offn}${lran}${tpn}${in}" ] && lnn="-ln${lran}${tpn}${in}${offn}" || lnn="-ln"
-  $verb "${inpath}/tmp/${infile}${secn}${lnn}.{flac,meas}"
-  [ -f "${inpath}/tmp/${infile}${secn}${lnn}.flac" ] || { # make loudnorm flac https://en.wikipedia.org/wiki/EBU_R_128
+  $verb "${inpath}/tmp/${infile}${secn}${lnn}.{meas,flac}"
+  [ -f "${inpath}/tmp/${infile}${secn}${lnn}.meas" -a -f "${inpath}/tmp/${infile}${secn}${lnn}.flac" ] \
+    || { # make loudnorm flac https://en.wikipedia.org/wiki/EBU_R_128
   # local off="${off:=0}" tp="${tp:=-2}"   lra="${lra:=7}" i="${i:=-24}" # assign unset parm to default values
   # local off="${off:=0}" tp="${tp:=-1}"   lra="${lra:=7}" i="${i:=-23}" # https://tech.ebu.ch/docs/r/r128.pdf revision 2020
     local off="${off:=0}" tp="${tp:=-0.7}" lra="${lra:=7}" i="${i:=-23}" # assign unset parm to local defaults
-    local $(grep measured "${inpath}/tmp/${infile}${secn}.meas")
+    local $(grep measured "${inpath}/tmp/${infile}${secn}.meas") # source measured input data
     { echo "# ${infile}${secn}${lnn}.flac infile ln flac"
+      # also measure the post loudnorm output data
       ffmpeg -hide_banner -loglevel info -benchmark -y $secc -i "$infilep" \
-          -af "loudnorm=print_format=json:linear=true
+          -af "highpass=f=6:p=2, lowpass=f=22000:p=2, aresample=48000,
+               loudnorm=print_format=json:linear=true
                    :measured_I=${measured_I}:measured_TP=${measured_TP}
                    :measured_LRA=${measured_LRA}:measured_thresh=${measured_thresh}
                    :offset=${off}:i=${i}:tp=${tp}:lra=${lra}" \
-          -f flac "${inpath}/tmp/${infile}${secn}${lnn}.flac~" 2>&1 | awk '/^{/,0' \
+          -ar 48000 -f flac "${inpath}/tmp/${infile}${secn}${lnn}.flac~" 2>&1 | awk '/^{/,0' \
           | jq -r '. | "measured_I=\(.input_i) measured_TP=\(.input_tp) measured_LRA=\(.input_lra) measured_thresh=\(.input_thresh) linear=\(.linear)\nout_i_LUFS=\(.output_i) out_tp_dBTP=\(.output_tp)   out_lra_LU=\(.output_lra)     out_tr_LUFS=\(.output_thresh) offset_LU=\(.target_offset)"'
     } >"${inpath}/tmp/${infile}${secn}${lnn}.meas~" \
     && { # only rotate {flac,meas} on no error
         mv -f "${inpath}/tmp/${infile}${secn}${lnn}.flac~" "${inpath}/tmp/${infile}${secn}${lnn}.flac"
         mv -f "${inpath}/tmp/${infile}${secn}${lnn}.meas~" "${inpath}/tmp/${infile}${secn}${lnn}.meas"
-        while IFS= read a ; do ${verb2} "loudnorm post: $a" ; done <"${inpath}/tmp/${infile}${secn}${lnn}.meas"
-        } || { chkerr "$FUNCNAME : '${inpath}/tmp/${infile}${secn}${lnn}.{flac,meas}' (6675e2b2)"  ; return 1 ;}
+        while IFS= read a ; do ${verb2} "$a" ; done       <"${inpath}/tmp/${infile}${secn}${lnn}.meas"
+        } || {                         chkerr "$FUNCNAME : '${inpath}/tmp/${infile}${secn}${lnn}.{flac,meas}' (6675e2b2)"  ; return 1 ;}
   } # make loudnorm flac
+  { chkwrn ln flac diff
+    ffprobe -v error -show_format -show_streams "${inpath}/tmp/${infile}${secn}.flac"
+    ffprobe -v error -show_format -show_streams "${inpath}/tmp/${infile}${secn}${lnn}.flac" ;} | sort | uniq -u
+    ckstat "${inpath}/tmp/${infile}${secn}.flac" "${inpath}/tmp/${infile}${secn}${lnn}.flac"
   ##### begin rb section ######################################
   local out="${infile}${secn}${lnn}"
   local Fc='' Fn=''
@@ -788,29 +870,28 @@ EOF
     local out="${infile}${secn}${tn}${pn}${fhzn}${cn}${Fn}${cfn}${lnn}"
       [ -e "${inpath}/tmp/${out}.wav" ] || { # master sans volume
         $verb "${inpath}/tmp/${out}.wav"
-        $verb2 $rb -q $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav~"
-             { $rb -q $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav~" 2>&1 \
-                 | while IFS= read a ; do ${verb} "$a" ; done ;} || { chkerr \
-               $rb                      $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav~" '(6542c978)'; return 1 ;}
-        mv -f "${inpath}/tmp/${out}.wav~" "${inpath}/tmp/${out}.wav"
+        $verb2   $rb -q $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav~"
+             { { $rb -q $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav~" 2>&1 \
+                                                          && mv -f "${inpath}/tmp/${out}.wav~" "${inpath}/tmp/${out}.wav" 
+               } | while IFS= read a ; do ${verb} "$a" ; done ;} || { chkerr \
+                "$rb    $tc $pc $fhzc $cc $Fn $cfc '${inpath}/tmp/${infile}${secn}${lnn}.flac' '${inpath}/tmp/${out}.wav~' (6542c978)" ; return 1 ;}
         } # final master, sans sox volume
       # apply volume and make an mp3 --- hopefully the input is not clipped already!
       $verb2 "$(hms2sec $(ffprobe -hide_banner  -loglevel info  "${inpath}/tmp/${out}.wav" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //') ) seconds rubberband"
       $verb "${inpath}/tmp/${out}${vn}.mp3"
-                    # not seeing sox format specifier for ".mp3~" type files...
       $verb2         sox "${inpath}/tmp/${out}.wav" "${inpath}/tmp/${out}${vn}.tmp.mp3" $vc
-                 {   sox "${inpath}/tmp/${out}.wav" "${inpath}/tmp/${out}${vn}.tmp.mp3" $vc 2>&1 \
-                 | while IFS= read a ; do ${verb} "$a" ; done ;} || { chkerr \
-                    "sox '${inpath}/tmp/${out}.wav' '${inpath}/tmp/${out}${vn}.tmp.mp3' $vc" ; return 1 ;}
-      mv -f "${inpath}/tmp/${out}${vn}.tmp.mp3" "${inpath}/tmp/${out}${vn}.mp3"
+               { {   sox "${inpath}/tmp/${out}.wav" "${inpath}/tmp/${out}${vn}.tmp.mp3" $vc 2>&1 \
+                                           && mv -f "${inpath}/tmp/${out}${vn}.tmp.mp3" "${inpath}/tmp/${out}${vn}.mp3"
+                 } | while IFS= read a ; do ${verb} "$a" ; done ;} || { chkerr \
+                    "sox '${inpath}/tmp/${out}.wav' '${inpath}/tmp/${out}${vn}.tmp.mp3' $vc (66761b47)" ; return 1 ;}
     } || { # no rb input parms (only seconds start/stop, volume, or neither)
         # verb2 same as above "output flac seconds" "${inpath}/tmp/${out}.flac"
         $verb "${inpath}/tmp/${out}${vn}.mp3"
         $verb2         sox "${inpath}/tmp/${out}.flac" "${inpath}/tmp/${out}${vn}.tmp.mp3" $vc
-                 {     sox "${inpath}/tmp/${out}.flac" "${inpath}/tmp/${out}${vn}.tmp.mp3" $vc 2>&1 \
-                 | while IFS= read a ; do ${verb} "$a" ; done ;} || { chkerr \
-                      "sox '${inpath}/tmp/${out}.flac' '${inpath}/tmp/${out}${vn}.tmp.mp3' $vc" ; return 1 ;}
-        mv -f "${inpath}/tmp/${out}${vn}.tmp.mp3" "${inpath}/tmp/${out}${vn}.mp3"
+               { {     sox "${inpath}/tmp/${out}.flac" "${inpath}/tmp/${out}${vn}.tmp.mp3" $vc 2>&1 \
+                                              && mv -f "${inpath}/tmp/${out}${vn}.tmp.mp3" "${inpath}/tmp/${out}${vn}.mp3"
+                 } | while IFS= read a ; do ${verb} "$a" ; done ;} || { chkerr \
+                      "sox '${inpath}/tmp/${out}.flac' '${inpath}/tmp/${out}${vn}.tmp.mp3' $vc (66761be1)" ; return 1 ;}
          }
     # prepend output filename
     $verb "./loss/${prependt}${out}${vn}.mp3"
@@ -1008,12 +1089,14 @@ verb2=chkwrn
 #    lacks1tone
 #    lacks2tone
 #    lacks5tone
+#    lacks6tone
 #    lacks15tones
+#    lacks26tones
 #    lacks125tones
 #    lacks155tones
 #    lacks1255tones
-# The default -45db level can be adjusted with arg1, eg "lacks2tone -30"
-# is 10db louder, BE CAREFUL DO NOT FORGET the "-" when specifying db.
+# The default -55db level can be adjusted with arg1, eg "lacks2tone -30"
+# is 15db closer to 0db (maximum), BE CAREFUL DO NOT FORGET the "-" when specifying db.
 lacktone () { # monitor lacktone logfile
    local tail tmp
    [ -d $HOME/Downloads ] && tmp="$HOME/Downloads/tmp" || tmp="$HOME/tmp"
@@ -1023,68 +1106,71 @@ lacktone () { # monitor lacktone logfile
      Linux)  tail='tail --follow=name' ;;
    esac
    touch "$tmp/lacktone"
-   $tail "$tmp/lacktone"
+   echo >> $tmp/lacktone
+   date >> $tmp/lacktone
+   $tail -n 1 "$tmp/lacktone" # | tr ' ' '\r'
+#    lacks15tones
  }
- lacktone1a () { # play background tone, optional gain (arg1) default -45
+ lacktone1a () { # play background tone, optional gain (arg1) default -55
    local g tmp
    [ -d $HOME/Downloads ] && tmp="$HOME/Downloads/tmp" || tmp="$HOME/tmp"
    mkdir -p "$tmp"
    echo >>"$tmp/lacktone"
-   [ "$1" ] && g="$1" || g="-45"
+   [ "$1" ] && g="$1" || g="-55"
    while :; do
       play -q -n -c1 synth sin %-44 sin %-9 sin %-6 sin %-19.7  fade h 0.09 2.3 01.35 gain $g
       play -q -n -c1 synth sin %-12 sin %-9 sin %-5 sin %-2     fade h 0.19 2.3 0.78  gain $g
       sleep 0.54
-      printf "%s" "1a/$g " >>"$tmp/lacktone" &
+      printf "%s" "1a/$g " >>"$tmp/lacktone" 
       done
  }
- lacktone1b () { # play background tone, optional gain (arg1) default -45
+ lacktone1b () { # play background tone, optional gain (arg1) default -55
    local g tmp
    [ -d $HOME/Downloads ] && tmp="$HOME/Downloads/tmp" || tmp="$HOME/tmp"
    mkdir -p "$tmp"
    echo >>"$tmp/lacktone"
-   [ "$1" ] && g="$1" || g="-45"
+   [ "$1" ] && g="$1" || g="-55"
    while :; do
       play -q -n -c2 synth sin %-44 sin %-9 sin %-6 sin %-19.7  fade h 0.09 2.3 01.35 gain $g
       play -q -n -c2 synth sin %-12 sin %-9 sin %-5 sin %-2     fade h 0.19 2.3 0.78  gain $g
       sleep $(dc -e "3 k 1 $(($RANDOM %49 + 1)) / 0.50 + p")
-      printf "%s" "1b/$g " >>"$tmp/lacktone" &
+      printf "%s" "1b/$g " >>"$tmp/lacktone" 
       done
   }
- lacktone2a () { # play background tone, optional gain (arg1) default -45
+ lacktone2a () { # play background tone, optional gain (arg1) default -55
    local g tmp
    [ -d $HOME/Downloads ] && tmp="$HOME/Downloads/tmp" || tmp="$HOME/tmp"
    mkdir -p "$tmp"
    echo >>"$tmp/lacktone"
-   [ "$1" ] && g="$1" || g="-45"
-    gb="$(echo "$g" | sed 's/-/_/' | awk '{print "4 k 0.06 "$1" * "$1" + p"}' | dc )"
+   [ "$1" ] && g="$1" || g="-55"
+    gb="$(echo "$g" | sed 's/-/_/' | awk '{print "3 k 0.06 "$1" * "$1" + p"}' | dc )"
    while :; do
-     play -q -n -c1 synth sin %-44 sin %-9 sin %-6 sin %-19.7  fade h 0.09 2.52 01.35 gain $g
-     play -q -n -c1 synth sin %-12 sin %-9 sin %-5 sin %-2     fade h 0.19 2.52 0.78  gain $gb
-      sleep 0.54
+     timeout -k 2 4.7 -- play -q -n -c1 synth sin %-44 sin %-9 sin %-6 sin %-19.7  fade h 0.09 2.52 01.35 gain $g
+     timeout -k 2 4.7 -- play -q -n -c1 synth sin %-12 sin %-9 sin %-5 sin %-2     fade h 0.19 2.52 0.78  gain $gb
+      sleep 1.34
       printf "%s" "2a/$g " >>"$tmp/lacktone" &
       done
  }
- lacktone2b () { # play background tone, optional gain (arg1) default -45
+ lacktone2b () { # play background tone, optional gain (arg1) default -55
    local g tmp
    [ -d $HOME/Downloads ] && tmp="$HOME/Downloads/tmp" || tmp="$HOME/tmp"
    mkdir -p "$tmp"
    echo >>"$tmp/lacktone"
-   [ "$1" ] && g="$1" || g="-45"
-    gb="$(echo "$g" | sed 's/-/_/' | awk '{print "4 k 0.06 "$1" * "$1" + p"}' | dc )"
+   [ "$1" ] && g="$1" || g="-55"
+    gb="$(echo "$g" | sed 's/-/_/' | awk '{print "3 k 0.06 "$1" * "$1" + p"}' | dc )"
    while :; do
-     play -q -n -c2 synth sin %-44 sin %-9 sin %-6 sin %-19.7  fade h 0.09 2.52 01.35 gain $g
-     play -q -n -c2 synth sin %-12 sin %-9 sin %-5 sin %-2     fade h 0.19 2.52 0.78  gain $gb
-      sleep $(dc -e "3 k 1 $(($RANDOM %42 + 1)) / 0.50 + p")
+     timeout -k 2 4.7 -- play -q -n -c2 synth sin %-44 sin %-9 sin %-6 sin %-19.7  fade h 0.09 2.52 01.35 gain $g 
+     timeout -k 2 4.7 -- play -q -n -c2 synth sin %-12 sin %-9 sin %-5 sin %-2     fade h 0.19 2.52 0.78  gain $gb
+      sleep $(dc -e "3 k 1 $(($RANDOM %42 + 1)) / 1.00 + p")
       printf "%s" "2b/$g " >>"$tmp/lacktone" &
       done
   }
- lacktone5a () { # play background tone, optioal gain (arg1) default -45
+ lacktone5a () { # play background tone, optioal gain (arg1) default -55
    local g tmp
    [ -d $HOME/Downloads ] && tmp="$HOME/Downloads/tmp" || tmp="$HOME/tmp"
    mkdir -p "$tmp"
    echo >>"$tmp/lacktone"
-   [ "$1" ] && g="$1" || g="-45"
+   [ "$1" ] && g="$1" || g="-55"
     gb="$(echo "$g" | sed 's/-/_/' | awk '{print "4 k 0.03 "$1" * "$1" + p"}' | dc )"
    while :; do
       play -q -n -c1 synth sin %-33 sin %-9 sin %-6 sin %-19.7  fade h 0.09 2.27 01.35 gain $gb
@@ -1093,12 +1179,12 @@ lacktone () { # monitor lacktone logfile
       printf "%s" "5a/$g " >>"$tmp/lacktone" &
       done
  }
- lacktone5b () { # play background tone, optional gain (arg1) default -45
+ lacktone5b () { # play background tone, optional gain (arg1) default -55
    local g tmp
    [ -d $HOME/Downloads ] && tmp="$HOME/Downloads/tmp" || tmp="$HOME/tmp"
    mkdir -p "$tmp"
    echo >>"$tmp/lacktone"
-   [ "$1" ] && g="$1" || g="-45"
+   [ "$1" ] && g="$1" || g="-55"
     gb="$(echo "$g" | sed 's/-/_/' | awk '{print "4 k 0.22 "$1" * "$1" + p"}' | dc )"
    while :; do
       play -q -n -c2 synth sin %-33 sin %-9 sin %-6 sin %-19.7  fade h 0.09 2.33 01.35 gain $g
@@ -1107,33 +1193,179 @@ lacktone () { # monitor lacktone logfile
       printf "%s" "5b/$g " >>"$tmp/lacktone" &
       done
   }
+ lacktone6a () { # play background tone, optioal gain (arg1) default -55
+   local g tmp
+   [ -d $HOME/Downloads ] && tmp="$HOME/Downloads/tmp" || tmp="$HOME/tmp"
+   mkdir -p "$tmp"
+   echo >>"$tmp/lacktone"
+   [ "$1" ] && g="$1" || g="-55"
+    gb="$(echo "$g" | sed 's/-/_/' | awk '{print "3 k 0.03 "$1" * "$1" + p"}' | dc )"
+   while :; do
+      timeout -k 2 4.7 -- play -q -n -c1 synth sin %-33 sin %-9 sin %-6 sin %-19.7  fade h 0.09 $(dc -e "5 k 1 $(($RANDOM %128)) 0.51 + / 0.8 + 1.87 + p") 1.35 gain $gb
+      timeout -k 2 4.7 -- play -q -n -c1 synth sin %-12 sin %-9 sin %-5 sin %-2     fade h 0.19 2.33 0.78  gain $g 
+      sleep 2.74
+      printf "%s" "6a/$g " >>"$tmp/lacktone" 
+      done
+ } # 6679c49e 20240624
+ lacktone6b () { # play background tone, optional gain (arg1) default -55
+   local g tmp
+   [ -d $HOME/Downloads ] && tmp="$HOME/Downloads/tmp" || tmp="$HOME/tmp"
+   mkdir -p "$tmp"
+   echo >>"$tmp/lacktone"
+   [ "$1" ] && g="$1" || g="-55"
+    gb="$(echo "$g" | sed 's/-/_/' | awk '{print "3 k 0.22 "$1" * "$1" + p"}' | dc )"
+   while :; do
+      timeout -k 2 4.7 -- play -q -n -c2 synth sin %-33 sin %-9 sin %-6 sin %-19.7  fade h 0.09 2.33 01.35 gain $g
+      timeout -k 2 4.7 -- play -q -n -c2 synth sin %-12 sin %-9 sin %-5 sin %-2     fade h 0.19 $(dc -e "5 k 1 $(($RANDOM %128)) 0.51 + / 0.8 + 2.00 + p") 0.78  gain $gb
+      #sleep $(dc -e "6 k 1 $(($RANDOM %42 )) 0.51 + 1 / 0.76 + p")
+      sleep 2.89
+      printf "%s" "6b/$g " >>"$tmp/lacktone" 
+      done
+  } # 6679c49e 20240624
+
+lacks26tones () {
+    [ "$1" ] && v="$1" || v=".00112"
+    awk -v v=$v 'BEGIN {if (v > 0 && v < 0.06) exit 0; else exit 1}' \
+        || { chkwrn "$FUNCNAME : volume should be 0 > arg1 > 0.06" ; return 1 ;}
+    lacktoneloop2a "$v" & lacktoneloop2b "$v" &
+    lacktoneloop6a "$v" & lacktoneloop6b "$v" &
+    lacktone
+    } # 6679c49e 20240624
+
+lacktoneloop2a () {
+  [ -d $HOME/Downloads ] && tmp="$HOME/Downloads/tmp" || tmp="$HOME/tmp"
+  mkdir -p "$tmp"
+  local v1=
+  [ "$1" ] && v1="$1" || v1=".003"
+  local v2= ; read v2 < <(dc -e "5 k $v1 0.92 * p")
+  while :; do
+    printf "%s" " 2a1/$v2" >>"$tmp/lacktone" ; lacktonegen 1 3 2 "$v2" || break 1 # 2a1
+    printf "%s" " 2a2/$v1" >>"$tmp/lacktone" ; lacktonegen 3 4 2 "$v1" || break 1 # 2a2
+    done || return 1
+  } # 6680b86b-20240629_184401
+lacktoneloop2b () {
+  [ -d $HOME/Downloads ] && tmp="$HOME/Downloads/tmp" || tmp="$HOME/tmp"
+  mkdir -p "$tmp"
+  local v1=
+  [ "$1" ] && v1="$1" || v1=".003"
+  local v2= ; read v2 < <(dc -e "5 k $v1 0.92 * p")
+  while :; do
+    printf "%s" " 2b1/$v1" >>"$tmp/lacktone" ; lacktonegen 1 3 6 "$v1" || break 1 # 2b1
+    printf "%s" " 2b2/$v1" >>"$tmp/lacktone" ; lacktonegen 3 4 6 "$v2" || break 1 # 2b2
+    done || return 1
+  } # 6680b86b-20240629_184401
+lacktoneloop6a () {
+  [ -d $HOME/Downloads ] && tmp="$HOME/Downloads/tmp" || tmp="$HOME/tmp"
+  mkdir -p "$tmp"
+  local v1=
+  [ "$1" ] && v1="$1" || v1=".003"
+  local v2= ; read v2 < <(dc -e "5 k $v1 0.92 * p")
+  while :; do
+    printf "%s" " 6a1/$v2" >>"$tmp/lacktone" ; lacktonegen 2 10 3 "$v2" || break 1 # 6a1
+    printf "%s" " 6a2/$v1" >>"$tmp/lacktone" ; lacktonegen 3 2  3 "$v1" || break 1 # 6a2
+    done || return 1
+  } # 6680b86b-20240629_184401
+lacktoneloop6b () {
+  [ -d $HOME/Downloads ] && tmp="$HOME/Downloads/tmp" || tmp="$HOME/tmp"
+  mkdir -p "$tmp"
+  local v1=
+  [ "$1" ] && v1="$1" || v1=".003"
+  local v2= ; read v2 < <(dc -e "5 k $v1 0.92 * p")
+  while :; do
+    printf "%s" " 6b1/$v1" >>"$tmp/lacktone" ; lacktonegen 2 1  4 "$v1" || break 1 # 6b1
+    printf "%s" " 6b2/$v2" >>"$tmp/lacktone" ; lacktonegen 3 11 4 "$v2" || break 1 # 6b2
+    done || return 1
+  } # 6680b86b-20240629_184401
+lacktonegen () { local c="$1" e="$2" s="$3" v="$4" 
+ local f1= f2= f3= f4= fi= d= fo= sec= tmp=
+  [ -d $HOME/Downloads ] && tmp="$HOME/Downloads/tmp" || tmp="$HOME/tmp"
+  mkdir -p "$tmp"
+ #echo >>"$tmp/lacktone"
+  case $c in # chord
+    1) f1=-44 f2=-9 f3=-6 f4=-19.7  ;; # 1a1 1b1 1a1 2a1 2b1
+    2) f1=-33 f2=-9 f3=-6 f4=-19.7  ;; #                        6a1 6b1
+    3) f1=-12 f2=-9 f3=-5 f4=-2     ;; # 1a2 1b2 2a2 2b2        6a2 6b2
+    esac
+  case $e in # envlope
+    1) fi=0.09 d=2.3  fo=1.35   ;; # 1a1 1b1                6b1
+    2) fi=0.19 d=2.3  fo=0.78   ;; # 1a2 1b2                6a2
+    3) fi=0.09 d=2.52 fo=1.35   ;; # 2a1 2b1
+    4) fi=0.19 d=2.52 fo=0.78   ;; # 2a2 2b2
+    5) fi=0.09 d=2.27 fo=1.35   ;;
+    6) fi=0.19 d=2.33 fo=0.78   ;;
+    7) fi=0.09 d=2.33 fo=1.35   ;;
+    8) fi=0.19 d=2.27 fo=0.78   ;;
+   10) fi=0.09        fo=1.35 ; read d < <(dc -e "5 k 1 $(($RANDOM %128)) 0.51 + / 0.8 + 1.87 + p") ;; #    6a1
+   11) fi=0.19        fo=0.78 ; read d < <(dc -e "5 k 1 $(($RANDOM %128)) 0.51 + / 0.8 + 2.00 + p") ;; #    6b2
+    esac
+  case $s in # sleep
+    1) sec=0.54 ;; # 1a
+    2) sec=1.34 ;; # 2a
+    3) sec=2.74 ;; #          6a
+    4) sec=2.89 ;; #          6b
+    5) read sec < <(dc -e "3 k 1 $(($RANDOM %49 + 1)) / 0.50 + p") ;; # 1b
+    6) read sec < <(dc -e "3 k 1 $(($RANDOM %42 + 1)) / 1.00 + p") ;; # 2b
+    7) read sec < <(dc -e "3 k 1 $(($RANDOM %42 + 1)) / 0.52 + p") ;;
+    esac
+  local TOTAL_DURATION="$d"
+  local FADE_IN_DURATION="$fi"
+  local FADE_OUT_DURATION="$fo"
+  local FADE_OUT_START=
+    read FADE_OUT_START < <(awk "BEGIN {print $TOTAL_DURATION - $FADE_OUT_DURATION}")
+    read f1 < <(awk "BEGIN {print 440 * 2^($f1/12)}")
+    read f2 < <(awk "BEGIN {print 440 * 2^($f2/12)}")
+    read f3 < <(awk "BEGIN {print 440 * 2^($f3/12)}")
+    read f4 < <(awk "BEGIN {print 440 * 2^($f4/12)}")
+
+#chkwrn f1=$f1 f2=$f2 f3=$f3 f4=$f4
+#chkwrn FADE_IN_DURATION=$FADE_IN_DURATION TOTAL_DURATION=$TOTAL_DURATION FADE_OUT_DURATION=$FADE_OUT_DURATION 
+ffplay -hide_banner -loglevel error -nodisp -autoexit \
+    -bufsize 16k \
+    -f lavfi \
+    -i "anullsrc=channel_layout=mono:sample_rate=44100,
+        aeval='sin(2*PI*${f1}*t)+sin(2*PI*${f2}*t)+sin(2*PI*${f3}*t)+sin(2*PI*${f4}*t)',
+        afade=t=in:st=0:d=${FADE_IN_DURATION},
+        afade=t=out:st=${FADE_OUT_START}:d=${FADE_OUT_DURATION},
+    volume=${v},
+    atrim=end=${TOTAL_DURATION},
+    aresample=async=1000:min_comp=0.0001:min_hard_comp=0.85" \
+    >/dev/null || return 1
+    sleep "$sec" || return 1 ; sleep 3.148 || return 1
+  } # 6680ad0a-20240629_175528
+
 lacks1tone () {
-    [ "$1" ] && g="$1" || g="-45"
+    [ "$1" ] && g="$1" || g="-55"
     lacktone1a $g & lacktone1b $g &
     lacktone
     fg;fg
     }
 lacks2tone () {
-    [ "$1" ] && g="$1" || g="-45"
+    [ "$1" ] && g="$1" || g="-55"
     lacktone2a $g & lacktone2b $g &
     lacktone
     fg;fg
     }
 lacks5tone () {
-    [ "$1" ] && g="$1" || g="-45"
+    [ "$1" ] && g="$1" || g="-55"
     lacktone5a $g & lacktone5b $g &
     lacktone
     fg;fg
     }
+lacks6tone () {
+    [ "$1" ] && g="$1" || g="-55"
+    lacktone6a $g & lacktone6b $g &
+    lacktone
+    fg;fg
+    }
 lacks15tones () {
-    [ "$1" ] && g="$1" || g="-45"
+    [ "$1" ] && g="$1" || g="-55"
     lacktone1a $g & lacktone1b $g &
     lacktone5a $g & lacktone5b $g &
     lacktone
     fg;fg ; fg;fg
     }
 lacks125tones () {
-    [ "$1" ] && g="$1" || g="-45"
+    [ "$1" ] && g="$1" || g="-55"
     lacktone1a $g & lacktone1b $g &
     lacktone2a $g & lacktone2b $g &
     lacktone5a $g & lacktone5b $g &
@@ -1141,7 +1373,7 @@ lacks125tones () {
     fg;fg ; fg;fg ; fg;fg
     }
 lacks155tones () {
-    [ "$1" ] && g="$1" || g="-45"
+    [ "$1" ] && g="$1" || g="-55"
     lacktone1a $g & lacktone1b $g &
     lacktone5a $g & lacktone5b $g &
     lacktone5a $g & lacktone5b $g &
@@ -1149,7 +1381,7 @@ lacks155tones () {
     fg;fg ; fg;fg ; fg;fg
     }
 lacks1255tones () {
-    [ "$1" ] && g="$1" || g="-45"
+    [ "$1" ] && g="$1" || g="-55"
     lacktone1a $g & lacktone1b $g &
     lacktone2a $g & lacktone2b $g &
     lacktone5a $g & lacktone5b $g &
@@ -1157,6 +1389,27 @@ lacks1255tones () {
     lacktone
     fg;fg ; fg;fg ; fg;fg ; fg;fg
     }
+lacks6tones () {
+    [ "$1" ] && v="$1" || v="0.5"
+    lacktoneloop6a "$v" & lacktoneloop6b "$v" &
+    lacktone
+    fg;fg
+    } # 668100ae-20240629_235220
+lacks16tones () {
+    [ "$1" ] && g="$1" || g="-55"
+    lacktone1a $g & lacktone1b $g &
+    lacktone6a $g & lacktone6b $g &
+    lacktone
+    fg;fg ; fg;fg
+    } # 6679c49e 20240624
+lacks126tones () {
+    [ "$1" ] && g="$1" || g="-55"
+    lacktone1a $g & lacktone1b $g &
+    lacktone2a $g & lacktone2b $g &
+    lacktone6a $g & lacktone6b $g &
+    lacktone
+    fg;fg ; fg;fg ; fg;fg
+    } # 6679c49e 20240624
 
   # {
   #   xargs -P 3 -I {} sh -c 'eval "$1"' - {} <<'EOF'
