@@ -35,7 +35,8 @@ stderr () { [ "$*" ] && echo "$*" 1>&2 || true ;}                          #:> a
 chkwrn () { [ "$*" ] && { stderr    "^^ $* ^^"   ; return $? ;} || true ;} #:> wrn stderr args return 0, noop if null
 chkexit () { [ "$*" ] && { stderr    ">>> $* <<<" ; exit 1   ;} || true ;} #:> err stderr args exit 1, noop if null
 
-which w3m >/dev/null 2>&1    || chkexit "$0 : no w3m in path"
+which w3m >/dev/null 2>&1    || chkexit "$0 : w3m not found in path"
+which curl >/dev/null 2>&1   || chkexit "$0 : curl not found in path"
 which ipcalc >/dev/null 2>&1 || chkexit "$0 : ipcalc not found in path"
 
 #  printf function for terminal verbose, otherwise quiet
@@ -81,6 +82,7 @@ cd "${tmpd}"
 # get header then
 curl -s --head "https://ftp.ripe.net/pub/stats/ripencc/nro-stats/latest/${stats}" \
     | grep -E '(^Last-Modified|^Content-Length)' >${stats}-header~
+[ -e ${stats}-header ] || touch ${stats}-header
 [ "$(cksum <${stats}-header~)" = "$(cksum <${stats}-header)" ] \
     || { # download stats
         [ -e "${dbd}/${stats}" ] && mv "${dbd}/${stats}" "${dbd}/${stats}-0"
