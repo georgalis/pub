@@ -82,7 +82,6 @@ endtry
 map gt :w!<CR>:!aspell check %<CR>:e! %<CR>
 
 
-
 " :scriptnames all the files sourced in the configuratioon
 " :highlight (:hi) shows all highlight settings, with arg1 the settings for that highlight, otherwise sets arg1 settings
 " level the deck, least artifacts remain...
@@ -92,44 +91,50 @@ set background=dark
 set termguicolors
 syntax on
 
-"1   2               3          4                5                 6             7         8              9
-"hi  name            term=none  cterm=none       ctermfg=none      ctermbg=none  gui=none  guifg=none     guibg=none
-hi   Comment         term=NONE  cterm=NONE       ctermfg=DarkCyan  ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
-hi   Identifier      term=NONE  cterm=NONE       ctermfg=69        ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
-hi   NonText         term=NONE  cterm=NONE       ctermfg=23        ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
-hi   Search          term=NONE  cterm=reverse    ctermfg=24        ctermbg=NONE  gui=NONE  guifg=#600982  guibg=NONE
-hi   CurSearch       term=NONE  cterm=reverse    ctermfg=24        ctermbg=NONE  gui=NONE  guifg=#c77a0e  guibg=NONE
-hi   Special         term=NONE  cterm=NONE       ctermfg=5         ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
-hi   Statement       term=NONE  cterm=NONE       ctermfg=3         ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
-hi   makeCommands    term=NONE  cterm=NONE       ctermfg=7         ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
-hi   makeComment     term=NONE  cterm=NONE       ctermfg=6         ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
-hi   makeIdent       term=NONE  cterm=NONE       ctermfg=5         ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
-hi   makeImplicit    term=NONE  cterm=NONE       ctermfg=2         ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
-hi   makeTarget      term=NONE  cterm=bold       ctermfg=3         ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
-hi   shCmdSubRegion  term=NONE  cterm=NONE       ctermfg=197       ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
-hi   shCommandSub    term=NONE  cterm=NONE       ctermfg=90        ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
-hi   shDeref         term=NONE  cterm=underline  ctermfg=130       ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
-hi   shFunctionOne   term=NONE  cterm=NONE       ctermfg=182       ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
-hi   shOption        term=NONE  cterm=NONE       ctermfg=22        ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
-hi   vim9Comment     term=NONE  cterm=bold       ctermfg=red       ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
-hi   SpecialKey      term=NONE  cterm=reverse    ctermfg=237       ctermbg=NONE  gui=NONE  guifg=#36261a  guibg=NONE
-hi   Constant        term=NONE  cterm=underline  ctermfg=109       ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
-hi   PreProc         term=NONE  cterm=NONE       ctermfg=NONE      ctermbg=NONE  gui=NONE  guifg=#5f30a1  guibg=NONE
-hi   shParen         term=NONE  cterm=NONE       ctermfg=NONE      ctermbg=NONE  gui=NONE  guifg=#b499bf  guibg=NONE
-hi   shDerefPattern  term=NONE  cterm=NONE       ctermfg=NONE      ctermbg=NONE  gui=NONE  guifg=#6e6c64  guibg=NONE
-hi   shExpr          term=NONE  cterm=NONE       ctermfg=NONE      ctermbg=NONE  gui=NONE  guifg=#8f8029  guibg=NONE
-hi   Todo  guibg=NONE  guifg=NONE  gui=NONE  ctermbg=208   ctermfg=NONE  cterm=bold
+"1   2                 3          4                5                 6             7         8              9
+"hi  Name              term=NONE  cterm=NONE       ctermfg=NONE      ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
+hi   Comment           term=NONE  cterm=NONE       ctermfg=DarkCyan  ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
+hi   Identifier        term=NONE  cterm=NONE       ctermfg=69        ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
+hi   NonText           term=NONE  cterm=NONE       ctermfg=23        ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
+hi   Search            term=NONE  cterm=reverse    ctermfg=24        ctermbg=NONE  gui=NONE  guifg=#600982  guibg=#5da3a9
+hi   CurSearch         term=NONE  cterm=reverse    ctermfg=24        ctermbg=NONE  gui=NONE  guifg=#c77a0e  guibg=NONE
+hi   Special           term=NONE  cterm=NONE       ctermfg=5         ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
+hi   Statement         term=NONE  cterm=NONE       ctermfg=3         ctermbg=NONE  gui=NONE  guifg=#b6b500  guibg=NONE
+hi   makeCommands      term=NONE  cterm=NONE       ctermfg=7         ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
+hi   makeComment       term=NONE  cterm=NONE       ctermfg=6         ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
+hi   makeIdent         term=NONE  cterm=NONE       ctermfg=5         ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
+hi   makeImplicit      term=NONE  cterm=NONE       ctermfg=2         ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
+hi   makeTarget        term=NONE  cterm=bold       ctermfg=3         ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
+hi   shCmdSubRegion    term=NONE  cterm=NONE       ctermfg=197       ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
+hi   shCommandSub      term=NONE  cterm=NONE       ctermfg=90        ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
+hi   shDeref           term=NONE  cterm=underline  ctermfg=130       ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
+hi   shFunctionOne     term=NONE  cterm=NONE       ctermfg=182       ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
+hi   shOption          term=NONE  cterm=NONE       ctermfg=22        ctermbg=NONE  gui=NONE  guifg=#bab900  guibg=NONE
+hi   shOption          term=NONE  cterm=NONE       ctermfg=22        ctermbg=NONE  gui=NONE  guifg=#d5c8ab  guibg=NONE
+hi   vim9Comment       term=NONE  cterm=bold       ctermfg=red       ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
+hi   SpecialKey        term=NONE  cterm=reverse    ctermfg=237       ctermbg=NONE  gui=NONE  guifg=#36261a  guibg=NONE
+hi   Constant          term=NONE  cterm=underline  ctermfg=109       ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
+hi   Constant          term=NONE  cterm=underline  ctermfg=109       ctermbg=NONE  gui=NONE  guifg=#ceebfd  guibg=NONE
+hi   PreProc           term=NONE  cterm=NONE       ctermfg=NONE      ctermbg=NONE  gui=NONE  guifg=#9167a9  guibg=NONE
+hi   shParen           term=NONE  cterm=NONE       ctermfg=NONE      ctermbg=NONE  gui=NONE  guifg=#b499bf  guibg=NONE
+hi   shDerefPattern    term=NONE  cterm=NONE       ctermfg=NONE      ctermbg=NONE  gui=NONE  guifg=#6e6c64  guibg=NONE
+hi   shExpr            term=NONE  cterm=NONE       ctermfg=NONE      ctermbg=NONE  gui=NONE  guifg=#8f8029  guibg=NONE
+hi   Todo              term=NONE  cterm=NONE       ctermfg=NONE      ctermbg=208   gui=NONE  guifg=NONE     guibg=NONE
+hi   Visual            term=none  cterm=none       ctermfg=none      ctermbg=NONE  gui=NONE  guifg=NONE     guibg=#505006
+hi   shCmdParenRegion  term=NONE  cterm=NONE       ctermfg=130       ctermbg=NONE  gui=NONE  guifg=#8f8029  guibg=NONE
+hi   vimSetEqual       term=NONE  cterm=NONE       ctermfg=NONE      ctermbg=NONE  gui=NONE  guifg=#e1af68  guibg=NONE
+" ctermbg=42 
 
 " cterm: none,bold,underline,reverse
-hi  User1  guibg=NONE  guifg=NONE  gui=NONE  ctermbg=1     ctermfg=NONE  cterm=bold
-hi  User2  guibg=NONE  guifg=NONE  gui=NONE  ctermbg=196   ctermfg=NONE  cterm=bold
-hi  User3  guibg=NONE  guifg=NONE  gui=NONE  ctermbg=208   ctermfg=NONE  cterm=bold
-hi  User4  guibg=NONE  guifg=NONE  gui=NONE  ctermbg=221   ctermfg=NONE  cterm=bold
-hi  User5  guibg=NONE  guifg=NONE  gui=NONE  ctermbg=11    ctermfg=NONE  cterm=bold
-hi  User6  guibg=NONE  guifg=NONE  gui=NONE  ctermbg=123   ctermfg=NONE  cterm=bold
-hi  User7  guibg=NONE  guifg=NONE  gui=NONE  ctermbg=32    ctermfg=NONE  cterm=bold
-hi  User8  guibg=NONE  guifg=NONE  gui=NONE  ctermbg=20    ctermfg=15    cterm=bold
-hi  User9  guibg=NONE  guifg=NONE  gui=NONE  ctermbg=none  ctermfg=91    cterm=bold
+hi  User1  term=NONE cterm=bold    ctermfg=11    ctermbg=1     gui=NONE  guifg=NONE     guibg=NONE
+hi  User2  term=NONE cterm=bold    ctermfg=221   ctermbg=196   gui=NONE  guifg=NONE     guibg=NONE
+hi  User3  term=NONE cterm=bold    ctermfg=19    ctermbg=208   gui=NONE  guifg=NONE     guibg=NONE
+hi  User4  term=NONE cterm=bold    ctermfg=19    ctermbg=221   gui=NONE  guifg=NONE     guibg=NONE
+hi  User5  term=NONE cterm=bold    ctermfg=19    ctermbg=11    gui=NONE  guifg=NONE     guibg=NONE
+hi  User6  term=NONE cterm=bold    ctermfg=19    ctermbg=123   gui=NONE  guifg=NONE     guibg=NONE
+hi  User7  term=NONE cterm=bold    ctermfg=123   ctermbg=33    gui=NONE  guifg=NONE     guibg=NONE
+hi  User8  term=NONE cterm=bold    ctermfg=11    ctermbg=19    gui=NONE  guifg=NONE     guibg=NONE
+hi  User9  term=NONE cterm=bold    ctermfg=1     ctermbg=0     gui=NONE  guifg=NONE     guibg=NONE
 
 set statusline=
 "set statusline+=%1*1\ %2*2\ %3*3\ %4*4\ %5*5\ %6*6\ %7*7\ %8*8\ %9*9\ 
@@ -269,9 +274,21 @@ set statusline+=%8*\ %v,%l\ %P/%L\                     " column,line line-percen
 " for c in {16..51} ; do export c ; for d in {1..6} ; do export d ; for e in {1..5} ; do export e ; f=$((c+35*d*e)) ; printf "\x1b[48;5;${f}m" ; printf "%4d" "${f}" ; test "$(( ( f - 15 ) % 36 ))" -ne "0" && printf "" || printf "\n" ;  done ; done; done
 " for c in {232..255} ;  do printf "\x1b[48;5;${c}m" ; printf "%4d\x1b[38;5;7m\x1b[48;5;0m" "${c}" ; done ; echo ; for c in 1 196 208 221 11 123 32 20 91  0 94 166  167 208 214 112 34 ; do printf "\x1b[48;5;${c}m" ; printf "%4d\x1b[38;5;7m\x1b[48;5;0m" "${c}" ; done ; echo
 
-" for c in {0..16} ; do printf "\x1b[48;5;${c}m" ; printf "%3d" "${c}" ; done ; echo ;
-" for c in 0 1 9 3 11 15 14 6 2 10 12 8 4  ; do printf "\x1b[48;5;${c}m" ; printf "%3d" "${c}" ; done ; echo ;
+"for c in {232..255} ;  do printf "\x1b[48;5;${c}m" ; printf "%4d\x1b[38;5;7m\x1b[48;5;0m" "${c}" ; done ; echo
+"for c in {0..7} ; do printf "\x1b[48;5;${c}m" ; printf "%3d" "${c}" ; done ; echo
+"for c in {8..15} ; do printf "\x1b[48;5;${c}m" ; printf "%3d" "${c}" ; done ; echo
+"for c in {16..231} ; do printf "\x1b[48;5;${c}m" ; printf "%4d" "${c}" ; test "$(( ( c - 15 ) % 36 ))" -ne "0" && printf "" || printf "\x1b[0m\n" ;  done ;
+
+" for c in {0..15} ; do printf "\x1b[48;5;${c}m" ; printf "%3d" "${c}" ; done ; echo 
+" for c in {8..15} {0..7} ; do printf "\x1b[48;5;${c}m" ; printf "%3d" "${c}" ; done ; echo ;
+" for c in 1 196 208 221 11 123 33 19 91  0 94 64 34 112 123 103 166  167 208 214  ; do printf "\x1b[48;5;${c}m" ; printf "%4d\x1b[38;5;7m\x1b[48;5;0m" "${c}" ; done ; echo
+
 " for c in {16..231} ; do printf "\x1b[48;5;${c}m" ; printf "%4d" "${c}" ; test "$(( ( c - 15 ) % 36 ))" -ne "0" && printf "" || printf "\n" ;  done ;
 " for c in {232..255} ;  do printf "\x1b[48;5;${c}m" ; printf "%4d\x1b[38;5;7m\x1b[48;5;0m" "${c}" ; done ; echo ;
-" for c in 1 196 208 221 11 123 32 20 91  0 94 166  167 208 214 112 34 ; do printf "\x1b[48;5;${c}m" ; printf "%4d\x1b[38;5;7m\x1b[48;5;0m" "${c}" ; done ; echo
+" awk 'BEGIN{for(y=0;y<6;y++){for(x=0;x<36;x++){c=16+6*x+y;printf("\033[48;5;%dm\033[%dm%4d\033[0m",c,x%6<2?97:30,c)}print""}}'
 
+" awk 'BEGIN{for(i=0;i<6;i++){for(j=0;j<6;j++){for(k=0;k<6;k++){c=16+36*i+6*j+k;printf("\033[48;5;%dm\033[%dm%4d\033[0m",c,k<2?97:30,c)}printf("")}print""}}'
+" awk 'BEGIN{for(t=0;t<6;t++){for(y=0;y<6;y++){for(x=0;x<6;x++){c=16+36*x+6*y+t;printf("\033[48;5;%dm\033[%dm%4d\033[0m",c,t<3?97:30,c)}printf("")}print""}}'
+" awk 'BEGIN{for(t=0;t<6;t++){for(y=0;y<6;y++){for(x=0;x<6;x++){c=16+36*t+6*x+y;printf("\033[48;5;%dm\033[%dm%4d\033[0m",c,y<3?97:30,c)}printf("")}print""}}'
+" awk 'BEGIN{for(t=0;t<6;t++){for(y=0;y<6;y++){for(x=0;x<6;x++){c=16+t+6*x+36*y;printf("\033[48;5;%dm\033[%dm%4d\033[0m",c,(x+y)%2?97:30,c)}printf("")}print""}}'
+" awk 'BEGIN{for(t=0;t<6;t++){for(y=0;y<6;y++){for(x=0;x<6;x++){c=16+36*y+t*6+x;printf("\033[48;5;%dm\033[%dm%4d\033[0m",c,x<3?97:30,c)}printf("")}print""}}'
