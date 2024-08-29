@@ -1,6 +1,6 @@
 " .vim-color.vim
 
-" (c) 2017-2023 George Georgalis <george@galis.org> unlimited use with this notice
+" (c) 2017-2024 George Georgalis <george@galis.org> unlimited use with this notice
 
 if &t_Co > 1
    syntax enable
@@ -91,6 +91,8 @@ set background=dark
 set termguicolors
 syntax on
 
+" ctermbg=42 
+" cterm: NONE,bold,underline,reverse
 "1   2                 3          4                5                 6             7         8              9
 "hi  Name              term=NONE  cterm=NONE       ctermfg=NONE      ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
 hi   Comment           term=NONE  cterm=NONE       ctermfg=DarkCyan  ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
@@ -123,9 +125,6 @@ hi   Todo              term=NONE  cterm=NONE       ctermfg=NONE      ctermbg=208
 hi   Visual            term=none  cterm=none       ctermfg=none      ctermbg=NONE  gui=NONE  guifg=NONE     guibg=#505006
 hi   shCmdParenRegion  term=NONE  cterm=NONE       ctermfg=130       ctermbg=NONE  gui=NONE  guifg=#8f8029  guibg=NONE
 hi   vimSetEqual       term=NONE  cterm=NONE       ctermfg=NONE      ctermbg=NONE  gui=NONE  guifg=#e1af68  guibg=NONE
-" ctermbg=42 
-
-" cterm: none,bold,underline,reverse
 hi  User1  term=NONE cterm=bold    ctermfg=11    ctermbg=1     gui=NONE  guifg=NONE     guibg=NONE
 hi  User2  term=NONE cterm=bold    ctermfg=221   ctermbg=196   gui=NONE  guifg=NONE     guibg=NONE
 hi  User3  term=NONE cterm=bold    ctermfg=19    ctermbg=208   gui=NONE  guifg=NONE     guibg=NONE
@@ -135,6 +134,17 @@ hi  User6  term=NONE cterm=bold    ctermfg=19    ctermbg=123   gui=NONE  guifg=N
 hi  User7  term=NONE cterm=bold    ctermfg=123   ctermbg=33    gui=NONE  guifg=NONE     guibg=NONE
 hi  User8  term=NONE cterm=bold    ctermfg=11    ctermbg=19    gui=NONE  guifg=NONE     guibg=NONE
 hi  User9  term=NONE cterm=bold    ctermfg=1     ctermbg=0     gui=NONE  guifg=NONE     guibg=NONE
+
+highlight CustomTab   term=NONE  cterm=NONE       ctermfg=6         ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
+match /\t/ CustomTab
+highlight CustLeadTab term=NONE  cterm=NONE       ctermfg=6         ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
+match /^[\t]+/ CustLeadTab
+highlight CustMultiSpace term=NONE  cterm=NONE       ctermfg=6         ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
+match / [ ]+/ CustMultiSpace
+highlight CustLead term=NONE  cterm=NONE       ctermfg=6         ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE 
+match /^ [ ]+/ CustLead
+highlight CustTrail term=NONE  cterm=NONE       ctermfg=6         ctermbg=NONE  gui=NONE  guifg=NONE     guibg=NONE
+match /[ ]*$/ CustTrail
 
 set statusline=
 "set statusline+=%1*1\ %2*2\ %3*3\ %4*4\ %5*5\ %6*6\ %7*7\ %8*8\ %9*9\ 
