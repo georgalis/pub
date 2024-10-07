@@ -1,13 +1,14 @@
 # ~/.profile
 
-# (c) 2004-2023 George Georgalis unlimited use with this notice
+# (c) 2004-2024 George Georgalis unlimited use with this notice
 #
 # For Bourne-compatible shells (bash,ksh,sh)
 #
 # https://raw.githubusercontent.com/georgalis/pub/master/skel/.profile
 
 # for interactive sessions only
-/usr/bin/tty -s || return
+#/usr/bin/tty -s || return
+test -t 0 && test -t 1 && test -t 2 || return 0
 
 export EDITOR="vi"
 export PAGER='less --jump-target=3'
@@ -19,30 +20,55 @@ export OS=$(uname)
 umask 022
 ulimit -c 1 # one byte core files memorialize their creation
 
+# setup ls alias world
+[ -x "$(which colorls 2>/dev/null)" ] && { # setup colorls
+ #export LSCOLORS='xefxcxdxbxegedabagacad'
+ #export CLICOLORS=$LSCOLORS
+ # define reverse for directory color
+ #export LSCOLORS='4x5x2x3x1x464301060203' # default, per man
+  export LSCOLORS='x45x2x3x1x464301060203' # invert directory color
+ alias    l='colorls -FGr'
+ alias   lr='colorls -FG'
+ alias   ll='colorls -AFGTlr'
+ alias  llr='colorls -AFGTl'
+ alias   lt='colorls -AFGTrt'
+ alias  ltr='colorls -AFGTt'
+ alias  llt='colorls -AFGTlrt'
+ alias lltr='colorls -AFGTlt'
+ alias   lS='colorls -AFGTlrS'
+ alias  lSr='colorls -AFGTlS'
+ } || true # echo "no colorls"
+#
 case "$OS" in
 Darwin)
  export LSCOLORS='xefxcxdxbxegedabagacad' # invert directory color
- alias   l='ls -GFr'
- alias  lr='ls -GF'
- alias  ll='ls -AFTGlr  -D %Y%m%d_%H%M%S'
- alias llr='ls -AFTGl   -D %Y%m%d_%H%M%S'
- alias  lt='ls -AFGTrt  -D %Y%m%d_%H%M%S'
- alias llt='ls -AFGTlrt -D %Y%m%d_%H%M%S'
- alias  lS='ls -AFGTlrS -D %Y%m%d_%H%M%S'
+ alias    l='ls -GFr'
+ alias   lr='ls -GF'
+ alias   ll='ls -AFTGlr  -D %Y%m%d_%H%M%S'
+ alias  llr='ls -AFTGl   -D %Y%m%d_%H%M%S'
+ alias   lt='ls -AFGTrt  -D %Y%m%d_%H%M%S'
+ alias  ltr='ls -AFGTt   -D %Y%m%d_%H%M%S'
+ alias  llt='ls -AFGTlrt -D %Y%m%d_%H%M%S'
+ alias lltr='ls -AFGTlt  -D %Y%m%d_%H%M%S'
+ alias   lS='ls -AFGTlrS -D %Y%m%d_%H%M%S'
+ alias  lSr='ls -AFGTlS  -D %Y%m%d_%H%M%S'
  alias   t='tail -F'
  alias top='top -S -n24 -s4 -o cpu'
  alias   p='ps -ax -o uid,pid,command -ww'
  alias xattrc='xattr -c'
 ;; # Darwin
 Linux)
- eval $(dircolors | sed 's/di=01;34/di=00;44/')
- alias   l='ls --color=auto -r'
- alias  lr='ls --color=auto'
- alias  ll='ls --color=auto -Alr   --full-time --time-style=+%Y%m%d_%H%M%S'
- alias llr='ls --color=auto -Al    --full-time --time-style=+%Y%m%d_%H%M%S'
- alias  lt='ls --color=auto -AFtr  --full-time --time-style=+%Y%m%d_%H%M%S'
- alias llt='ls --color=auto -AFlrt --full-time --time-style=+%Y%m%d_%H%M%S'
- alias  lS='ls --color=auto -AFlrS --full-time --time-style=+%Y%m%d_%H%M%S'
+ eval $(dircolors | sed 's/di=01;34/di=00;44/') # invert directory color
+ alias    l='ls --color=auto -r'
+ alias   lr='ls --color=auto'
+ alias   ll='ls --color=auto -Alr   --full-time --time-style=+%Y%m%d_%H%M%S'
+ alias  llr='ls --color=auto -Al    --full-time --time-style=+%Y%m%d_%H%M%S'
+ alias   lt='ls --color=auto -AFtr  --full-time --time-style=+%Y%m%d_%H%M%S'
+ alias  ltr='ls --color=auto -AFt   --full-time --time-style=+%Y%m%d_%H%M%S'
+ alias  llt='ls --color=auto -AFlrt --full-time --time-style=+%Y%m%d_%H%M%S'
+ alias lltr='ls --color=auto -AFlt  --full-time --time-style=+%Y%m%d_%H%M%S'
+ alias   lS='ls --color=auto -AFlrS --full-time --time-style=+%Y%m%d_%H%M%S'
+ alias  lSr='ls --color=auto -AFlS  --full-time --time-style=+%Y%m%d_%H%M%S'
  alias  t='tail --follow=name'
  alias  p='ps -e f -o pid,user,cmd --sort=user'
  #export PAGER='less -G --jump-target=2'
@@ -52,13 +78,16 @@ OpenBSD)
  alias t='tail -f'
 ;; # OpenBSD
 NetBSD|FreeBSD|Dragonfly)
- alias   l='ls -Fr'
- alias  lr='ls -F'
- alias  ll='ls -AFTlr'
- alias llr='ls -AFTl'
- alias  lt='ls -AFTrt'
- alias llt='ls -AFTlrt'
- alias  lS='ls -AFTlrS'
+ alias    l='ls -Fr'
+ alias   lr='ls -F'
+ alias   ll='ls -AFTlr'
+ alias  llr='ls -AFTl'
+ alias   lt='ls -AFTrt'
+ alias  ltr='ls -AFTt'
+ alias  llt='ls -AFTlrt'
+ alias lltr='ls -AFTlt'
+ alias   lS='ls -AFTlrS'
+ alias  lSr='ls -AFTlS'
  alias t='tail -F'
  alias top='top -S -I -s4 -o cpu'
  alias p >/dev/null 2>&1 || alias p='ps ax'
@@ -68,27 +97,11 @@ NetBSD|FreeBSD|Dragonfly)
 ;; # NetBSD|FreeBSD|Dragonfly
 esac # "$OS"
 
-# setup ls aliases
-[ -x "$(which colorls 2>/dev/null)" ] && { # setup colorls
- #export LSCOLORS='xefxcxdxbxegedabagacad'
- #export CLICOLORS=$LSCOLORS
- # define reverse for directory color
- #export LSCOLORS='4x5x2x3x1x464301060203' # default, per man
-  export LSCOLORS='x45x2x3x1x464301060203' # invert directory color
- alias   l='colorls -FGr'
- alias  lr='colorls -FG'
- alias  ll='colorls -AFGTlr'
- alias llr='colorls -AFGTl'
- alias  lt='colorls -AFGTrt'
- alias llt='colorls -AFGTlrt'
- alias  lS='colorls -AFGTlrS'
- } || true # echo "no colorls"
-
-alias    g='grep'   # grep for the extended regex
-alias    v='grep -v'  # grep -v for the extended regex
-alias    h='fc -l'     # list commands previously entered in shell.
-alias    j='jobs -l'   # list background jobs
-alias    s='less -R'   # less
+alias    g='grep'    # grep the regex
+alias    v='grep -v' # grep -v the regex
+alias    h='fc -l'   # list commands previously entered in shell.
+alias    j='jobs -l' # list background jobs
+alias    s='less -R' # less
 alias    m='man $man_ops' ; export man_ops='-a'
 alias  scp='scp -pr' # never not...
 alias   cp='cp -ip'  # always
@@ -263,6 +276,7 @@ case "$SHELL" in
     set -o errtrace  # any trap on ERR is inherited by shell functions
     set -o functrace # traps on DEBUG and RETURN are inherited by shell functions
     set -o pipefail  # exit pipeline on non-zero status (rightmost?)
+    #set -o autocd    # if interactive, cd directory when executed as a command
  ;;
  *ksh)
   export HOSTNAME="$(hostname)"

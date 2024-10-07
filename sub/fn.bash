@@ -431,7 +431,7 @@ _youtube_video_list () {
   [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d' (6542c62a)" ; return 1 ;}
   [ "$ytdl" ] || ytdl="youtube-dl"
   "$ytdl" --abort-on-error --yes-playlist \
-   --write-info-json --write-comments --write-sub --write-auto-sub --sub-lang en --write-thumbnail \
+   --write-info-json --write-comments --write-sub --write-auto-sub --sub-langs "en,en-GB" --write-thumbnail \
    --restrict-filenames --audio-quality 0 --audio-format best \
    --playlist-start 1 \
    -o "$d/${xs}%(playlist_title)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
@@ -451,10 +451,14 @@ _youtube_video () {
   [ -d "$d" ] || d="$(pwd -P)"
   [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d' (6542c61e)" ; return 1 ;}
   [ "$ytdl" ] || ytdl="youtube-dl"
-  "$ytdl" --write-info-json --write-comments --write-sub --write-auto-sub --sub-lang en --write-thumbnail \
-   --restrict-filenames --audio-quality 0 --audio-format best \
-   --abort-on-error --no-playlist \
-   -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+  local ytdl_vtt ytdl_json
+  read ytdl_vtt ytdl_json < <(tr '\n' ' ' < <(sed -e '/^\[info\] Writing/!d' -e 's/.*: //' < <(# collect filenames from ytdl output
+    $ytdl --write-info-json --write-comments --write-sub --write-auto-sub --sub-langs "en,en-GB" \
+        --restrict-filenames --audio-quality 0 --audio-format best \
+        --abort-on-error --no-playlist \
+        -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" "$id" )))
+  uniq < <(sed -e '/align:start position/d' -e 's/<[^>]*>//g' -e '/ --> /d' -e '/^ [ ]*$/d' -e '/^$/d' "$ytdl_vtt") >"$d/${ytdl_vtt}.txt" \
+    || { chkerr "$FUNCNAME : could not create '$d/${ytdl_vtt}.txt' (66fd682e)" ; return 1 ;} # write out vtt as txt
   "$ytdl" \
    --restrict-filenames --audio-quality 0 --audio-format best --extract-audio --keep-video \
    --abort-on-error --no-playlist \
@@ -471,7 +475,7 @@ _youtube_list () {
   [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d' (6542c9e4)" ; return 1 ;}
   [ "$ytdl" ] || ytdl="youtube-dl"
   "$ytdl" --abort-on-error --yes-playlist \
-   --write-info-json --write-comments --write-sub --write-auto-sub --sub-lang en --write-thumbnail \
+   --write-info-json --write-comments --write-sub --write-auto-sub --sub-langs "en,en-GB" --write-thumbnail \
    --restrict-filenames --audio-quality 0 --audio-format best --extract-audio \
    --playlist-start 1 \
    -o "$d/00$(xs),%(playlist_title)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
@@ -492,11 +496,11 @@ _youtube_txt () { # put youtube (arg1) json and captions in dir (arg2, original 
     || { chkerr "$FUNCNAME : failed to set xs (6674c2fd)" ; return 1 ;}
   local ytdl_vtt= ytdl_json=
   read ytdl_vtt ytdl_json < <(tr '\n' ' ' < <(sed -e '/^\[info\] Writing/!d' -e 's/.*: //' < <(# collect filenames from ytdl output
-    $ytdl --write-info-json --write-comments --write-sub --write-auto-sub --sub-lang en \
+    $ytdl --write-info-json --write-comments --write-sub --write-auto-sub --sub-langs "en,en-GB" \
         --restrict-filenames --skip-download --abort-on-error --no-playlist \
         -o "$d/@/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" "$id" )))
   $verb chkwrn "ytdl_vtt=$ytdl_vtt"
-  uniq < <(sed -e '/align:start position/d' -e 's/<[^>]*>//g' -e '/^ [ ]*$/d' -e '/^$/d' "$ytdl_vtt") >"${ytdl_vtt}.txt" \
+  uniq < <(sed -e '/align:start position/d' -e 's/<[^>]*>//g' -e '/ --> /d' -e '/^ [ ]*$/d' -e '/^$/d' "$ytdl_vtt") >"${ytdl_vtt}.txt" \
     && mv "${ytdl_vtt}.txt" "$d" || { chkerr "$FUNCNAME : could not create '$d/${ytdl_vtt}.txt' (6674c795)" ; return 1 ;}
   chktrue "$d/${ytdl_vtt##*/}.txt"
   $verb chkwrn "ytdl_json=$ytdl_json"
@@ -531,10 +535,12 @@ _youtube () {
     || { chkerr "$FUNCNAME : failed to set xs (6674c2fd)" ; return 1 ;}
   local t=$(mkdir -p "$HOME/%/ytdl" && cd "$HOME/%/ytdl" && mktemp ytdl-XXXX)
   # get the id
-  local f="$(find $links -name \*$($ytdl --dump-json $id | jq --ascii-output --raw-output '(.id)' | yq --yaml-output |head -n1)\* | grep -Ev '/(tmp|0)/' | sort)"
+  local f="$(find $links -name \*$($ytdl --dump-json --no-write-comments $id \
+    | jq --ascii-output --raw-output '(.id)' \
+    | yq --yaml-output |head -n1)\* | grep -Ev '/(tmp|0)/' | sort)"
   # check if the id exists already, chance to abort...
   [ "$f" ] && { echo "$f" ; read -p "files found, continue (N/y) " f ; [ "$f" = 'y' ] || return 1 ;}
-  $ytdl --write-info-json --write-comments --write-sub --write-auto-sub --sub-lang en --write-thumbnail \
+  $ytdl --write-info-json --write-comments --write-sub --write-auto-sub --sub-langs "en,en-GB" --write-thumbnail \
    --restrict-filenames --audio-quality 0 --audio-format best --extract-audio \
    --abort-on-error --no-playlist \
    -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id | tee "$HOME/%/ytdl/$t"
@@ -555,7 +561,7 @@ _youtube_json2txt () { # fixup youtube .info.json to yaml txt and sort files
   local a
   [ -f "${1}" ]     || { chkerr "$FUNCNAME : not a file : ${1} (6542c870)" ; return 1 ;}
   [ -f "${1}.txt" ] && { chkerr "$FUNCNAME : exists ${1}.txt (6542c86a)" ; return 1 ;}
-  local inpath='' _fout="_^$(jq --ascii-output --raw-output '(.id, .acodec)' "$1" \
+  local inpath='' _fout="_^$(jq --ascii-output --raw-output '(.id, .audio_ext)' "$1" \
     | tr -d '"' | tr '\n' '.' | sed 's/\.$//')"
   #expr "$1" : ".*/" >/dev/null && inpath="${1%/*}" || inpath="."
   [[ "$1" =~ / ]] && inpath="${1%/*}" || inpath="."
@@ -576,6 +582,7 @@ _youtube_json2txt () { # fixup youtube .info.json to yaml txt and sort files
   # so only do the side effect if the files are there...
   [ -f "$inpath"/*"${_fout}" ] && mkdir -p "$inpath/@/meta" && ln -f "$inpath"/*${_fout} "$inpath"/@/${_fout}
   [ -f "$inpath"/*"${_fout}" ] && mkdir -p "$inpath/orig"   && mv -f "$inpath"/*${_fout} "$inpath/orig"
+  mkdir -p "$inpath"'/@/meta'
   find "$inpath" -maxdepth 1 -name \*${_fout%%.*}\* \
     \( -name \*json -o -name \*webp -o -name \*jpg -o -name \*vtt \) \
     -exec mv \{\} "$inpath"'/@/meta' \;
@@ -596,36 +603,51 @@ _youtube_comment_unflatten () { # convert comment text from _youtube_json2txt to
 # $s means only match the last line of the file
 
 _youtube_comment_unflatten () { # convert comment text from _youtube_json2txt to ascii formatted
-    # $s means only match the last line of the file
-    # the second awk converts input string of Unicode mathematical alphanumeric symbols to regular Latin characters.
-      sed -e '
-        s/^[ ]*text: "//
-        s/^[ ]*//
-        s/\\$//
-        s/\\ / /g
-        s/\\"/"/g
-        s/\\t/	/g
-        s/\\r//g
-        $s/"$//' | tr -d '\n' | sed 'y/\r/\n/' \
-      | sed '
-    :loop
-    /\\U[0-9A-F]\{4\}/{ 
-        h
-        s/\\U\([0-9A-F]\{4\}\)/\1/
-        :inner
-            n
-            /^[0-9A-F]?$/!b inner
-            H
-            g
-            s/\(.\)\(.*\)/\2\1/
-        b inner
-        g
-        x
-        s/\(.\)\(.\)\(.\)\(.\)/printf %d "0x\1\2\3\4" | xxd -r -p
+    # echo -e "$( yq -r . )" ... subshell, no \" and no utf
+    awk '
+    BEGIN {
+        FS = OFS = ""
+        escape["\\"] = "\\"
+        escape["a"] = "\a"
+        escape["b"] = "\b"
+        escape["f"] = "\f"
+        escape["n"] = "\n"
+        escape["r"] = "\r"
+        escape["t"] = "\t"
+        escape["v"] = "\v"
+        escape["\""] = "\""
     }
-    n
-    b loop
-    ' | awk '{gsub(/\\n/,"\n")}1'
+    {
+        line = $0
+        result = ""
+        for (i = 1; i <= length(line); i++) {
+            if (substr(line, i, 1) == "\\") {
+                i++
+                char = substr(line, i, 1)
+                if (char in escape) {
+                    result = result escape[char]
+                } else if (char == "x") {
+                    hex = substr(line, i+1, 2)
+                    result = result sprintf("%c", strtonum("0x" hex))
+                    i += 2
+                } else if (char == "0") {
+                    oct = substr(line, i, 3)
+                    result = result sprintf("%c", strtonum("0" oct))
+                    i += 2
+                } else {
+                    result = result char
+                }
+            } else {
+                result = result substr(line, i, 1)
+            }
+        }
+        print result
+    }
+    '
+    } # _youtube_comment_unflatten 20230323
+_youtube_comment_unflatten () { # convert comment text from _youtube_json2txt to ascii formatted
+    # echo -e "$( yq -r . )" ... subshell, no \" and no utf
+    yq -r 'to_entries[] | .value'
     } # _youtube_comment_unflatten 20230323
 
 span2ssto () { # start (arg1) span (arg2) and remaining args to f2rb2mp3
@@ -646,7 +668,7 @@ span2ssto () { # start (arg1) span (arg2) and remaining args to f2rb2mp3
     } # span2ssto 20220519
 hms2sec () { # passthrough seconds or convert hh:mm:ss to seconds
     # must provide ss which may be ss.nn, hh: and hh:mm: are optional
-    # a number must proceed every colin
+    # a number must proceed every colon
   { # remove trailing 0 from seconds decimal
   [[ $1 == *:*:*:* ]] && { chkerr "too many ':' in '$1' (6542c9ba)" ; return 1 ;}
   [[ $1 == *:*:* ]] && { echo $1 | sed -e 's/:/ 0/g' \
@@ -847,10 +869,6 @@ EOF
         while IFS= read a ; do ${verb2} "$a" ; done       <"${inpath}/tmp/${infile}${secn}${lnn}.meas"
         } || {                         chkerr "$FUNCNAME : '${inpath}/tmp/${infile}${secn}${lnn}.{flac,meas}' (6675e2b2)"  ; return 1 ;}
   } # make loudnorm flac
-  { chkwrn ln flac diff
-    ffprobe -v error -show_format -show_streams "${inpath}/tmp/${infile}${secn}.flac"
-    ffprobe -v error -show_format -show_streams "${inpath}/tmp/${infile}${secn}${lnn}.flac" ;} | sort | uniq -u
-    ckstat "${inpath}/tmp/${infile}${secn}.flac" "${inpath}/tmp/${infile}${secn}${lnn}.flac"
   ##### begin rb section ######################################
   local out="${infile}${secn}${lnn}"
   local Fc='' Fn=''
@@ -1269,8 +1287,9 @@ lacktoneloop6b () {
   [ -d $HOME/Downloads ] && tmp="$HOME/Downloads/tmp" || tmp="$HOME/tmp"
   mkdir -p "$tmp"
   local v1=
-  [ "$1" ] && v1="$1" || v1=".003"
+  [ "$1" ] && v1="$1" || v1=".0043"
   local v2= ; read v2 < <(dc -e "5 k $v1 0.92 * p")
+  # XXX return 1 if v1 is greater than 0.0099
   while :; do
     printf "%s" " 6b1/$v1" >>"$tmp/lacktone" ; lacktonegen 2 1  4 "$v1" || break 1 # 6b1
     printf "%s" " 6b2/$v2" >>"$tmp/lacktone" ; lacktonegen 3 11 4 "$v2" || break 1 # 6b2
