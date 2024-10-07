@@ -1,0 +1,106 @@
+Title: |
+  The GRC/DevSecOps Nexus
+  Continuous Governance challenges,
+  as prerequisite to automated governance
+
+Author: (c) 2020-2024 George Georgalis <george@galis.org> unlimited use with this notice
+
+Outline:
+
+Objective (2 minutes):
+  - necessity of operational visibility and logistics-schema
+    - as the foundation to horz scaling (individual to multi)
+    - as prerequisite to vert scaling (to multi-division and to multi-organization)
+
+Overview (4 minutes):
+  - 1) history and evolution of development systems and process models
+  - 1) every continuous model is basically a Vee-model in time
+  - 1) perspective, plan, schema, specification, horizontal/vertical scaling, RACI, RBAC/visibility, merit
+  - 1) clockwise vs counter-clockwise, GAMP-5 Vee-model
+
+Vee-models and SAFe (1 minute):
+  - 2) System Arch Vee (What, Why, and Who), Entity Vee (How), and Dual-Vee (V&V) (User:Greghc; Wikipedia)
+  - 3) Design-to and Build-to realization iterations, Multi-Vee; (User:Greghc; Wikipedia)
+  - 4) Silos in SAFe still have orthogonal opaque inputs:
+     - Portfolio Flow > Solution Train Backlog
+     - Value Stream Management > [ Solution Demo, Continuous Delivery Pipeline, DevSecOps ]
+     - Lean UX > Team Backlogs
+
+Continuous Governance (2 minutes):
+  - 5) Planning Must-Not-Exclude, lexicon of GRC from perspectives of Regulatory, Representation, Implementation, and Quality
+  - 5) From stack of turtles (beginning) to automation celebration (end)
+  - 5) a manual process improved through iterations, implies automation as a consequence of development
+  - 5) automation needs programming, needs API, needs logistics schema,
+        needs digitization, needs systems architecture, needs function/data flow
+  - 5) Bidirectional arrows represent development; direction changes with transition from manual push to automated pull
+  - 5) Manual one-way logistics pull @ authorization, transitions to authorization of automation, and logistics push @ quality gate
+  - 5) Questions:  (8 minutes):
+
+Low-Hanging Fruit Challenge (4 minutes):
+  - 6) Enhancing NIST Document Metadata Access
+  - 6) Questions
+
+Deck:
+  - notes: https://github.com/georgalis/pub/tree/main/know/control/GRC_DevOps_Nexus.yml
+  - slides:  https://github.com/georgalis/pub/tree/main/know/control/GRC_DevOps_Nexus.pdf
+
+references:
+  - Dual Vee Model:
+    - https://en.wikipedia.org/wiki/User:Greghc/Dual_Vee_Model
+    - User:Greghc/Dual Vee Model
+    - the power of the Dual Vee Model when applied as a reminder model for development of complex systems
+  - A successful Git branching model:
+    - http://nvie.com/posts/a-successful-git-branching-model/
+    - By Vincent Driessen on Tuesday, January 05, 2010
+  - SAFe Lean-Agile Principles:
+    - https://scaledagileframework.com/safe-lean-agile-principles/
+    - SAFe is based on ten immutable, underlying Lean-Agile principles
+  - GAMP-5 detail and history:
+    - https://www.slideshare.net/slideshow/gamp5-new/17385991
+    - Gamp5 new; Mar 19, 2013; Kalpeshkumar Vaghela
+    - GAMP 5 provides guidance for computerized systems validation. It focuses on risk-based approaches and scalability of efforts based on a system's risk, complexity, and novelty. GAMP 5 also emphasizes leveraging supplier activities and avoiding duplication of efforts. The document provides a framework for life cycle activities from concept to retirement, including planning, specification, development, operation, and retirement of computerized systems.
+  - Meta study, organizing framework that clarifies the topology of the literature:
+    - https://www.researchgate.net/publication/318361926_Process_models_in_design_and_development
+    - Process models in design and development
+    - April 2018; Research in Engineering Design 29(2):161-202
+    - DOI:10.1007/s00163-017-0262-7; David C. Wynn; P. John Clarkson
+  - Using V Models for Testing:
+    - https://insights.sei.cmu.edu/sei_blog/2013/11/using-v-models-for-testing.html
+    - "Using V Models for Testing". insights.sei.cmu.edu. Software Engineering Institute, Carnegie Mellon University. 11 November 2013.
+    - The verification and validation of requirements are a critical part of systems and software engineering
+  - Vee Model of Systems Engineering to System Dynamics Modeling:
+    - https://www.researchgate.net/publication/255593138_A_Case_Study_in_Application_of_Vee_Model_of_Systems_Engineering_to_System_Dynamics_Modelling_of_Dryland_Salinity_in_Australia
+    - A Case Study in Application of Vee Model of Systems Engineering to System Dynamics Modeling of Dryland Salinity in Australia; January 2008; Naeem U Khan; Alan Mclucas
+  - Systems engineering:
+    - https://en.wikipedia.org/wiki/Systems_engineering
+    - Systems engineering is an interdisciplinary field of engineering and engineering management
+  - National Online Informative References Program (OLIR):
+    - https://csrc.nist.gov/Projects/olir
+
+Ancillary:
+  LLM alignment of GAMP with DevOps and DevSecOps :
+    Focus on GAMP-5 and GAMP-6 systems maturity and their alignment with DevOps and DevSecOps practices: |
+      GAMP-5 and GAMP-6 represent evolving approaches to system maturity in regulated industries, particularly in pharmaceutical and life sciences sectors. Their principles increasingly align with modern DevOps and DevSecOps practices, reflecting the industry's shift towards more agile and integrated methodologies.
+      GAMP-5, released in 2008, introduced concepts that parallel certain aspects of DevOps:
+        1. Risk-based approach: Similar to DevOps' continuous risk assessment.
+        2. Scalable lifecycle model: Aligns with DevOps' iterative development cycles.
+        3. Supplier assessment: Corresponds to DevOps' focus on integrating third-party tools securely.
+        4. Emphasis on automated testing: A core principle in DevOps practices.
+      GAMP-6, released in 2022, further bridges the gap between traditional validation approaches and modern software development practices:
+        1. Agile and DevOps integration: Explicitly acknowledges and incorporates Agile and DevOps methodologies.
+        2. Continuous compliance: Aligns with DevOps' continuous integration and delivery (CI/CD) pipelines.
+        3. Data integrity by design: Parallels DevSecOps' principle of security by design.
+        4. Critical thinking approach: Resonates with DevOps culture of continuous improvement and learning.
+      The alignment of GAMP-6 with DevOps and DevSecOps is more pronounced, reflecting the evolving nature of system maturity in regulated environments:
+        1. Continuous Validation: GAMP-6 supports continuous validation, which aligns closely with DevOps' continuous integration and deployment practices.
+        2. Automated Testing and Verification: Both GAMP-6 and DevOps emphasize automated testing to ensure quality and compliance throughout the development lifecycle.
+        3. Risk Management: GAMP-6's risk-based approach complements DevSecOps' focus on continuous risk assessment and mitigation.
+        4. Collaboration and Communication: GAMP-6 encourages cross-functional collaboration, mirroring the DevOps principle of breaking down silos between development and operations teams.
+      By adopting GAMP-6 principles alongside DevOps and DevSecOps practices, organizations can achieve:
+        1. Increased efficiency in validation processes
+        2. Improved quality and compliance in software development
+        3. Better alignment between IT and quality assurance teams
+        4. Faster time-to-market while maintaining regulatory compliance
+        5. Enhanced ability to adapt to changing regulatory requirements
+      The evolution from GAMP-5 to GAMP-6 demonstrates a clear trend towards greater alignment with modern software development practices. This progression allows regulated industries to benefit from the agility and efficiency of DevOps and DevSecOps while maintaining the rigorous quality and compliance standards required in their sectors.
+      Organizations looking to maximize their system maturity should consider integrating GAMP-6 principles with DevOps and DevSecOps methodologies. This integrated approach can lead to more robust, compliant, and efficient software development processes that meet both regulatory requirements and modern development standards.
