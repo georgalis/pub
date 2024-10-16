@@ -1920,7 +1920,7 @@ auto_dgst () { #0> auto create digest (_/dgst), _/dgst-sha3-384, _/dgst-ckstatsu
       ci -m"($FUNCNAME)" -l -t-"auto digest ckstatsum" -q "./_/dgst-ckstatsum,"
     ) ;}
 
-test -x "$(which stemwords 2>/dev/null)" && { # create stemwords wrappers, stemray and stempar
+which stemwords >/dev/null 2>&1 && { # create stemwords wrappers, stemray and stempar
 stemray() { # take args or stdin, return brackeded sorted comma separated words, and novel unstemmed in comments
     local w= wi="$*" wu=() ws=() # w{word} wi{input words} wu{arr uniq words input} ws{arr stemmed wu}
     # read stdin if null args
