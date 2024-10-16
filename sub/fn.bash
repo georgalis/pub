@@ -1919,3 +1919,59 @@ auto_dgst () { #0> auto create digest (_/dgst), _/dgst-sha3-384, _/dgst-ckstatsu
       ci -m"($FUNCNAME)" -l -t-"auto digest ${h}" -q "./_/dgst-${h},"
       ci -m"($FUNCNAME)" -l -t-"auto digest ckstatsum" -q "./_/dgst-ckstatsum,"
     ) ;}
+
+test -x "$(which stemwords 2>/dev/null)" && { # create stemwords wrappers, stemray and stempar
+stemray() { # take args or stdin, return brackeded sorted comma separated words, and novel unstemmed in comments
+    local w= wi="$*" wu=() ws=() # w{word} wi{input words} wu{arr uniq words input} ws{arr stemmed wu}
+    # read stdin if null args
+    [ "$wi" ] || read -d '' wi < <(cat) || true
+    # load wu() with unique wi
+    while read w ; do wu+=($w) ; done < <(sort -u < <(sed '/^$/d' < <(tr -c '[:alnum:]' '\n' < <(echo "$wi"))))
+    while read w ; do ws+=($w) ; done < <(sort -u < <(stemwords < <(for w in ${wu[@]};do echo "$w" ; done)))
+    awk 'BEGIN { ORS = ""; print "[ " }           # wrap list in brackets, purge \n
+         NF { if (NR > 1) print ", " ; print $1 } # ignore blanks, comma not before first
+         END { print " ]" }                       # close bracket
+         ' < <(tr ' ' '\n' <<<"${ws[@]}")
+    for w in "${wu[@]}"; do grep -i " $w " <<<" ${ws[*]} " >/dev/null || echo -n " $w" ; done | sed -e '/^$/d' -e 's/^/ #/'
+    echo
+    # while read a ; do echo ; echo -n ": " ; stemray "$a" ; a= ;  done
+    } # stemray 670d57e8-20241014_104150
+# process stemwords on input text returning same paragraph/puncuation but loosing capitalization
+# Requirements:
+#   BSD/Darwin compatibility:
+#   Input processing:
+#     - Handle UTF-8 input.
+#     - Convert input newlines (\n) to a special character (ASCII 128) before processing.
+#   Disassembly (intermediate format):
+#     - Output one [:alpha:]* word per line.
+#     - Preserve all non-alphabetic characters (including spaces and punctuation) on their own lines.
+#     - Preserve special characters (ASCII 128) which represent original newlines.
+#   Processing:
+#     - pipe the data to stemwords, git@github.com:snowballstem/snowball.git
+#   Reassembly:
+#      - Remove all newlines from the intermediate format.
+#      - Convert special characters (ASCII 128) back to newlines (\n).
+stempar() { # take args or stdin, return stemwords text
+  _dsy() { # disassemble text
+    iconv -f utf-8 -t ascii//TRANSLIT -c | tr '\n' '\200' | LC_ALL=C awk '
+      { for (i = 1; i <= length; i++)
+        { c = substr($0, i, 1)
+          if (c ~ /[[:alpha:]]/)
+            { word = word c }
+          else { if (word != "")
+            { print word ; word = "" }
+            printf "%c\n", c }
+        }
+      }
+      END { if (word != "") print word }'
+    }
+  _asy() { # reassemble text
+    tr -d '\n' | tr '\200' '\n'
+    }
+  # load words input (wi) from args or stdin
+  local wi="$*"
+  [ "$wi" ] || read -d '' wi < <(cat) || true
+  echo "$wi" | _dsy | stemwords | _asy
+  } # stempar 670d7aa1-20241014_130959
+} || true # no error is stemwords not installed
+
