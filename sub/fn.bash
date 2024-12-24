@@ -206,10 +206,10 @@ alias  grst='git reset HEAD'
 #
 # git status # generic command
 # gstatus    # alias for git short form status of $@
-gst () { # short form status of $@ (current repo), sorted
+gst () { # short form status of $@ (or pwd repo), sorted
   git status --short $@ | sed -e 's/^ /_/' -e 's/^\(.\) /\1_/' | sort ;}
  #git status --short $@ | awk '{s=$1; $1=""; sub(/[ ]* /,//,$2); printf "%-2s%s\n",s,$0}' | sort ;}
-gsta () { # git short form status of all repos below $@ (or current repo), sorted
+gsta () { # git short form status of all repos below $@ (or pwd repo), sorted
   local start=$@
   [ "$start" ] || start='.'
   find $start -name .git -type d | while IFS= read a ; do
@@ -416,11 +416,6 @@ ct () { #:> on terminal output, truncate lines to width
         } || cat
     } # ct formally cattrunc
 
-# for comments download: yt-dlp is a youtube-dl fork based on the now inactive youtube-dlc
-# https://github.com/yt-dlp/yt-dlp
-# also, aparently (?) youtube throttles is you do not run javascript first (youtube-dl vs yt-dlp)
-# cf https://github.com/ytdl-org/youtube-dl/issues/29326#issuecomment-894619419
-
 _youtube_video_list () {
   local id="$1" d="$2" xs=$(xs)
   [ "$id" ] || read -p "youtube id: " id
@@ -432,11 +427,11 @@ _youtube_video_list () {
   [ "$ytdl" ] || ytdl="youtube-dl"
   "$ytdl" --abort-on-error --yes-playlist \
    --write-info-json --write-comments --write-sub --write-auto-sub --sub-langs "en,en-GB" --write-thumbnail \
-   --restrict-filenames --audio-quality 0 --audio-format best \
+   --restrict-filenames --audio-quality 0 --format-sort "acodec:opus,acodec:m4a" \
    --playlist-start 1 \
    -o "$d/${xs}%(playlist_title)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   "$ytdl" --abort-on-error --yes-playlist \
-   --restrict-filenames --audio-quality 0 --audio-format best --extract-audio --keep-video \
+   --restrict-filenames --audio-quality 0 --format-sort "acodec:opus,acodec:m4a" --extract-audio --keep-video \
    --playlist-start 1 \
    -o "$d/${xs}%(playlist_title)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   } # _youtube_video_list 20220516
@@ -452,15 +447,17 @@ _youtube_video () {
   [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d' (6542c61e)" ; return 1 ;}
   [ "$ytdl" ] || ytdl="youtube-dl"
   local ytdl_vtt ytdl_json
+  chkwrn "capturing ytdl_vtt ytdl_json filenames from video/json download"
   read ytdl_vtt ytdl_json < <(tr '\n' ' ' < <(sed -e '/^\[info\] Writing/!d' -e 's/.*: //' < <(# collect filenames from ytdl output
     $ytdl --write-info-json --write-comments --write-sub --write-auto-sub --sub-langs "en,en-GB" \
-        --restrict-filenames --audio-quality 0 --audio-format best \
+        --restrict-filenames --audio-quality 0 --format-sort "acodec:opus,acodec:m4a" \
         --abort-on-error --no-playlist \
         -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" "$id" )))
-  uniq < <(sed -e '/align:start position/d' -e 's/<[^>]*>//g' -e '/ --> /d' -e '/^ [ ]*$/d' -e '/^$/d' "$ytdl_vtt") >"$d/${ytdl_vtt}.txt" \
+  chkwrn "processing ytdl_vtt to txt"
+  uniq < <(sed -e '/align:start position/d' -e 's/<[^>]*>//g' -e '/ --> /d' -e '/^ [ ]*$/d' -e '/^$/d' "$ytdl_vtt") >"${ytdl_vtt}.txt" \
     || { chkerr "$FUNCNAME : could not create '$d/${ytdl_vtt}.txt' (66fd682e)" ; return 1 ;} # write out vtt as txt
   "$ytdl" \
-   --restrict-filenames --audio-quality 0 --audio-format best --extract-audio --keep-video \
+   --restrict-filenames --audio-quality 0 --format-sort "acodec:opus,acodec:m4a" --extract-audio --keep-video \
    --abort-on-error --no-playlist \
    -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   } # _youtube_video 20220516
@@ -476,7 +473,7 @@ _youtube_list () {
   [ "$ytdl" ] || ytdl="youtube-dl"
   "$ytdl" --abort-on-error --yes-playlist \
    --write-info-json --write-comments --write-sub --write-auto-sub --sub-langs "en,en-GB" --write-thumbnail \
-   --restrict-filenames --audio-quality 0 --audio-format best --extract-audio \
+   --restrict-filenames --audio-quality 0 --format-sort "acodec:opus,acodec:m4a" --extract-audio \
    --playlist-start 1 \
    -o "$d/00$(xs),%(playlist_title)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
   } # _youtube_list 20220516
@@ -541,7 +538,7 @@ _youtube () {
   # check if the id exists already, chance to abort...
   [ "$f" ] && { echo "$f" ; read -p "files found, continue (N/y) " f ; [ "$f" = 'y' ] || return 1 ;}
   $ytdl --write-info-json --write-comments --write-sub --write-auto-sub --sub-langs "en,en-GB" --write-thumbnail \
-   --restrict-filenames --audio-quality 0 --audio-format best --extract-audio \
+   --restrict-filenames --audio-quality 0 --format-sort "acodec:opus,acodec:m4a" --extract-audio \
    --abort-on-error --no-playlist \
    -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id | tee "$HOME/%/ytdl/$t"
   # prompt with filing indices and catagories
@@ -1447,58 +1444,49 @@ lacks126tones () {
   # # the PID of the most recently started background process.
   # wait $!
 
-# 07/10/21
-numlist () { #:> re-sequence (in base32) a list of files, retaining the "major" (first) character
-    # so that when combined with another list, the result is interlaced with major sequence retained.
-    # Plan:
-    # Accept files (args) OR stdin (one file per line), only act on regular files, squash leading "./";
-    # Expect filenames to start with sequence characters (base 32 chars, followed by ",");
-    # Retain the major sequence character, regenerate base 32 sequence;
-    # Bump up the sequence major value by "$numlistbump" if set (integer);
-    # Prepend output filenames with "$numlist" string, if set;
-    # Initialize base 32 sequence with 0 major for input files that have no sequence;
-    # For name changes, without collisions, generate mv commands for review or "| sh"
-    local f='' fs='' p='' c='' b='' a='' src='' dst='';
-    while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift ; done
-    [ "$fs" ] || fs="$(cat)"
-    fs="$(sed -e 's/^\.\///' <<<"$fs" | while IFS= read f ; do [ -f "${f%%/*}" ] && echo "${f%%/*}" || true ; done)"
-    local b32char=$(for a in {0..31} ; do base 32 $a ; done | tr -d '\n') # 0123456789abcdefghjkmnpqrstuvxyz
-    for p in {0..31} ; do # iterate on each major base 32
-        b="$(base 32 $p)"
-        c="$b"
-        [ "$numlistbump" -gt 0 ] 2>/dev/null \
-          && { for a in {1..$numlistbump} ; do # bump the major sequence by $numlistbump if set
-               c="$(tr "${b32char}" "${b32char:1}${b32char::1}" <<<$b)"
-               done
-             } || true
-        # drop comma & meta files from rename
-        { sed -e "/^$b[${b32char}]*,./!d" -e "/^${b}00,/d" <<<"$fs" || true ;} \
-            | while IFS= read f ; do printf "%s\n" "$f" ; done \
-            | awk '{printf "%s %d %s\n",$0,NR,$0}' \
-            | sed -e '/^ /d' -e "s/^[${b32char}]*,//" -e '/^$/d' \
-            | while IFS= read a ; do set $a # {f} {NR} {seq,f}
-                printf "%s %s%s%02s,%s\n" "$3" "$numlist" "$c" "$(base 32 $2)" "$1"
-                done \
-            | while IFS= read a ; do set $a # {orig} {numlist}{c}{seq},{name}
-                src="$1"
-                # prepend "0," if not a comma file
-                grep "^[${b32char}]*," <<<"$src" >/dev/null && dst="$2" || dst="0,$2"
-                [ "$src" = "$dst" ] || [ -e "$dst" ] || echo "mv '$src' '$dst'"
-                done
-        done # p
-    # and give all files that had no sequence a "0" major (no bump) and sequence
-    { sed -e "/^[${b32char}]*,/d" -e '/^$/d' <<<"$fs" || true ;} \
-    | while IFS= read f; do printf "%s\n" "$f" ; done \
-        | awk '{printf "%s %d %s\n",$0,NR,$0}' \
-        | while IFS= read a ; do set $a
-            printf "%s %s%s%02s,%s\n" "$3" "$numlist" "0" "$(base 32 $2)" "$1"
-            done \
-        | while IFS= read a ; do set $a # {orig} {numlist}0{seq},{name}
-            dst="$2"
-            # when we add a dry-run switch we can remove the echo...
-            [ "$1" = "$dst" ] || { [ -e "$dst" ] && chkwrn "$FUNCNAME collision : $dst (6542c52e)" || echo "mv '$1' '$dst'" ;}
-            done
-    } # numlist 632ca5d3-20220922_111329
+numlist() { # comma sequence aware file renaming utility with base 32 index and major character retention
+  # so that when combined with another list, the result is interlaced with major sequence retained.
+  # rev 6769b365-20241223_110043
+  # Accept files as args OR stdin (one file per line), only act on regular files, squash leading "./";
+  # Expect filenames to start with sequence characters (base 32 chars, followed by ",");
+  # Retain the sequence and major sequence character, regenerate filenames with base 32 sequence index;
+  # Bump up the sequence major value by "$numlistbump" if set (integer);
+  # Prepend output filenames with "$numlist" string, if set;
+  # Initialize base 32 comma sequence, with 0 major, for input files that have no comma sequence;
+  # For name changes, without collisions, generate mv commands for review or "| sh"
+  local fs='' f='' major_char='' new_major='' seq_num=0 B32_CHARS
+  read B32_CHARS < <(tr -d '\n' < <(for a in {0..31} ; do base 32 $a ; done)) # 0123456789abcdefghjkmnpqrstuvxyz
+  [ "$B32_CHARS" ] || chkerr "$FUNCNAME : empty B32_CHARS, base issue (6768d182)"
+  [[ -z "$numlistbump" || "$numlistbump" =~ ^-?[[:digit:]]+$ ]] || {
+    chkerr "$FUNCNAME : env numlistbump must be null or an integer (6768d4f4)" ; return 1 ;}
+  bump_table() { # translate major_car from $B32_CHARS with $numlistbump
+    local input_char="$1" offset="$2"
+    [[ "$offset" =~ ^-?[[:digit:]]+$ ]] || return 1
+    local i=0 ; while ((i < ${#B32_CHARS})); do [[ "${B32_CHARS:$i:1}" == "$input_char" ]] && break ; ((i++)) ; done
+    local new_pos=$(( (i + offset) % 32 )) ; ((new_pos < 0)) && new_pos=$((new_pos + 32)) || true
+    printf "%s" "${B32_CHARS:$new_pos:1}" ;}
+  while [ $# -gt 0 ]; do fs+="$1"$'\n' ; shift ; done ; [ -z "$fs" ] && read -d '' fs || true
+  while read -r f; do
+    [ -f "$f" ] || continue
+    [[ "$f" =~ ^[$B32_CHARS]+, ]] && { major_char="${f:0:1}"
+    [ -n "$numlistbump" ] && { new_major=$(bump_table "$major_char" "$numlistbump")
+      } || new_major="$major_char"
+    seq_num=$((seq_num + 1))
+    read seq_num32 < <(awk '{printf "%02s",$0}' < <(base 32 $seq_num))
+    new_name="${numlist:-}${new_major}${seq_num32},${f#*,}"
+    [ "$f" = "$new_name" ] || [ -e "$new_name" ] || echo "mv '$f' '$new_name'" ;}
+    done <<< "$fs"
+  seq_num=0
+  while read -r f; do
+    [[ $f =~ ^[$B32_CHARS]+, ]] && continue
+    [ -f "${f#./}" ] || continue
+    seq_num=$((seq_num + 1))
+    read seq_num32 < <(awk '{printf "%02s",$0}' < <(base 32 $seq_num))
+    new_name="${numlist:-}0${seq_num32},${f}"
+    [ "$f" = "$new_name" ] || [ -e "$new_name" ] || echo "mv '$f' '$new_name'"
+    done <<< "$fs"
+  } # numlist 632ca5d3-20220922_111329 # 07/10/21
+
 
 numlistdst () { # distribute filenames across base 32 major (alnum lower sans 'ilow')
     # in the future accept distribution major range (start/stop for the distribution)
