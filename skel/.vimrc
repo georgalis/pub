@@ -1,6 +1,6 @@
 " .vimrc
 
-" (c) 2017-2023 George Georgalis <george@galis.org> unlimited use with this notice
+" (c) 1998-2025 George Georgalis <george@galis.org> unlimited use with this notice
 
 " I know not using ascii is going to hurt, but binary txt files already hurts
 "set fileencoding=utf8
@@ -8,6 +8,7 @@
 "set termencoding=utf8
 " :e! ++enc=utf8
 " :e! ++enc=ascii
+" iconv -f utf-8 -c -t ascii//TRANSLIT
 " iconv -f utf-8 -t ascii//TRANSLIT
 " iconv -f utf-8 -t ascii//IGNORE
 
@@ -15,24 +16,23 @@ set timeout timeoutlen=3000 ttimeoutlen=100
 set timeout timeoutlen=1000 ttimeoutlen=100
 "set noesckeys
 
-" https://linuxhandbook.com/vim-auto-complete/
+" try, someday... https://linuxhandbook.com/vim-auto-complete/
 
-" zm zr foldmethod=indent foldmethod=syntax foldlevel=20
-" %  jump to matching ([{}]), start/end of C-style comment, preprocessor conditional, code block
-
+set nospell
+set spelllang=en_us
 "  ]s  [s :: fwd and back move to a misspelled word
 "  z= :: get suggestions
 "  zg :: add word to dictionary
 "  zw :: mark word incorrect
-setlocal nospell
-set spelllang=en_us
+" map aspell for whole doc spell check...
+map gt :w!<CR>:!aspell check %<CR>:e! %<CR>
+" see also newsbody - Run a program on the body of a mail or news message
 
 set nocompatible
 set modelines=0 " prior to 6.3.83, modelines could could execute arbitrary commands
-set noautoindent
 set textwidth=0	" wrap with cr @ n cols
 set viminfo='80,\"200	" read/write a .viminfo file
-set history=350
+set history=650
 set suffixes=.bak,~,.swp,.o,.info,.aux,.log,.dvi,.bbl,.blg,.brf,.cb,.ind,.idx,.ilg,.inx,.out,.toc,.rpm,.z,.Z,.tar,.gz,.tgz,.zip,.bz2,.deb
 set showcmd		" Show (partial) command in status line.
 set showmatch	" Show matching brackets.
@@ -43,18 +43,14 @@ set ttyfast
 set hlsearch
 set sidescroll=20
 set scrolloff=48	
-set mouse=a     " helps, and no problems
 set wrap	" so longlines are visible
 "set nowrap	" can be better
 set nolbr   " better for copying
 "set lbr	" wrap on word, for editing text
-set expandtab " prefer spaces, use ctrl-v tab for tab-character
-set tabstop=4 " 4 characters better than 8
-"set shiftwidth=4
 "set backspace=2
 set backspace=indent,eol,start
 set nobackup " Preserves multi links cf 'vip' 'vim in place'
-"set backupcopy=yes 
+"set backupcopy=yes
 "set backupskip=/tmp/crontab*
 set ruler		" show the cursor position all the time
 set laststatus=2
@@ -73,7 +69,7 @@ if has("autocmd")
     \ endif
 endif " has("autocmd")
 
-map <f1> {!}par 1600<CR>
+map <f1> {!}par 2600<CR>
 map <F2> {!}par 52<CR>
 map <F3> {!}par 66<CR>
 map <F4> {!}par 94<CR>
@@ -100,7 +96,22 @@ function! SourceIfExists(file)
     exe 'source' a:file
     endif
   endfunction
+" When Vim starts, it follows a specific sequence:
+" a) Processes the main vimrc file
+" b) Loads plugins
+" c) Applies colorschemes
+" d) Sets up the initial environment
+" Custom highlight groups and matches need to be defined after the colorscheme is loaded. If defined earlier, they might be overwritten or not properly recognized.
+"   The colorscheme might not be fully loaded yet
+"   Some required highlight groups might not exist
+"   The terminal capabilities might not be fully determined
+" The VimEnter event is triggered after Vim has completed its startup sequence.
 
-call SourceIfExists("~/.vim-color.vim")
+" zm zr foldmethod=indent foldmethod=syntax foldlevel=20
+" %  jump to matching ([{}]), start/end of C-style comment, preprocessor conditional, code block
+"call SourceIfExists("~/.vimrc.fold-yaml")
+"call SourceIfExists("~/Downloads/vimrc.fold-yaml.txt")
+call SourceIfExists("~/.vimrc.color")
+"autocmd VimEnter * call SourceIfExists("~/.vimrc.color") # https://claude.ai/chat/5fc8e932-e38e-4901-954b-fc8973b41791
 call SourceIfExists("~/.vimrc.local")
 

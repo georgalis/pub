@@ -113,7 +113,7 @@ back() { cd "$OLDPWD" ;} # previous directory
 #cal() { cal -h $@ ;}
 
 # https://raw.githubusercontent.com/georgalis/pub/master/skel/.profile
-# common functions for shell verbose management.... 
+# common functions for shell verbose management....
 devnul() { return 0 ;}                                                 #:> drop args
 stderr() {  [ "$*" ] && echo "$*" 1>&2 || true ;}                      #:> args to stderr, or noop if null
 chkstd() {  [ "$*" ] && echo "$*"      || true ;}                      #:> args to stdout, or noop if null
@@ -135,7 +135,7 @@ siffx() { local verb="${verb:-devnul}" s="$1" f='' b=''
     || { chkerr  "$b siffx: export signal $? in '$f'" ; return 1 ;} \
     } #:> source arg1 if exists , on err recall args for backtrace
 
-# verbosity, typically set in ~/.profile.local to devnul, chkwrn, or chkerr 
+# verbosity, typically set in ~/.profile.local to devnul, chkwrn, or chkerr
 #verb="${verb:=devnul}"
 #verb2="${verb2:=devnul}"
 #verb3="${verb3:=devnul}"
@@ -272,6 +272,18 @@ case "$SHELL" in
     #PROMPT_COMMAND
     export HISTCONTROL=erasedups
     export HISTFILE="${HOME}/.bash_history" HISTFILESIZE=9600 HISTSIZE=2600
+    # Remove @ (/etc/hosts) and = (pwd files) from tab expansion
+    #export COMP_WORDBREAKS="${COMP_WORDBREAKS//@}" # Remove @ (/etc/hosts) from tab expansion
+    #export COMP_WORDBREAKS="${COMP_WORDBREAKS//=}" # Remove = (pwd files) from tab expansion
+    #read -d '' COMP_WORDBREAKS < <(tr -d '@=' <<<"$COMP_WORDBREAKS")
+    #read -d '' < <(tr -d '@=' <<<"$COMP_WORDBREAKS") ; export COMP_WORDBREAKS="$REPLY"
+    #REPLY=${COMP_WORDBREAKS//[=@]} ; export COMP_WORDBREAKS="$REPLY"
+    REPLY=${COMP_WORDBREAKS//[=@]}
+    #declare -p REPLY
+    export COMP_WORDBREAKS="$REPLY"
+    #declare -p COMP_WORDBREAKS
+    #sed -e 's/^/REPLY           X/' -e 's/$/X/' <<<"$REPLY"
+    #sed -e 's/^/COMP_WORDBREAKS X/' -e 's/$/X/' <<<"$COMP_WORDBREAKS"
     set -o ignoreeof # disable ctrl-d exit
     set -o errtrace  # any trap on ERR is inherited by shell functions
     set -o functrace # traps on DEBUG and RETURN are inherited by shell functions
@@ -330,8 +342,11 @@ rm $key_in ;}
 # ssh socket, key, and agent managent
 [ "$SSH_AGENT_ENV" ] || {
     tput dim
-    _ssh_agents=$(ps ax | awk '/ ssh-agent$/ {print $1}' )
-    [ "$_ssh_agents" ] && echo extra agents: $_ssh_agents ; unset _ssh_agents
+    #_ssh_agents=$(ps ax | awk '/ ssh-agent$/ {print $1}' )
+    #[ "$_ssh_agents" ] && echo extra agents: $_ssh_agents ; unset _ssh_agents
+    # rs -tz -g1 -w$(($(tput cols)-8))
+    #fmt 65 < <(awk 'BEGIN{print "extra agents:"} / ssh-agent$/ {print $1}' < <(ps ax))
+    tr '\n' ' ' < <(awk 'BEGIN{print "agents:"} / ssh-agent$/ {print $1}' < <(ps ax)) ; echo
     printf "User ${USER}@${HOSTNAME}: "
     eval $(ssh-agent)
     export SSH_AGENT_ENV="SSH_AGENT_PID $SSH_AGENT_PID SHELL_PID $$"
