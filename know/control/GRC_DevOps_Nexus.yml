@@ -44,6 +44,27 @@ Deck:
   - notes: https://github.com/georgalis/pub/tree/main/know/control/GRC_DevOps_Nexus.yml
   - slides:  https://github.com/georgalis/pub/tree/main/know/control/GRC_DevOps_Nexus.pdf
 
+
+comments:
+  - Synopses: proposing an enhanced approach to operational security and scaling by integrating quality metrics, version control, and automation frameworks more tightly into the continuous integration/deployment process.
+  - Lack of concrete examples: The presentation is highly abstract and could benefit from specific examples to illustrate concepts.
+  - Unclear implementation steps: While the slide outlines a high-level approach, it doesn't provide clear, actionable steps for implementation.
+  - Missing stakeholder considerations: The slide doesn't address how this change might affect different stakeholders in the organization.
+  - Myopia is the blind spot of engineering:
+    - Holistic View: Recognizing that programmatic governance automation requires a comprehensive understanding of manual continuous governance challenges across the organization.
+    - Breaking Down Silos: Addressing the lack of visibility into cross-departmental challenges, inputs, workflows, outputs, and hand-offs, which are primary contributors to inefficiencies and conflicts.
+    - Unified Process Mapping: Encouraging development activity visibility through Role-Based Access Control (RBAC) for operational schema logistics, implemented via Responsible, Accountable, Consulted, and Informed (RACI) matrices and a simplified, uniform process mapping approach.
+    - Flexible Implementation: While providing a macro framework, the approach allows for departmental customization of specific details to suit individual needs within the larger enterprise context.
+    - Cross-Functional Integration: Tackling the key challenge of complexity in enterprise Verification & Validation (V&V) and integration by improving coordination between traditionally siloed divisions such as DevOps, Quality Assurance, and Compliance.
+    - Interdisciplinary approach: The audience may infer the importance of diverse perspectives to compensate for individual or disciplinary blind spots.
+  - Stakeholder Engagement: Encouraging stakeholders to more carefully consider the schema logistics and input/output hand-offs of their specific missions in the context of overall enterprise coordination.
+  - Critical thinking: It could encourage questioning of established practices and assumptions in engineering.
+  - Systems thinking: It may prompt consideration of complex interdependence's in engineering projects that are easy to miss.
+  - NIST Document Metadata Access and OSCAL: |
+    I'm uncertain there is a direct nexus between OSCAL artifacts' and the metadata I envision. My OSCAL understanding is limited and I haven't considered governance documents as OSCAL output, though it seems feasible. How are OSCAL consumers privately cataloging their documentation libraries? My concern is that NIST begin producing machine-readable JSON publication data as soon as possible. (For mission concurrent with that driving OSCAL.) The absence of machine readable publication metadata hinders standard adoption at a tactical level for the intended "standard-consumer" audience. Manually populating local library catalog data with NIST web page data is a pedestrian process at best.
+    Existing uniform publication presentation suggests NIST library cataloging systems are in play and well developed. The challenge is why document metadata pages require manual extraction for local digital ingestion. An authorized NIST JSON file with the same data (title, author, abstract, filename, references) could accompany the publication via the same HTTPS channel, enhancing accessibility outside NIST. The OLIR disposition appears intended to edify NIST portfolio more than other gov agencies or industry consumer adoption. While a NIST standard-consumer might select OSCAL, they might wish to start with a small selection of the simplest NIST standards first, for ease of adoption with existing internal controls.
+    I see a simple solution which feels obvious, yet I hesitate because it seems to conflict with OLIR's disposition. Perhaps there are complexities I'm missing to implement the suggestion? I believe revisiting the presentation process to include JSON metadata could bring unexpected benefits. I'm eager to understand any obstacles, clarify use case, and work towards a solution that bridges publications closer to practical application, adoption. Let's explore this together.
+
 references:
   - Dual Vee Model:
     - https://en.wikipedia.org/wiki/User:Greghc/Dual_Vee_Model
@@ -51,7 +72,7 @@ references:
     - the power of the Dual Vee Model when applied as a reminder model for development of complex systems
   - A successful Git branching model:
     - http://nvie.com/posts/a-successful-git-branching-model/
-    - By Vincent Driessen on Tuesday, January 05, 2010
+    - By Vincent Driessen, January 05, 2010
   - SAFe Lean-Agile Principles:
     - https://scaledagileframework.com/safe-lean-agile-principles/
     - SAFe is based on ten immutable, underlying Lean-Agile principles
@@ -104,3 +125,4 @@ Ancillary:
         5. Enhanced ability to adapt to changing regulatory requirements
       The evolution from GAMP-5 to GAMP-6 demonstrates a clear trend towards greater alignment with modern software development practices. This progression allows regulated industries to benefit from the agility and efficiency of DevOps and DevSecOps while maintaining the rigorous quality and compliance standards required in their sectors.
       Organizations looking to maximize their system maturity should consider integrating GAMP-6 principles with DevOps and DevSecOps methodologies. This integrated approach can lead to more robust, compliant, and efficient software development processes that meet both regulatory requirements and modern development standards.
+

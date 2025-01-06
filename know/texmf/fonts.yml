@@ -14,49 +14,231 @@ file: fonts
         5) confirming available fonts, weights, and shapes, with a demo tex file.
       p: |
         Obtain your TTF files, typically distributed within a zip file.
-        Create a directory `{FontName}` and extract the TTF files into it.
-      p: |
+        For each font, create a directory `{FontName}` and extract the zip files into it.
         A TeX and Metafont directory `texmf` is used to store fonts and styles.
-        On Darwin, `mkdir -p ~/Library/texmf/fonts/truetype`
-        other posix systems, use `mkdir -p ~/texmf/fonts/truetype`
-        Throughout this document the `./texmf` directory refers to the path on your system.
-        Move the `{FontName}` directory with the ttf files into the `./texmf/fonts/truetype` directory.
+        On Darwin, `~/Library/texmf` other posix systems, use `~/texmf`
+        Throughout this document the `$texmf` directory refers to the path on your system.
+        Catagorize and store your fonts into directories
+        serif, sanserif, and typewriter (monospace).
+        
+            case $(uname) in Darwin) texmf="$HOME/Library/texmf" ;; *BSD|Linux ) texmf="$HOME/texmf" ;; esac
+            mkdir -p $texmf/fonts/truetype/{serif,sanserif,typewriter}
+            mv {FontName1} "$texmf/fonts/truetype/typewriter"
+            mv {FontName2} "$texmf/fonts/truetype/sanserif"
+            mv {FontName3} "$texmf/fonts/truetype/serif"
+
+        # purging for iterative development... 
+        # # bootstrap texmf user fonts install,
+        # # assuming we only install ttf fonts as user!
+        # # purge user fonts environment
+        #   rm -rf $texmf/fonts
+        # # restore ttf source zip files and extracted ttf data stored
+        # # in serif, sanserif, and typewriter directories, per instructions
+        #   mkdir -p              $texmf/fonts/truetype
+        #   rsync -a ~/kdb/fonts/ $texmf/fonts/
+        
+
       p: |
-        Use the autoinst command to install the font, there are many options but you are probably
-        only interested in -serif/-sanserif/-typewriter, group your fonts in these categories,
-        then use wildcards to install each group together with the corresponding option, eg
-        <pre>
-        autoinst -serif      ./texmf/fonts/truetype/{FontName}/*{serif}*.ttf
-        autoinst -sanserif   ./texmf/fonts/truetype/{FontName2}/*{sanserif}*.ttf
-        autoinst -typewriter ./texmf/fonts/truetype/{FontName3}/*{mono}*.ttf
-        </pre>
-        If you don't use this option autoinst may incorrectly guess the font type.
-      p: |
-        The next step is difficult to explain, but the script should take care of it.
-        Set the paths and create the dir, before writing a updmap.cfg file
+        Use the autoinst command to install the font, there are many options
+        but you are probably only interested in -serif -sanserif -typewriter
+        the other options are usually guessed correctly.
+        pdflatex does not support varable font features,
+        if your font has {fontname}/static/*tff files, use them,
+        otherwise with latex, you only get one font from varable ttf files.
+        Use wildcards to install all fonts in each group with the correct option, eg
+        
+          cd "$texmf/fonts/truetype"
+          eval "$(
+          { # loop on font types, create autoinst comands, prefer static ttf files
+            for fonttype in serif sanserif typewriter ; do export fonttype
+              [ -d $fonttype ] && { cd $fonttype
+                find . -type d -path \*/static -prune -o -name \*.ttf \
+                  -exec dirname \{\} \; | sort -u | while read fontdir ; do
+                    [ -d "$fontdir/static" ] && fontpath="$fontdir/static" || fontpath="$fontdir"
+                    echo "cd $PWD && echo '### $fonttype/$fontpath' && autoinst -$fonttype $fontpath/*ttf"
+                    done # fontdir
+              cd .. ;} ; done # fonttype
+             echo "cd $PWD" ;} # end of loop to create autoinst commands
+           )" # eval
+
+
+            mv {FontName1} "$texmf/fonts/truetype/tt"
+            autoinst -typewriter tt/IntelOneMono/ttf/*ttf
+            autoinst -sanserif   ss/B612/*ttf
+            autoinst -serif      sf/PlayfairDisplay/static/*ttf
+            autoinst -serif      sf/IBMPlexSerif/*ttf
+            autoinst -serif      sf/HeptaSlab/static/*ttf
+            autoinst -serif      sf/Fraunces/static/*ttf
+            autoinst -serif      sf/Domine/static/*ttf
+            autoinst -serif      sf/CrimsonText/*ttf
+            autoinst -serif      sf/CormorantGaramond/*ttf
+            autoinst -serif      sf/Arvo/*ttf
+        The last step will produce log files which will be helpful, to determine font names.
+            playfair.log                     frauncesseventwopt.log              frauncesninept.log
+            intelonemono.log                 frauncesonefourfourptsupersoft.log  domine.log
+            ibmplexserif.log                 frauncesonefourfourptsoft.log       crimsontext.log
+            heptaslab.log                    frauncesonefourfourpt.log           cormorantgaramond.log
+            frauncesseventwoptsupersoft.log  frauncesnineptsupersoft.log         bsixonetwo.log
+            frauncesseventwoptsoft.log       frauncesnineptsoft.log              arvo.log
+
+p: |
+        The next step is difficult to explain, but the script should solve it.
+        Set the paths and create the dir, before writing a updmap.cfg file,
         with the map files created by autoinst.
-        <pre>
-        v="$(tlmgr --version | sed -e '/version/!d' -e 's/.*version //')"
-        case $(uname) in
-          Darwin) a="$HOME/Library/texmf/fonts/map" b="$HOME/Library/texlive/$v/texmf-config/web2c" ;;
-          Linux)  a="$HOME/texmf/fonts/map"         b="$HOME/.texlive/$v/texmf-config/web2c" ;;
-        esac
-        [ -d "$a" ] && { mkdir -p "$b"
-            find "$a" -type f -name \*map -exec basename \{\} \; \
-              | sed 's/^/Map /' >"$b/updmap.cfg" ;}
-        </pre>
+            a="$texmf/fonts/map"
+            v="$(tlmgr --version | sed -e '/version/!d' -e 's/.*version //')"
+            case $(uname) in
+              Darwin) b="$HOME/Library/texlive/$v/texmf-config/web2c" ;;
+              Linux|*BSD)    b="$HOME/.texlive/$v/texmf-config/web2c" ;;
+            esac
+            [ -d "$a" ] && { mkdir -p "$b"
+              find "$a" -type f -name \*map -exec basename \{\} \; \
+                | sed 's/^/Map /' >"$b/updmap.cfg" ;}
       p: |
         Rebuild the ls-R filename databases with texhash, and 
         configure the user env fonts (and administratively installed fonts)
         with the updmap command, this step may take tens of seconds
         (repeat this step in the future to add new administratively installed fonts).
-        <pre>
-        texhash ./texmf (Mac: texhash ~/Library/texmf)
-        updmap --user
-        </pre>
+            texhash $texmf
+            updmap --user
+
+The .sty file:
+  - Contains font family declarations
+  - Usually defines commands for accessing different weights/shapes
+  - May include \DeclareFontFamily statements
+
+The .fd (Font Definition) files:
+  - Contains \DeclareFontShape commands that map between LaTeX font shapes/weights and actual font files
+    Format: \DeclareFontShape{<encoding>}{<family>}{<shape>}{<weight>}{<font file>}{}
+  - Note the combinations of shapes and weights
+    Command: \fontfamily{fontname-TLF}\fontseries{<weight>}\fontshape{<shape>}\selectfont
+
+For font family, shapes/weights, encoding, and figure style selection,
+the least ambigious syntax is demonstrated, typically this is also the
+modern approach and offers the most flexibility. 
+
+figure style selection:
+\usepackage[tlf]{fontname}
+
+Switching styles mid-document:
+{\addfontfeatures{Numbers=OldStyle} Text with oldstyle figures}
+
+Main figure styles:
+  - TLF (Tabular Lining Figures) - fixed-width, all-caps height
+  - TOsF (Tabular Oldstyle Figures) - fixed-width, with ascenders/descenders
+  - LF or CLF (Proportional Lining Figures) - variable-width, all-caps height
+  - OsF or POsF (Proportional Oldstyle Figures) - variable-width, with ascenders/descenders
+
+In package options: |
+  \usepackage[osf]{fontname}    % oldstyle figures
+  \usepackage[lf]{fontname}     % lining figures
+  \usepackage[tosf]{fontname}   % tabular oldstyle
+  \usepackage[tlf]{fontname}    % tabular lining
+
+Or using font commands: |
+  \fontfamily{fontname-TLF}\selectfont  % tabular lining
+  \fontfamily{fontname-TOsF}\selectfont % tabular oldstyle
+  \fontfamily{fontname-LF}\selectfont   % proportional lining
+  \fontfamily{fontname-OsF}\selectfont  % proportional oldstyle
+
+#You can check or change the default using the \figurestyle command in some font packages:
+# \renewcommand{\figurestyle}{osf}  % switch to oldstyle
+# \renewcommand{\figurestyle}{lf}   % switch to lining
+
+The main differences: Default varies by font family and package
+  - Tabular vs. Proportional: affects figure spacing/width
+  - Lining vs. Oldstyle: affects figure height and style
+
+Common use cases:
+  Tables/financial data: TLF (aligned columns)
+  Body text: OsF (blends with lowercase)
+  Headlines: LF (matches caps)
+  Technical material: TLF (consistent spacing)
+
+
+Common shape codes in .fd files: |
+  n = normal/regular
+  it = italic
+  sl = slanted
+  sc = small caps
+  b = bold
+  bi = bold italic
+  bx = bold extended
+
+Weight codes: |
+  ul = ultra light
+  el = extra light
+  l = light
+  m = medium
+  sb = semibold
+  b = bold
+  eb = extra bold
+  ub = ultra bold
+
+
+% Modern lining figures (TLF)
+\fontfamily{fontname-TLF}\selectfont
+1234567890
+
+% Oldstyle figures (TOsF)
+\fontfamily{fontname-TOsF}\selectfont
+1234567890
+
+
+\oldstylenums{1234567890}
+
+Point Sizes:
+LaTeX fonts are typically available in any size because they're scalable vector fonts. However, some fonts have optical sizes - different designs optimized for different size ranges. These are usually indicated in the .fd file with size ranges like:
+
+\DeclareFontShape{T1}{fontname-TLF}{m}{n}{
+  <-8> fontname-light
+  <8-14> fontname-regular
+  <14-> fontname-display
+}{}
+
+{\tiny Text}      % Typically 5pt
+{\scriptsize Text}% Typically 7pt
+{\footnotesize Text}% Typically 8pt
+{\small Text}     % Typically 9pt
+{\normalsize Text}% Typically 10pt
+{\large Text}     % Typically 12pt
+{\Large Text}     % Typically 14pt
+{\LARGE Text}     % Typically 17pt
+{\huge Text}      % Typically 20pt
+{\Huge Text}      % Typically 25pt
+
+Or specify exact sizes:
+{\fontsize{12}{14}\selectfont Text} % 12pt with 14pt leading
+
+When loading the font package:
+\usepackage[scale=1.2]{fontname}  % Scales all sizes by 1.2
+
+In specific font declarations:
+\DeclareFontFamily{T1}{fontname-TLF}[Scale=1.2]{}
+
+You can also use relative scaling between different fonts:
+\usepackage[scale=MatchLowercase]{fontname}  % Scales to match x-height of main font
+\usepackage[scale=MatchUppercase]{fontname}  % Scales to match caps height
+
+
+With font family, shapes/weights, encoding, and figure style selection
+covered, this is probably the best place as any to discuss initials,
+decorative initial capital letters (drop caps) with ornamentation or
+just simply larger, with the subsequent lines wrapping around them.
+
+
+The basic syntax is:
+preamble: 
+  \usepackage{lettrine}
+document:
+  \lettrine[options]{Initial}{Following text}
+
+
+
       p: |
          Use the font in your document, reference the style package file
         (.sty) and use the respective font commands. For package name hints,
-        <pre>
-        find ./texmf/tex/latex/ -mtime -1 -name \*sty -exec grep ProvidesPackage \{\} \;
-        </pre>
+            find ./texmf/tex/latex/ -mtime -1 -name \*sty -exec grep ProvidesPackage \{\} \;
+
+
+
