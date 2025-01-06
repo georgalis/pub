@@ -104,16 +104,16 @@ gen_index () { # in pwd, for "$links/$name/"
     find "$wdp/$name"  -name stat.time.list -empty -exec rm \{\} \;
     find "$wdp/$name"  -name stat.pitch.list -empty -exec rm \{\} \;
 
-    $verb ${name}.ckstat ; $verb2 tmp "$wdp/%/$t/${name}.ckstat"
+    $verb ${name}.cks ; $verb2 tmp "$wdp/%/$t/${name}.cks"
     cat "$wdp/${name}.list" | while IFS= read a ; do
         ckstat    $links/$name/$a | awk -v f="${a##*,}" '{printf ". . % 8s % 8s %s %s\n",$3,$4,$5,f}'
       # ckstatsum $links/$name/$a | awk -v f="${a##*,}" '{printf ". . % 8s % 8s %s %s\n",$3,$4,$5,f}'
         spin2
-        done >"$wdp/%/$t/${name}.ckstat~"
+        done >"$wdp/%/$t/${name}.cks~"
     spin2 0
-    sort -k 6 -u "$wdp/%/$t/${name}.ckstat~" >"$wdp/%/$t/${name}.ckstat"
-    touch -r "$wdp/${name}.list" "$wdp/%/$t/${name}.ckstat"
-    mv "$wdp/%/$t/${name}.ckstat" "$wdp/$name/"
+    sort -k 6 -u "$wdp/%/$t/${name}.cks~" >"$wdp/%/$t/${name}.cks"
+    touch -r "$wdp/${name}.list" "$wdp/%/$t/${name}.cks"
+    mv "$wdp/%/$t/${name}.cks" "$wdp/$name/"
 
    $verb "${name}{.view,.list,.md,/*mp3} $links/0/kind/"
    rm -rf   "$links/0/kind/${name}"*
@@ -285,7 +285,7 @@ readme2html2kind
 
 rm -rf "$wdp/%/$t/"
 $verb2 "eof"
-chktrue 'rm -rf /Volumes/CURATE/{.fseventsd,.Spotlight-V100,*.{LIB,PL,BMK}}'
+chktrue 'rm -rf /Volumes/CURATE/{.fseventsd,.Spotlight-V100,*.{LIB,PL,BMK}} ; eject /Volumes/CURATE/'
 exit 0
 
 cat >/dev/null <<eof
