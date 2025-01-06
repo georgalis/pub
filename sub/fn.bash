@@ -481,7 +481,7 @@ _yt_vid () { # ytdl wrapper functions for video
   find "$d/" -maxdepth 1 -name "00${xs},*" \( -name "*.json" -o -name "*.webp" \
     -o -name "*.jpg" -o -name "*.vtt" \) -exec mv {} "$d/@/meta/" \;
   read -d '' media_file < <(find "$d/" -mindepth 1 -maxdepth 1 -name "00${xs},*${id}*") || true
-  [ -f "$media_file" ] || { chkerr "$FUNCNAME : media_file not found '$d/00${xs},*${id}*' (676c6dcb)" ; return 1 ;}
+  [ "$media_file" ] || { chkerr "$FUNCNAME : media_file not found '$d/00${xs},*${id}*' (676c6dcb)" ; return 1 ;}
   read count < <(wc -l <<<"$media_file")
   [ "$count" = 1 ] || { chkerr "$FUNCNAME : unexpected media_file count '$count' for id '$d/00${xs},*${id}*' (676c6f29)" ; return 1 ;}
  #audio_file="${media_file/%webm/$acodec}"
@@ -614,58 +614,17 @@ _yt_txt () { # ytdl transcript wrapper
  #audio_file="${media_file/%webm/$acodec}"
  #[ "$media_file" = "$audio_file" ] || mv "${media_file}" "${audio_file}" # maybe webm will never show again... or not.
   #read ext < <(sed -e '/^  Stream /!d' -e 's/.* Audio: //' -e 's/,.*//' < <(ffprobe "$audio_file" 2>&1 ))
-chkerr  ln -f "$audio_file" "$d/@/_^${id}.${acodec}"
-chkerr  mv -f "$audio_file" "$d/orig/"
+chkerr  was: ln -f "$audio_file" "$d/@/_^${id}.${acodec}"
+chkerr  was: mv -f "$audio_file" "$d/orig/"
   # Generate yaml summary
   _yt_json2txt "$d/@/meta/00${xs},"*".json" "$d/@/_^${id}.${acodec}" "$d"
   } # _yt_txt _youtube_txt 66749f14-20240620_142842
-
-  x_youtube_txt () { # put youtube (arg1) json and captions in dir (arg2, original json and vtt stored in arg2/@)
-    local id="$1" d="$2"
-    [ "$id" ] || read -p "youtube id: " id
-    [ "$id" ] || { chkerr "$FUNCNAME : no id? (66749f30)" ; return 1 ;}
-    read id < <(sed -e "s/\([?&]\)si=................[&]*/\1/" -e 's/\?$//' <<<"$id") # squash trackers from url
-    [ "$d" ]  || read -p "directory: " d
-    [ "$d" ]  || d='.'
-    [ -d "$d/@" ] || mkdir -p "$d/@" || { chkerr "$FUNCNAME : unable to mkdir '$d/@' (66749f61)" ; return 1 ;}
-    [ "$ytdl" ] || ytdl="youtube-dl"
-   #local t= ; read t < <(mkdir -p "$HOME/%/ytdl" && cd "$HOME/%/ytdl" && mktemp ytdl-XXXX)
-   #[ -e "$HOME/%/ytdl/$t" ] || { chkerr "$FUNCNAME : could not set tmp file '$t' (6674ab6a)" ; return 1 ;}
-    local xs= ; read xs < <(sed -e 's/^@4[0]*//' -e 's/[[:xdigit:]]\{8\} $//' < <(tai64n <<<'')) \
-      || { chkerr "$FUNCNAME : failed to set xs (6674c2fd)" ; return 1 ;}
-    local ytdl_vtt= ytdl_json=
-    read ytdl_vtt ytdl_json < <(tr '\n' ' ' < <(sed -e '/^\[info\] Writing/!d' -e 's/.*: //' < <(# collect filenames from ytdl output
-      $ytdl --write-info-json --write-comments --write-sub --write-auto-sub --sub-langs "en,en-GB" \
-          --restrict-filenames --skip-download --abort-on-error --no-playlist \
-          -o "$d/@/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" "$id" )))
-    $verb chkwrn "ytdl_vtt=$ytdl_vtt"
-    uniq < <(sed -e '/align:start position/d' -e 's/<[^>]*>//g' -e '/ --> /d' -e '/^ [ ]*$/d' -e '/^$/d' "$ytdl_vtt") >"${ytdl_vtt}.txt" \
-      && mv "${ytdl_vtt}.txt" "$d" || { chkerr "$FUNCNAME : could not create '$d/${ytdl_vtt}.txt' (6674c795)" ; return 1 ;}
-    chktrue "$d/${ytdl_vtt##*/}.txt"
-    $verb chkwrn "ytdl_json=$ytdl_json"
-    yq -y 'del(.formats, .thumbnails, .thumbnail, .age_limit, ._format_sort_fields,
-               .automatic_captions, .playable_in_embed, .is_live, .was_live, .tbr,
-               .format, .format_id, .format_note, .protocol,
-               .width, .height, .resolution, .fps, .vcodec, .vbr, .aspect_ratio )
-         | del(.comments[]? | (._time_text, .author_thumbnail, .author_is_verified))' "$ytdl_json" >"${ytdl_json}.yml" \
-      && mv "${ytdl_json}.yml" "$d" || { chkerr "$FUNCNAME : could not create '$d/${ytdl_json}.yml' (6674c7fe)" ; return 1 ;}
-    chktrue "$d/${ytdl_json##*/}.yml"
-  # more deletes
-  # .downloader_options, .http_headers, .webpage_url_basename, .author_thumbnail, .live_status,
-  # .automatic_captions, .extractor,
-    ## get the id
-    #local f="$(find $links -name \*$($ytdl --dump-json $id | jq --ascii-output --raw-output '(.id)' | yq --yaml-output |head -n1)\* | grep -Ev '/(tmp|0)/' | sort)"
-    ## check if the id exists already, chance to abort...
-    #[ "$f" ] && { echo "$f" ; read -p "files found, continue (N/y) " f ; [ "$f" = 'y' ] || return 1 ;}
-    #_youtube_json2txt $(sed -e '/as JSON to/!d' -e 's/.*to: //' <"$HOME/%/ytdl/$t") && rm -f "$HOME/%/ytdl/$t" \
-    } # _youtube_txt 66749f14-20240620_142842
-  
 
 _yt () { # ytdl wrapper functions
   # Download audio, subtitles, metadata and generate yaml summary
   # rev 677027f9 20241228_083153
   local id="$1" d="${2:-}" ytdl=${ytdl:-yt-dlp}
-  local tmp_json= xs= existing= resp= json_path= count= base_name= acodec= media_file= audio_file= 
+  local tmp_json= xs= existing= resp= json_path= count= base_name= acodec= media_file= audio_file=
   [ "$id" ] || read -p "youtube id: " id
   [ "$id" ] || { chkerr "$FUNCNAME : no id? (6542c9d2)" ; return 1 ;}
   read id < <(sed -e 's/[?&]si=[[:alnum:]_-]\{16\}[&]*//' -e 's/\?$//' <<<"$id") # squash trackers from url
@@ -716,46 +675,45 @@ chkwrn 67703fd0 media_file: mv -f "$media_file" "$d/orig/"
   _yt_json2txt "$d/@/meta/00${xs},"*".json" "$d/@/_^${id}.${acodec}" "$d"
   } # _yt _youtube 20220516
 
-_yt_json2txt () { # fixup youtube .info.json to yaml txt and sort files
-  # rev 677027f9 20241228_083153
-  local json_file="$1" media_master="$2" txt_dir="$3"
-chkwrn local json_file="$1" media_master="$2" txt_dir="$3"
-  [ -f "$json_file" ] || { chkerr "$FUNCNAME : json_file not found '$json_file' (676c648c)" ; return 1 ;}
-  [ -f "${json_file}.txt" ] && { chkerr "$FUNCNAME : exists '${json_file}.txt' (676c64d2)" ; return 1 ;}
-  [ -f "${txt_dir}/${json_file##*/}.txt" ] && { chkerr "$FUNCNAME : exists '${json_file}.txt' (676c64d2)" ; return 1 ;}
-  txt_dir="${txt_dir:-.}"
-chkwrn local json_file="$1" media_master="$2" txt_dir="$3"
-  { printf "\nss= ; export verb=chkwrn ss= to= t= p= f= c=r3 F= CF= off= tp= lra= i= cmp=pard v=3db"
-    printf "\nss= ; export _f=@/%s\n\n" "${media_master##*/}"
-    read id file_ext < <(jq -r '[.id, .ext] | @tsv' "$json_file")
    #awk 'P=$0{printf "\n_a=%s\n_r=%s\n\n",P,P}' >>"${json_file}.txt~" <(
-    sed -e 's,\\u0332,,g' -e 's,\\u2013,-,g' -e 's,\\u00d7,-,g' -e 's,\\u2022,-,g' <(
-      echo -n "ss= _a=";  yq -r  '.title' < <(iconv -f utf-8 -c -t  ascii//TRANSLIT <"$json_file")
-      echo -n "ss= _r=";  yq -r  '.fulltitle' < <(iconv -f utf-8 -c -t  ascii//TRANSLIT <"$json_file")
-      printf "\n\n"
-#     sed -e 's/ /_/g' -e 's/_-_/-/g' -e 's/^/ss= _a=/' 
-#       < <(jq -r '.fulltitle | @text' "$json_file")
-#     sed -e 's/ /_/g' -e 's/_-_/-/g' -e 's/^/ss= _r=/' 
-#       < <(jq -r '.fulltitle | @text' "$json_file")
-      printf ' ss= to= f2rb2mp3 $_f ooo,${_a}-Trak_Title-${_r}\n' ''
-      jq -r '.duration_string | @text' "$json_file" || true
-      printf "\n\n" )
-    sed -e 's/\.0 / /g' < <(yq -y '.chapters[] | {ss: .start_time, to: .end_time, ooo: .title}' < <(iconv -f utf-8 -c -t  ascii//TRANSLIT <"$json_file"))
-    printf "\n---\n"
-    yq -r  '.title' < <(iconv -f utf-8 -c -t  ascii//TRANSLIT <"$json_file")
-    printf "\n---\n"
-    yq -r  '.description' < <(iconv -f utf-8 -c -t  ascii//TRANSLIT <"$json_file")
-    printf "\n---\n"
-    yq -r '.comments | sort_by(.timestamp) | .[] | select(.author_is_uploader == true) | .text'  < <( iconv -f utf-8 -c -t  ascii//TRANSLIT <"$json_file")
-    printf "\n---\n"
-    yq -y 'del(.formats, .thumbnail, .thumbnails, .downloader_options,
-            .http_headers, .webpage_url_basename, .author_thumbnail,
-            .playable_in_embed, .live_status, .automatic_captions,
-            .extractor, .is_live, .was_live)' < <(iconv -f utf-8 -c -t  ascii//TRANSLIT <"$json_file")
-    } >"${txt_dir}/${json_file##*/}.txt~" && mv "${txt_dir}/${json_file##*/}.txt~" "${txt_dir}/${json_file##*/}.txt" \
+  _yt_json2txt () { # fixup youtube .info.json to yaml txt and sort files
+    # rev 677ba227-20250106_012757
+    local json_file="$1" media_master="$2" txt_dir="${3:-.}" verb="${verb:-devnul}"
+    local json= id= file_ext= duration= title= fulltitle= chapters= description= comments= metadata=
+    [ -f "$json_file" ] || { chkerr "$FUNCNAME : json_file not found '$json_file' (676c648c)" ; return 1 ;}
+    [ -f "${json_file}.txt" ] && { chkerr "$FUNCNAME : exists '${json_file}.txt' (676c64d2)" ; return 1 ;}
+    [ -f "${txt_dir}/${json_file##*/}.txt" ] && { chkerr "$FUNCNAME : exists '${txt_dir}/${json_file##*/}.txt' (677b4682)" ; return 1 ;}
+    read -rd '' json <"$json_file" || true ; $verb json from "$json_file"
+    read -r id file_ext duration < <(jq -r '[.id, .ext, .duration_string] | @tsv' <<<"$json")
+    read -rd '' title < <(jq -r '.title' <<<"$json") || true ; $verb title
+    read -rd '' fulltitle < <(jq -r '.fulltitle' <<<"$json") || true ; $verb fulltitle
+    read -rd '' chapters < <(yq -ry -w10000 '.chapters[] | {ss: .start_time, to: .end_time, ooo: .title}' <<<"$json") || true ; $verb chapters
+    read -rd '' description < <(yq -r '.description' <<<"$json") || true ; $verb description
+    read -rd '' comments < <(yq -r '.comments | sort_by(.timestamp) | .[] | select(.author_is_uploader == true) | .text' <<<"$json") || true ; $verb comments
+    read -rd '' metadata < <(yq -ry 'del(.formats, .thumbnail, .thumbnails, .downloader_options,
+      .http_headers, .webpage_url_basename, .author_thumbnail,
+      .playable_in_embed, .live_status, .automatic_captions,
+      .extractor, .is_live, .was_live)' <<<"$json") || true ; $verb metadata
+    { printf "ss= ; export verb=$verb ss= to= t= p= f= c=r3 F= CF= off= tp= lra= i= cmp=pard v=3db\n"
+      printf "ss= ; export _f=./@/%s\n\n"  "${media_master##*/}"
+      printf "ss= _a=%s\n"                 "$title"
+      printf "ss= _r=%s\n\n"               "$fulltitle"
+      printf ' ss= to= f2rb2mp3 $_f ooo,${_a}-Trak_Title-${_r}\n%s\n\n' "$duration"
+      printf -- "--- chapters \n%s\n\n"    "$chapters" | iconv -f utf-8 -c -t ascii//TRANSLIT \
+                                                       | sed -e 's/: /=/' -e 's/\.0$//' -e "s/'//g" -e 's/ /_/g' -e '/^---$/d' \
+                                                             -e 's/^ooo=/f2rb2mp3 $_f ooo,${_a}-/' -e '/^f2rb/s/$/-${_r}/' -e 's/\&/and/g' \
+                                                       | tr -d '()[].;:`"'
+      printf -- "--- title \n%s\n\n"       "$title"
+      printf -- "--- description \n%s\n\n" "$description"
+      printf -- "--- comments \n%s\n\n"    "$comments" | tr -s '\n\r' '\n' ; echo
+      printf -- "--- metadata \n%s\n\n"    "$metadata"
+      # | sed -e 's,\\u0332,,g' -e 's,\\u2013,-,g' -e 's,\\u00d7,-,g' -e 's,\\u2022,-,g' \
+     #} | iconv -f utf-8 -c -t ascii//TRANSLIT >"${txt_dir}/${json_file##*/}.txt~" \
+      } >"${txt_dir}/${json_file##*/}.txt~" \
+      && mv "${txt_dir}/${json_file##*/}.txt~" "${txt_dir}/${json_file##*/}.txt" \
       || { chkerr "$FUNCNAME : error parsing json or creating '${txt_dir}/${json_file##*/}.txt' (676c7462)" ; return 1 ;}
-  echo "${txt_dir}/${json_file##*/}.txt"
-  } # _yt_json2txt _youtube_json2txt 20220516
+    echo "${txt_dir}/${json_file##*/}.txt"
+    } # _yt_json2txt _youtube_json2txt 20220516
 
 _youtube_comment_unflatten () { # convert comment text from _youtube_json2txt to ascii formatted
     # echo -e "$( yq -r . )" ... subshell, no \" and no utf
