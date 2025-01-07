@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# (c) 2004-2023 George Georgalis unlimited use with this notice
+# (c) 2004-2025 George Georgalis unlimited use with this notice
 #
 # Sundry functions, and commensurate alias, env.
 #

@@ -1,6 +1,6 @@
 # ~/.profile
 
-# (c) 2004-2024 George Georgalis unlimited use with this notice
+# (c) 2004-2025 George Georgalis unlimited use with this notice
 #
 # For Bourne-compatible shells (bash,ksh,sh)
 #
@@ -210,6 +210,59 @@ ckstatsum() { # return sortable stat data for args (OR stdin file list)
       } || chkerr "$FUNCNAME : not a regular file : $f"
     done # f
   } # ckstatsum()
+
+chkst() { # return sortable stat data for args OR stdin file list
+  # rev 677c63fa-20250106_151506
+  # chkst /var/run/resolv.conf
+  #  c0eb521  1 .      1ab 677c76ff /var/run/resolv.conf
+  # inode links .     size     date input
+  # (c) 2017-2025 George Georgalis <george@galis.org> unlimited use with this notice
+  [ "$1" = "-h" -o "$1" = "--help" ] && {
+    chkwrn 'Return sortable hex stat data for args OR stdin file list:'
+    chkwrn 'inode links . size mdate file'
+    return 0 ;} || true
+  local f= fs= OS=
+  while [ $# -gt 0 ]; do fs+="$1"$'\n' ; shift ; done ; fs="${fs%$'\n'}" ; [ -z "$fs" ] && read -d '' fs || true
+  read OS < <(uname)
+  [ "$OS" = "Linux" ]                      && _stat() { stat -c %i\ %h\ %s\ %Y "$1" ;} || true
+  [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat() { stat -f %i\ %l\ %z\ %m "$1" ;} || true
+  while IFS= read f; do
+    [ -h "$f" ] && { chkwrn "$FUNCNAME : a symbolic link '$f'" ;} || true
+    [ -e "$f" ] && { # use this to extract filenames with spaces: awk '{print substr($0, index($0,$6))}'
+      awk '{printf "%8x %2x . % 8x %08x ",$1,$2,$3,$4}' < <(_stat "$f")
+      # purge symbols for executable, symbolic link, socket, whiteout, and FIFO, but not directory
+      sed -e 's/[*@=%|]$//' < <(ls -dF "$f")
+      } || chkerr "$FUNCNAME : does not exist '$f'"
+    done <<<"$fs" # f
+  } # chkst 6305e87b
+
+chksthash() { # return sortable stat and hash data for args OR stdin file list
+  # rev 677c9c44-20250106_191506
+  # chksthash /etc/resolv.conf
+  #  c0eb521  1 3a9954      1ab 677c76ff /var/run/resolv.conf
+  # inode links shake256-x3 size    date input
+  # (c) 2017-2022 George Georgalis <george@galis.org> unlimited use with this notice
+  [ "$1" = "-h" -o "$1" = "--help" ] && {
+    chkwrn 'Return sortable hex stat and hash data for args OR stdin file list:'
+    chkwrn 'inode links hash size mdate file'
+    return 0 ;} || true
+  local f= fs= OS=
+  while [ $# -gt 0 ]; do fs+="$1"$'\n' ; shift ; done ; fs="${fs%$'\n'}" ; [ -z "$fs" ] && read -d '' fs || true
+  read OS < <(uname)
+  [ "$OS" = "Linux" ]                      && _stat() { stat -c %i\ %h\ %s\ %Y "$1" ;} || true
+  [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat() { stat -f %i\ %l\ %z\ %m "$1" ;} || true
+  while IFS= read f; do [ -f "$f" -a ! -h "$f" ] && { # only process regular files
+ # use this to extract filenames with spaces: awk '{print substr($0, index($0,$6))}'
+ # shake256 -xoflen 3 is okay for integrity check, and compatible with longer crypto reference
+      # sed to purge symbols for executable, and whiteout
+      awk '{printf "%8x %2x %06s % 8x %08x ",$1,$2,$5,$3,$4}' < <( tr '\n' ' ' \
+        < <( _stat "$f" && awk '{print $2}' < <(openssl shake256 -xoflen 3 -hex <"$f"))) \
+      && sed -e 's/[*%]$//' < <(ls -dF "$f") \
+      || { chkerr "$FUNCNAME : internal error '$f'" ; return 1 ;}
+      } || { [ -h "$f" ] && { chkwrn "$FUNCNAME : symbolic link '$f'" ;} \
+                         || { chkwrn "$FUNCNAME : not a regular file '$f'" ;} ;} # warn for non-files
+    done <<<"$fs" # f
+  } # chksthash 677c9c44-20250106_191506 ckstatsum
 
 ascii_filter() { while IFS= read a ; do echo "$a" | strings -e s ; done ;}
 
