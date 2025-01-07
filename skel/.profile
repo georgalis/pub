@@ -211,9 +211,9 @@ ckstatsum() { # return sortable stat data for args (OR stdin file list)
     done # f
   } # ckstatsum()
 
-chkst() { # return sortable stat data for args OR stdin file list
+cks () { # return sortable stat data for args OR stdin file list
   # rev 677c63fa-20250106_151506
-  # chkst /var/run/resolv.conf
+  # cks /var/run/resolv.conf
   #  c0eb521  1 .      1ab 677c76ff /var/run/resolv.conf
   # inode links .     size     date input
   # (c) 2017-2025 George Georgalis <george@galis.org> unlimited use with this notice
@@ -230,18 +230,18 @@ chkst() { # return sortable stat data for args OR stdin file list
     [ -h "$f" ] && { chkwrn "$FUNCNAME : a symbolic link '$f'" ;} || true
     [ -e "$f" ] && { # use this to extract filenames with spaces: awk '{print substr($0, index($0,$6))}'
       awk '{printf "%8x %2x . % 8x %08x ",$1,$2,$3,$4}' < <(_stat "$f")
-      # purge symbols for executable, symbolic link, socket, whiteout, and FIFO, but not directory
+      # purge listing decoration for executable, symbolic link, socket, whiteout, and FIFO, but not directory
       sed -e 's/[*@=%|]$//' < <(ls -dF "$f")
       } || chkerr "$FUNCNAME : does not exist '$f'"
     done <<<"$fs" # f
-  } # chkst 6305e87b
+  } # cks 6305e87b
 
-chksthash() { # return sortable stat and hash data for args OR stdin file list
+cksh () { # return sortable stat and hash data for args OR stdin file list
   # rev 677c9c44-20250106_191506
-  # chksthash /etc/resolv.conf
+  # chsh /etc/resolv.conf
   #  c0eb521  1 3a9954      1ab 677c76ff /var/run/resolv.conf
   # inode links shake256-x3 size    date input
-  # (c) 2017-2022 George Georgalis <george@galis.org> unlimited use with this notice
+  # (c) 2017-2025 George Georgalis <george@galis.org> unlimited use with this notice
   [ "$1" = "-h" -o "$1" = "--help" ] && {
     chkwrn 'Return sortable hex stat and hash data for args OR stdin file list:'
     chkwrn 'inode links hash size mdate file'
@@ -254,7 +254,7 @@ chksthash() { # return sortable stat and hash data for args OR stdin file list
   while IFS= read f; do [ -f "$f" -a ! -h "$f" ] && { # only process regular files
  # use this to extract filenames with spaces: awk '{print substr($0, index($0,$6))}'
  # shake256 -xoflen 3 is okay for integrity check, and compatible with longer crypto reference
-      # sed to purge symbols for executable, and whiteout
+      # sed to purge symbols for executable, and whiteout listing decoration
       awk '{printf "%8x %2x %06s % 8x %08x ",$1,$2,$5,$3,$4}' < <( tr '\n' ' ' \
         < <( _stat "$f" && awk '{print $2}' < <(openssl shake256 -xoflen 3 -hex <"$f"))) \
       && sed -e 's/[*%]$//' < <(ls -dF "$f") \
@@ -262,7 +262,7 @@ chksthash() { # return sortable stat and hash data for args OR stdin file list
       } || { [ -h "$f" ] && { chkwrn "$FUNCNAME : symbolic link '$f'" ;} \
                          || { chkwrn "$FUNCNAME : not a regular file '$f'" ;} ;} # warn for non-files
     done <<<"$fs" # f
-  } # chksthash 677c9c44-20250106_191506 ckstatsum
+  } # cksh 677c9c44-20250106_191506 ckstatsum
 
 ascii_filter() { while IFS= read a ; do echo "$a" | strings -e s ; done ;}
 
@@ -286,7 +286,7 @@ dirper() { # reveal dir permissions of "$*" or "$PWD"
   ;; esac ; [ "$d" = "/" ] && return || dirper $(dirname "$d");}
 
 symview() { # report directories and symlinks below args or stdin if $# is 0
-    # for consistancy, please start relitative symlinks with a dot,
+    # for consistency, please start relative symlinks with a dot,
     # like this: ln -s ./tmp sym
     #  NOT this: ln -s tmp sym
     #
@@ -306,7 +306,7 @@ symview() { # report directories and symlinks below args or stdin if $# is 0
         done
     } # symview
 
-lock() { # lock to prevent concurent runs
+lock() { # lock to prevent concurrent runs
  mkdir -p "$HOME/var/run"
  local name="$(basename "$0")"
  local LOCK="$HOME/var/run/${name}.pid"
@@ -392,7 +392,7 @@ rm $key_in ;}
 #   #		|| { echo $(hostname) ssh-agent already died? 2>/dev/stderr ; exit 1 ;} ;}
 
 
-# ssh socket, key, and agent managent
+# ssh socket, key, and agent management
 [ "$SSH_AGENT_ENV" ] || {
     tput dim
     #_ssh_agents=$(ps ax | awk '/ ssh-agent$/ {print $1}' )
