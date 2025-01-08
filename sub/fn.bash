@@ -126,7 +126,6 @@ validfn () { #:> validate function, compare unit hash vs operation env hash
 		EOF
     return 1 ;}
     } # validfn
-
 # Now that validfn is defined, run the framework on expected functions...
 #
 # eg first, generate hashes of known functions...
@@ -150,6 +149,62 @@ chkexit e6d9b430 0000005a
 logexit 235b98c9 0000005d
 siffx c20a9040 000002f7
 validfn 6fcde5cc 0000046d
+EOF
+
+vfn () { #:> validate function against shake256 xoflen hash, or generate hash
+  # rev 677ab05a-20250108_132329 ./sub/fn.bash
+  grep bash >/dev/null 2>&1 < <(grep "^[ ]*$$ " < <(ps)) || { echo ">>> $0 : Not bash shell (677d0f41) <<<" >&2 ; return 1 ;}
+  # if arg1 ${*:-} ; help
+  [ -z "$1" -o "$1" = '-h' -o "$1" = '--help' ] && {
+    cat 1>&2 <<-EOF
+	:: $FUNCNAME FUNCTION VALIDATOR
+	:; $FUNCNAME {function}        ; returns {function-name} {hash}
+	:: $FUNCNAME {function} {hash} ; return no error, if hash match
+	:: the former is intended to provide data for the latter
+	:: env xoflen sets shake256 hash length, else xoflen determined from input
+	:: xoflen=5 sets a 40 bit hash (8x), vs a default 256 bit hash, xoflen=32
+	:: a short bit test may be used on a long hash, max hash 512 bit, xoflen=64
+	EOF
+    return 0 ;} || true
+  local fn= hash= _xoflen= fndef= check=
+  # substitute non-alphanumeric/underscore chars with underscore on read args
+  read -r fn hash <<<"${*//[^[:alnum:]_]/_}"
+  # if xoflen; check xoflen digit and range && _xoflen=xoflen || "xoflen not null, and out of range 3 <= digit <= 64"
+  [ -n "${xoflen:-}" ] && { { [[ "${xoflen:-}" =~ [[:digit:]]+ ]] && [ "$xoflen" -ge 3 -a "$xoflen" -le 64 ] && _xoflen="$xoflen" ;} \
+    || { echo ">>> $0 : xoflen out of range; 3 <= '$xoflen' <= 64 (677d8f59) <<<" >&2 ; return 1 ;} ;}
+  # if xoflen and hash; check 2*xoflen <= hash-len || "xoflen exceeds available hash"
+  [ "$xoflen" -a "$hash" ] && { [ $((2*${xoflen})) -le ${#hash} ] \
+    || { echo ">>> $0 : 'xoflen=$xoflen' exceeds available hash bits '$((${#hash}*8))' xoflen=$((${#hash}/2)) (677d93ab) <<<" >&2 ; return 1 ;} ;}
+  # if xoflen and no-hash; generate a hash and return, later, first prioritize check performance
+  # read fndef; define hashfn, with default if no _xoflen; read check
+  read -rd '' fndef < <(declare -f "$fn" || { echo ">>> $0 : function not found '$fn' (677df620) <<<" >&2 ; return 1 ;}) || true
+  read check < <(awk '{print $2}' < <(openssl shake256 -hex -xoflen "${_xoflen:-32}" <<<"$fndef"))
+  [ "${hash:0:${#check}}" = "$check" ] && return 0 # truncate hash to check length, exit success on match
+  [ "$hash" -a "$check" ] && { printf '>>>---\n%s check error: %s\n unit: %s\n  env: %s\n<<<---\n' "$FUNCNAME" "$fn" "$hash" "$check" 1>&2 ; return 1 ;}
+  [ "$hash" ] || { echo "$fn $check" ; return 0 ;}
+  echo ">>> $0 : internal error (677da024) <<<" >&2
+  return 1
+  } # vfn 677da1f9 20250107_135153; fnhash Jul 28, 2023; validfn Feb 8, 2020 sub/func.bash
+# now that vfn is defined, run the validator on dep functions from .profile, and
+# raise help on err; first, generate reference xoflen=48 hashes of functions...
+#   for f in devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue chkexit logexit siffx validfn vfn ; do xoflen=48 vfn $f ; done
+# then run vfn with min 24-bit hash (xoflen=3) against the reference 384-bit
+# hash data, to lightweight qualify the functions
+declare -f vfn >/dev/null 2>&1 || { echo "$0 : vfn not defined (677e40bc)" 1>&2 ; _help_sub ; return 1 ;}
+while IFS= read fn hash ; do xoflen=3 vfn $fn $hash || { echo "env qualify error (677e4110)" 1>&2 ; _help_skel ; break 1 ;} ; done <<EOF
+devnul   0eb7cdd2bfb59cd4e2743c0c8d22db1b6b711dc5f70eafc51d841d67aeb850adb5f24f6561829a1c55d3fe9a62a89ceb
+stderr   e010b0e704f67ee4d5fc8227d32030bfa06e60be9a49daf0b4c91c6eee9671bc2a17a3d517b8da4e20b7946ea302c130
+chkstd   66c5e827c43c8291eb471d1bb61067f6323b2cf3fc5fd9f56f9b4b8516a9e574f44d4c0d614853512894ca651af9caa8
+chkwrn   3acc570671ddfd9b5c0eeca64a2c7541b4559d9c3e1edae841c2317bba84a9a55c90455b86deafaf32d592a8f48c5726
+logwrn   1775beeee82daa381b314944b9a1963381c9291bbc9884ef27ce99cb762a80a7bb8f5c0d5e1c9586b6a12f15a919b150
+chkerr   50195549cedb329654b8cd279d5e471a536488ebfd3045b4589d05e20c0072faecf4b89566df11144369f437821a27d5
+logerr   8420e3638ccde6b2c86820d4460e059edcfcb00e2f3ba065e5270bf57e66abce058c88ea95168f3345539ea536abad79
+chktrue  6053b8cfa998834844f9dd687af4753b96d2f2e14cf6c51c22dac7165daaf2405e4637bd82096c81165e54728d1d5d3b
+chkexit  95f639509bf0fd473fb5188531b7138201ce2691b2ca8744c535eb764ab756abca5b5db2ef5d88c9924ad33804960e87
+logexit  669f2138af0e8ec67d469796abd822cec889640de3d529fa8ff5af876d30fcdf56a4a6d77baba81c951fe4d33d86ed6d
+siffx    faf13db46a77326a019ca42325f2d1b4ab3c410c39bc36f3294baf2da85d53f11af2a1738d055eaaaee78333654a8c3e
+validfn  4240a107e4f699a97fde04d53403dbb9e4a06452fe72c2b5781258ea3a242d288faac045458f35efc61cecde3cbefc34
+vfn      fbd426ba997831f20333fea08bd66ceb4a92cc264ce1e9162521d0df83b5eb645122902e6d4a800c15c7d56c8599ceb1
 EOF
 
 fnhash () { # gen validfn data from env and fn names in file (arg1), for repo commit comments
@@ -235,7 +290,7 @@ gcfg () { # report all the git config and where it comes from, repo dir may be s
 
 which ci >/dev/null 2>&1 && {
 _rcs () { # local rcs function
-    # unfortunatly rcs predates modern documentation...
+    # unfortunately rcs predates modern documentation...
     # this wrapper handles basic "capture a file revision"
     #   _rcs {filename} "{message}"
     # 
