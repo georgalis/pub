@@ -146,7 +146,8 @@ kind_curate_rsync () { # rsync $links/0/kind/$name/
     # Fixup OSX Ventura rsync problem (sets timestamp to transfer time vs orig file time, to ms-dos filesystems)
     # https://discussions.apple.com/thread/254383328
     # https://github.com/WayneD/rsync/issues/412
-    rsync -aP --delete --modify-window=1 $links/0/kind/${name}* "/Volumes/CURATE/kind/" \
+    # --bwlimit="5.2m" seems to stop micro sd overheating...
+    rsync -aP --delete --modify-window=1 --bwlimit="5.2m" $links/0/kind/${name}* "/Volumes/CURATE/kind/" \
         | grep -vE '((^sending|^sent|^total) |^$|^\./$)' || true
 #       cd $links/0/kind/ && find . -type f -path "./${name}*" -exec touch -r \{\} "/Volumes/CURATE/kind/"\{\} \;
     } # kind_curate_rsync

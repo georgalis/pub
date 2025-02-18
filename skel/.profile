@@ -413,8 +413,9 @@ rm $key_in ;}
 #		|| { echo $(hostname) ssh-agent already died? 2>/dev/stderr ; exit 1 ;} ;}
 
 siffx "$HOME/.profile.local" "~/.profile (63b8877f)" && chktrue "$_ $HOME/.profile.local" || { return 2 ; exit 3 ;}
+# use -n to not source this file, just report it has been sourced, now that the end is reached
 siffx -n "$HOME/.profile"    "~/.profile (642a7466)" && chktrue "$_ $HOME/.profile" || { return 2 ; exit 3 ;}
-
+# also be verbose about agent status
 tput dim
 echo "User ${USER}@${HOSTNAME}: "
 tput bold

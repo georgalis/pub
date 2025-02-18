@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# (c) 2004-2025 George Georgalis unlimited use with this notice
+# (c) 2004-2025 George Georgalis <george@galis.org> unlimited use with this notice
 #
 # Sundry functions, and commensurate alias, env.
 #
@@ -14,56 +14,75 @@ _help_skel() {
   eval "$(curl -fsSL --insecure \
     https://raw.githubusercontent.com/georgalis/pub/master/skel/.profile)"
   export -f devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue \
-    chkexit logexit siffx validfn
+    chkexit logexit siffx
 ---<<<
 eof
   }
 
-# one confusion at a time, fn.bash from ~/.profile.local, eg
-# siffx "$HOME/sub/fn.bash" || { return 1 ; exit 2 ;}
-declare -f chktrue >/dev/null || { _help_skel ; return 2 ; exit 3 ;}
+# one confusion at a time,
+# ~/.profile.local from ~/.profile eg
+#   fn.bash from ~/.profile.local
+# ~/sub/sub/fn.bash from ~/.profile.local
+# siffx "$HOME/sub/fn.bash" "~/.profile.local (678007bd)" && chktrue "$_ $HOME/sub/fn.bash" || { return 2 ; exit 3 ;}
+declare -f chktrue >/dev/null 2>&1 || { _help_skel ; return 2 ; exit 3 ;}
 
-[ "${SHELL##*/}" = "bash" ] && { # alias, to restore login env, iff no active jobs.
-    alias _env='tput sgr0 ; chkerr "$(jobs -l)" \
-        && exec env -i TERM="$TERM" COLORTERM="$COLORTERM" \
-            SHELL="$SHELL" HOME="$HOME" LOGNAME="$LOGNAME" USER="$USER" \
+[ "${SHELL##*/}" = "bash" ] && { # rev 67800555-20250109_092011
+  # the "_env" alias (and variations) initializes the shell environment
+  # to a login state, expediting configuration development by purging
+  # all runtime alias, functions, and env variables (which may be in a
+  # development state), and initializing the default environment, without
+  # the need to open a new terminal. a test for background processes
+  # blocks the initialization, so they don't become orphaned. the default
+  # alias retains verbose settings and ssh-agent initialization through
+  # the exec, it is trivial to adjust preservation of additional parameters.
+  alias _env='tput sgr0 ; chkerr "$(jobs -l)" \
+    && exec env -i TERM="$TERM" COLORTERM="$COLORTERM" \
+      SHELL="$SHELL" HOME="$HOME" LOGNAME="$LOGNAME" USER="$USER" \
+      SSH_AGENT_PID="$SSH_AGENT_PID" SSH_AUTH_SOCK="$SSH_AUTH_SOCK" \
+      SSH_AGENT_ENV="$SSH_AGENT_ENV" \
+      verb="$verb" verb1="$verb1" verb2="$verb2" \
+      '"${SHELL} -l"
+  alias _env_verb='tput sgr0 ; chkerr "$(jobs -l)" \
+    && exec env -i TERM="$TERM" COLORTERM="$COLORTERM" \
+      SHELL="$SHELL" HOME="$HOME" LOGNAME="$LOGNAME" USER="$USER" \
+      SSH_AGENT_PID="$SSH_AGENT_PID" SSH_AUTH_SOCK="$SSH_AUTH_SOCK" \
+      SSH_AGENT_ENV="$SSH_AGENT_ENV" \
+      verb="chkwrn" verb1="chkwrn" verb2="chkwrn" \
+      '"${SHELL} -l"
+  alias _env_noverb='tput sgr0 ; chkerr "$(jobs -l)" \
+    && exec env -i TERM="$TERM" COLORTERM="$COLORTERM" \
+      SHELL="$SHELL" HOME="$HOME" LOGNAME="$LOGNAME" USER="$USER" \
+      SSH_AGENT_PID="$SSH_AGENT_PID" SSH_AUTH_SOCK="$SSH_AUTH_SOCK" \
+      SSH_AGENT_ENV="$SSH_AGENT_ENV" \
+      '"${SHELL} -l"
+    } # _env Apr 3, 2023 sub/fn.bash
+
+first_bash () { # identify the first bash in PATH and switch if different
+  # rev 6780052b-20250109_091929
+  # in addition to exec bash as needed, first_bash manages some env as well
+  export bash_path="$(which bash)"
+  # if running bash, and bash_path is different, switch, iff no active jobs.
+  ps | grep "^[ ]*$$ " | grep bash >/dev/null 2>&1 \
+    && { test -x $bash_path \
+      && { expr "$("$bash_path" --version)" \
+        : "GNU bash, version ${BASH_VERSINFO[0]}\.${BASH_VERSINFO[1]}\.${BASH_VERSINFO[2]}(${BASH_VERSINFO[3]})-${BASH_VERSINFO[4]} (${BASH_VERSINFO[5]})" >/dev/null \
+        || { tput sgr0 ; chkerr "$(jobs -l)" \
+          && exec env -i TERM="$TERM" COLORTERM="$COLORTERM" \
+            SHELL="${bash_path}" HOME="$HOME" LOGNAME="$LOGNAME" USER="$USER" \
             SSH_AGENT_PID="$SSH_AGENT_PID" SSH_AUTH_SOCK="$SSH_AUTH_SOCK" \
             SSH_AGENT_ENV="$SSH_AGENT_ENV" \
             verb="$verb" verb1="$verb1" verb2="$verb2" \
-            '"${SHELL} -l"
-    alias _env_verb='tput sgr0 ; chkerr "$(jobs -l)" \
-        && exec env -i TERM="$TERM" COLORTERM="$COLORTERM" \
-            SHELL="$SHELL" HOME="$HOME" LOGNAME="$LOGNAME" USER="$USER" \
-            SSH_AGENT_PID="$SSH_AGENT_PID" SSH_AUTH_SOCK="$SSH_AUTH_SOCK" \
-            SSH_AGENT_ENV="$SSH_AGENT_ENV" \
-            verb="chkwrn" verb1="chkwrn" verb2="chkwrn" \
-            '"${SHELL} -l"
-    alias _env_noverb='tput sgr0 ; chkerr "$(jobs -l)" \
-        && exec env -i TERM="$TERM" COLORTERM="$COLORTERM" \
-            SHELL="$SHELL" HOME="$HOME" LOGNAME="$LOGNAME" USER="$USER" \
-            SSH_AGENT_PID="$SSH_AGENT_PID" SSH_AUTH_SOCK="$SSH_AUTH_SOCK" \
-            SSH_AGENT_ENV="$SSH_AGENT_ENV" \
-            '"${SHELL} -l"
-    }
+            "$bash_path" -l ;} # exec replace shell, if BASH_VERSINFO doesn't match
+        } && { echo "<>< $bash_path ${BASH_VERSINFO[0]}.${BASH_VERSINFO[1]}.${BASH_VERSINFO[2]}(${BASH_VERSINFO[3]})-${BASH_VERSINFO[4]}" ;} \
+      || return 1 # exec failed...
+      } || true # not bash, OR bash_path unavailable OR same version
+  } # first_bash Apr 3, 2023 sub/fn.bash
 
-export bash_path="$(which bash)"
-# if running bash, and bash_path is different, switch, iff no active jobs.
-ps | grep "^[ ]*$$ " | grep bash >/dev/null 2>&1 \
-  && { test -x $bash_path \
-        && { expr "$("$bash_path" --version)" \
-            : "GNU bash, version ${BASH_VERSINFO[0]}\.${BASH_VERSINFO[1]}\.${BASH_VERSINFO[2]}(${BASH_VERSINFO[3]})-${BASH_VERSINFO[4]} (${BASH_VERSINFO[5]})" >/dev/null \
-            || { tput sgr0 ; chkerr "$(jobs -l)" \
-                  && exec env -i TERM="$TERM" COLORTERM="$COLORTERM" \
-                    SHELL="${bash_path}" HOME="$HOME" LOGNAME="$LOGNAME" USER="$USER" \
-                    SSH_AGENT_PID="$SSH_AGENT_PID" SSH_AUTH_SOCK="$SSH_AUTH_SOCK" \
-                    SSH_AGENT_ENV="$SSH_AGENT_ENV" \
-                    verb="$verb" verb1="$verb1" verb2="$verb2" \
-                    "$bash_path" -l ;} # replace, BASH_VERSINFO doesn't match
-           } && { echo "<>< $bash_path ${BASH_VERSINFO[0]}.${BASH_VERSINFO[1]}.${BASH_VERSINFO[2]}(${BASH_VERSINFO[3]})-${BASH_VERSINFO[4]}" ;} \
-        || return 1 # exec failed...
-     } || true # not bash, OR bash_path unavailable OR same version
+# this is only invoked when sourced from profile, but as a function
+# it is more easily referenced
+first_bash
 
-# earlier and we would normally see it twice...
+# any earlier, and we would see it twice...
 uptime
 
 validex () { #:> validate executable, compare unit hash vs operation env hash
@@ -98,6 +117,7 @@ validex () { #:> validate executable, compare unit hash vs operation env hash
     } # validex 64399fcb 20230414 1147 Fri 14 Apr PDT
 
 validfn () { #:> validate function, compare unit hash vs operation env hash
+    # DEPRECATED, use vfn below instead
     [ "$1" ] || {
       cat 1>&2 <<-EOF
 		#:: $FUNCNAME {function}        ; returns {function-name} {hash}
@@ -151,19 +171,23 @@ siffx c20a9040 000002f7
 validfn 6fcde5cc 0000046d
 EOF
 
-vfn () { #:> validate function against shake256 xoflen hash, or generate hash
+vfn () { #:> verify function against shake256 xoflen hash, or generate hash
   # rev 677ab05a-20250108_132329 ./sub/fn.bash
-  grep bash >/dev/null 2>&1 < <(grep "^[ ]*$$ " < <(ps)) || { echo ">>> $0 : Not bash shell (677d0f41) <<<" >&2 ; return 1 ;}
+  # this bash function uses "declare -f {funcname}" to normalize openssl
+  # hash inputs. the bash interpreter version (shell) provided by apple
+  # is circa 2006, and not compatible with the current bash versions.
+  # for cross-platform compatibility, and bug fixes, install a current
+  # stable version of bash, on macos
   # if arg1 ${*:-} ; help
   [ -z "$1" -o "$1" = '-h' -o "$1" = '--help' ] && {
     cat 1>&2 <<-EOF
-	:: $FUNCNAME FUNCTION VALIDATOR
-	:; $FUNCNAME {function}        ; returns {function-name} {hash}
-	:: $FUNCNAME {function} {hash} ; return no error, if hash match
-	:: the former is intended to provide data for the latter
-	:: env xoflen sets shake256 hash length, else xoflen determined from input
-	:: xoflen=5 sets a 40 bit hash (8x), vs a default 256 bit hash, xoflen=32
-	:: a short bit test may be used on a long hash, max hash 512 bit, xoflen=64
+	: $FUNCNAME VERIFY FUNCTION usage:
+	  $FUNCNAME {function}        ; returns {function-name} {hash}
+	  $FUNCNAME {function} {hash} ; return no error, if hash match
+	: the former is intended to provide hash data for the latter,
+	: env xoflen sets the shake256 hash length, or it is determined from input
+	: xoflen=5 sets a 40-bit hash (8x), vs a default 256-bit hash (xoflen=32)
+	: a short bit test may be used on a long hash, max hash 512-bit (xoflen=64)
 	EOF
     return 0 ;} || true
   local fn= hash= _xoflen= fndef= check=
@@ -185,12 +209,15 @@ vfn () { #:> validate function against shake256 xoflen hash, or generate hash
   echo ">>> $0 : internal error (677da024) <<<" >&2
   return 1
   } # vfn 677da1f9 20250107_135153; fnhash Jul 28, 2023; validfn Feb 8, 2020 sub/func.bash
-# now that vfn is defined, run the validator on dep functions from .profile, and
-# raise help on err; first, generate reference xoflen=48 hashes of functions...
+# now that vfn is defined, run the function qualifier on dep functions
+# from .profile, raise help on err; first, generate 384-bit
+# reference hashes (xoflen=48) of the functions...
 #   for f in devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue chkexit logexit siffx validfn vfn ; do xoflen=48 vfn $f ; done
-# then run vfn with min 24-bit hash (xoflen=3) against the reference 384-bit
-# hash data, to lightweight qualify the functions
-declare -f vfn >/dev/null 2>&1 || { echo "$0 : vfn not defined (677e40bc)" 1>&2 ; _help_sub ; return 1 ;}
+# then run vfn with xoflen=3 with the reference hash data, for a
+# lightweight 24-bit qualification of the functions, from the reference
+# hash data, ---for more frequent integrity checks, based on stronger
+# reference hashes
+declare -f vfn >/dev/null 2>&1 || { echo "$0 : vfn not defined (677e40bc)" 1>&2 ; _help_skel ; return 1 ;}
 while IFS= read fn hash ; do xoflen=3 vfn $fn $hash || { echo "env qualify error (677e4110)" 1>&2 ; _help_skel ; break 1 ;} ; done <<EOF
 devnul   0eb7cdd2bfb59cd4e2743c0c8d22db1b6b711dc5f70eafc51d841d67aeb850adb5f24f6561829a1c55d3fe9a62a89ceb
 stderr   e010b0e704f67ee4d5fc8227d32030bfa06e60be9a49daf0b4c91c6eee9671bc2a17a3d517b8da4e20b7946ea302c130
@@ -204,7 +231,7 @@ chkexit  95f639509bf0fd473fb5188531b7138201ce2691b2ca8744c535eb764ab756abca5b5db
 logexit  669f2138af0e8ec67d469796abd822cec889640de3d529fa8ff5af876d30fcdf56a4a6d77baba81c951fe4d33d86ed6d
 siffx    faf13db46a77326a019ca42325f2d1b4ab3c410c39bc36f3294baf2da85d53f11af2a1738d055eaaaee78333654a8c3e
 validfn  4240a107e4f699a97fde04d53403dbb9e4a06452fe72c2b5781258ea3a242d288faac045458f35efc61cecde3cbefc34
-vfn      fbd426ba997831f20333fea08bd66ceb4a92cc264ce1e9162521d0df83b5eb645122902e6d4a800c15c7d56c8599ceb1
+vfn      edc7e32d2cb89b32c15255a675dec8f82d8470bd792be28c887549ba73e6c75ca4a3ac70498919619bbb2d05431592d8
 EOF
 
 fnhash () { # gen validfn data from env and fn names in file (arg1), for repo commit comments
@@ -293,16 +320,16 @@ _rcs () { # local rcs function
     # unfortunately rcs predates modern documentation...
     # this wrapper handles basic "capture a file revision"
     #   _rcs {filename} "{message}"
-    # 
+    #
     # Show changes since last checkin revision
     #   rcsdiff {filename}
     #
     # Review revision information for filename1:
     #   rlog filename1
-    # 
+    #
     # Restoring revision2 of filename1 to filename3
     #   co -p -r"revision2" "filename1" > "filename3"
-    # 
+    #
     # rlog Options
     #   -L  : Ignore RCS files with no locks set
     #   -R  : Print only the name of the RCS file
@@ -495,7 +522,7 @@ _yt_vid () { # ytdl wrapper functions for video
   # Download video, audio, subtitles, metadata and generate yaml summary
   # rev 677027f9 20241228_083153
   local id="$1" d="${2:-}" ytdl=${ytdl:-yt-dlp}
-  local tmp_json= xs= existing= resp= json_path= count= base_name= acodec= media_file= audio_file= 
+  local tmp_json= xs= existing= resp= json_path= count= base_name= acodec= media_file= audio_file=
   [ "$id" ] || read -p "youtube id: " id
   [ "$id" ] || { chkerr "$FUNCNAME : no id? (6542c9d2)" ; return 1 ;}
   read id < <(sed -e 's/[?&]si=[[:alnum:]_-]\{16\}[&]*//' -e 's/\?$//' <<<"$id") # squash trackers from url
@@ -578,7 +605,7 @@ _yt_list () { # ytdl wrapper function for playlist
   # Download audio, subtitles, metadata and generate yaml summary
   # rev 677027f9 20241228_083153
   local id="$1" d="${2:-}" ytdl=${ytdl:-yt-dlp}
-  local tmp_json= xs= existing= resp= json_path= count= base_name= acodec= media_file= audio_file= 
+  local tmp_json= xs= existing= resp= json_path= count= base_name= acodec= media_file= audio_file=
   [ "$id" ] || read -p "youtube id: " id
   [ "$id" ] || { chkerr "$FUNCNAME : no id? (6542c9d2)" ; return 1 ;}
   read id < <(sed -e 's/[?&]si=[[:alnum:]_-]\{16\}[&]*//' -e 's/\?$//' <<<"$id") # squash trackers from url
@@ -613,7 +640,7 @@ _yt_txt () { # ytdl transcript wrapper
   # Download audio, subtitles, metadata and generate yaml summary
   # rev 677027f9 20241228_083153
   local id="$1" d="${2:-}" ytdl=${ytdl:-yt-dlp}
-  local tmp_json= xs= existing= resp= json_path= count= base_name= acodec= media_file= audio_file= 
+  local tmp_json= xs= existing= resp= json_path= count= base_name= acodec= media_file= audio_file=
   [ "$id" ] || read -p "youtube id: " id
   [ "$id" ] || { chkerr "$FUNCNAME : no id? (6542c9d2)" ; return 1 ;}
   read id < <(sed -e 's/[?&]si=[[:alnum:]_-]\{16\}[&]*//' -e 's/\?$//' <<<"$id") # squash trackers from url
@@ -658,6 +685,7 @@ _yt_txt () { # ytdl transcript wrapper
          | del(.comments[]? | (._time_text, .author_thumbnail, .author_is_verified))' "$ytdl_json" >"${ytdl_json}.yml" \
       && mv "${ytdl_json}.yml" "$d" || { chkerr "$FUNCNAME : could not create '$d/${ytdl_json}.yml' (6674c7fe)" ; return 1 ;}
     chktrue "$d/${ytdl_json##*/}.yml"
+# jq  '.comments[] | del(.author_thumbnail, .author_is_uploader, .author_is_verified,.author_url,._time_text,.author_id)' /Users/geo/kdb/6/7/9/4/7/v/0067947083,The_French_Way_of_War-20250121_^iIHgkQNzXqA.info.json > /Users/geo/kdb/6/7/9/4/7/v/0067947083,The_French_Way_of_War-20250121_^iIHgkQNzXqA.info.com.json
 
   # Move files to final locations
   find "$d/" -maxdepth 1 -name "00${xs},*" \( -name "*.json" -o -name "*.webp" \
@@ -691,7 +719,7 @@ _yt () { # ytdl wrapper functions
   read xs < <(sed -e 's/^@4[0]*//' -e 's/[[:xdigit:]]\{8\} $//' < <(tai64n <<<'')) \
     || { chkerr "$FUNCNAME : failed to set xs (6674c2fd)" ; return 1 ;}
   # Check for existing files using temp json metadata
-  { $ytdl --dump-json --no-write-comments "$id" \
+  { $ytdl --dump-json --no-write-comments -- "$id" \
     || { chkerr "$FUNCNAME : failed to load json '$id' (676c4aad)" ; return 1 ;}
     } >"$d/@/tmp/ytdl/$tmp_json"
   read -d '' id acodec < <(jq -r '[.id, .acodec] | @tsv' "$d/@/tmp/ytdl/$tmp_json") || true
@@ -704,7 +732,7 @@ _yt () { # ytdl wrapper functions
   $ytdl --write-info-json --write-comments --write-sub --write-auto-sub \
     --sub-langs "en,en-GB" --write-thumbnail --restrict-filenames \
     -f bestaudio --extract-audio --abort-on-error --no-playlist \
-    -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" "$id"
+    -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" -- "$id"
   # Get downloaded json path and organize files
   read -d '' json_path < <(find "$d/" -maxdepth 1 -name "*${id}*.json") || true
   [ "$json_path" ] || { chkerr "$FUNCNAME : not found '$d/*${id}*json' (676c546a)" ; return 1 ;}
@@ -988,8 +1016,8 @@ EOF
   [ -f "${inpath}/tmp/${infile}${secn}.meas" -a -f  "${inpath}/tmp/${infile}${secn}.flac" ] \
     || { # measure for EBU R128 loudness normalization
         { echo "# ${infile}${secn}.meas infile secn meas flac"
-          #$verb2 "loudnorm in: loudnorm=print_format=json... $secc -i $infilep > ${inpath}/tmp/${infile}${secn}.flac~" 
-          $verb2 @ffmpeg -hide_banner -loglevel info -y $secc -i "$infilep" 
+          #$verb2 "loudnorm in: loudnorm=print_format=json... $secc -i $infilep > ${inpath}/tmp/${infile}${secn}.flac~"
+          $verb2 @ffmpeg -hide_banner -loglevel info -y $secc -i "$infilep"
           ffmpeg -hide_banner -loglevel info -y $secc -i "$infilep" \
             -af "highpass=f=6:p=2, lowpass=f=22000:p=2, aresample=48000,
                  loudnorm=print_format=json" \
@@ -1058,7 +1086,7 @@ EOF
         $verb "${inpath}/tmp/${out}.wav"
         $verb2   $rb -q $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav~"
              { { $rb -q $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav~" 2>&1 \
-                                                          && mv -f "${inpath}/tmp/${out}.wav~" "${inpath}/tmp/${out}.wav" 
+                                                          && mv -f "${inpath}/tmp/${out}.wav~" "${inpath}/tmp/${out}.wav"
                } | while IFS= read a ; do ${verb} "$a" ; done ;} || { chkerr \
                 "$rb    $tc $pc $fhzc $cc $Fn $cfc '${inpath}/tmp/${infile}${secn}${lnn}.flac' '${inpath}/tmp/${out}.wav~' (6542c978)" ; return 1 ;}
         } # final master, sans sox volume
@@ -1307,7 +1335,7 @@ lacktone () { # monitor lacktone logfile
       play -q -n -c1 synth sin %-44 sin %-9 sin %-6 sin %-19.7  fade h 0.09 2.3 01.35 gain $g
       play -q -n -c1 synth sin %-12 sin %-9 sin %-5 sin %-2     fade h 0.19 2.3 0.78  gain $g
       sleep 0.54
-      printf "%s" "1a/$g " >>"$tmp/lacktone" 
+      printf "%s" "1a/$g " >>"$tmp/lacktone"
       done
  }
  lacktone1b () { # play background tone, optional gain (arg1) default -55
@@ -1320,7 +1348,7 @@ lacktone () { # monitor lacktone logfile
       play -q -n -c2 synth sin %-44 sin %-9 sin %-6 sin %-19.7  fade h 0.09 2.3 01.35 gain $g
       play -q -n -c2 synth sin %-12 sin %-9 sin %-5 sin %-2     fade h 0.19 2.3 0.78  gain $g
       sleep $(dc -e "3 k 1 $(($RANDOM %49 + 1)) / 0.50 + p")
-      printf "%s" "1b/$g " >>"$tmp/lacktone" 
+      printf "%s" "1b/$g " >>"$tmp/lacktone"
       done
   }
  lacktone2a () { # play background tone, optional gain (arg1) default -55
@@ -1345,7 +1373,7 @@ lacktone () { # monitor lacktone logfile
    [ "$1" ] && g="$1" || g="-55"
     gb="$(echo "$g" | sed 's/-/_/' | awk '{print "3 k 0.06 "$1" * "$1" + p"}' | dc )"
    while :; do
-     timeout -k 2 4.7 -- play -q -n -c2 synth sin %-44 sin %-9 sin %-6 sin %-19.7  fade h 0.09 2.52 01.35 gain $g 
+     timeout -k 2 4.7 -- play -q -n -c2 synth sin %-44 sin %-9 sin %-6 sin %-19.7  fade h 0.09 2.52 01.35 gain $g
      timeout -k 2 4.7 -- play -q -n -c2 synth sin %-12 sin %-9 sin %-5 sin %-2     fade h 0.19 2.52 0.78  gain $gb
       sleep $(dc -e "3 k 1 $(($RANDOM %42 + 1)) / 1.00 + p")
       printf "%s" "2b/$g " >>"$tmp/lacktone" &
@@ -1388,9 +1416,9 @@ lacktone () { # monitor lacktone logfile
     gb="$(echo "$g" | sed 's/-/_/' | awk '{print "3 k 0.03 "$1" * "$1" + p"}' | dc )"
    while :; do
       timeout -k 2 4.7 -- play -q -n -c1 synth sin %-33 sin %-9 sin %-6 sin %-19.7  fade h 0.09 $(dc -e "5 k 1 $(($RANDOM %128)) 0.51 + / 0.8 + 1.87 + p") 1.35 gain $gb
-      timeout -k 2 4.7 -- play -q -n -c1 synth sin %-12 sin %-9 sin %-5 sin %-2     fade h 0.19 2.33 0.78  gain $g 
+      timeout -k 2 4.7 -- play -q -n -c1 synth sin %-12 sin %-9 sin %-5 sin %-2     fade h 0.19 2.33 0.78  gain $g
       sleep 2.74
-      printf "%s" "6a/$g " >>"$tmp/lacktone" 
+      printf "%s" "6a/$g " >>"$tmp/lacktone"
       done
  } # 6679c49e 20240624
  lacktone6b () { # play background tone, optional gain (arg1) default -55
@@ -1405,7 +1433,7 @@ lacktone () { # monitor lacktone logfile
       timeout -k 2 4.7 -- play -q -n -c2 synth sin %-12 sin %-9 sin %-5 sin %-2     fade h 0.19 $(dc -e "5 k 1 $(($RANDOM %128)) 0.51 + / 0.8 + 2.00 + p") 0.78  gain $gb
       #sleep $(dc -e "6 k 1 $(($RANDOM %42 )) 0.51 + 1 / 0.76 + p")
       sleep 2.89
-      printf "%s" "6b/$g " >>"$tmp/lacktone" 
+      printf "%s" "6b/$g " >>"$tmp/lacktone"
       done
   } # 6679c49e 20240624
 
@@ -1463,7 +1491,7 @@ lacktoneloop6b () {
     printf "%s" " 6b2/$v2" >>"$tmp/lacktone" ; lacktonegen 3 11 4 "$v2" || break 1 # 6b2
     done || return 1
   } # 6680b86b-20240629_184401
-lacktonegen () { local c="$1" e="$2" s="$3" v="$4" 
+lacktonegen () { local c="$1" e="$2" s="$3" v="$4"
  local f1= f2= f3= f4= fi= d= fo= sec= tmp=
   [ -d $HOME/Downloads ] && tmp="$HOME/Downloads/tmp" || tmp="$HOME/tmp"
   mkdir -p "$tmp"
@@ -1505,7 +1533,7 @@ lacktonegen () { local c="$1" e="$2" s="$3" v="$4"
     read f4 < <(awk "BEGIN {print 440 * 2^($f4/12)}")
 
 #chkwrn f1=$f1 f2=$f2 f3=$f3 f4=$f4
-#chkwrn FADE_IN_DURATION=$FADE_IN_DURATION TOTAL_DURATION=$TOTAL_DURATION FADE_OUT_DURATION=$FADE_OUT_DURATION 
+#chkwrn FADE_IN_DURATION=$FADE_IN_DURATION TOTAL_DURATION=$TOTAL_DURATION FADE_OUT_DURATION=$FADE_OUT_DURATION
 ffplay -hide_banner -loglevel error -nodisp -autoexit \
     -bufsize 16k \
     -f lavfi \

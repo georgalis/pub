@@ -1,0 +1,405 @@
+#### multi platform, boot pkgsrc
+# cf ~/vcs/config/yaml-schema.yml
+---
+# hybrid markdown/yaml format
+pkgsrc targets:     https://wiki.netbsd.org/pkgsrc/targets/
+security practices: https://www.unitedbsd.com/d/438-pkgsrc-security-practices
+Darwin: # see secondary: ~/vcs/pub/boot/darwin.yaml
+    cmd:
+        - softwareupdate --history
+        - xcode-select -v
+        - xcrun -v --show-sdk-version
+    bootstrap: |
+        export pkgsrc=/opt/pkgsrc-current pkgtag=HEAD          
+        export pkgsrc=/opt/pkgsrc-release pkgtag=pkgsrc-2024Q2 
+        [ -d "$pkgsrc" ] && cd "$pkgsrc" \
+            && { date ; pwd ; cvs -q upd -dP -r $pkgtag . 2>&1 ;} \
+                    | sed '/\/work$/d' | tee -a $pkgsrc/cvs.log
+        read sdk < <(xcrun --show-sdk-version) || true \
+            && [ "$sdk" ] && export sdk MACOSX_DEPLOYMENT_TARGET="$sdk"
+        pkgtag=$(sed -e 's/^./pkg/' -e 's/pkgsrc//' -e 's/HEAD/-HEAD/' <$pkgsrc/CVS/Tag)
+        now=$(awk -v nd=5 -v ts=$(date +%s) 'BEGIN{s=32-(4*nd);printf"%0"nd"x\n",int(ts/2^s)}')
+        pkgrev=${pkgtag}-${now}-$(uname -msr | tr ' ' '_' )-${sdk}
+        export LOCALBASE=/opt/$pkgrev
+        export WRKOBJDIR=/tmp/${pkgrev}-work
+        export OBJMACHINE=defined
+        export DISTDIR=/opt/dist
+        export PACKAGES=$pkgsrc/packages-$pkgrev
+            [ -d "$LOCALBASE" ] && { echo "first remove: '$LOCALBASE'" ;} || sudo mv $(mktemp -d) $LOCALBASE
+            [ -w "/$LOCALBASE" ] && cd $pkgsrc/bootstrap \
+                && [ -d work ] && rm -rf work || true \
+                && ./bootstrap --prefix "$LOCALBASE" --workdir "$WRKOBJDIR" --unprivileged --prefer-pkgsrc yes --make-jobs 8 \
+                && echo "...fixup profile PATH '$LOCALBASE/{bin,sbin}' # Darwin Bash breaks validfn" \
+                && echo '...fixup "read LOCALBASE < <(sed "s,/bin/bmake,," < <(which bmake)) ; export LOCALBASE' \
+                && echo "...fixup $LOCALBASE/sbin/pkg_admin -K $LOCALBASE/pkgdb fetch-pkg-vulnerabilities" \
+                && sed -e 's/^[ ]*//' >>"$LOCALBASE/etc/mk.conf" <<EOF
+                    
+                    WRKOBJDIR=  /tmp/${pkgrev}-work
+                    OBJMACHINE= defined
+                    DISTDIR=    /opt/dist
+                    PACKAGES=   $pkgsrc/packages-$pkgrev
+                    
+                    ALLOW_VULNERABLE_PACKAGES=NO
+                    # https://www.unitedbsd.com/d/438-pkgsrc-security-practices
+                    # https://www.netbsd.org/docs/pkgsrc/hardening.html
+                    PKGSRC_USE_STACK_CHECK?=    yes # downside?
+                    # default PKGSRC_MKPIE=     yes # position-independent executables, could cause problems...
+                    PKGSRC_USE_FORTIFY?=        yes # could fail package builds...
+                    # default PKGSRC_USE_RELRO?= partial # full will greatly slow load large programs
+                    PKGSRC_USE_SSP?=            all # default=strong, stack protector, good programs should be okay
+                    PKGSRC_USE_STACK_CHECK?=    yes # stack boundary verification, only useful for multi-threaded programs
+                    
+                    ACCEPTABLE_LICENSES+= gnu-agpl-v3
+                    ACCEPTABLE_LICENSES+= esdl-license
+                    # make jobs can break some ports!
+                    MAKE_JOBS=                  6
+                    PKG_DEVELOPER?=             yes
+                    PKG_DEFAULT_OPTIONS+=       -x11
+                    PKG_OPTIONS.ffmpeg6+=       -x11
+                    PKG_OPTIONS.SDL2+=          -x11
+EOF
+
+NetBSD:
+    no-X11: |
+    # start tmux!
+    # mount /nfs-pkg
+    cross tools setup : 
+        # prepare src toolchain for cross-builds,
+        # /usr/src should be previously created and user owned
+        # https://www.netbsd.org/gallery/presentations/riastradh/asiabsdcon2015/pkgsrc-cross.pdf
+        localpre=/usr/src
+        cd $localpre && ftp -a http://cdn.netbsd.org/pub/NetBSD/NetBSD-release-10/tar_files/src.tar.gz
+        tar xzf src.tar.gz
+        srctag=$(sed -e 's/^.//' <./src/CVS/Tag) # netbsd-10
+        mv src $srctag
+        # /usr/src/netbsd-10/BUILDING
+        USE_CROSS_COMPILE=yes
+        USETOOLS=yes
+        MACHINE=$(uname -m)
+        MACHINE_ARCH=$(uname -p)
+        TOOLDIR=/usr/obj.evbppc/tooldir.NetBSD-6.1.amd64
+        CROSS_DESTDIR=/usr/obj.evbppc/destdir.evbppc
+        MAKEOBJDIRPREFIX=$p/$srctag/objdir
+        MKHOSTOBJ=yes
+        ...
+
+    checkout: |
+        # HEAD
+        cd ${localpre} && mkdir current && cd current
+        ftp -a http://cdn.netbsd.org/pub/pkgsrc/current/pkgsrc.tar.xz \
+            && tar --no-same-owner --no-same-permissions -xzf pkgsrc.tar.xz && mv pkgsrc ../pkgsrc-current \
+            && cd ../pkgsrc-current && rm -rf ../current && pwd
+        # pkgsrc-2023Q4
+        p=/usr/pkg
+        cd ${p}
+        ftp -a http://cdn.netbsd.org/pub/pkgsrc/stable/pkgsrc.tar.xz \
+            && tar --no-same-owner --no-same-permissions -xzf pkgsrc.tar.xz \
+            && mv pkgsrc pkgsrc-release
+    update current: |
+        pkgsrc="$p/pkgsrc-current" && cd "$pkgsrc" \
+            && pkgtag="HEAD"
+        { date ; pwd ; echo $pkgtag ; cvs -q upd -dP -r $pkgtag . 2>&1 ;} \
+            | sed -e '/\/work$/d' -e "s/^/$pkgtag /" | tee -a "${pkgsrc}/cvs.log"
+    update release: |
+        pkgsrc="$p/pkgsrc-release" && cd "$pkgsrc" \
+            && pkgtag="$(sed 's/^T//' <$pkgsrc/CVS/Tag)"
+#           && LOCALBASE="$p/$(sed 's/^Tpkgsrc/pkg/' <$pkgsrc/CVS/Tag)-$(uname -msr | tr ' ' '_' )" \
+
+        { date ; pwd ; cvs -q upd -dP -r $pkgtag . 2>&1 ;} \
+            | sed -e '/\/work$/d' -e "s/^/$pkgtag /" | tee -a "$pkgsrc/cvs.log"
+    bootstrap: |
+        local: local=/usr/pkg
+        nfs:   nfs=/nfs-pkg
+        current: pkgsrc="$local/pkgsrc-current"
+        release: pkgsrc="$local/pkgsrc-release"
+        # /usr/pkgsrc/doc/HOWTO-use-crosscompile
+
+        pkgtag=$(sed -e 's/^./pkg/' -e 's/pkgsrc//' <$pkgsrc/CVS/Tag)
+        now=$(awk -v nd=5 -v ts=$(date +%s) 'BEGIN{s=32-(4*nd);printf"%0"nd"x\n",int(ts/2^s)}')
+        pkgrev=${pkgtag}-${now}-$(uname -msr | tr ' ' '_' )
+        LOCALBASE=$p/$pkgrev
+        WRKOBJDIR=/tmp/${pkgrev}-work
+        OBJMACHINE=defined
+        DISTDIR=$p/dist
+        PACKAGES=$pkgsrc/packages-$pkgrev
+        # check/delete target first... continue iif target does not exist...
+        [ -d "$LOCALBASE" ] && { echo "first remove: '$LOCALBASE'" ;} || mkdir $LOCALBASE
+        # mkdir $(basename $LOCALBASE) && su -m root -c "mv $(basename $LOCALBASE) $p"
+        [ -w "$LOCALBASE" ] && cd "$pkgsrc/bootstrap" \
+            && [ -d work ] && rm -rf work
+        { date ; pwd
+        ./bootstrap --prefix "$LOCALBASE" --workdir $WRKOBJDIR --make-jobs 6 \
+            --unprivileged --prefer-pkgsrc yes 2&>1 ;} | tee -a "$pkgsrc/bootstrap.log" \
+            && echo "...fixup $LOCALBASE/sbin/pkg_admin -K $LOCALBASE/pkgdb fetch-pkg-vulnerabilities" \
+            && echo "...fixup $LOCALBASE/etc/mk.conf
+        pkgtag=$pkgtag
+        now=$now
+        LOCALBASE=$p/$pkgrev
+        WRKOBJDIR=/tmp/${pkgrev}-work
+        OBJMACHINE=defined
+        DISTDIR=$p/dist
+        PACKAGES=$pkgsrc/packages-$pkgrev
+            " \
+            && echo "...fixup export PATH=$LOCALBASE/bin:$LOCALBASE/sbin:\$PATH" \
+            && echo "...fixup export LOCALBASE=\$(which bmake | sed 's,/bin/bmake,,')" \
+            && echo "...fixup export pkgsrc=$pkgsrc"
+    mk.conf: |
+    ALLOW_VULNERABLE_PACKAGES=NO
+    # https://www.unitedbsd.com/d/438-pkgsrc-security-practices
+    # https://www.netbsd.org/docs/pkgsrc/hardening.html
+    PKGSRC_USE_STACK_CHECK?=    yes # downside?
+    # default PKGSRC_MKPIE=     yes # position-independent executables, could cause problems...
+    PKGSRC_USE_FORTIFY?=        yes # could fail package builds...
+    # default PKGSRC_USE_RELRO?= partial # full will greatly slow load large programs
+    PKGSRC_USE_SSP?=            all # default=strong, stack protector, good programs should be okay
+    PKGSRC_USE_STACK_CHECK?=    yes # stack boundary verification, only useful for multi-threaded programs
+
+    ACCEPTABLE_LICENSES+= gnu-agpl-v3
+
+    # make jobs can break some ports!
+    MAKE_JOBS=                  8
+    PKG_DEVELOPER?=             yes
+    PKG_DEFAULT_OPTIONS+=       -x11
+
+# Cross-compile by default.
+USE_CROSS_COMPILE?=  yes
+
+   # Point pkgsrc at the NetBSD tooldir and destdir.  These are used
+   # only for cross-builds.
+   #
+   # XXX There is no obvious variable that is set to amd64 so that we
+   # could use
+   #
+   #    TOOLDIR=        /usr/obj/tooldir.${OPSYS}-${OS_VERSION}-${NATIVE_xyz}
+   #
+   # MACHINE is amd64 but, since it's not NATIVE_xyz, it's wrong.
+   # NATIVE_MACHINE_ARCH is x86_64, not amd64.
+   TOOLDIR=             /usr/obj/tooldir.NetBSD-6.1-amd64
+   CROSS_DESTDIR=       /usr/obj/destdir.evbppc
+
+   # Specify the machine architecture of target packages.
+   #
+   # XXX This currently can't be set on the command line, which is a
+   # bug.
+   .if !empty(USE_CROSS_COMPILE:M[yY][eE][sS])
+   MACHINE_ARCH=        powerpc
+   .endif
+
+    pkg_report:
+        { pkgin list | awk '{print $1}' ; pkgin export ;} ; pkgin srd tokyocabinet-1.4.48
+        pkgin export | while read a ; do cd $pkgsrc/$a && bmake show-var VARNAME=PKGNAME ; done 
+        pkgin pbd  yelp-xsl-42.1 | awk -F= '/^PKGPATH=/ {print $2}'
+        #
+        pkgsrc=/opt/pkgsrc-current
+        pkgsrc=/opt/pkgsrc-release
+        pkgin list | awk '{print $1}' \
+            | sed -E -e '/(^atf|^bmake|^bootstrap-mk-files|^cwrappers|^mksh|^mktools|^nawk|^nbsed|^pkg_install|^shtk)-/d' \
+            | while read a ; do pp= b= ; echo -n "." 1>&2
+            read pp < <(pkgin pbd $a | awk -F= '/^PKGPATH=/ {print $2}')
+            [ "$pp" ] && { cd $pkgsrc/$pp && read b < <(bmake show-var VARNAME=PKGNAME)
+                [ "$a" = "$b" ] && true || { echo 1>&2 ; echo "X $a $pp $b" ;} ;} \
+                || cat >/dev/null # abort the read loop on error
+            done
+                
+        # https://www.anserinae.net/setting-up-a-pkgsrc-repository.html
+    packages: | 
+        # Objective: Guidance for package management to support scientific compute on robust platform.
+        # Overview: Package management for scientific compute has complex and orthoganal requirements. In order to maintain efficiency, availability, security, and repeatibility for rigior and improvement, this framework around the to record requirements, certification, and status has been developed around the uses the package source (pkgsrc) guidance 
+        # Plan:
+        #   * Use pkgsrc for current and future Linux, Mac, and NetBSD software package needs.
+        #   * Enable quick security patching and long term package set validation and certification.
+        #   * Develop evaluation package sets (tags, current, patched, etc) alongside certifications.
+        #   * All profile data, scripts, and deployment config is recorded in repository.
+        #   * YAML (or JSON) prefered profile data format, unless scripts or config data is optimal.
+        # Requirement:
+        #   * Build pkgsrc packages for local and other site systems use.
+        #   * Use framework for unambigious cross builds, paths and packaging.
+        #   * Certify bootstraps for various user requirements.
+        #   * Retain certified bootstraps as long as users require them.
+        #   * Make current and/or patched packages available, and traceable.
+        # User Guidance: 
+        #   * Minimum complient software requests and certification data is required for long term support.
+        #   * Create a purpose table for distinct projects (purpose-id, name, priority, description, RACI).
+        #   * Create a package request list (uid, purpose-id, pkgpath, url, version) sans dependancies.
+        #   * As your package request list is implemented, add LOCALBASE path information to your environment.
+        #   * Create a package certification list (uid, archive, expire, LOCALBASE/{filepath}) sans dependancies.
+        #   * Record archive, and expire dates in certification record to retain requested packages.
+        # Implementation Primatives:
+        #   * Simultaniously maintain a pkgsrc-release and pkgsrc-current, source checkouts.
+        #   * Use a unique LOCALBASE, encoded with pkgrev indicating pkgtag, time, and other attributes, for each bootstrap.
+        #   * Large, long term, special patch, or otherwise difficult package certifications should be partitioned into dedicated bootstraps.
+        #   * Ocasionally, when optimal, re-bootstrap current.
+        #   * Record matrix table map of certifications
+        #   * Identify purpose and status each of LOCALBASE (in use, archive, expire, undefined). eand open requests and their purpose.
+        #   * Check mapping, when archive date is reached for all bootstrap certifications, archive the bootstrap. When expire is reahed, delete.
+        #   map LOCALBASE I'll add nd pkgsrc-current source checkouts, ocasionally I'll =/opt/pkgsrc-current pkgtag=HEAD
+        # Glossary:
+        #   filename: a distinct name with no special characters, maps a project or component to a filepath. A separate record table indicates the coorsponding full name and description. A filename may be a regular file or directory. A filename length of 8 characters is ideal, 25 characters maximum, although exceptions are made where it is optimal to encoded parameters into the name.
+        #   full name: The human readable name of a project or component.
+        #   description: Text representation, account, distinctness, exact meaning, class or type denoted by a filename or full name.
+        #   definition: exact meaning, class or type denoted by a filename or full name.
+        #   human readable: A string of ascii alpha numeric characters which may include spaces but lacking puncuation, regex symbols, and control characters.
+        #   type: charastics of a component or project, to denote definition or exact parameters, use class.
+        #   class: the meta data uniquely and completely characterizing a component or project.
+
+
+#       pkg=$(sed -e 's/^./pkg/' -e 's/pkgsrc//' -e 's/HEAD/-HEAD/' <$pkgsrc/CVS/Tag)
+#       case $OS in
+#           *BSD)
+#               now=$(awk -v nd=5 -v ts=$(date +%s) 'BEGIN{s=32-(4*nd);printf"%0"nd"x\n",int(ts/2^s)}')
+#               pkgrev=${pkgtag}-${now}-$(uname -msr | tr ' ' '_' )
+#               export PACKAGES=$pkgsrc/packages-$pkgrev
+#               export WRKOBJDIR=/var/tmp/${pkgrev}-work
+#               export OBJMACHINE=defined
+#               test -d "/nfs-pkg" && prebase="$_" || prebase="/usr"
+#               export LOCALBASE=$prebase/$pkgrev
+#               export DISTDIR=$prebase/pkgdist
+#           ;;
+#           Darwin)
+#               now=$(awk -v nd=5 -v ts=$(date +%s) 'BEGIN{s=32-(4*nd);printf"%0"nd"x\n",int(ts/2^s)}')
+#               pkgrev=${pkgtag}-${now}-${sdk}-$(uname -msr | tr ' ' '_' )
+#               export LOCALBASE=/$pre/$pkgrev
+#               export WRKOBJDIR=/tmp/${pkgrev}-work
+#               export OBJMACHINE=defined
+#               export DISTDIR=/opt/dist
+#               export PACKAGES=$pkgsrc/packages-$pkgrev
+#           ;;
+#           Linux) pre=/usr
+#           ;;
+#           esac
+
+###     determine according to the , pkgsrc, pkgtag, and LOCALBASE according to the bootstrap
+#       [ "$pre" ] || {
+
+
+########################## ##########################
+########################## ##########################
+
+main:
+ entry:
+  - code: |
+# new main ~/vcs/pub/boot/local/ap3.yml
+####### pkgsrc env setup, any os 
+        export OS=$(uname)
+        case "$OS" in *BSD|Linux) pre=/usr ;; Darwin) pre=/opt ;; esac
+      # export pkgsrc="$pre/pkgsrc-current" pkgtag=HEAD
+        export pkgsrc="$pre/pkgsrc-stable" 
+        export pkgtag=pkgsrc-2024Q4
+      # export pkgtag=$(sed -e 's/^./pkg/' -e 's/pkgsrc//' -e 's/HEAD/-HEAD/' <$pkgsrc/CVS/Tag)
+        # "now" is "nd significant digits of hex unix seconds"
+        now=$(awk -v nd=5 -v ts=$(date +%s) 'BEGIN{s=32-(4*nd);printf"%0"nd"x\n",int(ts/2^s)}')
+        case "$OS" in 
+          *BSD|Linux) pre=/usr pkgrev=${pkgtag/pkgsrc/pkg}-${now}-$(uname -msr | tr ' ' '_' ) ;;
+              Darwin) pre=/opt
+                read sdk < <(xcrun --show-sdk-version) || true \
+                  && [ "$sdk" ] && export sdk MACOSX_DEPLOYMENT_TARGET="$sdk" \
+                               pkgrev=${pkgtag/pkgsrc/pkg}-${now}-$(uname -msr | tr ' ' '_' )-${sdk} ;; esac
+        export pre pkgrev
+        export    DISTDIR="$pre/dist"
+        export  LOCALBASE="$pre/$pkgrev"
+        export  WRKOBJDIR="/tmp/work-${pkgrev}"
+        export   PACKAGES="$pkgsrc/packages-$pkgrev"
+        export OBJMACHINE="defined"
+####### as user, check/create target before bootstrap... continue iif target does not exist...
+        [ -d "$LOCALBASE" ] && { echo "first remove: '$LOCALBASE'" 1>&2 ;} \
+          || { case "$OS" in
+               Darwin|Linux) sudo mv $(mktemp -d) $LOCALBASE ;;
+               *BSD) mkdir $(basename $LOCALBASE) && su -m root -c "mv $(basename $LOCALBASE) $pre" ;;
+               esac ;}
+
+       #[ -d "$pkgsrc" ] && pkgsrc-update || pkgsrc-checkout
+###     verify and export LOCALBASE
+        # echo $LOCALBASE
+        # which bmake
+
+###     update $pkgsrc source
+        [ -f "$pkgsrc/CVS/Tag" ] \
+          && { echo "This may take a few minutes before output..." ; date
+               cd "$pkgsrc" \
+               && { date ; pwd ; read Tag < <(sed 's/^T//' ./CVS/Tag)
+                  cvs -q upd -dP -r $Tag . 2>&1 ;} \
+               | sed '/\/work$/d' | tee -a ./cvs.log ;} \
+          || { echo "'pkgsrc' not found: no '$pkgsrc/CVS/Tag'" 1>&2 ; false ;}
+
+###
+###
+###     Bootstrap
+        read cores < <(sysctl -n hw.ncpu)
+        read cores < <(sysctl -n hw.physicalcpu)
+        # Note that hw.ncpu shows logical cores (including hyperthreading) while hw.physicalcpu shows physical cores only.
+        [ -w "$LOCALBASE" ] && cd "$pkgsrc/bootstrap" \
+            && [ -d work ] && rm -rf work || true \
+            && ./bootstrap --prefix "$LOCALBASE" --workdir "$WRKOBJDIR" --unprivileged --prefer-pkgsrc yes --make-jobs $cores \
+            && sed -e 's/^[ ]*//' >>"$LOCALBASE/etc/mk.conf" <<EOF
+                    
+                    DISTDIR=    $pkgsrc/dist
+                    WRKOBJDIR=  /tmp/work-${LOCALBASE##*/}
+                    PACKAGES=   $pkgsrc/packages-${LOCALBASE##*/}
+                    OBJMACHINE= defined
+                    
+                    ALLOW_VULNERABLE_PACKAGES=  NO
+                    # https://www.unitedbsd.com/d/438-pkgsrc-security-practices
+                    # https://www.netbsd.org/docs/pkgsrc/hardening.html
+                    PKGSRC_USE_STACK_CHECK?=    yes # downside?
+                    # default PKGSRC_MKPIE=     yes # position-independent executables, could cause problems...
+                    PKGSRC_USE_FORTIFY?=        yes # could fail package builds...
+                    # default PKGSRC_USE_RELRO?= partial # full will greatly slow load large programs
+                    PKGSRC_USE_SSP?=            all # default=strong, stack protector, good programs should be okay
+                    PKGSRC_USE_STACK_CHECK?=    yes # stack boundary verification, only useful for multi-threaded programs
+                    
+                    ACCEPTABLE_LICENSES+= gnu-agpl-v3
+                    ACCEPTABLE_LICENSES+= esdl-license
+                    # make jobs can break some ports!
+                    MAKE_JOBS=                  $cores
+                    PKG_DEVELOPER?=             yes
+                    PKG_DEFAULT_OPTIONS+=       -x11
+                    PKG_OPTIONS.ffmpeg6+=       -x11
+                    PKG_OPTIONS.SDL2+=          -x11
+EOF
+        # 1) export PATH entries according to the pkgsrc bootstrap LOCALBASE
+        # 2) use the PATH to export LOCALBASE
+        #   read LOCALBASE < <(which bmake | sed 's,/bin/bmake,,')
+        #   export LOCALBASE
+        # 3) export pkgsrc and pkgtag according to the desired source and tag
+        #   pkgsrc=/opt/pkgsrc-stable pkgtag=pkgsrc-2024Q2
+            printf "\n\n SUCCESS \n\n"
+            && echo "...fixup profile PATH '$LOCALBASE/{bin,sbin}' # Darwin Bash breaks validfn" \
+            && echo '...fixup "read LOCALBASE < <(sed "s,/bin/bmake,," < <(which bmake)) ; export LOCALBASE' \
+            && echo "...fixup $LOCALBASE/sbin/pkg_admin -K $LOCALBASE/pkgdb fetch-pkg-vulnerabilities" \
+
+        # first packages....
+        cd $pkgsrc/pkgtools/pkg_summary-utils/ && bmake clean clean-depends package package-install
+        cd $pkgsrc/pkgtools/pkgin              && bmake clean clean-depends package package-install \
+            && read PACKAGES < (bmake show-var VARNAME=PACKAGES) \
+            && echo "file://$PACKAGES/ALL" >>$LOCALBASE/etc/pkgin/repositories.conf
+
+        # new packages (catagory/package between the eof)
+        # should make compatable with "pkgin autoremove" eg remove "pkgin show-no-keep"
+        # followed by command to install a package in repository, iff it is the current rev of source, else build package and installl
+        # thus maintaining the package repo and allowing frequent "pkgin autoremove" which will remove build requirements that are not
+        # runtime requirements....
+        cd $pkgsrc/pkgtools/pkgin \
+            && read PKG_DBDIR < <(bmake show-var VARNAME=PKG_DBDIR) \
+            && read PACKAGES < <(bmake show-var VARNAME=PACKAGES) \
+            && $LOCALBASE/sbin/pkg_admin -K $PKG_DBDIR fetch-pkg-vulnerabilities
+        while read a ; do cd $pkgsrc/$a \
+            && read pkgtag < <(sed -e 's/^./pkg/' -e 's/pkgsrc//' -e 's/HEAD/-HEAD/' <./CVS/Tag) \
+            && read PKGNAME < <(bmake show-var VARNAME=PKGNAME) \
+            && echo "^^^ DEBUG: PKG_DBDIR=$PKG_DBDIR" 1>&2 \
+            && echo "^^^ DEBUG: PACKAGES=$PACKAGES" 1>&2 \
+            && echo "^^^ DEBUG: LOCALBASE=$LOCALBASE" 1>&2 \
+            && echo "^^^ DEBUG: a=$a pkgtag=$pkgtag PKGNAME=$PKGNAME" 1>&2 \
+            && bmake clean clean-depends package \
+            && pkg_update_summary -r $PACKAGES/All/pkg_summary.gz $PACKAGES/All \
+            && pkgin -y in $PKGNAME \
+                && { date +%Y%m%d_%H%M%S ; echo "pass PKGNAME=$PKGNAME pkgtag=$pkgtag LOCALBASE=$LOCALBASE PWD=$PWD" ;}           >>$pkgsrc/pkg.log \
+                || { date +%Y%m%d_%H%M%S ; echo "fail PKGNAME=$PKGNAME pkgtag=$pkgtag LOCALBASE=$LOCALBASE PWD=$PWD" ; break 1 ;} >>$pkgsrc/pkg.log \
+            done <<EOF
+              pkgtools/pkgin
+            EOF
+
+            && pkgin -y in $PKGNAME || cat >/dev/null
+/opt/pkgsrc-stable/multimedia/ffmpeg6 g -l '^#include <' /private/tmp/pkg-2024Q1-663c7-Darwin_22.6.0_arm64-work/devel/gobject-introspection/work.aarch64/gobject-introspection-1.78.1/girepository/*.h | while read a ; do sed '/^#include/s/[<>]/"/g' <$a >${a}~ ; mv -f ${a}~ ${a} ; done
+
+gobject-introspection
+
