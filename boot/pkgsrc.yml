@@ -4,14 +4,19 @@
 # hybrid markdown/yaml format
 pkgsrc targets:     https://wiki.netbsd.org/pkgsrc/targets/
 security practices: https://www.unitedbsd.com/d/438-pkgsrc-security-practices
-Darwin: # see secondary: ~/vcs/pub/boot/darwin.yaml
+Darwin: # see secondary: ~/vcs/pub/boot/darwin.yml
     cmd:
         - softwareupdate --history
         - xcode-select -v
         - xcrun -v --show-sdk-version
     bootstrap: |
+        # first get and extract the archive, and update it
+        # https://cdn.netbsd.org/pub/pkgsrc/stable/pkgsrc.tar.xz
+        # https://cdn.netbsd.org/pub/pkgsrc/current/pkgsrc.tar.xz
         export pkgsrc=/opt/pkgsrc-current pkgtag=HEAD          
-        export pkgsrc=/opt/pkgsrc-release pkgtag=pkgsrc-2024Q2 
+        # we calculate pkgtag when creating a new bootstrap
+        # read pkgtag < <(awk '{m=$2-3;y=$1; if(m<=0){m+=12;y--} print "pkgsrc-" y "Q" (int((m-1)/3)+1)}' < <(date "+%Y %m"))
+        export pkgsrc=/opt/pkgsrc-release pkgtag=pkgsrc-2025Q1
         [ -d "$pkgsrc" ] && cd "$pkgsrc" \
             && { date ; pwd ; cvs -q upd -dP -r $pkgtag . 2>&1 ;} \
                     | sed '/\/work$/d' | tee -a $pkgsrc/cvs.log
@@ -49,6 +54,8 @@ Darwin: # see secondary: ~/vcs/pub/boot/darwin.yaml
                     PKGSRC_USE_SSP?=            all # default=strong, stack protector, good programs should be okay
                     PKGSRC_USE_STACK_CHECK?=    yes # stack boundary verification, only useful for multi-threaded programs
                     
+                    # investigate reproducible builds: When the same source package is built with the same compiler, flags, and environment, the resulting binary should be bit-for-bit identical regardless of when or where it's built. Benefits: Security verification, Supply chain integrity, Trust and transparency. https://tests.reproducible-builds.org/netbsd/netbsd.html
+
                     ACCEPTABLE_LICENSES+= gnu-agpl-v3
                     ACCEPTABLE_LICENSES+= esdl-license
                     # make jobs can break some ports!
@@ -60,9 +67,9 @@ Darwin: # see secondary: ~/vcs/pub/boot/darwin.yaml
 EOF
 
 NetBSD:
-    no-X11: |
+    no-X11:
     # start tmux!
-    # mount /nfs-pkg
+    # mount /nfs-pkg but don't checkout or build over nfs due to performance
     cross tools setup : 
         # prepare src toolchain for cross-builds,
         # /usr/src should be previously created and user owned
@@ -83,7 +90,7 @@ NetBSD:
         MKHOSTOBJ=yes
         ...
 
-    checkout: |
+    checkout:
         # HEAD
         cd ${localpre} && mkdir current && cd current
         ftp -a http://cdn.netbsd.org/pub/pkgsrc/current/pkgsrc.tar.xz \
@@ -285,6 +292,7 @@ main:
       # export pkgsrc="$pre/pkgsrc-current" pkgtag=HEAD
         export pkgsrc="$pre/pkgsrc-stable" 
         export pkgtag=pkgsrc-2024Q4
+        export pkgtag=pkgsrc-2025Q1
       # export pkgtag=$(sed -e 's/^./pkg/' -e 's/pkgsrc//' -e 's/HEAD/-HEAD/' <$pkgsrc/CVS/Tag)
         # "now" is "nd significant digits of hex unix seconds"
         now=$(awk -v nd=5 -v ts=$(date +%s) 'BEGIN{s=32-(4*nd);printf"%0"nd"x\n",int(ts/2^s)}')
@@ -315,15 +323,16 @@ main:
 ###     update $pkgsrc source
         [ -f "$pkgsrc/CVS/Tag" ] \
           && { echo "This may take a few minutes before output..." ; date
+               read Tag < <(sed -l 's/^T//' ./CVS/Tag)
                cd "$pkgsrc" \
-               && { date ; pwd ; read Tag < <(sed 's/^T//' ./CVS/Tag)
+               && { date ; pwd ; )
                   cvs -q upd -dP -r $Tag . 2>&1 ;} \
                | sed '/\/work$/d' | tee -a ./cvs.log ;} \
           || { echo "'pkgsrc' not found: no '$pkgsrc/CVS/Tag'" 1>&2 ; false ;}
 
 ###
 ###
-###     Bootstrap
+###     Bootstrap Darwin
         read cores < <(sysctl -n hw.ncpu)
         read cores < <(sysctl -n hw.physicalcpu)
         # Note that hw.ncpu shows logical cores (including hyperthreading) while hw.physicalcpu shows physical cores only.
@@ -349,7 +358,7 @@ main:
                     
                     ACCEPTABLE_LICENSES+= gnu-agpl-v3
                     ACCEPTABLE_LICENSES+= esdl-license
-                    # make jobs can break some ports!
+                    # MAKE_JOBS can break build of some ports!
                     MAKE_JOBS=                  $cores
                     PKG_DEVELOPER?=             yes
                     PKG_DEFAULT_OPTIONS+=       -x11
@@ -382,7 +391,7 @@ EOF
             && read PKG_DBDIR < <(bmake show-var VARNAME=PKG_DBDIR) \
             && read PACKAGES < <(bmake show-var VARNAME=PACKAGES) \
             && $LOCALBASE/sbin/pkg_admin -K $PKG_DBDIR fetch-pkg-vulnerabilities
-        while read a ; do cd $pkgsrc/$a \
+        while read a ; do { cd $pkgsrc/$a \
             && read pkgtag < <(sed -e 's/^./pkg/' -e 's/pkgsrc//' -e 's/HEAD/-HEAD/' <./CVS/Tag) \
             && read PKGNAME < <(bmake show-var VARNAME=PKGNAME) \
             && echo "^^^ DEBUG: PKG_DBDIR=$PKG_DBDIR" 1>&2 \
@@ -391,9 +400,10 @@ EOF
             && echo "^^^ DEBUG: a=$a pkgtag=$pkgtag PKGNAME=$PKGNAME" 1>&2 \
             && bmake clean clean-depends package \
             && pkg_update_summary -r $PACKAGES/All/pkg_summary.gz $PACKAGES/All \
-            && pkgin -y in $PKGNAME \
-                && { date +%Y%m%d_%H%M%S ; echo "pass PKGNAME=$PKGNAME pkgtag=$pkgtag LOCALBASE=$LOCALBASE PWD=$PWD" ;}           >>$pkgsrc/pkg.log \
-                || { date +%Y%m%d_%H%M%S ; echo "fail PKGNAME=$PKGNAME pkgtag=$pkgtag LOCALBASE=$LOCALBASE PWD=$PWD" ; break 1 ;} >>$pkgsrc/pkg.log \
+            && { pkgin -y in $PKGNAME \
+                && { date +%Y%m%d_%H%M%S ; echo "pass PKGNAME=$PKGNAME pkgtag=$pkgtag LOCALBASE=$LOCALBASE PWD=$PWD" >>$pkgsrc/pkg.log ;} \
+                || { date +%Y%m%d_%H%M%S ; echo "fail PKGNAME=$PKGNAME pkgtag=$pkgtag LOCALBASE=$LOCALBASE PWD=$PWD" >>$pkgsrc/pkg.log ; break 1 ;} 
+               } ;}
             done <<EOF
               pkgtools/pkgin
             EOF
@@ -401,5 +411,4 @@ EOF
             && pkgin -y in $PKGNAME || cat >/dev/null
 /opt/pkgsrc-stable/multimedia/ffmpeg6 g -l '^#include <' /private/tmp/pkg-2024Q1-663c7-Darwin_22.6.0_arm64-work/devel/gobject-introspection/work.aarch64/gobject-introspection-1.78.1/girepository/*.h | while read a ; do sed '/^#include/s/[<>]/"/g' <$a >${a}~ ; mv -f ${a}~ ${a} ; done
 
-gobject-introspection
 

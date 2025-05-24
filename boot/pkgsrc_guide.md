@@ -328,6 +328,10 @@ pkgin -y in $PKGNAME && {
 
 ## Source Management
 
+first get and extract the archive, and update it
+  - https://cdn.netbsd.org/pub/pkgsrc/stable/pkgsrc.tar.xz
+  - https://cdn.netbsd.org/pub/pkgsrc/current/pkgsrc.tar.xz
+
 ### CVS Operations with Filtering
 
 ```bash
