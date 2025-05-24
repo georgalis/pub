@@ -497,6 +497,11 @@ ct () { #:> on terminal output, truncate lines to width
         awk -v cols="$((cols))" 'length > cols{$0=substr($0,0,cols)""}1'
         } || cat
     } # ct formally cattrunc
+ctt () { #:> always truncate lines to width
+        local cols
+        read cols < <(tput cols);
+        awk -v cols="$((cols))" 'length > cols{$0=substr($0,0,cols)""}1'
+    } # ct formally cattrunc
 
 _youtube_video_list () {
   local id="$1" d="$2" xs=$(xs)
@@ -664,8 +669,9 @@ _yt_txt () { # ytdl transcript wrapper
   # Download content with original audio format
   $ytdl --write-info-json --write-comments --write-sub --write-auto-sub \
     --sub-langs "en,en-GB" --restrict-filenames --skip-download \
-    --abort-on-error --no-playlist \
+    --no-playlist \
     -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" "$id"
+    # --abort-on-error 
   # Get downloaded json path and organize files
   read -d '' json_path < <(find "$d/" -maxdepth 1 -name "*${id}*.json") || true
   [ "$json_path" ] || { chkerr "$FUNCNAME : not found '$d/*${id}*json' (676c546a)" ; return 1 ;}
