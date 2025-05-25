@@ -30,17 +30,20 @@ This guide provides a parameterized PKGSRC framework supporting scientific compu
 
 ### Environment Variables
 
-# Detect platform and set base paths
+```bash
+# Detect platform and set path
 export OS=$(uname)
 case "$OS" in *BSD|Linux) pre=/usr ;; Darwin) pre=/opt ;; esac
 # identify available paths then add them to user env profile: ls -d1 $pre/pkg-*/{sbin,bin}
-test -d /opt/pkg-2024Q4-67799-Darwin_22.6.0_arm64-14.2/bin  && path_prepend "$_"
-test -d /opt/pkg-2024Q4-67799-Darwin_22.6.0_arm64-14.2/sbin && path_prepend "$_"
+test -d /opt/pkg-2024Q4-67799-Darwin_22.6.0_arm64-14.2/bin  && PATH="$_":$PATH
+test -d /opt/pkg-2024Q4-67799-Darwin_22.6.0_arm64-14.2/sbin && PATH="$_":$PATH
+```
 
-# LOCALBASE assignment - conditional on scenario:
+#### LOCALBASE assignment - conditional on scenario:
 
-# package building: set or discover existing source tag, and prefix
+Package building: set or discover existing source tag, and prefix
 
+```bash
 # Select source branch
 export pkgsrc="$pre/pkgsrc-stable"
 export pkgtag="pkgsrc-2025Q1" # manual set
@@ -51,14 +54,19 @@ read pkgtag < <(sed 's/^T//' $pkgsrc/CVS/Tag) # tag discovery
 read REPLY < <(sed "s,/bin/bmake,," < <(which bmake))
 [ -d "$REPLY" ] && { export LOCALBASE="$REPLY" PKG_DBDIR="$REPLY/pkgdb"
     read pkgrev < <(basename "$LOCALBASE") ;}
+```
 
-# Bootstrap prefix: generate new revision identifier with hex timestamp and bootstrap
+Bootstrap prefix: generate new revision identifier with hex timestamp and bootstrap
+
+```bash
 read pkgtag < <(awk '{m=$2-3;y=$1; if(m<=0){m+=12;y--} print "pkgsrc-" y "Q" (int((m-1)/3)+1)}' < <(date "+%Y %m"))
 read -d '' now < <(awk -v nd=5 -v ts=$(date +%s) 'BEGIN{s=32-(4*nd);printf"%0"nd"x\n",int(ts/2^s)}') || true
 pkgrev=${pkgtag/pkgsrc/pkg}-${now}-$(uname -msr | tr ' ' '_')
 export LOCALBASE="$pre/$pkgrev" PKG_DBDIR="$LOCALBASE/pkgdb"
+```
 
-### Build Configuration Variables
+Build Configuration Variables
+
 ```
 export DISTDIR="$pre/dist"            # Shared source cache
 export WRKOBJDIR="/tmp/work-$pkgrev"  # Build workspace (/dev/shm on Linux)
@@ -73,16 +81,13 @@ export MAKE_JOBS="$(cores)"           # Platform-specific CPU detection
 
 ### Environment Setup (All Platforms)
 
-```
+LOCALBASE underpins all other build parameters
+
+```bash
 # Detect platform and set base paths
 export OS=$(uname)
-case "$OS" in 
-    *BSD|Linux) pre=/usr ;; 
-    Darwin) pre=/opt ;; 
-esac
+case "$OS" in *BSD|Linux) pre=/usr ;; Darwin) pre=/opt ;; esac
 
-
-# Export standard paths - LOCALBASE underpins all other build parameters
 export pre pkgrev
 export DISTDIR="$pre/dist"
 export LOCALBASE="$pre/$pkgrev" 
@@ -99,7 +104,7 @@ esac
 ## Platform-Specific Bootstrap
 
 ### Dedicated Build Account Setup
-```
+```bash
 # Create dedicated package build account for isolation
 # Leverages sudo for unprivileged implementation
 sudo useradd -m -s /bin/bash pkgbuild
@@ -108,7 +113,7 @@ sudo -u pkgbuild -i  # Switch to build account
 
 ### Darwin/macOS
 
-```
+```bash
 # Prerequisites and SDK detection
 softwareupdate --history
 xcode-select -v
@@ -120,18 +125,17 @@ read -d '' cores < <(sysctl -n hw.physicalcpu) || true
 # Prepare target directory with sudo for unprivileged bootstrap
 [ -d "$LOCALBASE" ] && { 
     echo "ERROR: Target exists: '$LOCALBASE'" >&2
-    exit 1
-} || sudo mv $(mktemp -d) $LOCALBASE
+    return 1
+    } || sudo mv $(mktemp -d) $LOCALBASE
 
 # Update source if exists with CVS filtering
-[ -f "$pkgsrc/CVS/Tag" ] && {
+[ -f "$pkgsrc/CVS/Tag" ] && (
     echo "Updating PKGSRC source..."
     cd "$pkgsrc"
     read -d '' Tag < <(sed 's/^T//' < CVS/Tag) || true
-    { date ; pwd ; cvs -q upd -dP -r $Tag . 2>&1 ;} | sed '/\/work$/d' | tee -a ./cvs.log
-}
+    { date ; pwd ; cvs -q upd -dP -r $Tag . 2>&1 ;} | sed '/\/work$/d' | tee -a ./cvs.log )
 
-# Bootstrap with make-jobs matching physical cores
+# Bootstrap LOCALBASE
 cd "$pkgsrc/bootstrap"
 [ -d work ] && rm -rf work
 ./bootstrap \
@@ -144,18 +148,16 @@ cd "$pkgsrc/bootstrap"
 
 ### NetBSD
 
-```
+```bash
 # CPU core detection
 read -d '' cores < <(sysctl -n hw.ncpu) || true
 
 # Prepare target directory
-[ -d "$LOCALBASE" ] && { 
-    echo "ERROR: Target exists: '$LOCALBASE'" >&2
-    exit 1  
-} || {
-    mkdir $(basename $LOCALBASE)
-    su -m root -c "mv $(basename $LOCALBASE) $pre"
-}
+[ -d "$LOCALBASE" ] && { echo "ERROR: Target exists: '$LOCALBASE'" >&2 ; return 1 ;} \
+  || {
+       mkdir $(basename $LOCALBASE)
+       su -m root -c "mv $(basename $LOCALBASE) $pre"
+     }
 
 # Bootstrap with NetBSD-specific settings
 cd "$pkgsrc/bootstrap"
@@ -170,19 +172,18 @@ cd "$pkgsrc/bootstrap"
 
 ### Linux
 
-```
+```bash
 # CPU core detection
 read -d '' cores < <(nproc) || true
 
 # Prepare target directory
 [ -d "$LOCALBASE" ] && { 
     echo "ERROR: Target exists: '$LOCALBASE'" >&2
-    exit 1
+    return 1
 } || sudo mv $(mktemp -d) $LOCALBASE
 
 # Ensure /dev/shm workspace exists
-[ -d "$WRKOBJDIR" ] || sudo mkdir -p "$WRKOBJDIR"
-sudo chown $(whoami):$(id -gn) "$WRKOBJDIR"
+[ -d "$WRKOBJDIR" ] || mkdir -p "$WRKOBJDIR"
 
 # Bootstrap with Linux-specific optimizations
 cd "$pkgsrc/bootstrap"
@@ -322,7 +323,7 @@ pkgin -y in $PKGNAME && {
     printf "%s fail PKGNAME=%s pkgtag=%s LOCALBASE=%s PWD=%s\n" \
         "$(date +%Y%m%d_%H%M%S)" "$PKGNAME" "$pkgtag" "$LOCALBASE" "$PWD" \
         >> $pkgsrc/pkg.log
-    exit 1
+    return 1
 }
 ```
 
