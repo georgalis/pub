@@ -59,7 +59,7 @@ pkgrev=${pkgtag/pkgsrc/pkg}-${now}-$(uname -msr | tr ' ' '_')
 export LOCALBASE="$pre/$pkgrev" PKG_DBDIR="$LOCALBASE/pkgdb"
 
 ### Build Configuration Variables
-```bash
+``` bash
 export DISTDIR="$pre/dist"            # Shared source cache
 export WRKOBJDIR="/tmp/work-$pkgrev"  # Build workspace (/dev/shm on Linux)
 export PACKAGES="$pkgsrc/packages-$pkgrev"  # Binary package output
@@ -73,7 +73,7 @@ export MAKE_JOBS="$(cores)"           # Platform-specific CPU detection
 
 ### Environment Setup (All Platforms)
 
-```bash
+``` bash
 # Detect platform and set base paths
 export OS=$(uname)
 case "$OS" in 
@@ -99,7 +99,7 @@ esac
 ## Platform-Specific Bootstrap
 
 ### Dedicated Build Account Setup
-```bash
+``` bash
 # Create dedicated package build account for isolation
 # Leverages sudo for unprivileged implementation
 sudo useradd -m -s /bin/bash pkgbuild
@@ -108,7 +108,7 @@ sudo -u pkgbuild -i  # Switch to build account
 
 ### Darwin/macOS
 
-```bash
+``` bash
 # Prerequisites and SDK detection
 softwareupdate --history
 xcode-select -v
@@ -144,7 +144,7 @@ cd "$pkgsrc/bootstrap"
 
 ### NetBSD
 
-```bash
+``` bash
 # CPU core detection
 read -d '' cores < <(sysctl -n hw.ncpu) || true
 
@@ -170,7 +170,7 @@ cd "$pkgsrc/bootstrap"
 
 ### Linux
 
-```bash
+``` bash
 # CPU core detection
 read -d '' cores < <(nproc) || true
 
@@ -238,7 +238,7 @@ PKG_OPTIONS.SDL2+=      -x11
 ## Vulnerability Management
 
 ### Build-Time Vulnerability Tracking
-```bash
+``` bash
 # Update vulnerability database before any package operations
 $LOCALBASE/sbin/pkg_admin -K $LOCALBASE/pkgdb fetch-pkg-vulnerabilities
 
@@ -248,7 +248,7 @@ bmake audit-packages      # Check for known vulnerabilities
 ```
 
 ### Runtime Vulnerability Monitoring
-```bash
+``` bash
 # Daily vulnerability report generation
 cat > /usr/local/bin/pkgsrc-vuln-report << 'EOF'
 #!/usr/bin/env bash
@@ -279,7 +279,7 @@ echo "0 6 * * * /usr/local/bin/pkgsrc-vuln-report" | crontab -
 
 ### Initial Setup with Integrity Verification
 
-```bash
+``` bash
 # Set up environment - LOCALBASE determined from bmake location
 export PATH="$LOCALBASE/bin:$LOCALBASE/sbin:$PATH"
 read -d '' LOCALBASE < <(which bmake | sed 's,/bin/bmake,,') || true
@@ -299,7 +299,7 @@ $LOCALBASE/sbin/pkg_admin -K $LOCALBASE/pkgdb fetch-pkg-vulnerabilities
 
 ### Package Installation with Certification Tracking
 
-```bash
+``` bash
 # Build and install with certification logging
 cd $pkgsrc/category/package
 read -d '' pkgtag < <(sed -e 's/^./pkg/' -e 's/pkgsrc//' -e 's/HEAD/-HEAD/' < CVS/Tag) || true
@@ -334,7 +334,7 @@ first get and extract the archive, and update it
 
 ### CVS Operations with Filtering
 
-```bash
+``` bash
 # Update existing checkout with work directory filtering
 cd "$pkgsrc"
 read -d '' Tag < <(sed 's/^T//' < CVS/Tag) || true
@@ -345,7 +345,7 @@ echo "Updating to $Tag..."
 ## Package Integrity Verification
 
 ### Reproducible Build Verification
-```bash
+``` bash
 # Verify bit-for-bit identical package builds
 cd $pkgsrc/category/package
 bmake clean
@@ -363,7 +363,7 @@ cmp $PACKAGES/All/$PKGNAME.t?z /tmp/build1.t?z && {
 ```
 
 ### Crypto Signature Verification
-```bash
+``` bash
 # Package integrity verification with signatures (when available)
 # Crypto signatures provide verification of package install integrity
 # beyond reproducible builds
@@ -384,7 +384,7 @@ done
 ## Cross-Compilation Support
 
 ### NetBSD Toolchain Setup
-```bash
+``` bash
 # Prepare NetBSD source toolchain for cross-builds
 localpre=/usr/src
 cd $localpre
@@ -413,7 +413,7 @@ EOF
 ## Maintenance Operations
 
 ### Package Verification and Reporting
-```bash
+``` bash
 # Comprehensive package consistency verification
 pkgin list | awk '{print $1}' | while read pkg; do
     echo -n "." >&2
@@ -427,7 +427,7 @@ done
 ```
 
 ### Lifecycle Management
-```bash
+``` bash
 # Archive bootstrap when certification expires
 # Manual verification required - check pkg.log for active certifications
 grep "$(basename $LOCALBASE)" $pkgsrc/pkg.log | tail -10
