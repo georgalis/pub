@@ -72,12 +72,12 @@ export LOCALBASE="$pre/$pkgrev" PKG_DBDIR="$LOCALBASE/pkgdb"
 Configuration Variables for Build 
 
 **Patterns**
-  * get source and set $pkgsrc in the environment,
-  * add $LOCALBASE/{bin,sbin} to $PATH after bootstrap,
-  * use `which bmake` to determine $LOCALBASE from $PATH
+  * get source and set $pkgsrc in the environment
+  * add $LOCALBASE/{bin,sbin} to $PATH after release bootstrap
+  * for package build, apply `which bmake` to determine $LOCALBASE from $PATH
   * discover $pkgtag from $pkgsrc checkout, prior to source update
   * use $LOCALBASE to determine other build paramaters, for package builds
-  * use a new $LOCALBASE prefix, and bootstrap, when installing a new $pkgtag
+  * set a new $pkgtag and $LOCALBASE prefix, to bootstrap and install a new release
 
 ## Quick Start
 
@@ -96,19 +96,21 @@ $LOCALBASE/etc/openssl/openssl.cnf        # OpenSSL package configuration file
 ```bash
 export OS=$(uname)
 case "$OS" in *BSD|Linux) pre=/usr ;; Darwin) pre=/opt ;; esac
-case "$OS" in *BSD|Darwin) tmp=/tmp ;; Linux) tmp=/usr/shm ;; esac # platform-specific
+case "$OS" in *BSD|Darwin) tmp=/tmp ;; Linux) tmp=/usr/shm ;; esac
 
 export tmp pre pkgsrc pkgrev
 export DISTDIR="$pre/dist"                 # Shared upstream source cache
 export LOCALBASE="$pre/$pkgrev" 
 export PACKAGES="$pkgsrc/packages-$pkgrev" # Binary package output separated by install prefix
 export OBJMACHINE="defined"                # Enable object directory separation, for cross-builds
-export WRKOBJDIR="$tmp/work-${pkgrev}"     # Build workspace, tmp for performance
+export WRKOBJDIR="$tmp/work-${pkgrev}"     # Build workspace, for platform-specific performance
 ```
 
 ## Platform-Specific Bootstrap
 
 ### Dedicated Build Account Setup
+
+Packages are built by an unprivleged user:
 ```bash
 # Create dedicated package build account for isolation
 # Leverages sudo for unprivileged implementation
@@ -124,14 +126,12 @@ softwareupdate --history
 xcode-select -v
 xcrun -v --show-sdk-version
 
-# CPU core detection - use physical cores for stability
-read -d '' cores < <(sysctl -n hw.physicalcpu) || true
+# CPU core detection - use physical cores
+read cores < <(sysctl -n hw.physicalcpu)
 
 # Prepare target directory with sudo for unprivileged bootstrap
-[ -d "$LOCALBASE" ] && { 
-    echo "ERROR: Target exists: '$LOCALBASE'" >&2
-    return 1
-    } || sudo mv $(mktemp -d) $LOCALBASE
+[ -d "$LOCALBASE" ] && { echo "ERROR: Target exists: '$LOCALBASE'" >&2 ; return 1 ;} \
+  || sudo mv $(mktemp -d) $LOCALBASE
 
 # Update source if exists with CVS filtering
 [ -f "$pkgsrc/CVS/Tag" ] && (
@@ -146,23 +146,20 @@ cd "$pkgsrc/bootstrap"
 ./bootstrap \
     --prefix "$LOCALBASE" \
     --workdir "$WRKOBJDIR" \
+    --make-jobs $cores \
     --unprivileged \
-    --prefer-pkgsrc yes \
-    --make-jobs $cores
+    --prefer-pkgsrc yes 2>&1 | tee -a "$pkgsrc/bootstrap.log"
 ```
 
 ### NetBSD
 
 ```bash
 # CPU core detection
-read -d '' cores < <(sysctl -n hw.ncpu) || true
+read cores < <(sysctl -n hw.ncpu)
 
-# Prepare target directory
+# Prepare target directory with sudo for unprivileged bootstrap
 [ -d "$LOCALBASE" ] && { echo "ERROR: Target exists: '$LOCALBASE'" >&2 ; return 1 ;} \
-  || {
-       mkdir $(basename $LOCALBASE)
-       su -m root -c "mv $(basename $LOCALBASE) $pre"
-     }
+  || sudo mv $(mktemp -d) $LOCALBASE
 
 # Bootstrap with NetBSD-specific settings
 cd "$pkgsrc/bootstrap"
@@ -179,26 +176,24 @@ cd "$pkgsrc/bootstrap"
 
 ```bash
 # CPU core detection
-read -d '' cores < <(nproc) || true
+read cores < <(nproc)
 
-# Prepare target directory
-[ -d "$LOCALBASE" ] && { 
-    echo "ERROR: Target exists: '$LOCALBASE'" >&2
-    return 1
-} || sudo mv $(mktemp -d) $LOCALBASE
+# Prepare target directory with sudo for unprivileged bootstrap
+[ -d "$LOCALBASE" ] && { echo "ERROR: Target exists: '$LOCALBASE'" >&2 ; return 1 ;} \
+  || sudo mv $(mktemp -d) $LOCALBASE
 
 # Ensure /dev/shm workspace exists
-[ -d "$WRKOBJDIR" ] || mkdir -p "$WRKOBJDIR"
+[ -d "$WRKOBJDIR" ] || mkdir -p "$WRKOBJDIR" || return 1
 
 # Bootstrap with Linux-specific optimizations
 cd "$pkgsrc/bootstrap"
-[ -d work ] && rm -rf work  
+[ -d work ] && rm -rf work
 ./bootstrap \
     --prefix "$LOCALBASE" \
     --workdir "$WRKOBJDIR" \
+    --make-jobs $cores \
     --unprivileged \
-    --prefer-pkgsrc yes \
-    --make-jobs $cores
+    --prefer-pkgsrc yes 2>&1 | tee -a "$pkgsrc/bootstrap.log"
 ```
 
 ## Security Configuration
@@ -260,8 +255,8 @@ cat > /usr/local/bin/pkgsrc-vuln-report << 'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 
-read -d '' LOCALBASE < <(which bmake | sed 's,/bin/bmake,,') || true
-read -d '' PKG_DBDIR < <($LOCALBASE/bin/bmake -f- show-var VARNAME=PKG_DBDIR <<< '.include "../../mk/bsd.prefs.mk"') || true
+read LOCALBASE < <(which bmake | sed 's,/bin/bmake,,')
+read PKG_DBDIR < <($LOCALBASE/bin/bmake -f- show-var VARNAME=PKG_DBDIR <<< '.include "../../mk/bsd.prefs.mk"')
 
 # Update vulnerability database
 $LOCALBASE/sbin/pkg_admin -K $PKG_DBDIR fetch-pkg-vulnerabilities
@@ -288,7 +283,7 @@ echo "0 6 * * * /usr/local/bin/pkgsrc-vuln-report" | crontab -
 ```
 # Set up environment - LOCALBASE determined from bmake location
 export PATH="$LOCALBASE/bin:$LOCALBASE/sbin:$PATH"
-read -d '' LOCALBASE < <(which bmake | sed 's,/bin/bmake,,') || true
+read LOCALBASE < <(which bmake | sed 's,/bin/bmake,,')
 export LOCALBASE
 
 # Install package management tools
