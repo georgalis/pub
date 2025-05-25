@@ -45,31 +45,35 @@ test -d /opt/pkg-2024Q4-67799-Darwin_22.6.0_arm64/bin  && PATH="$_":$PATH
 test -d /opt/pkg-2024Q4-67799-Darwin_22.6.0_arm64/sbin && PATH="$_":$PATH
 ```
 
-#### LOCALBASE assignment is conditional on scenario
+#### LOCALBASE assignment
+LOCALBASE setting is conditional on scenario
 
-* Set or discover existing source tag and install prefix, when adding packages to an existing LOCALBASE
+* Add packages packages to an existing LOCALBASE
 ```bash
-# Select source branch
+# Set or discover existing source branch and install prefix
 export pkgsrc="$pre/pkgsrc-stable"
 export pkgtag="pkgsrc-2025Q1" # manual set
 read pkgtag < <(sed 's/^T//' $pkgsrc/CVS/Tag) # tag discovery
 # OR: export pkgsrc="$pre/pkgsrc-current" pkgtag="HEAD"
 
-# set LOCALBASE and pkgrev
+# Set existing LOCALBASE and pkgrev
 read REPLY < <(sed "s,/bin/bmake,," < <(which bmake))
 [ -d "$REPLY" ] && { export LOCALBASE="$REPLY" PKG_DBDIR="$REPLY/pkgdb"
-    read pkgrev < <(basename "$LOCALBASE") ;}
+read pkgrev < <(basename "$LOCALBASE") ;}
 ```
 
-* Generate new revision identifier with hex timestamp and bootstrap a new LOCALBASE
+* New LOCALBASE bootstrap
 ```bash
+# Generate new revision, timestamp, bootstrap identifier, and set LOCALBASE
 read pkgtag < <(awk '{m=$2-3;y=$1; if(m<=0){m+=12;y--} print "pkgsrc-" y "Q" (int((m-1)/3)+1)}' < <(date "+%Y %m"))
 read -d '' now < <(awk -v nd=5 -v ts=$(date +%s) 'BEGIN{s=32-(4*nd);printf"%0"nd"x\n",int(ts/2^s)}') || true
 pkgrev=${pkgtag/pkgsrc/pkg}-${now}-$(uname -msr | tr ' ' '_')
 export LOCALBASE="$pre/$pkgrev" PKG_DBDIR="$LOCALBASE/pkgdb"
 ```
 
-Configuration Variables for Build 
+#### Configuration Variables for Build 
+
+When setting build env, ensure source tag ($pkgtag) matches prefix ($LOCALBASE) indication.
 
 **Patterns**
   * get source and set $pkgsrc in the environment
