@@ -1,4 +1,4 @@
-# PKGSRC Multi-Platform Deployment Guide
+# PKGSRC Multi-Release Deployment Guide
 
 ## Overview
 
