@@ -73,14 +73,6 @@ export LOCALBASE="$pre/$pkgrev" PKG_DBDIR="$LOCALBASE/pkgdb"
 
 Configuration Variables for Build 
 
-```
-export DISTDIR="$pre/dist"            # Shared source cache
-export WRKOBJDIR="/tmp/work-$pkgrev"  # Build workspace (/dev/shm on Linux)
-export PACKAGES="$pkgsrc/packages-$pkgrev"  # Binary package output
-export OBJMACHINE="defined"           # Enable object directory separation
-export MAKE_JOBS="$(cores)"           # Platform-specific CPU detection
-```
-
 **Patterns**:
     * get source and set $pkgsrc in the environment,
     * add $LOCALBASE/{bin,sbin} to $PATH after bootstrap,
@@ -93,20 +85,27 @@ export MAKE_JOBS="$(cores)"           # Platform-specific CPU detection
 
 ### Environment Setup (All Platforms)
 
-LOCALBASE underpins all other build parameters
+LOCALBASE selects to the installed release prefix and underpins all other build parameters, and release runtime env, eg:
 
 ```bash
-# Detect platform and set base paths
+$LOCALBASE/etc/mk.conf                    # compile options file produced by bootstrap-pkgsrc
+$LOCALBASE/etc/pkgin/repositories.conf    # package repositories list, for binary install and updates
+$LOCALBASE/etc/openssl/openssl.cnf        # OpenSSL package configuration file
+```
+
+#### Detect platform and set base paths
+
+```bash
 export OS=$(uname)
 case "$OS" in *BSD|Linux) pre=/usr ;; Darwin) pre=/opt ;; esac
 case "$OS" in *BSD|Darwin) tmp=/tmp ;; Linux) tmp=/usr/shm ;; esac # platform-specific
 
-export pre pkgrev
-export DISTDIR="$pre/dist"
+export tmp pre pkgsrc pkgrev
+export DISTDIR="$pre/dist"                 # Shared upstream source cache
 export LOCALBASE="$pre/$pkgrev" 
-export PACKAGES="$pkgsrc/packages-$pkgrev" # separated by install prefix
-export OBJMACHINE="defined"
-export WRKOBJDIR="$tmp/work-${pkgrev}" # Use tmpfs for performance
+export PACKAGES="$pkgsrc/packages-$pkgrev" # Binary package output separated by install prefix
+export OBJMACHINE="defined"                # Enable object directory separation, for cross-builds
+export WRKOBJDIR="$tmp/work-${pkgrev}"     # Build workspace, tmp for performance
 ```
 
 ## Platform-Specific Bootstrap
