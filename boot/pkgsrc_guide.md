@@ -4,6 +4,8 @@
 
 This guide provides a parameterized PKGSRC framework supporting scientific computing requirements across Darwin, NetBSD, and Linux platforms. The system maintains multiple concurrent package environments with unique LOCALBASE paths, security hardening, vulnerability tracking, and certification management.
 
+PKGSRC provides a standard for managing release cycles, dependencies, updates, and building packages across multiple OS. The default bootstrap guide is intended for general use, while this bootstrap guide leverages the available parameters for deployments with complex requirements, such as retention of specific release sets, while newer cycles are installed under their own prefix.
+
 **Key Features:**
 - Multi-platform bootstrap (Darwin/macOS, NetBSD, Linux)  
 - Concurrent current/stable source trees with CVS management
@@ -30,13 +32,17 @@ This guide provides a parameterized PKGSRC framework supporting scientific compu
 
 ### Environment Variables
 
+Typical user environment, from avaiable installed pkgsrc releases, the user selects their desired LOCALBASE and configures the release availability through their PATH varable.
+
+In this PKGSRC framework, selecting the release is a manual step, to ensure the user has the specific software versions expected for their workflow.
+
 ```bash
 # Detect platform and set path
 export OS=$(uname)
 case "$OS" in *BSD|Linux) pre=/usr ;; Darwin) pre=/opt ;; esac
-# identify available paths then add them to user env profile: ls -d1 $pre/pkg-*/{sbin,bin}
-test -d /opt/pkg-2024Q4-67799-Darwin_22.6.0_arm64-14.2/bin  && PATH="$_":$PATH
-test -d /opt/pkg-2024Q4-67799-Darwin_22.6.0_arm64-14.2/sbin && PATH="$_":$PATH
+# identify available release prefix and add them to user env profile: ls -d1 $pre/pkg-*/{sbin,bin}
+test -d /opt/pkg-2024Q4-67799-Darwin_22.6.0_arm64/bin  && PATH="$_":$PATH
+test -d /opt/pkg-2024Q4-67799-Darwin_22.6.0_arm64/sbin && PATH="$_":$PATH
 ```
 
 #### LOCALBASE assignment is conditional on scenario
@@ -93,18 +99,14 @@ LOCALBASE underpins all other build parameters
 # Detect platform and set base paths
 export OS=$(uname)
 case "$OS" in *BSD|Linux) pre=/usr ;; Darwin) pre=/opt ;; esac
+case "$OS" in *BSD|Darwin) tmp=/tmp ;; Linux) tmp=/usr/shm ;; esac # platform-specific
 
 export pre pkgrev
 export DISTDIR="$pre/dist"
 export LOCALBASE="$pre/$pkgrev" 
-export PACKAGES="$pkgsrc/packages-$pkgrev"
+export PACKAGES="$pkgsrc/packages-$pkgrev" # separated by install prefix
 export OBJMACHINE="defined"
-
-# Platform-specific build workspace
-case "$OS" in
-    Linux) export WRKOBJDIR="/dev/shm/work-${pkgrev}" ;;  # Use tmpfs for performance
-    *) export WRKOBJDIR="/tmp/work-${pkgrev}" ;;
-esac
+export WRKOBJDIR="$tmp/work-${pkgrev}" # Use tmpfs for performance
 ```
 
 ## Platform-Specific Bootstrap
