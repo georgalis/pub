@@ -39,9 +39,9 @@ test -d /opt/pkg-2024Q4-67799-Darwin_22.6.0_arm64-14.2/bin  && PATH="$_":$PATH
 test -d /opt/pkg-2024Q4-67799-Darwin_22.6.0_arm64-14.2/sbin && PATH="$_":$PATH
 ```
 
-#### LOCALBASE assignment - conditional on scenario:
+#### LOCALBASE assignment is conditional on scenario
 
-Package building: set or discover existing source tag, and prefix
+* Set or discover existing source tag and install prefix, when adding packages to an existing LOCALBASE
 
 ```bash
 # Select source branch
@@ -56,7 +56,7 @@ read REPLY < <(sed "s,/bin/bmake,," < <(which bmake))
     read pkgrev < <(basename "$LOCALBASE") ;}
 ```
 
-Bootstrap prefix: generate new revision identifier with hex timestamp and bootstrap
+* Generate new revision identifier with hex timestamp and bootstrap a new LOCALBASE
 
 ```bash
 read pkgtag < <(awk '{m=$2-3;y=$1; if(m<=0){m+=12;y--} print "pkgsrc-" y "Q" (int((m-1)/3)+1)}' < <(date "+%Y %m"))
@@ -65,7 +65,7 @@ pkgrev=${pkgtag/pkgsrc/pkg}-${now}-$(uname -msr | tr ' ' '_')
 export LOCALBASE="$pre/$pkgrev" PKG_DBDIR="$LOCALBASE/pkgdb"
 ```
 
-Build Configuration Variables
+Configuration Variables for Build 
 
 ```
 export DISTDIR="$pre/dist"            # Shared source cache
@@ -75,7 +75,13 @@ export OBJMACHINE="defined"           # Enable object directory separation
 export MAKE_JOBS="$(cores)"           # Platform-specific CPU detection
 ```
 
-**Workflow**: Users typically set `pkgsrc` in their environment, add LOCALBASE to PATH from bootstrap, discover `pkgtag` from source checkout, and use `which bmake` to determine LOCALBASE for package builds. During upgrades, these may be set manually when updating source before bootstrapping new install prefix.
+**Patterns**:
+    * get source and set $pkgsrc in the environment,
+    * add $LOCALBASE/{bin,sbin} to $PATH after bootstrap,
+    * use `which bmake` to determine $LOCALBASE from $PATH
+    * discover $pkgtag from $pkgsrc checkout, prior to source update
+    * use $LOCALBASE to determine other build paramaters, for package builds
+    * use a new $LOCALBASE prefix, and bootstrap, when installing a new $pkgtag
 
 ## Quick Start
 
