@@ -48,7 +48,6 @@ test -d /opt/pkg-2024Q4-67799-Darwin_22.6.0_arm64/sbin && PATH="$_":$PATH
 #### LOCALBASE assignment is conditional on scenario
 
 * Set or discover existing source tag and install prefix, when adding packages to an existing LOCALBASE
-
 ```bash
 # Select source branch
 export pkgsrc="$pre/pkgsrc-stable"
@@ -63,7 +62,6 @@ read REPLY < <(sed "s,/bin/bmake,," < <(which bmake))
 ```
 
 * Generate new revision identifier with hex timestamp and bootstrap a new LOCALBASE
-
 ```bash
 read pkgtag < <(awk '{m=$2-3;y=$1; if(m<=0){m+=12;y--} print "pkgsrc-" y "Q" (int((m-1)/3)+1)}' < <(date "+%Y %m"))
 read -d '' now < <(awk -v nd=5 -v ts=$(date +%s) 'BEGIN{s=32-(4*nd);printf"%0"nd"x\n",int(ts/2^s)}') || true
@@ -73,13 +71,13 @@ export LOCALBASE="$pre/$pkgrev" PKG_DBDIR="$LOCALBASE/pkgdb"
 
 Configuration Variables for Build 
 
-**Patterns**:
-    * get source and set $pkgsrc in the environment,
-    * add $LOCALBASE/{bin,sbin} to $PATH after bootstrap,
-    * use `which bmake` to determine $LOCALBASE from $PATH
-    * discover $pkgtag from $pkgsrc checkout, prior to source update
-    * use $LOCALBASE to determine other build paramaters, for package builds
-    * use a new $LOCALBASE prefix, and bootstrap, when installing a new $pkgtag
+**Patterns**
+  * get source and set $pkgsrc in the environment,
+  * add $LOCALBASE/{bin,sbin} to $PATH after bootstrap,
+  * use `which bmake` to determine $LOCALBASE from $PATH
+  * discover $pkgtag from $pkgsrc checkout, prior to source update
+  * use $LOCALBASE to determine other build paramaters, for package builds
+  * use a new $LOCALBASE prefix, and bootstrap, when installing a new $pkgtag
 
 ## Quick Start
 
