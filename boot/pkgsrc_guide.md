@@ -1,7 +1,5 @@
 # Multi-Release PKGSRC Guide
 
-# Overview
-
 This guide provides a parameterized PKGSRC framework supporting scientific computing requirements across Darwin, NetBSD, and Linux platforms. The system maintains multiple concurrent package release environments with unique LOCALBASE paths, security hardening, vulnerability tracking, and certification management.
 
 PKGSRC provides a standard for managing release cycles, dependencies, updates, and building packages across multiple OS. The default bootstrap guide is intended for general use, while this Multi-Release guide leverages the available parameters for sites with complex requirements, such as retention of specific package versions, while newer release cycles are installed, under their own prefix.
@@ -45,7 +43,7 @@ Administrators may choose to symlink a universal path to their newest installed 
 # Detect platform and set path within user profile
 export OS=$(uname)
 case "$OS" in *BSD|Linux) pre=/usr ;; Darwin) pre=/opt ;; esac
-# identify available release prefix and add them to user env profile: ls -d1 $pre/pkg-*/{sbin,bin}
+# identify available release prefix and add them to user env profile: ls -d1 $pre/*/{sbin,bin}
 test -d /opt/2024Q4-67799-Darwin_22.6.0_arm64/bin  && PATH="$_":$PATH
 test -d /opt/2024Q4-67799-Darwin_22.6.0_arm64/sbin && PATH="$_":$PATH
 ```
@@ -90,6 +88,8 @@ The LOCALBASE path is Platform-Specific and use is conditional per scenario:
 * Add packages to an existing LOCALBASE
 ```bash
 # Set or discover existing source branch and install prefix
+export OS=$(uname)
+case "$OS" in *BSD|Linux) pre=/usr ;; Darwin) pre=/opt ;; esac
 export pkgsrc="$pre/pkgsrc-stable"
 export pkgtag="pkgsrc-2025Q1" # manual set
 read pkgtag < <(sed 's/^T//' $pkgsrc/CVS/Tag) # tag discovery
@@ -104,21 +104,23 @@ export pkgrev=${LOCALBASE##*/}
 * New LOCALBASE bootstrap
 ```bash
 # Generate new revision, timestamp, bootstrap identifier, and set LOCALBASE
+export OS=$(uname)
+case "$OS" in *BSD|Linux) pre=/usr ;; Darwin) pre=/opt ;; esac
+# determine current PKGSRC tag, eg pkgsrc-YYYYQN
 read pkgtag < <(awk '{m=$2-3;y=$1; if(m<=0){m+=12;y--} print "pkgsrc-" y "Q" (int((m-1)/3)+1)}' < <(date "+%Y %m"))
+# determine local timestamp based release name
 read -d '' now < <(awk -v nd=5 -v ts=$(date +%s) 'BEGIN{s=32-(4*nd);printf"%0"nd"x\n",int(ts/2^s)}') || true
-export pkgrev=${pkgtag/pkgsrc/pkg}-${now}-$(uname -msr | tr ' ' '_')
+export pkgrev=${pkgtag/pkgsrc-/}-${now}-$(uname -msr | tr ' ' '_')
 export LOCALBASE="$pre/$pkgrev" PKG_DBDIR="$LOCALBASE/pkgdb"
-
 # Platform and build env
 read OS < <(uname)
 case "$OS" in *BSD|Linux)  pre=/usr ;; Darwin) pre=/opt ;; esac
 case "$OS" in *BSD|Darwin) tmp=/tmp ;; Linux)  tmp=/usr/shm ;; esac
-export tmp pre
-export DISTDIR="$pre/dist"                 # Shared upstream source cache
-export LOCALBASE="$pre/$pkgrev" 
-export PACKAGES="$pkgsrc/packages-$pkgrev" # Binary package output separated by install prefix
-export OBJMACHINE="defined"                # Enable object directory separation, for cross-builds
-export WRKOBJDIR="$tmp/work-${pkgrev}"     # Build workspace, for platform-specific performance
+export LOCALBASE="$pre/$pkgrev"
+export DISTDIR="$pre/dist"            # Shared upstream distributed source cache
+export PACKAGES="$pkgsrc/pkg-$pkgrev" # Binary package output separated by install prefix
+export OBJMACHINE="defined"           # Enable object directory separation, for cross-builds
+export WRKOBJDIR="$tmp/work-$pkgrev"  # Build workspace, for platform-specific performance
 ```
 
 # Bootstrap
