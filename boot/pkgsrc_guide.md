@@ -1,33 +1,34 @@
-# PKGSRC Multi-Release Deployment Guide
+# PKGSRC Multi-Release Guide
 
 ## Overview
 
-This guide provides a parameterized PKGSRC framework supporting scientific computing requirements across Darwin, NetBSD, and Linux platforms. The system maintains multiple concurrent package environments with unique LOCALBASE paths, security hardening, vulnerability tracking, and certification management.
+This guide provides a parameterized PKGSRC framework supporting scientific computing requirements across Darwin, NetBSD, and Linux platforms. The system maintains multiple concurrent package release environments with unique LOCALBASE paths, security hardening, vulnerability tracking, and certification management.
 
-PKGSRC provides a standard for managing release cycles, dependencies, updates, and building packages across multiple OS. The default bootstrap guide is intended for general use, while this bootstrap guide leverages the available parameters for deployments with complex requirements, such as retention of specific release sets, while newer cycles are installed under their own prefix.
+PKGSRC provides a standard for managing release cycles, dependencies, updates, and building packages across multiple OS. The default bootstrap guide is intended for general use, while this Multi-Release guide leverages the available parameters for sites with complex requirements, such as retention of specific package versions, while newer release cycles are installed, under their own prefix.
 
 **Key Features:**
-- Multi-platform bootstrap (Darwin/macOS, NetBSD, Linux)  
-- Concurrent current/stable source trees with CVS management
-- Unique versioned LOCALBASE paths with encoded metadata
+- Multi-platform bootstrap (Darwin/macOS, NetBSD, Linux)
+- Quartly release cycles, with rapid security patching
+- Concurrent current/stable source tags, and local patch management
+- Unambigious, version encoded release/dependancy metadata paths
 - Security-hardened configurations with runtime vulnerability scanning
 - Package certification, lifecycle management, and integrity verification
-- Cross-compilation support with toolchain integration
-- Dedicated build account isolation with unprivileged operations
+- Cross-compilation support with build toolchain integration
+- Unprivileged operations, with dedicated build account isolation
 
 ## Environment and Conventions
 
 ### Core Path Structure
 ```
 /opt (Darwin) or /usr (NetBSD/Linux)
-+-- pkgsrc-current/          # HEAD development source
-+-- pkgsrc-stable/           # Quarterly release source  
-+-- dist/                    # Source distribution cache (DISTDIR)
-+-- pkg-2025Q1-663c7-*/      # Versioned install prefix (LOCALBASE)
-+-- packages-*/              # Built binary packages (PACKAGES)
+ +-- pkgsrc-current/          # HEAD development source
+ +-- pkgsrc-stable/           # Quarterly release source  
+ +-- dist/                    # Source distribution cache (DISTDIR)
+ +-- pkg-2025Q1-663c7-*/      # Versioned install prefix (LOCALBASE)
+ +-- packages-*/              # Built binary packages (PACKAGES)
 
 /tmp (Darwin/NetBSD) or /dev/shm (Linux)
-+-- work-pkg-*/              # Build workspace (WRKOBJDIR)
+ +-- work-pkg-*/              # Build workspace (WRKOBJDIR)
 ```
 
 ### Environment Variables
@@ -85,9 +86,8 @@ When setting build env, ensure source tag ($pkgtag) matches prefix ($LOCALBASE) 
   * use $LOCALBASE to determine other build paramaters, for package builds
   * set a new $pkgtag and $LOCALBASE prefix, to bootstrap and install a new release
 
-## Quick Start
 
-### Setup All Platforms
+## Quick Start Setup
 
 LOCALBASE selects to the installed release prefix and underpins all other parameters used by build tools. It is coded into package binaries, for runtime release env configurations, eg:
 
@@ -97,7 +97,7 @@ $LOCALBASE/etc/pkgin/repositories.conf    # package repositories list, for binar
 $LOCALBASE/etc/openssl/openssl.cnf        # OpenSSL package configuration file
 ```
 
-#### Detect platform and set paths
+### Detect platform and set paths
 
 ```bash
 export OS=$(uname)
