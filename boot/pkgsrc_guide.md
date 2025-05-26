@@ -73,8 +73,19 @@ $LOCALBASE/etc/pkgin/repositories.conf    # package repositories list, for binar
 $LOCALBASE/etc/openssl/openssl.cnf        # OpenSSL package configuration file
 ```
 
+### Build Account Setup
+
+Packages are built from an unprivileged dedicated user account:
+```bash
+# Create dedicated package build account for isolation
+# Leverages sudo for unprivileged implementation
+sudo useradd -m -s /bin/bash pkgbuild
+sudo -u pkgbuild -i  # Switch to build account
+```
+
 ### Setting the LOCALBASE
-The LOCALBASE path used is conditional per scenario:
+
+The LOCALBASE path is Platform-Specific and use is conditional per scenario:
 
 * Add packages to an existing LOCALBASE
 ```bash
@@ -97,11 +108,8 @@ read pkgtag < <(awk '{m=$2-3;y=$1; if(m<=0){m+=12;y--} print "pkgsrc-" y "Q" (in
 read -d '' now < <(awk -v nd=5 -v ts=$(date +%s) 'BEGIN{s=32-(4*nd);printf"%0"nd"x\n",int(ts/2^s)}') || true
 export pkgrev=${pkgtag/pkgsrc/pkg}-${now}-$(uname -msr | tr ' ' '_')
 export LOCALBASE="$pre/$pkgrev" PKG_DBDIR="$LOCALBASE/pkgdb"
-```
 
-#### Platform and build env
-
-```bash
+# Platform and build env
 read OS < <(uname)
 case "$OS" in *BSD|Linux)  pre=/usr ;; Darwin) pre=/opt ;; esac
 case "$OS" in *BSD|Darwin) tmp=/tmp ;; Linux)  tmp=/usr/shm ;; esac
@@ -113,17 +121,7 @@ export OBJMACHINE="defined"                # Enable object directory separation,
 export WRKOBJDIR="$tmp/work-${pkgrev}"     # Build workspace, for platform-specific performance
 ```
 
-#### Build Account Setup
-
-Packages are built from an unprivileged dedicated user account:
-```bash
-# Create dedicated package build account for isolation
-# Leverages sudo for unprivileged implementation
-sudo useradd -m -s /bin/bash pkgbuild
-sudo -u pkgbuild -i  # Switch to build account
-```
-
-## Platform-Specific Bootstrap
+## Bootstrap
 
 ### Darwin/macOS
 
