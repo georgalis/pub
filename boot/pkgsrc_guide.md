@@ -18,14 +18,14 @@ PKGSRC provides a standard for managing release cycles, dependencies, updates, a
 
 ## Core Path Structure
 ```
-/home/pack (site hosted path) 
+/nfs/pack (site hosted path)
  +-- dist/                  # Source distribution cache (DISTDIR)
  +-- pkg-2025Q1-663c7-*/    # Per release binary packages (PACKAGES)
 
 /usr (NetBSD/Linux) or /opt (Darwin)
  +-- 2025Q1-663c7-*/        # Versioned install prefix (LOCALBASE)
  +-- pkgsrc-current/        # HEAD development source
- +-- pkgsrc-stable/         # Release source checkout 
+ +-- pkgsrc-stable/         # Release source checkout
 
 /dev/shm (Linux) or /tmp (Darwin/NetBSD)
  +-- work-2025Q1-663c7-*/   # Build workspace (WRKOBJDIR)
@@ -213,7 +213,7 @@ After bootstrap, append to `$LOCALBASE/etc/mk.conf`:
 ```make
 # Build paths derived from LOCALBASE
 DISTDIR=    $DISTDIR
-WRKOBJDIR=  $WRKOBJDIR  
+WRKOBJDIR=  $WRKOBJDIR
 PACKAGES=   $PACKAGES
 OBJMACHINE= defined
 
@@ -222,7 +222,7 @@ ALLOW_VULNERABLE_PACKAGES=  NO
 
 # Hardening options (https://www.netbsd.org/docs/pkgsrc/hardening.html)
 PKGSRC_USE_STACK_CHECK?=    yes     # Stack boundary verification
-PKGSRC_USE_FORTIFY?=        yes     # Buffer overflow protection  
+PKGSRC_USE_FORTIFY?=        yes     # Buffer overflow protection
 PKGSRC_USE_SSP?=            all     # Stack protector (default: strong)
 # PKGSRC_MKPIE=             yes     # Position-independent executables
 # PKGSRC_USE_RELRO?=        partial # Relocation read-only (full slows loading)
@@ -422,7 +422,7 @@ cp $PACKAGES/All/$PKGNAME.t?z /tmp/build1.t?z
 
 # Rebuild and compare
 bmake clean
-bmake package  
+bmake package
 cmp $PACKAGES/All/$PKGNAME.t?z /tmp/build1.t?z && {
     echo "PASS: Reproducible build verified"
 } || {
@@ -546,7 +546,7 @@ for release in /usr/pkg-*; do
 # Reference Links
 
 - [PKGSRC Targets](https://wiki.netbsd.org/pkgsrc/targets/)
-- [Security Practices](https://www.unitedbsd.com/d/438-pkgsrc-security-practices)  
+- [Security Practices](https://www.unitedbsd.com/d/438-pkgsrc-security-practices)
 - [Hardening Guide](https://www.netbsd.org/docs/pkgsrc/hardening.html)
 - [Cross-Compilation](https://www.netbsd.org/gallery/presentations/riastradh/asiabsdcon2015/pkgsrc-cross.pdf)
 - [Repository Setup](https://www.anserinae.net/setting-up-a-pkgsrc-repository.html)
