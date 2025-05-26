@@ -1,4 +1,4 @@
-# PKGSRC Multi-Release Guide
+# Multi-Release PKGSRC Guide
 
 ## Overview
 
@@ -20,51 +20,52 @@ PKGSRC provides a standard for managing release cycles, dependencies, updates, a
 
 ### Core Path Structure
 ```
-/opt (Darwin) or /usr (NetBSD/Linux)
- +-- pkgsrc-current/          # HEAD development source
- +-- pkgsrc-stable/           # Quarterly release source  
- +-- dist/                    # Source distribution cache (DISTDIR)
- +-- pkg-2025Q1-663c7-*/      # Versioned install prefix (LOCALBASE)
- +-- packages-*/              # Built binary packages (PACKAGES)
+/home/pack (site hosted path) 
+ +-- dist/                  # Source distribution cache (DISTDIR)
+ +-- pkg-2025Q1-663c7-*/    # Per release binary packages (PACKAGES)
 
-/tmp (Darwin/NetBSD) or /dev/shm (Linux)
- +-- work-pkg-*/              # Build workspace (WRKOBJDIR)
+/usr (NetBSD/Linux) or /opt (Darwin)
+ +-- 2025Q1-663c7-*/        # Versioned install prefix (LOCALBASE)
+ +-- pkgsrc-current/        # HEAD development source
+ +-- pkgsrc-stable/         # Release source checkout 
+
+/dev/shm (Linux) or /tmp (Darwin/NetBSD)
+ +-- work-2025Q1-663c7-*/   # Build workspace (WRKOBJDIR)
 ```
 
-### Environment Variables
+### Runtime Environment
 
-Typical user environment, the user selects their desired release prefix from avaiable installed pkgsrc LOCALBASE prefix and configures the release availability by setting their PATH varable.
+Typically, the user selects their desired PKGSRC release from avaiable installed LOCALBASE prefix; they configure the release availability by setting their PATH varable. It is possible to run a single binary (with respective dependancies) from an older installed release, by executing the full path to that binary.
 
-In this PKGSRC framework, selecting the release path is a manual step, to ensure the user has control over the specific software versions expected for their workflow. Multiple site releases may coexist, and expired paths are only removed when they are no longer required at the site.
+In this PKGSRC framework, selecting the path is a manual user step, to ensure control over the specific software versions for the workflow. Multiple release prefix may coexist, and expired paths are only removed when they are no longer required at the site.
 
-In some cases, the full path to an old release binary may be used (along with respective library versions for that release) while the user PATH is set to a current release, to leverage stable package versions, accept for one old required package.
+Administrators may choose to symlink a universal path to their newest installed release, for users desiring only the newest site version.
 
 ```bash
-# Detect platform and set path
+# Detect platform and set path within user profile
 export OS=$(uname)
 case "$OS" in *BSD|Linux) pre=/usr ;; Darwin) pre=/opt ;; esac
 # identify available release prefix and add them to user env profile: ls -d1 $pre/pkg-*/{sbin,bin}
-test -d /opt/pkg-2024Q4-67799-Darwin_22.6.0_arm64/bin  && PATH="$_":$PATH
-test -d /opt/pkg-2024Q4-67799-Darwin_22.6.0_arm64/sbin && PATH="$_":$PATH
+test -d /opt/2024Q4-67799-Darwin_22.6.0_arm64/bin  && PATH="$_":$PATH
+test -d /opt/2024Q4-67799-Darwin_22.6.0_arm64/sbin && PATH="$_":$PATH
 ```
 
+### Build Environment
 
-#### Build Configuration Variables
-
-When setting build env, ensure source tag ($pkgtag) matches prefix ($LOCALBASE) indication.
+When setting build environment, ensure source tag ($pkgtag) matches the ($LOCALBASE) prefix data.
 
 **Patterns**
   * get source and set $pkgsrc in the environment
   * add $LOCALBASE/{bin,sbin} to $PATH after release bootstrap
-  * for package build, apply `which bmake` to determine $LOCALBASE from bmake in $PATH
+  * for package build, use `which bmake` to determine primary $LOCALBASE from $PATH
   * discover $pkgtag from $pkgsrc checkout, prior to source update
-  * use $LOCALBASE to determine other build paramaters, for package builds
-  * set a new $pkgtag and $LOCALBASE prefix, to bootstrap and install a new release
-
+  * set build and runtime defaults in $LOCALBASE/etc
+  * use `bmake show-var VARNAME=SOME_VAR_NAME` to check configuration
+  * to bootstrap a new release, first set $pkgtag, update sources, and create a new $LOCALBASE
 
 ## Quick Start Setup
 
-LOCALBASE selects to the installed release prefix and underpins all other parameters used by build tools. It is coded into package binaries, for runtime release env configurations, eg:
+LOCALBASE selects to the installed release prefix and underpins all other parameters used by build tools. It is coded into package binaries, for runtime environment configuration, eg:
 
 ```bash
 $LOCALBASE/etc/mk.conf                    # compile options file produced by bootstrap-pkgsrc
@@ -73,7 +74,7 @@ $LOCALBASE/etc/openssl/openssl.cnf        # OpenSSL package configuration file
 ```
 
 ### Setting the LOCALBASE
-The LOCALBASE path is configured according to the desired PKGSRC release install prefix, and conditional per scenario
+The LOCALBASE path used is conditional per scenario:
 
 * Add packages to an existing LOCALBASE
 ```bash
@@ -94,17 +95,17 @@ export pkgrev=${LOCALBASE##*/}
 # Generate new revision, timestamp, bootstrap identifier, and set LOCALBASE
 read pkgtag < <(awk '{m=$2-3;y=$1; if(m<=0){m+=12;y--} print "pkgsrc-" y "Q" (int((m-1)/3)+1)}' < <(date "+%Y %m"))
 read -d '' now < <(awk -v nd=5 -v ts=$(date +%s) 'BEGIN{s=32-(4*nd);printf"%0"nd"x\n",int(ts/2^s)}') || true
-pkgrev=${pkgtag/pkgsrc/pkg}-${now}-$(uname -msr | tr ' ' '_')
+export pkgrev=${pkgtag/pkgsrc/pkg}-${now}-$(uname -msr | tr ' ' '_')
 export LOCALBASE="$pre/$pkgrev" PKG_DBDIR="$LOCALBASE/pkgdb"
 ```
-### Detect platform and set build env paths
+
+#### Platform and build env
 
 ```bash
-export OS=$(uname)
+read OS < <(uname)
 case "$OS" in *BSD|Linux)  pre=/usr ;; Darwin) pre=/opt ;; esac
 case "$OS" in *BSD|Darwin) tmp=/tmp ;; Linux)  tmp=/usr/shm ;; esac
-
-export tmp pre pkgsrc pkgrev
+export tmp pre
 export DISTDIR="$pre/dist"                 # Shared upstream source cache
 export LOCALBASE="$pre/$pkgrev" 
 export PACKAGES="$pkgsrc/packages-$pkgrev" # Binary package output separated by install prefix
