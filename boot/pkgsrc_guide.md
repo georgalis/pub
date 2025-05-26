@@ -48,31 +48,6 @@ test -d /opt/pkg-2024Q4-67799-Darwin_22.6.0_arm64/bin  && PATH="$_":$PATH
 test -d /opt/pkg-2024Q4-67799-Darwin_22.6.0_arm64/sbin && PATH="$_":$PATH
 ```
 
-#### Setting the LOCALBASE
-The LOCALBASE path is configured according to the desired PKGSRC release install prefix, and conditional per scenario
-
-* Add packages to an existing LOCALBASE
-```bash
-# Set or discover existing source branch and install prefix
-export pkgsrc="$pre/pkgsrc-stable"
-export pkgtag="pkgsrc-2025Q1" # manual set
-read pkgtag < <(sed 's/^T//' $pkgsrc/CVS/Tag) # tag discovery
-# OR: export pkgsrc="$pre/pkgsrc-current" pkgtag="HEAD"
-
-# Set an existing LOCALBASE and pkgrev
-read REPLY < <(sed "s,/bin/bmake,," < <(which bmake))
-[ -d "$REPLY" ] && { export LOCALBASE="$REPLY" PKG_DBDIR="$REPLY/pkgdb"
-export pkgrev=${LOCALBASE##*/}
-```
-
-* New LOCALBASE bootstrap
-```bash
-# Generate new revision, timestamp, bootstrap identifier, and set LOCALBASE
-read pkgtag < <(awk '{m=$2-3;y=$1; if(m<=0){m+=12;y--} print "pkgsrc-" y "Q" (int((m-1)/3)+1)}' < <(date "+%Y %m"))
-read -d '' now < <(awk -v nd=5 -v ts=$(date +%s) 'BEGIN{s=32-(4*nd);printf"%0"nd"x\n",int(ts/2^s)}') || true
-pkgrev=${pkgtag/pkgsrc/pkg}-${now}-$(uname -msr | tr ' ' '_')
-export LOCALBASE="$pre/$pkgrev" PKG_DBDIR="$LOCALBASE/pkgdb"
-```
 
 #### Build Configuration Variables
 
@@ -97,7 +72,32 @@ $LOCALBASE/etc/pkgin/repositories.conf    # package repositories list, for binar
 $LOCALBASE/etc/openssl/openssl.cnf        # OpenSSL package configuration file
 ```
 
-### Detect platform and set paths
+### Setting the LOCALBASE
+The LOCALBASE path is configured according to the desired PKGSRC release install prefix, and conditional per scenario
+
+* Add packages to an existing LOCALBASE
+```bash
+# Set or discover existing source branch and install prefix
+export pkgsrc="$pre/pkgsrc-stable"
+export pkgtag="pkgsrc-2025Q1" # manual set
+read pkgtag < <(sed 's/^T//' $pkgsrc/CVS/Tag) # tag discovery
+# OR: export pkgsrc="$pre/pkgsrc-current" pkgtag="HEAD"
+
+# Set an existing LOCALBASE and pkgrev
+read REPLY < <(sed "s,/bin/bmake,," < <(which bmake))
+[ -d "$REPLY" ] && { export LOCALBASE="$REPLY" PKG_DBDIR="$REPLY/pkgdb"
+export pkgrev=${LOCALBASE##*/}
+```
+
+* New LOCALBASE bootstrap
+```bash
+# Generate new revision, timestamp, bootstrap identifier, and set LOCALBASE
+read pkgtag < <(awk '{m=$2-3;y=$1; if(m<=0){m+=12;y--} print "pkgsrc-" y "Q" (int((m-1)/3)+1)}' < <(date "+%Y %m"))
+read -d '' now < <(awk -v nd=5 -v ts=$(date +%s) 'BEGIN{s=32-(4*nd);printf"%0"nd"x\n",int(ts/2^s)}') || true
+pkgrev=${pkgtag/pkgsrc/pkg}-${now}-$(uname -msr | tr ' ' '_')
+export LOCALBASE="$pre/$pkgrev" PKG_DBDIR="$LOCALBASE/pkgdb"
+```
+### Detect platform and set build env paths
 
 ```bash
 export OS=$(uname)
@@ -112,7 +112,7 @@ export OBJMACHINE="defined"                # Enable object directory separation,
 export WRKOBJDIR="$tmp/work-${pkgrev}"     # Build workspace, for platform-specific performance
 ```
 
-### Build Account Setup
+#### Build Account Setup
 
 Packages are built from an unprivileged dedicated user account:
 ```bash
