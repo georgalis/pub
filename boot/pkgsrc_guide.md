@@ -1,6 +1,6 @@
 # Multi-Release PKGSRC Guide
 
-## Overview
+# Overview
 
 This guide provides a parameterized PKGSRC framework supporting scientific computing requirements across Darwin, NetBSD, and Linux platforms. The system maintains multiple concurrent package release environments with unique LOCALBASE paths, security hardening, vulnerability tracking, and certification management.
 
@@ -16,9 +16,9 @@ PKGSRC provides a standard for managing release cycles, dependencies, updates, a
 - Cross-compilation support with build toolchain integration
 - Unprivileged operations, with dedicated build account isolation
 
-## Environment and Conventions
+# Environment and Conventions
 
-### Core Path Structure
+## Core Path Structure
 ```
 /home/pack (site hosted path) 
  +-- dist/                  # Source distribution cache (DISTDIR)
@@ -33,7 +33,7 @@ PKGSRC provides a standard for managing release cycles, dependencies, updates, a
  +-- work-2025Q1-663c7-*/   # Build workspace (WRKOBJDIR)
 ```
 
-### Runtime Environment
+## Runtime Environment
 
 Typically, the user selects their desired PKGSRC release from avaiable installed LOCALBASE prefix; they configure the release availability by setting their PATH varable. It is possible to run a single binary (with respective dependancies) from an older installed release, by executing the full path to that binary.
 
@@ -50,7 +50,7 @@ test -d /opt/2024Q4-67799-Darwin_22.6.0_arm64/bin  && PATH="$_":$PATH
 test -d /opt/2024Q4-67799-Darwin_22.6.0_arm64/sbin && PATH="$_":$PATH
 ```
 
-### Build Environment
+## Build Environment
 
 When setting build environment, ensure source tag ($pkgtag) matches the ($LOCALBASE) prefix data.
 
@@ -63,7 +63,7 @@ When setting build environment, ensure source tag ($pkgtag) matches the ($LOCALB
   * use `bmake show-var VARNAME=SOME_VAR_NAME` to check configuration
   * to bootstrap a new release, first set $pkgtag, update sources, and create a new $LOCALBASE
 
-## Quick Start Setup
+# Quick Start Setup
 
 LOCALBASE selects to the installed release prefix and underpins all other parameters used by build tools. It is coded into package binaries, for runtime environment configuration, eg:
 
@@ -73,7 +73,7 @@ $LOCALBASE/etc/pkgin/repositories.conf    # package repositories list, for binar
 $LOCALBASE/etc/openssl/openssl.cnf        # OpenSSL package configuration file
 ```
 
-### Build Account Setup
+## Build Account Setup
 
 Packages are built from an unprivileged dedicated user account:
 ```bash
@@ -83,7 +83,7 @@ sudo useradd -m -s /bin/bash pkgbuild
 sudo -u pkgbuild -i  # Switch to build account
 ```
 
-### Setting the LOCALBASE
+## Setting the LOCALBASE
 
 The LOCALBASE path is Platform-Specific and use is conditional per scenario:
 
@@ -121,9 +121,9 @@ export OBJMACHINE="defined"                # Enable object directory separation,
 export WRKOBJDIR="$tmp/work-${pkgrev}"     # Build workspace, for platform-specific performance
 ```
 
-## Bootstrap
+# Bootstrap
 
-### Darwin/macOS
+## Darwin/macOS
 
 ```bash
 # Prerequisites and SDK detection
@@ -156,7 +156,7 @@ cd "$pkgsrc/bootstrap"
     --prefer-pkgsrc yes 2>&1 | tee -a "$pkgsrc/bootstrap.log"
 ```
 
-### NetBSD
+## NetBSD
 
 ```bash
 # CPU core detection
@@ -177,7 +177,7 @@ cd "$pkgsrc/bootstrap"
     --prefer-pkgsrc yes 2>&1 | tee -a "$pkgsrc/bootstrap.log"
 ```
 
-### Linux
+## Linux
 
 ```bash
 # CPU core detection
@@ -202,10 +202,10 @@ cd "$pkgsrc/bootstrap"
 ```
 
 
-## Security Configuration
+# Security Configuration
 (incomplete section prototype placeholder)
 
-### Hardened mk.conf
+## Hardened mk.conf
 After bootstrap, append to `$LOCALBASE/etc/mk.conf`:
 
 ```make
@@ -243,10 +243,10 @@ PKG_OPTIONS.ffmpeg6+=   -x11
 PKG_OPTIONS.SDL2+=      -x11
 ```
 
-## Vulnerability Management
+# Vulnerability Management
 (incomplete section prototype placeholder)
 
-### Build-Time Vulnerability Tracking
+## Build-Time Vulnerability Tracking
 ```
 # Update vulnerability database before any package operations
 $LOCALBASE/sbin/pkg_admin -K $LOCALBASE/pkgdb fetch-pkg-vulnerabilities
@@ -256,7 +256,7 @@ cd $pkgsrc/category/package
 bmake audit-packages      # Check for known vulnerabilities
 ```
 
-### Runtime Vulnerability Monitoring
+## Runtime Vulnerability Monitoring
 ```
 # Daily vulnerability report generation
 cat > /usr/local/bin/pkgsrc-vuln-report << 'EOF'
@@ -284,10 +284,10 @@ chmod +x /usr/local/bin/pkgsrc-vuln-report
 echo "0 6 * * * /usr/local/bin/pkgsrc-vuln-report" | crontab -
 ```
 
-## Package Management Workflow
+# Package Management Workflow
 (incomplete section prototype placeholder)
 
-### Setup Integrity Verification
+## Setup Integrity Verification
 
 ```
 # Set up environment - LOCALBASE determined from bmake location
@@ -307,10 +307,10 @@ echo "file://$PACKAGES/ALL" >> $LOCALBASE/etc/pkgin/repositories.conf
 $LOCALBASE/sbin/pkg_admin -K $LOCALBASE/pkgdb fetch-pkg-vulnerabilities
 ```
 
-## Release archive for distribution
+# Release archive for distribution
 (incomplete section prototype placeholder)
 
-### Configure pkgin Repository Sources
+## Configure pkgin Repository Sources
 Edit /usr/pkg-YYYYQN-nnnn/etc/pkgin/repositories.conf:
 
 
@@ -323,12 +323,12 @@ cd / && tar czf $PACKAGES/${LOCALBASE##*/}.tgz $LOCALBASE .
 
 Install tarball
 
-### Log Locations
+## Log Locations
 * Package installation logs: /usr/pkg-YYYYQN-nnnn/var/db/pkg/pkgin.log
 * Repository update logs: /usr/pkg-YYYYQN-nnnn/var/db/pkgin/cache/
 * System logs: /var/log/messages (for permission issues)
 
-### Troubleshooting Common Issues
+## Troubleshooting Common Issues
 
 Test repository connectivity
 ```
@@ -340,7 +340,7 @@ Update package database
 pkgin update
 ```
 
-### Package Installation with Certification Tracking
+## Package Installation with Certification Tracking
 
 ```
 # Build and install with certification logging
@@ -369,14 +369,14 @@ pkgin -y in $PKGNAME && {
 }
 ```
 
-## Source Management
+# Source Management
 (incomplete section prototype placeholder)
 
 first get and extract the archive, and update it
   - https://cdn.netbsd.org/pub/pkgsrc/stable/pkgsrc.tar.xz
   - https://cdn.netbsd.org/pub/pkgsrc/current/pkgsrc.tar.xz
 
-### CVS Operations with Filtering
+## CVS Operations with Filtering
 
 ```
 # Update existing checkout with work directory filtering
@@ -386,10 +386,10 @@ echo "Updating to $Tag..."
 { date ; pwd ; cvs -q upd -dP -r $Tag . 2>&1 ;} | sed '/\/work$/d' | tee -a ./cvs.log
 ```
 
-## Package Integrity Verification
+# Package Integrity Verification
 (incomplete section prototype placeholder)
 
-### Maintenance Automation
+## Maintenance Automation
 Implement daily maintenance covering source tree updates, package database consistency verification, and build artifact cleanup. Periodic routines include binary package repository updates and comprehensive system reporting.
 
 * Daily maintenance routine
@@ -409,7 +409,7 @@ pkgsrc="$pre/pkgsrc-stable" && cd "$pkgsrc" \
 $LOCALBASE/sbin/pkg_admin -K $LOCALBASE/pkgdb check
 ```
 
-### Reproducible Build Verification
+## Reproducible Build Verification
 (incomplete section prototype placeholder)
 ```
 # Verify bit-for-bit identical package builds
@@ -428,7 +428,7 @@ cmp $PACKAGES/All/$PKGNAME.t?z /tmp/build1.t?z && {
 }
 ```
 
-### Crypto Signature Verification
+## Crypto Signature Verification
 (incomplete section prototype placeholder)
 ```
 # Package integrity verification with signatures (when available)
@@ -447,9 +447,9 @@ for pkg in *.t?z; do
 done
 ```
 
-## Cross-Compilation Support
+# Cross-Compilation Support
 (incomplete section prototype placeholder)
-### NetBSD Toolchain Setup
+## NetBSD Toolchain Setup
 ```
 # Prepare NetBSD source toolchain for cross-builds
 localpre=/usr/src
@@ -476,10 +476,10 @@ MACHINE_ARCH=           powerpc
 EOF
 ```
 
-## Maintenance Operations
+# Maintenance Operations
 (incomplete section prototype placeholder)
 
-### Package Verification and Reporting
+## Package Verification and Reporting
 ```
 # Comprehensive package consistency verification
 pkgin list | awk '{print $1}' | while read pkg; do
@@ -493,7 +493,7 @@ pkgin list | awk '{print $1}' | while read pkg; do
 done
 ```
 
-### Lifecycle Management
+## Lifecycle Management
 ```
 # Archive bootstrap when certification expires
 # Manual verification required - check pkg.log for active certifications
@@ -501,21 +501,21 @@ grep "$(basename $LOCALBASE)" $pkgsrc/pkg.log | tail -10
 ```
 
 
-#### Repository URLs for this release
+### Repository URLs for this release
 http://your-repo-server/packages/YYYYQN-nnnn/Linux/x86_64/All
 
-#### Initialize pkgin Database
+### Initialize pkgin Database
 Update package database
 ```
 sudo /usr/pkg-YYYYQN-nnnn/bin/pkgin update
 ```
 
-#### Verify repository connectivity
+### Verify repository connectivity
 ```
 /usr/pkg-YYYYQN-nnnn/bin/pkgin avail | head -20
 ```
 
-#### Monitoring and Maintenance
+### Monitoring and Maintenance
 Check repository connectivity for all releases
 ```bash
 for release in /usr/pkg-*; do
@@ -541,7 +541,7 @@ for release in /usr/pkg-*; do
 * Cleanup: Remove unused releases to save disk space
 * Documentation: Keep track of which releases are in use by teams/projects
 
-## Reference Links
+# Reference Links
 
 - [PKGSRC Targets](https://wiki.netbsd.org/pkgsrc/targets/)
 - [Security Practices](https://www.unitedbsd.com/d/438-pkgsrc-security-practices)  
@@ -552,7 +552,7 @@ for release in /usr/pkg-*; do
 
 ---
 
-## Excluded Input Elements (Completeness Audit)
+# Excluded Input Elements (Completeness Audit)
 
 The following code fragments and notes from the input were not integrated into this documentation:
 
