@@ -15,7 +15,7 @@ PKGSRC provides a standard for managing release cycles, dependencies, updates, a
 - Cross-compilation support with toolchain integration
 - Dedicated build account isolation with unprivileged operations
 
-## Path Conventions & Environment Variables
+## Environment and Conventions
 
 ### Core Path Structure
 ```
@@ -32,9 +32,11 @@ PKGSRC provides a standard for managing release cycles, dependencies, updates, a
 
 ### Environment Variables
 
-Typical user environment, from avaiable installed pkgsrc releases, the user selects their desired LOCALBASE and configures the release availability through their PATH varable.
+Typical user environment, the user selects their desired release prefix from avaiable installed pkgsrc LOCALBASE prefix and configures the release availability by setting their PATH varable.
 
-In this PKGSRC framework, selecting the release is a manual step, to ensure the user has the specific software versions expected for their workflow.
+In this PKGSRC framework, selecting the release path is a manual step, to ensure the user has control over the specific software versions expected for their workflow. Multiple site releases may coexist, and expired paths are only removed when they are no longer required at the site.
+
+In some cases, the full path to an old release binary may be used (along with respective library versions for that release) while the user PATH is set to a current release, to leverage stable package versions, accept for one old required package.
 
 ```bash
 # Detect platform and set path
@@ -45,10 +47,10 @@ test -d /opt/pkg-2024Q4-67799-Darwin_22.6.0_arm64/bin  && PATH="$_":$PATH
 test -d /opt/pkg-2024Q4-67799-Darwin_22.6.0_arm64/sbin && PATH="$_":$PATH
 ```
 
-#### LOCALBASE assignment
-LOCALBASE setting is conditional on scenario
+#### Setting the LOCALBASE
+The LOCALBASE path is configured according to the desired PKGSRC release install prefix, and conditional per scenario
 
-* Add packages packages to an existing LOCALBASE
+* Add packages to an existing LOCALBASE
 ```bash
 # Set or discover existing source branch and install prefix
 export pkgsrc="$pre/pkgsrc-stable"
@@ -56,10 +58,10 @@ export pkgtag="pkgsrc-2025Q1" # manual set
 read pkgtag < <(sed 's/^T//' $pkgsrc/CVS/Tag) # tag discovery
 # OR: export pkgsrc="$pre/pkgsrc-current" pkgtag="HEAD"
 
-# Set existing LOCALBASE and pkgrev
+# Set an existing LOCALBASE and pkgrev
 read REPLY < <(sed "s,/bin/bmake,," < <(which bmake))
 [ -d "$REPLY" ] && { export LOCALBASE="$REPLY" PKG_DBDIR="$REPLY/pkgdb"
-read pkgrev < <(basename "$LOCALBASE") ;}
+export pkgrev=${LOCALBASE##*/}
 ```
 
 * New LOCALBASE bootstrap
@@ -71,23 +73,23 @@ pkgrev=${pkgtag/pkgsrc/pkg}-${now}-$(uname -msr | tr ' ' '_')
 export LOCALBASE="$pre/$pkgrev" PKG_DBDIR="$LOCALBASE/pkgdb"
 ```
 
-#### Configuration Variables for Build 
+#### Build Configuration Variables
 
 When setting build env, ensure source tag ($pkgtag) matches prefix ($LOCALBASE) indication.
 
 **Patterns**
   * get source and set $pkgsrc in the environment
   * add $LOCALBASE/{bin,sbin} to $PATH after release bootstrap
-  * for package build, apply `which bmake` to determine $LOCALBASE from $PATH
+  * for package build, apply `which bmake` to determine $LOCALBASE from bmake in $PATH
   * discover $pkgtag from $pkgsrc checkout, prior to source update
   * use $LOCALBASE to determine other build paramaters, for package builds
   * set a new $pkgtag and $LOCALBASE prefix, to bootstrap and install a new release
 
 ## Quick Start
 
-### Environment Setup (All Platforms)
+### Setup All Platforms
 
-LOCALBASE selects to the installed release prefix and underpins all other build parameters, and release runtime env, eg:
+LOCALBASE selects to the installed release prefix and underpins all other parameters used by build tools. It is coded into package binaries, for runtime release env configurations, eg:
 
 ```bash
 $LOCALBASE/etc/mk.conf                    # compile options file produced by bootstrap-pkgsrc
@@ -95,12 +97,12 @@ $LOCALBASE/etc/pkgin/repositories.conf    # package repositories list, for binar
 $LOCALBASE/etc/openssl/openssl.cnf        # OpenSSL package configuration file
 ```
 
-#### Detect platform and set base paths
+#### Detect platform and set paths
 
 ```bash
 export OS=$(uname)
-case "$OS" in *BSD|Linux) pre=/usr ;; Darwin) pre=/opt ;; esac
-case "$OS" in *BSD|Darwin) tmp=/tmp ;; Linux) tmp=/usr/shm ;; esac
+case "$OS" in *BSD|Linux)  pre=/usr ;; Darwin) pre=/opt ;; esac
+case "$OS" in *BSD|Darwin) tmp=/tmp ;; Linux)  tmp=/usr/shm ;; esac
 
 export tmp pre pkgsrc pkgrev
 export DISTDIR="$pre/dist"                 # Shared upstream source cache
@@ -109,8 +111,6 @@ export PACKAGES="$pkgsrc/packages-$pkgrev" # Binary package output separated by 
 export OBJMACHINE="defined"                # Enable object directory separation, for cross-builds
 export WRKOBJDIR="$tmp/work-${pkgrev}"     # Build workspace, for platform-specific performance
 ```
-
-## Platform-Specific Bootstrap
 
 ### Build Account Setup
 
@@ -121,6 +121,8 @@ Packages are built from an unprivileged dedicated user account:
 sudo useradd -m -s /bin/bash pkgbuild
 sudo -u pkgbuild -i  # Switch to build account
 ```
+
+## Platform-Specific Bootstrap
 
 ### Darwin/macOS
 
@@ -202,6 +204,7 @@ cd "$pkgsrc/bootstrap"
 
 
 ## Security Configuration
+(incomplete section prototype placeholder)
 
 ### Hardened mk.conf
 After bootstrap, append to `$LOCALBASE/etc/mk.conf`:
@@ -242,6 +245,7 @@ PKG_OPTIONS.SDL2+=      -x11
 ```
 
 ## Vulnerability Management
+(incomplete section prototype placeholder)
 
 ### Build-Time Vulnerability Tracking
 ```
@@ -282,8 +286,9 @@ echo "0 6 * * * /usr/local/bin/pkgsrc-vuln-report" | crontab -
 ```
 
 ## Package Management Workflow
+(incomplete section prototype placeholder)
 
-### Initial Setup with Integrity Verification
+### Setup Integrity Verification
 
 ```
 # Set up environment - LOCALBASE determined from bmake location
@@ -304,6 +309,7 @@ $LOCALBASE/sbin/pkg_admin -K $LOCALBASE/pkgdb fetch-pkg-vulnerabilities
 ```
 
 ## Release archive for distribution
+(incomplete section prototype placeholder)
 
 ### Configure pkgin Repository Sources
 Edit /usr/pkg-YYYYQN-nnnn/etc/pkgin/repositories.conf:
@@ -365,6 +371,7 @@ pkgin -y in $PKGNAME && {
 ```
 
 ## Source Management
+(incomplete section prototype placeholder)
 
 first get and extract the archive, and update it
   - https://cdn.netbsd.org/pub/pkgsrc/stable/pkgsrc.tar.xz
@@ -381,6 +388,7 @@ echo "Updating to $Tag..."
 ```
 
 ## Package Integrity Verification
+(incomplete section prototype placeholder)
 
 ### Maintenance Automation
 Implement daily maintenance covering source tree updates, package database consistency verification, and build artifact cleanup. Periodic routines include binary package repository updates and comprehensive system reporting.
@@ -470,9 +478,9 @@ EOF
 ```
 
 ## Maintenance Operations
+(incomplete section prototype placeholder)
 
 ### Package Verification and Reporting
-(incomplete section prototype placeholder)
 ```
 # Comprehensive package consistency verification
 pkgin list | awk '{print $1}' | while read pkg; do
@@ -487,7 +495,6 @@ done
 ```
 
 ### Lifecycle Management
-(incomplete section prototype placeholder)
 ```
 # Archive bootstrap when certification expires
 # Manual verification required - check pkg.log for active certifications
@@ -496,24 +503,20 @@ grep "$(basename $LOCALBASE)" $pkgsrc/pkg.log | tail -10
 
 
 #### Repository URLs for this release
-(incomplete section prototype placeholder)
 http://your-repo-server/packages/YYYYQN-nnnn/Linux/x86_64/All
 
 #### Initialize pkgin Database
-(incomplete section prototype placeholder)
 Update package database
 ```
 sudo /usr/pkg-YYYYQN-nnnn/bin/pkgin update
 ```
 
 #### Verify repository connectivity
-(incomplete section prototype placeholder)
 ```
 /usr/pkg-YYYYQN-nnnn/bin/pkgin avail | head -20
 ```
 
 #### Monitoring and Maintenance
-(incomplete section prototype placeholder)
 Check repository connectivity for all releases
 ```bash
 for release in /usr/pkg-*; do
