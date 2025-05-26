@@ -19,7 +19,7 @@ PKGSRC provides a standard for managing release cycles, dependencies, updates, a
 ## Core Path Structure
 ```
 /nfs/pack (site hosted path)
- +-- dist/                  # Source distribution cache (DISTDIR)
+ +-- dist/                  # Upstream source distribution cache (DISTDIR)
  +-- pkg-2025Q1-663c7-*/    # Per release binary packages (PACKAGES)
 
 /usr (NetBSD/Linux) or /opt (Darwin)
@@ -81,51 +81,47 @@ sudo useradd -m -s /bin/bash pkgbuild
 sudo -u pkgbuild -i  # Switch to build account
 ```
 
-## Setting the LOCALBASE
+## Getting the Source
 
-The LOCALBASE path is Platform-Specific and use is conditional per scenario:
+For initial bootstrap, extract the stable archive into the pkgsrc-stable location. Optionally, extract pkgsrc-current as well. Tools will be installed as packages to maintain these source checkouts.
 
-* Add packages to an existing LOCALBASE
-```bash
-# Set or discover existing source branch and install prefix
-export OS=$(uname)
-case "$OS" in *BSD|Linux) pre=/usr ;; Darwin) pre=/opt ;; esac
-export pkgsrc="$pre/pkgsrc-stable"
-export pkgtag="pkgsrc-2025Q1" # manual set
-read pkgtag < <(sed 's/^T//' $pkgsrc/CVS/Tag) # tag discovery
-# OR: export pkgsrc="$pre/pkgsrc-current" pkgtag="HEAD"
+Although the extracted source archive is under 60MB, it contains 300K files and directories. Therefore, NFS is not recomended for management of this source tree.
 
-# Set an existing LOCALBASE and pkgrev
-read REPLY < <(sed "s,/bin/bmake,," < <(which bmake))
-[ -d "$REPLY" ] && { export LOCALBASE="$REPLY" PKG_DBDIR="$REPLY/pkgdb"
-export pkgrev=${LOCALBASE##*/}
+```
+https://cdn.netbsd.org/pub/pkgsrc/stable/pkgsrc.tar.xz
+https://cdn.netbsd.org/pub/pkgsrc/current/pkgsrc.tar.xz
 ```
 
-* New LOCALBASE bootstrap
+
+## Setup
+
+The LOCALBASE path is platform specific, and use is conditional per scenario:
+
+### New prefix environment
 ```bash
 # Generate new revision, timestamp, bootstrap identifier, and set LOCALBASE
-export OS=$(uname)
-case "$OS" in *BSD|Linux) pre=/usr ;; Darwin) pre=/opt ;; esac
+case "$(uname)" in *BSD|Linux) pre=/usr ;; Darwin) pre=/opt ;; esac
+pkgsrc="$pre/pkgsrc-stable"
 # determine current PKGSRC tag, eg pkgsrc-YYYYQN
 read pkgtag < <(awk '{m=$2-3;y=$1; if(m<=0){m+=12;y--} print "pkgsrc-" y "Q" (int((m-1)/3)+1)}' < <(date "+%Y %m"))
 # determine local timestamp based release name
 read -d '' now < <(awk -v nd=5 -v ts=$(date +%s) 'BEGIN{s=32-(4*nd);printf"%0"nd"x\n",int(ts/2^s)}') || true
+# OR: export pkgsrc="$pre/pkgsrc-current" pkgtag="HEAD"
 export pkgrev=${pkgtag/pkgsrc-/}-${now}-$(uname -msr | tr ' ' '_')
 export LOCALBASE="$pre/$pkgrev" PKG_DBDIR="$LOCALBASE/pkgdb"
 # Platform and build env
-read OS < <(uname)
-case "$OS" in *BSD|Linux)  pre=/usr ;; Darwin) pre=/opt ;; esac
-case "$OS" in *BSD|Darwin) tmp=/tmp ;; Linux)  tmp=/usr/shm ;; esac
+case "$(uname)" in Darwin) pre=/opt ;; *BSD|Linux) pre=/usr ;; esac
+case "$(uname)" in Darwin) tmp=/private/tmp ;; *BSD) tmp=/tmp ;; Linux) tmp=/usr/shm ;; esac
 export LOCALBASE="$pre/$pkgrev"
 export DISTDIR="$pre/dist"            # Shared upstream distributed source cache
-export PACKAGES="$pkgsrc/pkg-$pkgrev" # Binary package output separated by install prefix
+export PACKAGES="$pkgsrc/pkg-$pkgrev" # Binary package output by install prefix
 export OBJMACHINE="defined"           # Enable object directory separation, for cross-builds
 export WRKOBJDIR="$tmp/work-$pkgrev"  # Build workspace, for platform-specific performance
 ```
 
-# Bootstrap
+### Per-Platform Bootstrap
 
-## Darwin/macOS
+#### Darwin/macOS
 
 ```bash
 # Prerequisites and SDK detection
@@ -135,30 +131,21 @@ xcrun -v --show-sdk-version
 
 # CPU core detection - use physical cores
 read cores < <(sysctl -n hw.physicalcpu)
-
 # Prepare target directory with sudo for unprivileged bootstrap
 [ -d "$LOCALBASE" ] && { echo "ERROR: Target exists: '$LOCALBASE'" >&2 ; return 1 ;} \
   || sudo mv $(mktemp -d) $LOCALBASE
 
-# Update source if exists with CVS filtering
-[ -f "$pkgsrc/CVS/Tag" ] && (
-    echo "Updating PKGSRC source..."
-    cd "$pkgsrc"
-    read -d '' Tag < <(sed 's/^T//' < CVS/Tag) || true
-    { date ; pwd ; cvs -q upd -dP -r $Tag . 2>&1 ;} | sed '/\/work$/d' | tee -a ./cvs.log )
-
 # Bootstrap LOCALBASE
-cd "$pkgsrc/bootstrap"
-[ -d work ] && rm -rf work
-./bootstrap \
+( cd "$pkgsrc/bootstrap" || exit 1
+  ./bootstrap \
     --prefix "$LOCALBASE" \
     --workdir "$WRKOBJDIR" \
     --make-jobs $cores \
     --unprivileged \
-    --prefer-pkgsrc yes 2>&1 | tee -a "$pkgsrc/bootstrap.log"
+    --prefer-pkgsrc yes 2>&1 | tee -a "$pkgsrc/bootstrap.log" )
 ```
 
-## NetBSD
+#### NetBSD
 
 ```bash
 # CPU core detection
@@ -169,17 +156,16 @@ read cores < <(sysctl -n hw.ncpu)
   || sudo mv $(mktemp -d) $LOCALBASE
 
 # Bootstrap with NetBSD-specific settings
-cd "$pkgsrc/bootstrap"
-[ -d work ] && rm -rf work
-./bootstrap \
+( cd "$pkgsrc/bootstrap" || exit 1
+  ./bootstrap \
     --prefix "$LOCALBASE" \
     --workdir "$WRKOBJDIR" \
     --make-jobs $cores \
     --unprivileged \
-    --prefer-pkgsrc yes 2>&1 | tee -a "$pkgsrc/bootstrap.log"
+    --prefer-pkgsrc yes 2>&1 | tee -a "$pkgsrc/bootstrap.log" )
 ```
 
-## Linux
+#### Linux
 
 ```bash
 # CPU core detection
@@ -190,33 +176,52 @@ read cores < <(nproc)
   || sudo mv $(mktemp -d) $LOCALBASE
 
 # Ensure /dev/shm workspace exists
-[ -d "$WRKOBJDIR" ] || mkdir -p "$WRKOBJDIR" || return 1
+[ -d "$WRKOBJDIR" ] || return 1
 
 # Bootstrap with Linux-specific optimizations
-cd "$pkgsrc/bootstrap"
-[ -d work ] && rm -rf work
-./bootstrap \
+( cd "$pkgsrc/bootstrap"
+  ./bootstrap \
     --prefix "$LOCALBASE" \
     --workdir "$WRKOBJDIR" \
     --make-jobs $cores \
     --unprivileged \
-    --prefer-pkgsrc yes 2>&1 | tee -a "$pkgsrc/bootstrap.log"
+    --prefer-pkgsrc yes 2>&1 | tee -a "$pkgsrc/bootstrap.log" )
 ```
 
+### All Platforms
 
-# Security Configuration
-(incomplete section prototype placeholder)
-
-## Hardened mk.conf
-After bootstrap, append to `$LOCALBASE/etc/mk.conf`:
+Preserve the bootstrap settings, and additional configuration, for package builds.
 
 ```make
-# Build paths derived from LOCALBASE
+cat >>$LOCALBASE/etc/mk.conf <<eof
+# PKGSRC bootstrap environment
 DISTDIR=    $DISTDIR
 WRKOBJDIR=  $WRKOBJDIR
 PACKAGES=   $PACKAGES
 OBJMACHINE= defined
+MAKE_JOBS=  $cores
 
+# License acceptance
+ACCEPTABLE_LICENSES+= gnu-agpl-v3
+ACCEPTABLE_LICENSES+= esdl-license
+
+# Build optimization
+PKG_DEVELOPER?=         yes
+PKG_DEFAULT_OPTIONS+=   -x11        # Disable X11 by default
+
+# Package-specific options
+PKG_OPTIONS.ffmpeg6+=   -x11
+PKG_OPTIONS.SDL2+=      -x11
+
+eof
+```
+
+### Security Configuration
+
+Amend security features to the package build configuration.
+
+```make
+cat >>$LOCALBASE/etc/mk.conf <<eof
 # Security and vulnerability management
 ALLOW_VULNERABLE_PACKAGES=  NO
 
@@ -231,35 +236,45 @@ PKGSRC_USE_SSP?=            all     # Stack protector (default: strong)
 # When same source built with same compiler/flags/environment
 # Benefits: Security verification, supply chain integrity, trust transparency
 
-# License acceptance
-ACCEPTABLE_LICENSES+= gnu-agpl-v3
-ACCEPTABLE_LICENSES+= esdl-license
-
-# Build optimization
-MAKE_JOBS=              $cores      # Platform-detected cores
-PKG_DEVELOPER?=         yes
-PKG_DEFAULT_OPTIONS+=   -x11        # Disable X11 by default
-
-# Package-specific security options
-PKG_OPTIONS.ffmpeg6+=   -x11
-PKG_OPTIONS.SDL2+=      -x11
+eof
 ```
 
-# Vulnerability Management
-(incomplete section prototype placeholder)
+
+# Vulnerability Research
+
+# Update vulnerability database before any package operations
+# optionally configure -s to check the signature
+$LOCALBASE/sbin/pkg_admin -K $LOCALBASE/pkgdb fetch-pkg-vulnerabilities -u
+
+PKGSRC won't build packages with vulnerabilities
+
+
+$pkgsrc/catagory/package $LOCALBASE/bin/bmake show-depends-dirs
+
+cd /opt/pkgsrc-stable/category/package
+
+# Show all recursive dependencies (build + runtime)
+bmake show-depends-dirs          # Shows directory paths
+bmake show-all-depends           # Shows package names
+
+# More detailed dependency info
+bmake show-depends               # Direct dependencies only
+bmake show-build-depends         # Build-time dependencies
+bmake show-run-depends           # Runtime dependencies
+
 
 ## Build-Time Vulnerability Tracking
+Verify packages prior to build
 ```
-# Update vulnerability database before any package operations
-$LOCALBASE/sbin/pkg_admin -K $LOCALBASE/pkgdb fetch-pkg-vulnerabilities
-
-# Verify packages during build
-cd $pkgsrc/category/package
-bmake audit-packages      # Check for known vulnerabilities
+$LOCALBASE/sbin/pkg_admin -K $LOCALBASE/pkgdb audit
 ```
 
 ## Runtime Vulnerability Monitoring
-```
+Check all installed packages for vulnerabilities.
+
+$LOCALBASE/sbin/pkg_admin -K $LOCALBASE/pkgdb audit
+
+
 # Daily vulnerability report generation
 cat > /usr/local/bin/pkgsrc-vuln-report << 'EOF'
 #!/usr/bin/env bash
@@ -284,7 +299,43 @@ chmod +x /usr/local/bin/pkgsrc-vuln-report
 
 # Schedule daily execution
 echo "0 6 * * * /usr/local/bin/pkgsrc-vuln-report" | crontab -
+
+
+
+## Add packages to an existing LOCALBASE
+```bash
+# Set or discover existing source branch and install prefix
+case "$(uname)" in *BSD|Linux) pre=/usr ;; Darwin) pre=/opt ;; esac
+export pkgsrc="$pre/pkgsrc-stable"
+export pkgtag="pkgsrc-2025Q1" # manual set
+read pkgtag < <(sed 's/^T//' $pkgsrc/CVS/Tag) # tag discovery
+# OR: export pkgsrc="$pre/pkgsrc-current" pkgtag="HEAD"
+
+# Set an existing LOCALBASE and pkgrev
+read REPLY < <(sed "s,/bin/bmake,," < <(which bmake))
+[ -d "$REPLY" ] && { export LOCALBASE="$REPLY" PKG_DBDIR="$REPLY/pkgdb"
+export pkgrev=${LOCALBASE##*/}
 ```
+
+## Updating Source
+
+After successful bootstrap, the source tree is maintained by cvs commands from the devel/scmcvs package.
+
+```
+case "$(uname)" in *BSD|Linux) pre=/usr ;; Darwin) pre=/opt ;; esac
+pkgsrc="$pre/pkgsrc-stable"
+# Update stable checkout
+[ -f "$pkgsrc/CVS/Tag" ] \
+  && { read pkgtag < <(sed 's/^T//' "$pkgsrc/CVS/Tag")
+       echo "This may take a few minutes before output..."
+       ( cd $pkgsrc ; date ; pwd
+         cvs -q upd -dP -r $pkgtag . 2>&1 \
+         | sed -l -e '/\/work$/d' -e "s/^/$pkgtag /" \
+         | tee -a ./cvs.log ) ;} \
+  || { echo "pkgtag not found: no '$pkgsrc/CVS/Tag'" 1>&2 ; return 1 ;}
+# Update current checkout using approprate $pkgsrc
+```
+
 
 # Package Management Workflow
 (incomplete section prototype placeholder)
@@ -371,22 +422,6 @@ pkgin -y in $PKGNAME && {
 }
 ```
 
-# Source Management
-(incomplete section prototype placeholder)
-
-first get and extract the archive, and update it
-  - https://cdn.netbsd.org/pub/pkgsrc/stable/pkgsrc.tar.xz
-  - https://cdn.netbsd.org/pub/pkgsrc/current/pkgsrc.tar.xz
-
-## CVS Operations with Filtering
-
-```
-# Update existing checkout with work directory filtering
-cd "$pkgsrc"
-read -d '' Tag < <(sed 's/^T//' < CVS/Tag) || true
-echo "Updating to $Tag..."
-{ date ; pwd ; cvs -q upd -dP -r $Tag . 2>&1 ;} | sed '/\/work$/d' | tee -a ./cvs.log
-```
 
 # Package Integrity Verification
 (incomplete section prototype placeholder)
