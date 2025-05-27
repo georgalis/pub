@@ -1,14 +1,23 @@
 # Multi-Release PKGSRC Guide
 
-This guide provides a parameterized PKGSRC framework supporting scientific computing requirements across Darwin, NetBSD, and Linux platforms. The system maintains multiple concurrent package release environments with unique LOCALBASE paths, security hardening, vulnerability tracking, and certification management.
+This guide provides a parameterized PKGSRC framework supporting scientific
+computing requirements across Darwin, NetBSD, and Linux platforms. The system
+maintains multiple concurrent package release environments with unique
+LOCALBASE paths, security hardening, vulnerability tracking, and certification
+management.
 
-PKGSRC provides a standard for managing release cycles, dependencies, updates, and building packages across multiple OS. The default bootstrap guide is intended for general use, while this Multi-Release guide leverages the available parameters for sites with complex requirements, such as retention of specific package versions, while newer release cycles are installed, under their own prefix.
+PKGSRC provides a standard for managing release cycles, dependencies, updates,
+and building packages across multiple OS. The default bootstrap guide is
+intended for general use, while this Multi-Release guide leverages the
+available parameters for sites with complex requirements, such as retention
+of specific package versions, while newer release cycles are installed, under
+their own prefix.
 
 **Key Features:**
 - Multi-platform bootstrap (Darwin/macOS, NetBSD, Linux)
-- Quartly release cycles, with rapid security patching
+- Quarterly release cycles, with rapid security patching
 - Concurrent current/stable source tags, and local patch management
-- Unambigious, version encoded release/dependancy metadata paths
+- Unambiguously, version encoded release/dependency metadata paths
 - Security-hardened configurations with runtime vulnerability scanning
 - Package certification, lifecycle management, and integrity verification
 - Cross-compilation support with build toolchain integration
@@ -33,11 +42,19 @@ PKGSRC provides a standard for managing release cycles, dependencies, updates, a
 
 ## Runtime Environment
 
-Typically, the user selects their desired PKGSRC release from avaiable installed LOCALBASE prefix; they configure the release availability by setting their PATH varable. It is possible to run a single binary (with respective dependancies) from an older installed release, by executing the full path to that binary.
+Typically, the user selects their desired PKGSRC release from available
+installed LOCALBASE prefix; they configure the release availability by setting
+their PATH variable. It is possible to run a single binary (with respective
+dependencies) from an older installed release, by executing the full path to
+that binary.
 
-In this PKGSRC framework, selecting the path is a manual user step, to ensure control over the specific software versions for the workflow. Multiple release prefix may coexist, and expired paths are only removed when they are no longer required at the site.
+In this PKGSRC framework, selecting the path is a manual user step, to ensure
+control over the specific software versions for the workflow. Multiple release
+prefix may coexist, and expired paths are only removed when they are no longer
+required at the site.
 
-Administrators may choose to symlink a universal path to their newest installed release, for users desiring only the newest site version.
+Administrators may choose to symlink a universal path to their newest
+installed release, for users desiring only the newest site version.
 
 ```bash
 # Detect platform and set path within user profile
@@ -63,17 +80,19 @@ When setting build environment, ensure source tag ($pkgtag) matches the ($LOCALB
   * after bootstrap use `read SOME_VAR_NAME < <(pkg_admin config-var SOME_VAR_NAME)`
   * to bootstrap a new release, first set $pkgtag, update sources, and create a new $LOCALBASE
 
-# Quick Start Setup
+# Quick Start
 
-LOCALBASE selects to the installed release prefix and underpins all other parameters used by build tools. It is coded into package binaries, for runtime environment configuration, eg:
+LOCALBASE selects to the installed release prefix and underpins all other
+parameters used by build tools. It is coded into package binaries, for runtime
+environment configuration, eg:
 
 ```bash
-$LOCALBASE/etc/mk.conf                    # compile options file produced by bootstrap-pkgsrc
-$LOCALBASE/etc/pkgin/repositories.conf    # package repositories list, for binary install and updates
-$LOCALBASE/etc/openssl/openssl.cnf        # OpenSSL package configuration file
+$LOCALBASE/etc/mk.conf                 # compile options file produced by bootstrap-pkgsrc
+$LOCALBASE/etc/pkgin/repositories.conf # package repositories list, for binary install and updates
+$LOCALBASE/etc/openssl/openssl.cnf     # OpenSSL package configuration file
 ```
 
-## Build Account Setup
+## Build Account
 
 Packages are built from an unprivileged dedicated user account:
 ```bash
@@ -85,9 +104,13 @@ sudo -u pkgbuild -i  # Switch to build account
 
 ## Getting the Source
 
-For initial bootstrap, extract the stable archive into the pkgsrc-stable location. Optionally, extract pkgsrc-current as well. Tools will be installed as packages to maintain these source checkouts.
+For initial bootstrap, extract the stable archive into the pkgsrc-stable
+location. Optionally, extract pkgsrc-current as well. Tools will be
+installed as packages to maintain these source checkouts.
 
-Although the extracted source archive is under 60MB, it contains 300K files and directories. Therefore, NFS is not recomended for management of this source tree.
+Although the extracted source archive is under 60MB, it contains 300K
+files and directories. Therefore, NFS is not recommended for management
+of this source tree.
 
 ```
 https://cdn.netbsd.org/pub/pkgsrc/stable/pkgsrc.tar.xz
@@ -97,9 +120,9 @@ https://cdn.netbsd.org/pub/pkgsrc/current/pkgsrc.tar.xz
 
 ## Setup
 
-The LOCALBASE path is platform specific, and use is conditional per scenario:
+The LOCALBASE path is platform specific, and its use is conditional, per scenario:
 
-### New prefix environment
+### New Prefix Environment
 ```bash
 # Generate new revision, timestamp, bootstrap identifier, and set LOCALBASE
 case "$(uname)" in *BSD|Linux) pre=/usr ;; Darwin) pre=/opt ;; esac
@@ -185,7 +208,7 @@ read cores < <(nproc)
 [ -d "$WRKOBJDIR" ] || return 1
 
 # Bootstrap with Linux-specific optimizations
-( cd "$pkgsrc/bootstrap"
+( cd "$pkgsrc/bootstrap" || exit 1
   ./bootstrap \
     --prefix "$LOCALBASE" \
     --workdir "$WRKOBJDIR" \
@@ -195,7 +218,7 @@ read cores < <(nproc)
     --prefer-pkgsrc yes 2>&1 | tee -a "$pkgsrc/bootstrap.log" )
 ```
 
-### All Platforms
+### Post Bootstrap
 
 Preserve the bootstrap settings, and additional configuration, for package builds.
 
@@ -246,17 +269,22 @@ PKGSRC_USE_SSP?=            all     # Stack protector (default: strong)
 eof
 ```
 
-# Site packages
+# Site Packages
 
-Once the LOCALBASE is bootstrapped, the unprivleged user cat maintain the source tree
-and create packages for local install, or administrative install for other users, on other hosts.
+Once the LOCALBASE is bootstrapped, the unprivleged build user can maintain
+the source tree and create packages for local install, or administrative
+install on other hosts.
 
-There are several ways to do this, this approach creates a package for the pkgin tool,
-and installs it traditionally. Then, the scmcvs package (for updating the pkgsrc tree) is build,
-and installed with pkgin.
+There are several ways to do this, this approach creates a pkgin tool package,
+installs it (with the package-install makefile target) and configures
+traditionally.  An archive of the bootstrap is captured for non-build hosts.
+Then, the scmcvs package (for updating the pkgsrc tree) is built and installed
+with pkgin.
 
-First set approprate values for pkgsrc and configure the unprivileged build user to make use of the new paths in LOCALBASE
-(in this example, we use path_prepend to modify PATH without creating duplicate entries).
+First, set approprate values for pkgsrc and configure the unprivileged build
+user to make use of the new paths in LOCALBASE (in this example, a private
+function path_prepend is used to modify the user PATH, without creating
+duplicate entries).
 
 ```bash
 # example configuration
@@ -266,7 +294,9 @@ test -d /opt/2025Q1-6834d-Darwin_22.6.0_arm64/sbin && path_prepend "$_"
 read LOCALBASE < <(sed "s,/bin/bmake,," < <(which bmake)) ; export LOCALBASE
 ```
 
-Then as the build user, deploy pkgin, configure and update the package summary.
+Then as the build user, with correct environment,
+deploy pkgin, and configure the package repository.
+
 ```bash
 cd $pkgsrc/pkgtools/pkgin && bmake package-install \
   && read PACKAGES < <(bmake show-var VARNAME=PACKAGES) \
@@ -274,17 +304,20 @@ cd $pkgsrc/pkgtools/pkgin && bmake package-install \
 ```
 
 ## Release Archive
-Here at the midpoint of bootstraping our LOCALBASE for package builds,
-is the best oppurtunity to sutibly archive the prefix and base tools
-as framework for user install of the arbitrary packages, we will build.
+
+Here, at the midpoint of bootstrapping our LOCALBASE for package binary
+builds, is the best opportunity to archive the release prefix, and base tools
+as framework of the arbitrary binary packages, we will build for other hosts.
 
 ```bash
-# Create distribution tarball.
+# Create distribution tarball
 cd / && tar czf $PACKAGES/${LOCALBASE##*/}.tgz $LOCALBASE
 ```
 
 ## Continue Package Build
-Capture package summary database.
+
+Create a package summary database.
+
 ```bash
 cd $pkgsrc/pkgtools/pkg_summary-utils && bmake package-install \
   && pkg_update_summary -r $PACKAGES/All/pkg_summary.gz $PACKAGES/All
@@ -292,22 +325,31 @@ cd $pkgsrc/pkgtools/pkg_summary-utils && bmake package-install \
 
 Now, build the scmcvs package and install it locally with pkgin.
 ```bash
-# this package has an odd name to avoide colision with speciap
-# purpose ./CVS directories on case insensitive filesystems.
+# this package has an odd name to avoid colision with the special
+# purpose ./CVS directories, on case insensitive filesystems
+# the actual package name is cvs
 cd $pkgsrc/devel/scmcvs && bmake package \
   && pkg_update_summary -r $PACKAGES/All/pkg_summary.gz $PACKAGES/All \
   && pkgin install cvs
 ```
 
-After successful bootstrap and scmcvs deployment (provides cvs),
-the pkgsrc tree can be maintained, packages built and distributed
-for user or administrator installs, according to site requirements.
+After successful bootstrap and cvs (scmcvs) deployment, the pkgsrc tree can
+be maintained, packages built and distributed for user, or administrator
+installs, according to site requirements.
+
+For example, users may be granted sufficient sudo permissions to run pkgin
+commands as the unprivileged build user, and install packages.
 
 ## Updating PKGSRC Source
 
-The pkgsrc tree is maintained by cvs commands from the devel/scmcvs package.
+The pkgsrc tree tracks software package sources, stable revisions, security
+advisories, digital signatures, and the security and integration patches
+required to align supported software projects with the pkgsrc framework.
 
-```
+The local branch of the PKGSRC tree is maintained from the main pkgsrc
+repository, with cvs commands.
+
+```bash
 # Update the stable checkout
 [ -f "$pkgsrc/CVS/Tag" ] \
   && { read pkgtag < <(sed 's/^T//' "$pkgsrc/CVS/Tag")
@@ -316,26 +358,27 @@ The pkgsrc tree is maintained by cvs commands from the devel/scmcvs package.
          cvs -q upd -dP -r $pkgtag . 2>&1 \
          | sed -l -e "s/^/$pkgtag /" | tee -a ./cvs.log ) ;} \
   || { echo "pkgtag not found: no '$pkgsrc/CVS/Tag'" 1>&2 ; return 1 ;}
-# Update current checkout using approprate $pkgsrc
+# Update current checkout using appropriate $pkgsrc
 ```
 
 ## Site Packages
 
-A system to trace and map functions, applications, or user requirements
-with software packages can be developed for specific needs. The simplest
-approach is to colect lists of packages, and build them with each quartly
-release bootstrap. These can be incremently maintaind with security patches.
-Old release bootstraps are moved away (or deleted) when they are no longer
-used, after their replacements have passed acceptance tests. According to
-site needs.
+A system to trace and map functions, applications, or user requirements to
+PKGSRC packages can be developed for specific needs. The simplest approach
+is to collect lists of package requirements, and build them with each quarterly
+release bootstrap. These can be incrementally maintained with security patches.
+
+According to site needs, old release bootstraps are moved away (or deleted)
+when they are no longer used, and after their replacements have passed
+acceptance tests.
 
 ### Minimal List
 
 These commands build and install a list of packages with some logging error checking.
-This will result in in package build dependancy installs, however the build dependancies
+This will result in in package build dependency installs, however the build dependencies
 are not required on hosts installing binary packages. This example is crafted so
 After the builds are complete `pkgin autoremove` may be used to remove the packages
-not speecifically requested with pkgin, the build dependancies.
+not specifically requested with pkgin, the build dependencies.
 
 ```bash
 cd $pkgsrc/pkgtools/pkgin \
@@ -505,7 +548,7 @@ pkgin update
 
 ## Package Installation with Certification Tracking
 
-```
+```bash
 # Build and install with certification logging
 cd $pkgsrc/category/package
 read -d '' pkgtag < <(sed -e 's/^./pkg/' -e 's/pkgsrc//' -e 's/HEAD/-HEAD/' < CVS/Tag) || true
@@ -681,6 +724,7 @@ for release in /usr/pkg-*; do
 ```
 
 # Best Practices
+
 * Release Naming: Use consistent YYYYQN-nnnn format (e.g., 2024Q1-0001)
 * User Training: Provide use-pkgsrc script and documentation
 * Monitoring: Regularly check repository connectivity and disk usage
