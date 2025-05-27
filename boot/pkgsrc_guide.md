@@ -376,18 +376,19 @@ acceptance tests.
 
 ### Minimal List
 
-These commands build and install a list of packages with some logging error checking.
-This will result in in package build dependency installs, however the build dependencies
-are not required on hosts installing binary packages. This example is crafted so
-After the builds are complete `pkgin autoremove` may be used to remove the packages
-not specifically requested with pkgin, the build dependencies.
+These commands build and install a list of packages with some logging and
+error checking.  This will result in package build dependency installs,
+however the build dependencies are not required on hosts installing the binary
+packages. This example is crafted so after the builds are complete, `pkgin
+autoremove` may be used to remove the packages not specifically requested with
+pkgin (the build dependencies).
 
 ```bash
 cd $pkgsrc/pkgtools/pkgin \
   && read PACKAGES < <(bmake show-var VARNAME=PACKAGES) \
   && pkg_admin fetch-pkg-vulnerabilities -u \
   && while read a ; do { cd $pkgsrc/$a \
-    && bmake clean-depends package \
+    && bmake clean clean-depends package \
     && read pkgtag < <(sed 's/^T//' < CVS/Tag) \
     && read PKGNAME < <(bmake show-var VARNAME=PKGNAME) \
     && pkg_update_summary -r $PACKAGES/All/pkg_summary.gz $PACKAGES/All \
@@ -429,11 +430,43 @@ eof
 
 # Vulnerability Research
 
+While LLMs have helped build this guide, the Vulnerability Research
+solutions are mostly wrong. Various subsections and code fragments
+are included in the markdown source, as comments, so they are not
+published with the remaining reviewed guide content.
+
+
+<!--
+(incomplete section prototype placeholder)
+
 # Update vulnerability database before any package operations
 # optionally configure -s to check the signature
 $LOCALBASE/sbin/pkg_admin -K $LOCALBASE/pkgdb fetch-pkg-vulnerabilities -u
 
 PKGSRC won't build packages with vulnerabilities
+
+
+```
+cd /opt/pkgsrc-stable/category/package
+
+# Show all recursive dependencies (build + runtime)
+bmake show-depends-dirs          # Shows directory paths
+bmake show-all-depends           # Shows package names
+
+# More detailed dependency info
+bmake show-depends               # Direct dependencies only
+bmake show-build-depends         # Build-time dependencies
+bmake show-run-depends           # Runtime dependencies
+
+# Show conditional dependencies too
+bmake show-var VARNAME=BUILD_DEPENDS
+bmake show-var VARNAME=DEPENDS  
+bmake show-var VARNAME=TEST_DEPENDS
+
+# Check platform-specific probes
+bmake show-var VARNAME=OPSYS
+bmake show-var VARNAME=MACHINE_ARCH
+```
 
 
 $pkgsrc/catagory/package $LOCALBASE/bin/bmake show-depends-dirs
@@ -531,6 +564,7 @@ $LOCALBASE/sbin/pkg_admin -K $LOCALBASE/pkgdb fetch-pkg-vulnerabilities
 ```
 
 
+
 ## Log Locations
 * Package installation logs: /usr/pkg-YYYYQN-nnnn/var/db/pkg/pkgin.log
 * Repository update logs: /usr/pkg-YYYYQN-nnnn/var/db/pkgin/cache/
@@ -547,6 +581,7 @@ Update package database
 ```
 pkgin update
 ```
+
 
 ## Package Installation with Certification Tracking
 
@@ -724,6 +759,7 @@ for release in /usr/pkg-*; do
                 $release/sbin/pkg_info | wc -l
                 done
 ```
+--->
 
 # Best Practices
 
