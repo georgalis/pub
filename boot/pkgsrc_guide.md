@@ -305,9 +305,10 @@ cd $pkgsrc/pkgtools/pkgin && bmake package-install \
 
 ## Release Archive
 
-Here, at the midpoint of bootstrapping our LOCALBASE for package binary
-builds, is the best opportunity to archive the release prefix, and base tools
-as framework of the arbitrary binary packages, we will build for other hosts.
+Here, at the midpoint of bootstrapping our LOCALBASE for binary package
+builds, is the best opportunity to archive the release prefix (and package
+tools) as a framework for the arbitrary binary packages installs, on other
+hosts.
 
 ```bash
 # Create distribution tarball
@@ -338,7 +339,8 @@ be maintained, packages built and distributed for user, or administrator
 installs, according to site requirements.
 
 For example, users may be granted sufficient sudo permissions to run pkgin
-commands as the unprivileged build user, and install packages.
+commands as the unprivileged build user, to install packages from
+site aproved binary package repositories.
 
 ## Updating PKGSRC Source
 
