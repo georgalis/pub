@@ -58,7 +58,9 @@ When setting build environment, ensure source tag ($pkgtag) matches the ($LOCALB
   * for package build, use `which bmake` to determine primary $LOCALBASE from $PATH
   * discover $pkgtag from $pkgsrc checkout, prior to source update
   * set build and runtime defaults in $LOCALBASE/etc
+  <!-- # read PKG_DBDIR < <($LOCALBASE/bin/bmake -f- show-var VARNAME=PKG_DBDIR <<< '.include "../../mk/bsd.prefs.mk"') -->
   * use `bmake show-var VARNAME=SOME_VAR_NAME` to check configuration
+  * after bootstrap use `read SOME_VAR_NAME < <(pkg_admin config-var SOME_VAR_NAME)`
   * to bootstrap a new release, first set $pkgtag, update sources, and create a new $LOCALBASE
 
 # Quick Start Setup
@@ -105,7 +107,7 @@ pkgsrc="$pre/pkgsrc-stable"
 # determine current PKGSRC tag, eg pkgsrc-YYYYQN
 read pkgtag < <(awk '{m=$2-3;y=$1; if(m<=0){m+=12;y--} print "pkgsrc-" y "Q" (int((m-1)/3)+1)}' < <(date "+%Y %m"))
 # determine local timestamp based release name
-read -d '' now < <(awk -v nd=5 -v ts=$(date +%s) 'BEGIN{s=32-(4*nd);printf"%0"nd"x\n",int(ts/2^s)}') || true
+read now < <(awk -v nd=5 -v ts=$(date +%s) 'BEGIN{s=32-(4*nd);printf"%0"nd"x\n",int(ts/2^s)}')
 # OR: export pkgsrc="$pre/pkgsrc-current" pkgtag="HEAD"
 export pkgrev=${pkgtag/pkgsrc-/}-${now}-$(uname -msr | tr ' ' '_')
 export LOCALBASE="$pre/$pkgrev" PKG_DBDIR="$LOCALBASE/pkgdb"
@@ -114,10 +116,12 @@ case "$(uname)" in Darwin) pre=/opt ;; *BSD|Linux) pre=/usr ;; esac
 case "$(uname)" in Darwin) tmp=/private/tmp ;; *BSD) tmp=/tmp ;; Linux) tmp=/usr/shm ;; esac
 export LOCALBASE="$pre/$pkgrev"
 export DISTDIR="$pre/dist"            # Shared upstream distributed source cache
-export PACKAGES="$pkgsrc/pkg-$pkgrev" # Binary package output by install prefix
 export OBJMACHINE="defined"           # Enable object directory separation, for cross-builds
 export WRKOBJDIR="$tmp/work-$pkgrev"  # Build workspace, for platform-specific performance
+export PACKAGES="$pkgsrc/pkg-$pkgrev" # Binary package output by install prefix
+export PKG_DBDIR=$LOCALBASE/pkgdb     # DB directory for local installed packages
 ```
+
 
 ### Per-Platform Bootstrap
 
@@ -140,6 +144,7 @@ read cores < <(sysctl -n hw.physicalcpu)
   ./bootstrap \
     --prefix "$LOCALBASE" \
     --workdir "$WRKOBJDIR" \
+    --pkgdbdir $PKG_DBDIR \
     --make-jobs $cores \
     --unprivileged \
     --prefer-pkgsrc yes 2>&1 | tee -a "$pkgsrc/bootstrap.log" )
@@ -160,6 +165,7 @@ read cores < <(sysctl -n hw.ncpu)
   ./bootstrap \
     --prefix "$LOCALBASE" \
     --workdir "$WRKOBJDIR" \
+    --pkgdbdir $PKG_DBDIR \
     --make-jobs $cores \
     --unprivileged \
     --prefer-pkgsrc yes 2>&1 | tee -a "$pkgsrc/bootstrap.log" )
@@ -183,6 +189,7 @@ read cores < <(nproc)
   ./bootstrap \
     --prefix "$LOCALBASE" \
     --workdir "$WRKOBJDIR" \
+    --pkgdbdir $PKG_DBDIR \
     --make-jobs $cores \
     --unprivileged \
     --prefer-pkgsrc yes 2>&1 | tee -a "$pkgsrc/bootstrap.log" )
@@ -239,6 +246,141 @@ PKGSRC_USE_SSP?=            all     # Stack protector (default: strong)
 eof
 ```
 
+# Site packages
+
+Once the LOCALBASE is bootstrapped, the unprivleged user cat maintain the source tree
+and create packages for local install, or administrative install for other users, on other hosts.
+
+There are several ways to do this, this approach creates a package for the pkgin tool,
+and installs it traditionally. Then, the scmcvs package (for updating the pkgsrc tree) is build,
+and installed with pkgin.
+
+First set approprate values for pkgsrc and configure the unprivileged build user to make use of the new paths in LOCALBASE
+(in this example, we use path_prepend to modify PATH without creating duplicate entries).
+
+```bash
+# example configuration
+export pkgsrc="/opt/pkgsrc-stable"
+test -d /opt/2025Q1-6834d-Darwin_22.6.0_arm64/bin  && path_prepend "$_"
+test -d /opt/2025Q1-6834d-Darwin_22.6.0_arm64/sbin && path_prepend "$_"
+read LOCALBASE < <(sed "s,/bin/bmake,," < <(which bmake)) ; export LOCALBASE
+```
+
+Then as the build user, deploy pkgin, configure and update the package summary.
+```bash
+cd $pkgsrc/pkgtools/pkgin && bmake package-install \
+  && read PACKAGES < <(bmake show-var VARNAME=PACKAGES) \
+  && echo "file://$PACKAGES/ALL" >>$LOCALBASE/etc/pkgin/repositories.conf
+```
+
+## Release Archive
+Here at the midpoint of bootstraping our LOCALBASE for package builds,
+is the best oppurtunity to sutibly archive the prefix and base tools
+as framework for user install of the arbitrary packages, we will build.
+
+```bash
+# Create distribution tarball.
+cd / && tar czf $PACKAGES/${LOCALBASE##*/}.tgz $LOCALBASE
+```
+
+## Continue Package Build
+Capture package summary database.
+```bash
+cd $pkgsrc/pkgtools/pkg_summary-utils && bmake package-install \
+  && pkg_update_summary -r $PACKAGES/All/pkg_summary.gz $PACKAGES/All
+```
+
+Now, build the scmcvs package and install it locally with pkgin.
+```bash
+# this package has an odd name to avoide colision with speciap
+# purpose ./CVS directories on case insensitive filesystems.
+cd $pkgsrc/devel/scmcvs && bmake package \
+  && pkg_update_summary -r $PACKAGES/All/pkg_summary.gz $PACKAGES/All \
+  && pkgin install cvs
+```
+
+After successful bootstrap and scmcvs deployment (provides cvs),
+the pkgsrc tree can be maintained, packages built and distributed
+for user or administrator installs, according to site requirements.
+
+## Updating PKGSRC Source
+
+The pkgsrc tree is maintained by cvs commands from the devel/scmcvs package.
+
+```
+# Update the stable checkout
+[ -f "$pkgsrc/CVS/Tag" ] \
+  && { read pkgtag < <(sed 's/^T//' "$pkgsrc/CVS/Tag")
+       echo "This may take a few minutes before output..."
+       ( cd $pkgsrc ; date ; pwd ; echo $pkgtag
+         cvs -q upd -dP -r $pkgtag . 2>&1 \
+         | sed -l -e "s/^/$pkgtag /" | tee -a ./cvs.log ) ;} \
+  || { echo "pkgtag not found: no '$pkgsrc/CVS/Tag'" 1>&2 ; return 1 ;}
+# Update current checkout using approprate $pkgsrc
+```
+
+## Site Packages
+
+A system to trace and map functions, applications, or user requirements
+with software packages can be developed for specific needs. The simplest
+approach is to colect lists of packages, and build them with each quartly
+release bootstrap. These can be incremently maintaind with security patches.
+Old release bootstraps are moved away (or deleted) when they are no longer
+used, after their replacements have passed acceptance tests. According to
+site needs.
+
+### Minimal List
+
+These commands build and install a list of packages with some logging error checking.
+This will result in in package build dependancy installs, however the build dependancies
+are not required on hosts installing binary packages. This example is crafted so
+After the builds are complete `pkgin autoremove` may be used to remove the packages
+not speecifically requested with pkgin, the build dependancies.
+
+```bash
+cd $pkgsrc/pkgtools/pkgin \
+  && read PACKAGES < <(bmake show-var VARNAME=PACKAGES) \
+  && pkg_admin fetch-pkg-vulnerabilities -u \
+  && while read a ; do { cd $pkgsrc/$a \
+    && bmake clean-depends package \
+    && read pkgtag < <(sed 's/^T//' < CVS/Tag) \
+    && read PKGNAME < <(bmake show-var VARNAME=PKGNAME) \
+    && pkg_update_summary -r $PACKAGES/All/pkg_summary.gz $PACKAGES/All \
+    && { pkgin -y in $PKGNAME \
+         && { date +%Y%m%d_%H%M%S ; echo "pass PKGNAME=$PKGNAME pkgtag=$pkgtag LOCALBASE=$LOCALBASE PWD=$PWD" >>$pkgsrc/pkg.log ;} \
+         || { date +%Y%m%d_%H%M%S ; echo "fail PKGNAME=$PKGNAME pkgtag=$pkgtag LOCALBASE=$LOCALBASE PWD=$PWD" >>$pkgsrc/pkg.log ; break 1 ;}
+       } ;}
+    done <<eof
+      misc/tmux
+      shells/bash
+      editors/vim
+      devel/jq
+      textproc/yq
+      misc/colorls
+      sysutils/file
+      sysutils/htop
+      sysutils/pstree
+      textproc/aspell-en
+      archivers/lz4json
+      devel/openrcs
+      textproc/par
+      lang/lua54
+      devel/git
+      net/djbdnscurve6
+      sysutils/daemontools
+      sysutils/runit
+      net/rsync
+      net/wget
+      www/curl
+      www/w3m
+      net/fping
+      net/ipcalc
+      net/tcpdump
+      net/speedtest-cli
+      net/mtr
+eof
+```
+
 
 # Vulnerability Research
 
@@ -281,6 +423,8 @@ cat > /usr/local/bin/pkgsrc-vuln-report << 'EOF'
 set -euo pipefail
 
 read LOCALBASE < <(which bmake | sed 's,/bin/bmake,,')
+# pkg_admin config-var PKG_DBDIR
+read PKG_DBDIR < <(pkg_admin config-var PKG_DBDIR)
 read PKG_DBDIR < <($LOCALBASE/bin/bmake -f- show-var VARNAME=PKG_DBDIR <<< '.include "../../mk/bsd.prefs.mk"')
 
 # Update vulnerability database
@@ -317,25 +461,6 @@ read REPLY < <(sed "s,/bin/bmake,," < <(which bmake))
 export pkgrev=${LOCALBASE##*/}
 ```
 
-## Updating Source
-
-After successful bootstrap, the source tree is maintained by cvs commands from the devel/scmcvs package.
-
-```
-case "$(uname)" in *BSD|Linux) pre=/usr ;; Darwin) pre=/opt ;; esac
-pkgsrc="$pre/pkgsrc-stable"
-# Update stable checkout
-[ -f "$pkgsrc/CVS/Tag" ] \
-  && { read pkgtag < <(sed 's/^T//' "$pkgsrc/CVS/Tag")
-       echo "This may take a few minutes before output..."
-       ( cd $pkgsrc ; date ; pwd
-         cvs -q upd -dP -r $pkgtag . 2>&1 \
-         | sed -l -e '/\/work$/d' -e "s/^/$pkgtag /" \
-         | tee -a ./cvs.log ) ;} \
-  || { echo "pkgtag not found: no '$pkgsrc/CVS/Tag'" 1>&2 ; return 1 ;}
-# Update current checkout using approprate $pkgsrc
-```
-
 
 # Package Management Workflow
 (incomplete section prototype placeholder)
@@ -353,28 +478,13 @@ cd $pkgsrc/pkgtools/pkg_summary-utils && bmake clean package package-install
 cd $pkgsrc/pkgtools/pkgin && bmake clean package package-install
 
 # Configure package repository
-read -d '' PACKAGES < <(bmake show-var VARNAME=PACKAGES) || true
+read PACKAGES < <(pkg_admin config-var PACKAGES)
 echo "file://$PACKAGES/ALL" >> $LOCALBASE/etc/pkgin/repositories.conf
 
 # Initial vulnerability database update
 $LOCALBASE/sbin/pkg_admin -K $LOCALBASE/pkgdb fetch-pkg-vulnerabilities
 ```
 
-# Release archive for distribution
-(incomplete section prototype placeholder)
-
-## Configure pkgin Repository Sources
-Edit /usr/pkg-YYYYQN-nnnn/etc/pkgin/repositories.conf:
-
-
-Create distribution tarball.
-
-```bash
-cd / && tar czf $PACKAGES/${LOCALBASE##*/}.tgz $LOCALBASE .
-    # --exclude=work --exclude=distfiles .
-```
-
-Install tarball
 
 ## Log Locations
 * Package installation logs: /usr/pkg-YYYYQN-nnnn/var/db/pkg/pkgin.log
@@ -399,7 +509,7 @@ pkgin update
 # Build and install with certification logging
 cd $pkgsrc/category/package
 read -d '' pkgtag < <(sed -e 's/^./pkg/' -e 's/pkgsrc//' -e 's/HEAD/-HEAD/' < CVS/Tag) || true
-read -d '' PKGNAME < <(bmake show-var VARNAME=PKGNAME) || true
+read PKGNAME < <(pkg_admin config-var PKGNAME)
 
 # Vulnerability check before build
 bmake audit-packages
@@ -524,7 +634,7 @@ pkgin list | awk '{print $1}' | while read pkg; do
     read -d '' pkgpath < <(pkgin pbd $pkg | awk -F= '/^PKGPATH=/ {print $2}') || true
     [ "$pkgpath" ] && {
         cd $pkgsrc/$pkgpath
-        read -d '' expected < <(bmake show-var VARNAME=PKGNAME) || true
+        read expected < <(bmake show-var VARNAME=PKGNAME)
         [ "$pkg" = "$expected" ] || echo "MISMATCH: $pkg != $expected ($pkgpath)"
     } || cat >/dev/null  # Abort read loop on error
 done
