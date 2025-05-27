@@ -785,14 +785,10 @@ for release in /usr/pkg-*; do
 
 The following code fragments and notes from the input were not integrated into this documentation:
 
-1. **Darwin bootstrap archive extraction logic**: Complex pkgtag calculation with quarterly date arithmetic
 2. **Detailed mk.conf cross-compilation variables**: MACHINE/MACHINE_ARCH platform detection
 3. **Package framework requirements documentation**: YAML/JSON profile data format preferences, RACI matrices
 4. **Complex package request/certification workflow**: UID-based tracking, purpose tables, archive/expire dates
-5. **Advanced CVS tag manipulation**: Multiple sed expressions for tag transformation
-6. **NFS mount considerations**: Performance warnings for network builds
 7. **Specific package option examples**: gobject-introspection header modifications
-8. **Package export/import workflows**: pkgin export processing loops
 
 These elements represent advanced operational details beyond the scope of this expert administrator guide but may be valuable for specialized deployment scenarios.
 
