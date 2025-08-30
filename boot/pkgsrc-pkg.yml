@@ -4,48 +4,53 @@
 read: cat ./pkgsrc-pkg.yml | sed -e "/X $(uname)/d" -e '/X xtra/d' -e '/:/d' -e 's/#.*//' -e '/^---/d' -e '/^\.\.\./d' -e 's/ //g' -e '/^$/d'
 packages:
     min: |
-        shells/bash
-        sysutils/daemontools
-        sysutils/runit
-        devel/openrcs
+        devel/scmcvs
+
+        pkgtools/pkglint4   # no go dependency, the old version of pkglint
+#       pkgtools/pkglint4   # depends on go, actively maintained
+
         misc/tmux
-        misc/getopt
+        shells/bash
         editors/vim
-        security/netpgp
-        security/netpgpverify
-        security/pcsc-tools
-        security/pcsc-lite
-        net/djbdnscurve6
-        sysutils/pstree
-        misc/colorls
-        lang/lua54
         devel/jq
         textproc/yq
-        net/rsync
-        devel/git
-        pkgtools/rcorder
-        pkgtools/pkglint
-        meta-pkgs/pkg_developer
-        devel/scmcvs
-        sysutils/htop
+        misc/colorls
         sysutils/file
+        sysutils/htop
+        sysutils/pstree
+        textproc/aspell-en
+        archivers/lz4json
+        devel/openrcs
+        textproc/par
+        lang/lua54
+        devel/git
+        net/djbdnscurve6
+        sysutils/daemontools
+        sysutils/runit
+        net/rsync
         net/wget
         www/curl
         www/w3m
         net/fping
         net/ipcalc
-        net/mtr
         net/tcpdump
         net/speedtest-cli
+        net/mtr
+
+        security/netpgp
+        security/netpgpverify
+        security/pcsc-tools
+        security/pcsc-lite
+        pkgtools/rcorder
         net/netcat
         net/netcat6
-        textproc/aspell-en
-        textproc/par
         audio/rubberband
         audio/sox
-        archivers/lz4json
         net/rclone
         chat/irssi
+#       misc/getopt
+#       www/lighttpd
+#       meta-pkgs/pkg_developer
 
         multimedia/ffplay6  # X Darwin dep: devel/gobject-introspection error: 'gitypes.h' file not found with <angled> include; use "quotes" instead
         multimedia/ffmpeg6  # X Darwin dep: devel/gobject-introspection error: 'gitypes.h' file not found with <angled> include; use "quotes" instead
