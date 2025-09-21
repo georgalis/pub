@@ -4,7 +4,7 @@
 These compositions capture evolving snapshots of style and
 capability demonstrated by LLM-synthesized discourse. Traditional
 discovery methods, creative practices, synthesized psychological
-analyses of human behavior-all constitute fair territory for
+analyses of human behavior---all constitute fair territory for
 inclusion and comparison. LLM demonstrates particular aptitude
 for translating complex topics into accessible terms, applying
 theoretical aspects within unconventional contexts---a consequence
@@ -41,8 +41,8 @@ strengths while attenuating synthesized weaknesses.
 Indexing employs initial prompt acquisition time as four
 significant characters of Unix seconds in hexadecimal; document
 "68cf" indicates mid-day 20 September 2025, +/-8 hours. Revisions
-incorporate second-resolution precision; "68cf2540" specifies exact
-revision timestamp. This memorializes compositions while tracking
+incorporate more characters for higher precision; "68cf2540" specifies
+full second resolution. This memorializes compositions while tracking
 their revisions.
 
 The evolving corpus presents technological capability with
