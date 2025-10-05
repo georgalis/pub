@@ -154,21 +154,22 @@ cksh () { # return sortable stat and hash data for args OR stdin file list
   while getopts "n:xh" opt; do case "$opt" in
     n) n="$OPTARG" ;;
     x) x=skip ;;
-    h) sed 's/^[ ]\{8\}/  /' <<<\
-       "Usage: $FUNCNAME [-n NUM] [-x] [FILE...]
+    h) sed 's/^[ ]\{6\}//' <<eof
+        Usage: $FUNCNAME [-n NUM] [-x] [FILE...]
         Output: inode links hash size mdate filename
           -n NUM  Omit NUM leading fields: 0=none ... 5=all (default: 2)
           -x      Skip hash calculation (faster, outputs '.' for hash)
           --      End options; remaining args treated as filenames
           -h      Show help
-        Reads filenames from arguments or stdin. Hash auto-skipped when n>2."
+        Reads filenames from arguments or stdin. Hash auto-skipped when n>2.
+eof
        return 0 ;;
     *) { chkerr "invalid option '$opt'" ; return 1;}
     esac
   done
   shift $((OPTIND - 1))
   [[ "$n" =~ ^[0-5]$ ]] || { chkerr "$FUNCNAME : n must be 0-5" ; return 1 ;}
-  (( n > 2 )) && x=skip || true # don't calculate hash if field is truncated
+  ((n>2)) && x=skip || true # don't calculate hash if field is truncated
   [ "$x" ] && { _hash () { echo . ;} ;} || { _hash () { openssl shake256 -xoflen 3 -hex <"$f" 2>/dev/null ;} ;}
   read OS < <(uname) ; [ "$OS" = "Linux" ] && _stat() { stat -c %i\ %h\ %s\ %Y "$1" ;} || true
   [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat() { stat -f %i\ %l\ %z\ %m "$1" ;} || true
@@ -186,14 +187,11 @@ cksh () { # return sortable stat and hash data for args OR stdin file list
   while IFS= read f; do _awk < <( tr '\n' ' ' < <( _stat "$f" ; awk '{print $2}' < <( _hash ))) \
       && sed -e 's/[*%]$//' < <(ls -dF "$f") \
       || { chkerr "$FUNCNAME : internal error '$f'" ; return 1 ;}
-    done <<<"$fs"
-    # dir, sym, etc like regular files
+    done <<<"$fs" # dir, sym, etc like regular files
     # sed to purge executable and "whiteout" file symbols from listing decoration
     # shake256 -xoflen 3 is okay for integrity check, and compatible with longer crypto reference (requires newer openssl)
     # extract filenames with spaces from output: awk '{print substr($0, index($0,$6))}'
   } # cksh
-
-
 
 ascii_filter() { while IFS= read a ; do echo "$a" | strings -e s ; done ;}
 
