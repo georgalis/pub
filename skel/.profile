@@ -147,122 +147,53 @@ path_prepend() { # prepend $1 if not already in path
  echo "$PATH" | grep -E "(^$1:|^$1$)" 2>&1 >/dev/null \
   || export PATH="${1}:${PATH}" ;}
 
-ckstat() { # return sortable stat data for args (OR stdin file list)
-  # ckstat /etc/resolv.conf
-  # 033cb35f 01 .      16 6305e87b /etc/resolv.conf
-  # inode links . 0x_size  0x_date input
-  # (c) 2017-2023 George Georgalis <george@galis.org> unlimited use with this notice
-  [ "$1" = "-h" -o "$1" = "--help" ] && {
-    chkwrn 'Return sortable stat data for args (OR stdin file list):'
-    chkwrn 'inode\links . 0x-size 0x-mdate input'
-    return 0 ;} || true
-  local f fs
-  [ $# -gt 0 ] && { fs="$1" ; shift || true ;}
-  while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift || true ; done
-  [ "$fs" ] || fs="$(cat)"
-  [ "$OS" ] || local OS="$(uname)"
-  [ "$OS" = "Linux" ]                      && _stat() { stat -c %i\ %h\ %s\ %Y "$1" ;} || true
-  [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat() { stat -f %i\ %l\ %z\ %m "$1" ;} || true
-  echo "$fs" | while IFS= read f; do
-    [ -e "$f" ] && {
-      # \0 will produce \200, which does not terminate a string but behaves as a null
-      # per terminfo.5, so just use \200 to separate filnames with regex unfriendly char
-      # _stat "$f" | awk '{printf "%07x %02x . % 8x %08x \200",$1,$2,$3,$4}'
-      # \200 seems problematic for old mac bash, use this to extract filenames with spaces:
-      # ckstat * | sed -e 's/^\([ ]*[[:xdigit:]]*\)\{2\} [.]*[ ]*[[:xdigit:]]*\([ ]*[[:xdigit:]]*\)\{2\} //'
-      _stat "$f" | awk '{printf "%8x %2x . % 8x %08x ",$1,$2,$3,$4}'
-      ls -dF "$f"
-      # two ways to filter the names from the preceeding char
-      # awk '{sub(/^[^\200]*\200/,"") ; print}' # filename follows the first \200
-      # sed 's/^[ -~]*[^ -~]//' # first non-ascii match is \200, filename follows
-      } || chkerr "$FUNCNAME : does not exist '$f'"
-    done # f
-  } # ckstat()
-
-ckstatsum() { # return sortable stat data for args (OR stdin file list)
-  # ckstatsum /etc/resolv.conf
-  # 033cb35f01 b35a88ac       16 6305e87b /etc/resolv.conf
-  # inode\links 0x_cksum  0x_size 0x_date input
-  # (c) 2017-2022 George Georgalis <george@galis.org> unlimited use with this notice
-  [ "$1" = "-h" -o "$1" = "--help" ] && {
-    chkwrn 'Return sortable stat data for args (OR stdin file list):'
-    chkwrn 'inode\links . 0x-size 0x-mdate input'
-    return 0 ;} || true
-  local f fs
-  [ $# -gt 0 ] && { fs="$1" ; shift || true ;}
-  while [ $# -gt 0 ] ; do fs="$(printf "%s\n%s\n" "$fs" "$1")" ; shift || true ; done
-  [ "$fs" ] || fs="$(cat)"
-  [ "$OS" ] || local OS="$(uname)"
-  [ "$OS" = "Linux" ]                      && _stat() { stat -c %i\ %h\ %s\ %Y "$1" ;} || true
-  [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat() { stat -f %i\ %l\ %z\ %m "$1" ;} || true
-  echo "$fs" | while IFS= read f; do
-    [ -e "$f" ] && {
-      # \0 will produce \200, which does not terminate a string but behaves as a null
-      # per terminfo.5, so just use \200 to separate filnames with regex unfriendly char
-      # { _stat "$f" ; cksum <"$f" ;} | tr '\n' ' ' | awk '{printf "%07x %02x %08x % 8x %08x \200",$1,$2,$5,$3,$4}'
-      # \200 seems problematic for old mac bash, use this to extract filenames with spaces:
-      # ckstatsum * | sed -e 's/^\([ ]*[[:xdigit:]]*\)\{2\} [.]*[ ]*[[:xdigit:]]*\([ ]*[[:xdigit:]]*\)\{2\} //'
-      { _stat "$f" ; cksum <"$f" ;} | tr '\n' ' ' | awk '{printf "%8x %2x %08x % 8x %08x ",$1,$2,$5,$3,$4}'
-      ls -dF "$f"
-      # two ways to filter the names from the preceeding char
-      # awk '{sub(/^[^\200]*\200/,"") ; print}' # filename follows the first \200
-      # sed 's/^[ -~]*[^ -~]//' # first non-ascii match is \200, filename follows
-      } || chkerr "$FUNCNAME : not a regular file : $f"
-    done # f
-  } # ckstatsum()
-
-cks () { # return sortable stat data for args OR stdin file list
-  # rev 677c63fa-20250106_151506
-  # cks /var/run/resolv.conf
-  #  c0eb521  1 .      1ab 677c76ff /var/run/resolv.conf
-  # inode links .     size     date input
-  # (c) 2017-2025 George Georgalis <george@galis.org> unlimited use with this notice
-  [ "$1" = "-h" -o "$1" = "--help" ] && {
-    chkwrn 'Return sortable hex stat data for args OR stdin file list:'
-    chkwrn 'inode links . size mdate file'
-    return 0 ;} || true
-  local f= fs= OS=
-  while [ $# -gt 0 ]; do fs+="$1"$'\n' ; shift ; done ; fs="${fs%$'\n'}" ; [ -z "$fs" ] && read -d '' fs || true
-  read OS < <(uname)
-  [ "$OS" = "Linux" ]                      && _stat() { stat -c %i\ %h\ %s\ %Y "$1" ;} || true
-  [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat() { stat -f %i\ %l\ %z\ %m "$1" ;} || true
-  while IFS= read f; do
-    [ -h "$f" ] && { chkwrn "$FUNCNAME : a symbolic link '$f'" ;} || true
-    [ -e "$f" ] && { # use this to extract filenames with spaces: awk '{print substr($0, index($0,$6))}'
-      awk '{printf "%8x %2x . % 8x %08x ",$1,$2,$3,$4}' < <(_stat "$f")
-      # purge listing decoration for executable, symbolic link, socket, whiteout, and FIFO, but not directory
-      sed -e 's/[*@=%|]$//' < <(ls -dF "$f")
-      } || chkerr "$FUNCNAME : does not exist '$f'"
-    done <<<"$fs" # f
-  } # cks 6305e87b
-
 cksh () { # return sortable stat and hash data for args OR stdin file list
-  # rev 677c9c44-20250106_191506
-  # chsh /etc/resolv.conf
-  #  c0eb521  1 3a9954      1ab 677c76ff /var/run/resolv.conf
-  # inode links shake256-x3 size    date input
+  # rev 68e20bca 20251004 orig 6305e87b ckstat ckstatsum cks
   # (c) 2017-2025 George Georgalis <george@galis.org> unlimited use with this notice
-  [ "$1" = "-h" -o "$1" = "--help" ] && {
-    chkwrn 'Return sortable hex stat and hash data for args OR stdin file list:'
-    chkwrn 'inode links hash size mdate file'
-    return 0 ;} || true
-  local f= fs= OS=
-  while [ $# -gt 0 ]; do fs+="$1"$'\n' ; shift ; done ; fs="${fs%$'\n'}" ; [ -z "$fs" ] && read -d '' fs || true
-  read OS < <(uname)
-  [ "$OS" = "Linux" ]                      && _stat() { stat -c %i\ %h\ %s\ %Y "$1" ;} || true
+  local f= fs= OS= n=2 x= opt= OPTIND=
+  while getopts "n:xh" opt; do case "$opt" in
+    n) n="$OPTARG" ;;
+    x) x=skip ;;
+    h) sed 's/^[ ]\{8\}/  /' <<<\
+       "Usage: $FUNCNAME [-n NUM] [-x] [FILE...]
+        Output: inode links hash size mdate filename
+          -n NUM  Omit NUM leading fields: 0=none ... 5=all (default: 2)
+          -x      Skip hash calculation (faster, outputs '.' for hash)
+          --      End options; remaining args treated as filenames
+          -h      Show help
+        Reads filenames from arguments or stdin. Hash auto-skipped when n>2."
+       return 0 ;;
+    *) { chkerr "invalid option '$opt'" ; return 1;}
+    esac
+  done
+  shift $((OPTIND - 1))
+  [[ "$n" =~ ^[0-5]$ ]] || { chkerr "$FUNCNAME : n must be 0-5" ; return 1 ;}
+  (( n > 2 )) && x=skip || true # don't calculate hash if field is truncated
+  [ "$x" ] && { _hash () { echo . ;} ;} || { _hash () { openssl shake256 -xoflen 3 -hex <"$f" 2>/dev/null ;} ;}
+  read OS < <(uname) ; [ "$OS" = "Linux" ] && _stat() { stat -c %i\ %h\ %s\ %Y "$1" ;} || true
   [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat() { stat -f %i\ %l\ %z\ %m "$1" ;} || true
-  while IFS= read f; do [ -f "$f" -a ! -h "$f" ] && { # only process regular files
- # use this to extract filenames with spaces: awk '{print substr($0, index($0,$6))}'
- # shake256 -xoflen 3 is okay for integrity check, and compatible with longer crypto reference
-      # sed to purge symbols for executable, and whiteout listing decoration
-      awk '{printf "%8x %2x %06s % 8x %08x ",$1,$2,$5,$3,$4}' < <( tr '\n' ' ' \
-        < <( _stat "$f" && awk '{print $2}' < <(openssl shake256 -xoflen 3 -hex <"$f"))) \
+  ((n==0)) && { [ "$x" ] && _awk () { awk '{printf "%8x %2x . % 8x %08x ",$1,$2,$3,$4}' ;} \
+                         || _awk () { awk '{printf "%8x %2x %06s % 8x %08x ",$1,$2,$5,$3,$4}' ;} ;} || true
+  ((n==1)) && { [ "$x" ] && _awk () { awk '{printf ". %2x . % 8x %08x ",$2,$3,$4}' ;} \
+                         || _awk () { awk '{printf ". %2x %06s % 8x %08x ",$2,$5,$3,$4}' ;} ;} || true
+  ((n==2)) && { [ "$x" ] && _awk () { awk '{printf ". . . % 8x %08x ",$3,$4}' ;} \
+                         || _awk () { awk '{printf ". . %06s % 8x %08x ",$5,$3,$4}' ;} ;} || true
+  ((n==3)) && _awk () { awk '{printf ". . . % 8x %08x ",$3,$4}' ;} || true
+  ((n==4)) && _awk () { awk '{printf ". . . . %08x ",$4}' ;} || true
+  ((n==5)) && _awk () { awk '{printf ". . . . . "}' ;} || true
+  while [ $# -gt 0 ]; do fs+="$1"$'\n' ; shift ; done ; fs="${fs%$'\n'}" ; [ -z "$fs" ] && read -d '' fs || true
+  # generate _stat/_hash/ls composite, stream through _awk field extractor
+  while IFS= read f; do _awk < <( tr '\n' ' ' < <( _stat "$f" ; awk '{print $2}' < <( _hash ))) \
       && sed -e 's/[*%]$//' < <(ls -dF "$f") \
       || { chkerr "$FUNCNAME : internal error '$f'" ; return 1 ;}
-      } || { [ -h "$f" ] && { chkwrn "$FUNCNAME : symbolic link '$f'" ;} \
-                         || { chkwrn "$FUNCNAME : not a regular file '$f'" ;} ;} # warn for non-files
-    done <<<"$fs" # f
-  } # cksh 677c9c44-20250106_191506 ckstatsum
+    done <<<"$fs"
+    # dir, sym, etc like regular files
+    # sed to purge executable and "whiteout" file symbols from listing decoration
+    # shake256 -xoflen 3 is okay for integrity check, and compatible with longer crypto reference (requires newer openssl)
+    # extract filenames with spaces from output: awk '{print substr($0, index($0,$6))}'
+  } # cksh
+
+
 
 ascii_filter() { while IFS= read a ; do echo "$a" | strings -e s ; done ;}
 
@@ -337,6 +268,8 @@ case "$SHELL" in
     #declare -p COMP_WORDBREAKS
     #sed -e 's/^/REPLY           X/' -e 's/$/X/' <<<"$REPLY"
     #sed -e 's/^/COMP_WORDBREAKS X/' -e 's/$/X/' <<<"$COMP_WORDBREAKS"
+   #complete -r # remove completion specification
+   #shopt -u progcomp # disable programable completion feature
     set -o ignoreeof # disable ctrl-d exit
     set -o errtrace  # any trap on ERR is inherited by shell functions
     set -o functrace # traps on DEBUG and RETURN are inherited by shell functions
