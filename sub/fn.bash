@@ -531,14 +531,14 @@ eof
   ) ;} # 68bc9211 20250906 125655 PDT Sat 12:56 PM 6 Sep
 
 # "$ytdl" --abort-on-error --yes-playlist \
-#  --write-info-json --write-comments --write-sub --write-auto-sub --sub-langs "en,en-GB" --write-thumbnail \
+#  --write-info-json --write-comments --write-sub --write-auto-sub --sub-langs "en,en-US,en-GB,en-AU" --write-thumbnail \
 #  --restrict-filenames --audio-quality 0 --format-sort "acodec:opus,acodec:m4a" \
 #  --playlist-start 1 \
-#  -o "$d/${xs}%(playlist_title)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+#  -o "$d/${xs}%(playlist_title)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" -- "$id"
 # "$ytdl" --abort-on-error --yes-playlist \
 #  --restrict-filenames --audio-quality 0 --format-sort "acodec:opus,acodec:m4a" --extract-audio --keep-video \
 #  --playlist-start 1 \
-#  -o "$d/${xs}%(playlist_title)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+#  -o "$d/${xs}%(playlist_title)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(playlist_id)s-%(upload_date)s_^%(id)s.%(ext)s" -- "$id"
 
 _yt_vid () { # ytdl wrapper functions for video
   # Download video, audio, subtitles, metadata and generate yaml summary
@@ -556,7 +556,7 @@ _yt_vid () { # ytdl wrapper functions for video
   read xs < <(sed -e 's/^@4[0]*//' -e 's/[[:xdigit:]]\{8\} $//' < <(tai64n <<<'')) \
     || { chkerr "$FUNCNAME : failed to set xs (6674c2fd)" ; return 1 ;}
   # Check for existing files using temp json metadata
-  { $ytdl --dump-json --no-write-comments "$id" \
+  { $ytdl --dump-json --no-write-comments -- "$id" \
     || { chkerr "$FUNCNAME : failed to load json '$id' (676c4aad)" ; return 1 ;}
     } >"$d/@/tmp/ytdl/$tmp_json"
   read -d '' id acodec < <(jq -r '[.id, .acodec] | @tsv' "$d/@/tmp/ytdl/$tmp_json") || true
@@ -568,14 +568,14 @@ _yt_vid () { # ytdl wrapper functions for video
   # Download video and audio with original format
   # https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#format-selection
   $ytdl --write-info-json --write-comments --write-sub --write-auto-sub \
-    --sub-langs "en,en-GB" --write-thumbnail --restrict-filenames \
+    --sub-langs "en,en-US,en-GB,en-AU" --write-thumbnail --restrict-filenames \
     -f bv*+ba/b                 --abort-on-error --no-playlist \
-    -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" "$id"
+    -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" -- "$id"
   # also breakout the audio
   "$ytdl" --restrict-filenames \
     --extract-audio --keep-video \
     -f bv*+ba/b --abort-on-error --no-playlist \
-    -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+    -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" -- "$id"
   # Get downloaded json path and organize files
   read -d '' json_path < <(find "$d/" -maxdepth 1 -name "*${id}*.json") || true
   [ "$json_path" ] || { chkerr "$FUNCNAME : not found '$d/*${id}*json' (676c546a)" ; return 1 ;}
@@ -601,13 +601,13 @@ _yt_vid () { # ytdl wrapper functions for video
 #     $ytdl --write-info-json --write-comments --write-sub --write-auto-sub --sub-langs "en,en-US,en-GB,en-AU" \
 #         --restrict-filenames --audio-quality 0 --format-sort "acodec:opus,acodec:m4a" \
 #         --abort-on-error --no-playlist \
-#         -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" "$id" )))
+#         -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" -- "$id" )))
 #   uniq < <(sed -e '/align:start position/d' -e 's/<[^>]*>//g' -e '/ --> /d' -e '/^ [ ]*$/d' -e '/^$/d' "$ytdl_vtt") >"${ytdl_vtt}.txt" \
 #     || { chkerr "$FUNCNAME : could not create '$d/${ytdl_vtt}.txt' (66fd682e)" ; return 1 ;} # write out vtt as txt
 #   "$ytdl" \
 #    --restrict-filenames --audio-quality 0 --format-sort "acodec:opus,acodec:m4a" --extract-audio --keep-video \
 #    --abort-on-error --no-playlist \
-#    -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+#    -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" -- "$id"
 
 _yt_list () { # ytdl wrapper function for playlist
   # Download audio, subtitles, metadata and generate yaml summary
@@ -624,7 +624,7 @@ _yt_list () { # ytdl wrapper function for playlist
   read xs < <(sed -e 's/^@4[0]*//' -e 's/[[:xdigit:]]\{8\} $//' < <(tai64n <<<'')) \
     || { chkerr "$FUNCNAME : failed to set xs (6674c2fd)" ; return 1 ;}
   # Check for existing files using temp json metadata
-  { $ytdl --dump-json --no-write-comments "$id" \
+  { $ytdl --dump-json --no-write-comments -- "$id" \
     || { chkerr "$FUNCNAME : failed to load json '$id' (676c4aad)" ; return 1 ;}
     } >"$d/@/tmp/ytdl/$tmp_json"
   read -d '' id acodec < <(jq -r '[.id, .acodec] | @tsv' "$d/@/tmp/ytdl/$tmp_json") || true
@@ -638,7 +638,7 @@ _yt_list () { # ytdl wrapper function for playlist
     --write-info-json --write-comments --write-sub --write-auto-sub \
     --sub-langs "en,en-US,en-GB,en-AU" --write-thumbnail --restrict-filenames \
     -f bestaudio --extract-audio --abort-on-error --playlist-start 1 \
-    -o "$d/00${xs},%(playlist_title)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(upload_date)s_^%(id)s.%(ext)s" $id
+    -o "$d/00${xs},%(playlist_title)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(upload_date)s_^%(id)s.%(ext)s" -- "$id"
   # organize files manually...
   find "$d/" -maxdepth 1 -name 00${xs},\*
   } # _yt_list _youtube_list 20220516
@@ -659,13 +659,13 @@ _yt_com () { # if set use $ytdl_tmpl
 # mkdir -p "$d/{@/{,meta,tmp},orig}" # ./@/ ./@/meta ./@/tmp ./orig
   read tmp_json < <(cd "$d/@/tmp" && mktemp ytdl.json-XXXX)
   # Check for existing files using temp json metadata
-  { $ytdl --dump-json --no-write-comments "$id" \
+  { $ytdl --dump-json --no-write-comments -- "$id" \
     || { chkerr "$FUNCNAME : failed to load json '$id' (676c4aad)" ; return 1 ;}
     } >"$d/@/tmp/$tmp_json"
   read id < <(jq -r '[.id] | @tsv' "$d/@/tmp/$tmp_json")
   tee -s - $ytdl --write-info-json --write-comments \
     --restrict-filenames --skip-download --no-playlist --abort-on-error \
-    -o "$ytdl_tmpl" "$id" # --write-sub --write-auto-sub --sub-langs "en,en-US,en-GB,en-AU" \
+    -o "$ytdl_tmpl" -- "$id" # --write-sub --write-auto-sub --sub-langs "en,en-US,en-GB,en-AU" \
   find "$d" -maxdepth 1 -name "00${xs}*${id}.info.json"
 # yq -y '.comments[] | { text, author, timestamp}
 #   + (if (.like_count // 0) != 0 then {like_count} else {} end)
@@ -689,7 +689,7 @@ _yt_txt () { # ytdl transcript wrapper
   read xs < <(sed -e 's/^@4[0]*//' -e 's/[[:xdigit:]]\{8\} $//' < <(tai64n <<<'')) \
     || { chkerr "$FUNCNAME : failed to set xs (6674c2fd)" ; return 1 ;}
   # Check for existing files using temp json metadata
-  { $ytdl --dump-json --no-write-comments "$id" \
+  { $ytdl --dump-json --no-write-comments -- "$id" \
     || { chkerr "$FUNCNAME : failed to load json '$id' (676c4aad)" ; return 1 ;}
     } >"$d/@/tmp/ytdl/$tmp_json"
   read -d '' id acodec < <(jq -r '[.id, .acodec] | @tsv' "$d/@/tmp/ytdl/$tmp_json") || true
@@ -700,9 +700,9 @@ _yt_txt () { # ytdl transcript wrapper
     [ "$resp" = "y" ] || return 1 ;} || true
   # Download content with original audio format
   $ytdl --write-info-json --write-comments --write-sub --write-auto-sub \
-    --sub-langs "en,en-GB" --restrict-filenames --skip-download \
+    --sub-langs "en,en-US,en-GB,en-AU" --restrict-filenames --skip-download \
     --no-playlist \
-    -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" "$id"
+    -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" -- "$id"
     # --abort-on-error 
   # Get downloaded json path and organize files
   read -d '' json_path < <(find "$d/" -maxdepth 1 -name "*${id}*.json") || true
@@ -775,7 +775,7 @@ _yt () { # ytdl wrapper functions
     [ "$resp" = "y" ] || return 1 ;} || true
   # Download content with original audio format
   $ytdl --write-info-json --write-comments --write-sub --write-auto-sub \
-    --sub-langs "en,en-GB" --write-thumbnail --restrict-filenames \
+    --sub-langs "en,en-US,en-GB,en-AU" --write-thumbnail --restrict-filenames \
     -f bestaudio --extract-audio --abort-on-error --no-playlist \
     -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" -- "$id"
   # Get downloaded json path and organize files
