@@ -768,8 +768,7 @@ _yt () { # ytdl wrapper functions
     || { chkerr "$FUNCNAME : failed to load json '$id' (676c4aad)" ; return 1 ;}
     } >"$d/@/tmp/ytdl/$tmp_json"
   read -d '' id acodec < <(jq -r '[.id, .acodec] | @tsv' "$d/@/tmp/ytdl/$tmp_json") || true
-  read -d '' existing < <(sort < <(find -E "$links" -name "*${id}*" \
-    \! -regex "$links/.*(tmp|0)/.*")) || true
+  read -d '' existing < <(sort < <(find -E "$links" -regex "$links/.*/(tmp|0)" -prune -false -o -name "*${id}*" )) || true
   [ "$existing" ] && { echo "$existing"
     read -p "files found, continue (N/y) " resp
     [ "$resp" = "y" ] || return 1 ;} || true
@@ -784,12 +783,13 @@ _yt () { # ytdl wrapper functions
   read count < <(wc -l <<<"$id")
   [ "$count" = 1 ] || { chkerr "$FUNCNAME : unexpected json count '$count' for id '${id}' (676c5734)" ; return 1 ;}
   # Move files to final locations
+  read -d '' acodec < <(jq -r '.acodec' "$json_path" ) || true
   find "$d/" -maxdepth 1 -name "00${xs},*" \( -name "*.json" -o -name "*.webp" \
     -o -name "*.jpg" -o -name "*.vtt" \) -exec mv {} "$d/@/meta/" \;
   read -d '' media_file < <(find "$d/" -mindepth 1 -maxdepth 1 -name "00${xs},*${id}*") || true
-  [ -f "$media_file" ] || { chkerr "$FUNCNAME : media_file not found '$d/00${xs},*${id}*' (676c6dcb)" ; return 1 ;}
   read count < <(wc -l <<<"$media_file")
   [ "$count" = 1 ] || { chkerr "$FUNCNAME : unexpected media_file count '$count' for id '$d/00${xs},*${id}*' (676c6f29)" ; return 1 ;}
+  [ -f "$media_file" ] || { chkerr "$FUNCNAME : media_file not found '$d/00${xs},*${id}*' (676c6dcb)" ; return 1 ;}
  #audio_file="${media_file/%webm/$acodec}"
  #[ "$media_file" = "$audio_file" ] || mv "${media_file}" "${audio_file}" # maybe webm will never show again... or not.
   #read ext < <(sed -e '/^  Stream /!d' -e 's/.* Audio: //' -e 's/,.*//' < <(ffprobe "$audio_file" 2>&1 ))
@@ -813,33 +813,36 @@ chkwrn 67703fd0 media_file: mv -f "$media_file" "$d/orig/"
     [ -f "${txt_dir}/${json_file##*/}.txt" ] && { chkerr "$FUNCNAME : exists '${txt_dir}/${json_file##*/}.txt' (677b4682)" ; return 1 ;}
     read -rd '' json <"$json_file" || true ; $verb json from "$json_file"
     read -r id file_ext duration < <(jq -r '[.id, .ext, .duration_string] | @tsv' <<<"$json")
-    read -rd '' title < <(jq -r '.title' <<<"$json") || true ; $verb title
-    read -rd '' fulltitle < <(jq -r '.fulltitle' <<<"$json") || true ; $verb fulltitle
-    read -rd '' chapters < <(yq -ry -w10000 '.chapters[] | {ss: .start_time, to: .end_time, ooo: .title}' <<<"$json") || true ; $verb chapters
+    read -rd '' title       < <(jq -r '.title' <<<"$json") || true ; $verb title
+    read -rd '' fulltitle   < <(jq -r '.fulltitle' <<<"$json") || true ; $verb fulltitle
+    read -rd '' chapters    < <(yq -ry -w10000 '.chapters[] | {ss: .start_time, to: .end_time, ooo: .title}' <<<"$json") || true ; $verb chapters
     read -rd '' description < <(yq -r '.description' <<<"$json") || true ; $verb description
-    read -rd '' comments < <(yq -r '.comments | sort_by(.timestamp) | .[] | select(.author_is_uploader == true) | .text' <<<"$json") || true ; $verb comments
-    read -rd '' metadata < <(yq -ry 'del(.formats, .thumbnail, .thumbnails, .downloader_options,
+    read -rd '' author_comments < <(yq -r '.comments | sort_by(.timestamp) | .[] | select(.author_is_uploader == true) | .text' <<<"$json") || true ; $verb comments
+    read -rd '' metadata    < <(yq -ry \
+      'del(.formats, .thumbnail, .thumbnails, .downloader_options,
       .http_headers, .webpage_url_basename, .author_thumbnail,
       .playable_in_embed, .live_status, .automatic_captions,
       .extractor, .is_live, .was_live)' <<<"$json") || true ; $verb metadata
-    { printf "ss= ; export verb=$verb ss= to= t= p= f= c=r3 F= CF= off= tp= lra= i= cmp=pard v=3db\n"
+    { echo "# see 68e48288, applied iconv -f utf-8 -c -t ascii//TRANSLIT"
+      echo "# $json_file"
+      printf "# ${json_file##*/}.txt\n\n"
+      printf "ss= ; export verb=chkwrn ss= to= t= p= f= c=r3 F= CF= off= tp= lra= i= cmp=pard v=3db\n"
       printf "ss= ; export _f=./@/%s\n\n"  "${media_master##*/}"
       printf "ss= _a=%s\n"                 "$title"
       printf "ss= _r=%s\n\n"               "$fulltitle"
       printf ' ss= to= f2rb2mp3 $_f ooo,${_a}-Trak_Title-${_r}\n%s\n\n' "$duration"
-      printf -- "--- chapters \n%s\n\n"    "$chapters" | iconv -f utf-8 -c -t ascii//TRANSLIT \
-                                                       | sed -e 's/: /=/' -e 's/\.0$//' -e "s/'//g" -e 's/ /_/g' -e '/^---$/d' \
+      printf -- "--- chapters \n%s\n\n"    "$chapters" | sed -e 's/: /=/' -e 's/\.0$//' -e "s/'//g" -e 's/ /_/g' -e '/^---$/d' \
                                                              -e 's/^ooo=/f2rb2mp3 $_f ooo,${_a}-/' -e '/^f2rb/s/$/-${_r}/' -e 's/\&/and/g' \
                                                        | tr -d '()[].;:`"'
       printf -- "--- title \n%s\n\n"       "$title"
       printf -- "--- description \n%s\n\n" "$description"
-      printf -- "--- comments \n%s\n\n"    "$comments" | tr -s '\n\r' '\n' ; echo
-      printf -- "--- metadata \n%s\n\n"    "$metadata"
+      printf -- "--- author_comments \n%s\n\n"    "$author_comments" | tr -s '\n\r' '\n' ; echo
+      echo "# end of ascii//TRANSLIT"
       # | sed -e 's,\\u0332,,g' -e 's,\\u2013,-,g' -e 's,\\u00d7,-,g' -e 's,\\u2022,-,g' \
-     #} | iconv -f utf-8 -c -t ascii//TRANSLIT >"${txt_dir}/${json_file##*/}.txt~" \
-      } >"${txt_dir}/${json_file##*/}.txt~" \
-      && mv "${txt_dir}/${json_file##*/}.txt~" "${txt_dir}/${json_file##*/}.txt" \
-      || { chkerr "$FUNCNAME : error parsing json or creating '${txt_dir}/${json_file##*/}.txt' (676c7462)" ; return 1 ;}
+      } | iconv -f utf-8 -c -t ascii//TRANSLIT >"${txt_dir}/${json_file##*/}.txt~" || true
+      printf -- "--- metadata \n%s\n\n"    "$metadata" >>"${txt_dir}/${json_file##*/}.txt~" \
+        && mv "${txt_dir}/${json_file##*/}.txt~" "${txt_dir}/${json_file##*/}.txt" \
+        || { chkerr "$FUNCNAME : error parsing json or creating '${txt_dir}/${json_file##*/}.txt' (676c7462)" ; return 1 ;}
     echo "${txt_dir}/${json_file##*/}.txt"
     } # _yt_json2txt _youtube_json2txt 20220516
 
