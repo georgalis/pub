@@ -148,19 +148,24 @@ path_prepend() { # prepend $1 if not already in path
   || export PATH="${1}:${PATH}" ;}
 
 cksh () { # return sortable stat and hash data for args OR stdin file list
-  # rev 68e20bca 20251004 orig 6305e87b ckstat ckstatsum cks
+  # rev 68e59742 20251007 orig 6305e87b ckstat ckstatsum cks
   # (c) 2017-2025 George Georgalis <george@galis.org> unlimited use with this notice
-  local f= fs= OS= n=2 x= opt= OPTIND=
-  while getopts "n:xh" opt; do case "$opt" in
-    n) n="$OPTARG" ;;
-    x) x=skip ;;
+  local f= fs= OS= n=2 x= xoflen=3 ol= opt= OPTIND=
+  while getopts ":012345n:x:h" opt; do case "$opt" in
+    0|1|2|3|4|5) n="$opt" ;; n) n="$OPTARG" ;;
+    x) [[ "$OPTARG" =~ ^[0-9]+$ ]] && [ "$OPTARG" -le 64 ] \
+         && { [ "$OPTARG" -eq 0 ] && x=skip || xoflen="$OPTARG" ;} \
+         || { chkerr "$FUNCNAME : -x requires 0-64, got '$OPTARG'" ; return 1 ;} ;;
+    :) [ "$OPTARG" = "x" ] && x=skip \
+         || { chkerr "$FUNCNAME : option -$OPTARG requires argument" ; return 1 ;} ;;
     h) sed 's/^[ ]\{6\}//' <<eof
-        Usage: $FUNCNAME [-n NUM] [-x] [FILE...]
+        Usage: $FUNCNAME [-NUM] [-n NUM] [-x [LEN]] [FILE...]
         Output: inode links hash size mdate filename
-          -n NUM  Omit NUM leading fields: 0=none ... 5=all (default: 2)
-          -x      Skip hash calculation (faster, outputs '.' for hash)
-          --      End options; remaining args treated as filenames
-          -h      Show help
+          -n NUM    Omit NUM leading fields: 0-5, default: 2
+          -x [0]    Skip hash calculation (faster, uses '.' placeholder)
+          -x [1-64] Set XOF output length (default: 3)
+          --        End options; remaining args treated as filenames
+          -h        Show help
         Reads filenames from arguments or stdin. Hash auto-skipped when n>2.
 eof
        return 0 ;;
@@ -170,21 +175,21 @@ eof
   shift $((OPTIND - 1))
   [[ "$n" =~ ^[0-5]$ ]] || { chkerr "$FUNCNAME : n must be 0-5" ; return 1 ;}
   ((n>2)) && x=skip || true # don't calculate hash if field is truncated
-  [ "$x" ] && { _hash () { echo . ;} ;} || { _hash () { openssl shake256 -xoflen 3 -hex <"$f" 2>/dev/null ;} ;}
+  [ "$x" ] && { _hash () { echo . ;} ;} || { _hash () { openssl shake256 -xoflen "$xoflen" -hex <"$f" 2>/dev/null ;} ; ol=$((xoflen*2)) ;}
   read OS < <(uname) ; [ "$OS" = "Linux" ] && _stat() { stat -c %i\ %h\ %s\ %Y "$1" ;} || true
   [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat() { stat -f %i\ %l\ %z\ %m "$1" ;} || true
   ((n==0)) && { [ "$x" ] && _awk () { awk '{printf "%8x %2x . % 8x %08x ",$1,$2,$3,$4}' ;} \
-                         || _awk () { awk '{printf "%8x %2x %06s % 8x %08x ",$1,$2,$5,$3,$4}' ;} ;} || true
+             || _awk () { awk -v ol="$ol" '{printf "%8x %2x %0"ol"s % 8x %08x ",$1,$2,$5,$3,$4}' ;} ;} || true
   ((n==1)) && { [ "$x" ] && _awk () { awk '{printf ". %2x . % 8x %08x ",$2,$3,$4}' ;} \
-                         || _awk () { awk '{printf ". %2x %06s % 8x %08x ",$2,$5,$3,$4}' ;} ;} || true
+             || _awk () { awk -v ol="$ol" '{printf ". %2x %0"ol"s % 8x %08x ",$2,$5,$3,$4}' ;} ;} || true
   ((n==2)) && { [ "$x" ] && _awk () { awk '{printf ". . . % 8x %08x ",$3,$4}' ;} \
-                         || _awk () { awk '{printf ". . %06s % 8x %08x ",$5,$3,$4}' ;} ;} || true
+             || _awk () { awk -v ol="$ol" '{printf ". . %0"ol"s % 8x %08x ",$5,$3,$4}' ;} ;} || true
   ((n==3)) && _awk () { awk '{printf ". . . % 8x %08x ",$3,$4}' ;} || true
   ((n==4)) && _awk () { awk '{printf ". . . . %08x ",$4}' ;} || true
   ((n==5)) && _awk () { awk '{printf ". . . . . "}' ;} || true
   while [ $# -gt 0 ]; do fs+="$1"$'\n' ; shift ; done ; fs="${fs%$'\n'}" ; [ -z "$fs" ] && read -d '' fs || true
   # generate _stat/_hash/ls composite, stream through _awk field extractor
-  while IFS= read f; do _awk < <( tr '\n' ' ' < <( _stat "$f" ; awk '{print $2}' < <( _hash ))) \
+  while IFS= read f; do _awk < <( tr '\n' ' ' < <( _stat "$f" ; awk '{print $2}' < <(_hash))) \
       && sed -e 's/[*%]$//' < <(ls -dF "$f") \
       || { chkerr "$FUNCNAME : internal error '$f'" ; return 1 ;}
     done <<<"$fs" # dir, sym, etc like regular files
