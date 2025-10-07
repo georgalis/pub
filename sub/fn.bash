@@ -299,8 +299,8 @@ gsta () { # git short form status of all repos below $@ (or pwd repo), sorted
    done | sort ;}
 gstat () { # find uncommitted changes to all repos below $@ (or current repo), sorted by time
   # reports files with <space> in name as irregular... ("read a" doesn't evaluate quotes inserted by git)
-  gsta $@ | sed 's/^...//' | while IFS= read a ; do ckstat "$a" ; done \
-    | sort -k5 | awk -F "\t" '{print $3}' ;}
+  gsta $@ | sed 's/^...//' | while IFS= read a ; do cksh -x "$a" ; done \
+    | sort -k5 | awk '{print substr($0, index($0,$6))}' ;}
 gcfg () { # report all the git config and where it comes from, repo dir may be specified as arg1
   local a= b= d="$1" e="$OLDPWD" p=
   [ "$d" ] || d='.'
@@ -1341,7 +1341,7 @@ verb2=chkwrn
   [ "$1" ] && local hash="$1" || { chkerr "$FUNCNAME : no hash (6542c7e0)" ; return 1 ;}
   [ "$2" ] || local dir="$links/_ln" && local dir="$2"
   dot4find "$hash" \
-    | grep -vE '(.vtt$|.json$)' | ckstat | sort -k5 | head -n1 \
+    | grep -vE '(.vtt$|.json$)' | cksh -x  | sort -k5 | head -n1 \
     | awk -v m="$dir/$hash" '{print "ln",$5,m}'
  }
 
@@ -1761,7 +1761,7 @@ mp3range () { # mp3 listing limiter
     # or current dir if no remaining args.
     #
     # file fullpath of two directories, sorted by filepath...
-    # mp3range 2 3 ../ . | ckstat | sort -k6 | awk '{print $6}'
+    # mp3range 2 3 ../ . | cksh -x | sort -k6 | awk '{print $6}'
     #
     local start="$1" stop="$2" dirs= a= opwd="$PWD" prefix= mp3range_file="$HOME/0/v/mp3range"
     mkdir -p "${mp3range_file%/*}";
@@ -2020,9 +2020,9 @@ rotatefile () { #P> keep at least n backups, and delete files older than m secon
         rotatefile_secs="$((18 * 60 * 60 * 24 ))" rotatefile_keep="7"'
     declare -f chkerr >/dev/null 2>&1  || { echo "$FUNCNAME : chkerr unavailable (630bacd0)" 1>&2 ; return 1 ;}
     declare -f validfn >/dev/null 2>&1 || { echo "$FUNCNAME : validfn unavailable (630c4002)" 1>&2 ; return 1 ;}
-    validfn ckstat c44370c9 000003ac   || { chkerr "$FUNCNAME : unexpected ckstat (630bab5c)" ; return 1 ;}
+    validfn cksh 1e282ba4 00000bad     || { chkerr "$FUNCNAME : unexpected cksh (630bab5c)" ; return 1 ;}
     which tai64n >/dev/null            || { chkerr "$FUNCNAME : tai64n not in path (630bb522)" ; return 1 ;}
-    xs () { echo | tai64n | sed -e 's/^@4[0]*//' -e 's/.\{9\}$//' ;}
+    xs () { sed -e 's/^@4[0]*//' -e 's/.\{9\}$//' < <(tai64n <<<'') ;}
     term_pleft () { local str= char='-'
         { [ $# -gt 0 ] && echo "$*" || cat ;} \
           | while IFS= read str; do [ -t 1 ] && {
@@ -2049,7 +2049,7 @@ rotatefile () { #P> keep at least n backups, and delete files older than m secon
         | while IFS= read f ; do
             expr "$(( 0x$xs - 0x$(ckstat "$f" | awk '{print $5}') ))" '>' "$rotatefile_secs" >/dev/null && rm -f "$f" || true
             done
-    mv "$f" "${f}-$(ckstat "$f" | awk '{print $5}')"
+    mv "$f" "${f}-$(cksh -x "$f" | awk '{print $5}')"
     }
 
 spin1 () { # '.oO@Oo+~:"`   '
@@ -2149,10 +2149,10 @@ auto_dgst () { #0> auto create digest (_/dgst), _/dgst-sha3-384, _/dgst-ckstatsu
       find -E . -regex ".*(/%$|/0$|,$|~$)" -prune -type f -o -type f \
           | grep -Ev '(/\.DS_Store|/tmp/|/.git/|,v$|~$)' | sort >"./_/dgst"
       while read a; do openssl dgst -${h} "$a" ; done >"./_/dgst-${h},"      <"./_/dgst"
-      while read a; do ckstatsum "$a"          ; done >"./_/dgst-ckstatsum," <"./_/dgst"
+      while read a; do cksh      "$a"          ; done >"./_/dgst-cksh," <"./_/dgst"
       ci -m"($FUNCNAME)" -l -t-"auto digest" -q "./_/dgst"
       ci -m"($FUNCNAME)" -l -t-"auto digest ${h}" -q "./_/dgst-${h},"
-      ci -m"($FUNCNAME)" -l -t-"auto digest ckstatsum" -q "./_/dgst-ckstatsum,"
+      ci -m"($FUNCNAME)" -l -t-"auto digest cksh" -q "./_/dgst-cksh,"
     ) ;}
 
 which stemwords >/dev/null 2>&1 && { # create stemwords wrappers, stemray and stempar

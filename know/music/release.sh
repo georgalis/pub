@@ -8,7 +8,7 @@ set -e
 dep_help_skel () { echo '# ><> eval "$(curl -fsSL https://github.com/georgalis/pub/blob/master/skel/.profile)" <><' 1>&2
     echo 'export -f devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue chkexit logexit validfn' 1>&2 ;}
 dep_help_sub () { echo '# ><> eval "$(curl -fsSL https://github.com/georgalis/pub/blob/master/sub/fn.bash)" <><' 1>&2
-    echo 'export -f ckstatsum ckstat formfile formfilestats spin2' 1>&2 ;}
+    echo 'export -f cksh formfile formfilestats spin2' 1>&2 ;}
 
 test "$(declare -f validfn 2>/dev/null)" || { echo "$0 : validfn not defined" 1>&2 ; dep_help_skel ; exit 1 ;}
 while IFS= read a ; do
@@ -32,10 +32,9 @@ while IFS= read a ; do
     validfn $a && true || { echo "$0 : validfn error : $a" 1>&2 ; dep_help_sub ; exit 1 ;}
     done <<EOF
 spin2 1263edf2 00000180
-ckstat c44370c9 000003ac
-ckstatsum 464f5378 00000406
 formfile b646d543 00000fe1
 formfilestats c8598f5f 00000389
+cksh 1e282ba4 00000bad
 EOF
 
 [ -e $HOME/sub/markdown.awk ] || { echo "$0 : markdown.awk not found" 1>&2 ; dep_help_sub ; exit 1 ;}
@@ -104,16 +103,15 @@ gen_index () { # in pwd, for "$links/$name/"
     find "$wdp/$name"  -name stat.time.list -empty -exec rm \{\} \;
     find "$wdp/$name"  -name stat.pitch.list -empty -exec rm \{\} \;
 
-    $verb ${name}.cks ; $verb2 tmp "$wdp/%/$t/${name}.cks"
+    $verb ${name}.cksh ; $verb2 tmp "$wdp/%/$t/${name}.cksh"
     cat "$wdp/${name}.list" | while IFS= read a ; do
-        ckstat    $links/$name/$a | awk -v f="${a##*,}" '{printf ". . % 8s % 8s %s %s\n",$3,$4,$5,f}'
-      # ckstatsum $links/$name/$a | awk -v f="${a##*,}" '{printf ". . % 8s % 8s %s %s\n",$3,$4,$5,f}'
+        cksh $links/$name/$a | awk -v f="${a##*,}" '{$6=f; printf ". . %6s %08s %s %s\n",$3,$4,$5,f}'
         spin2
-        done >"$wdp/%/$t/${name}.cks~"
+        done >"$wdp/%/$t/${name}.cksh~"
     spin2 0
-    sort -k 6 -u "$wdp/%/$t/${name}.cks~" >"$wdp/%/$t/${name}.cks"
-    touch -r "$wdp/${name}.list" "$wdp/%/$t/${name}.cks"
-    mv "$wdp/%/$t/${name}.cks" "$wdp/$name/"
+    sort -k 6 -u "$wdp/%/$t/${name}.cksh~" >"$wdp/%/$t/${name}.cksh"
+    touch -r "$wdp/${name}.list" "$wdp/%/$t/${name}.cksh"
+    mv "$wdp/%/$t/${name}.cksh" "$wdp/$name/"
 
    $verb "${name}{.view,.list,.md,/*mp3} $links/0/kind/"
    rm -rf   "$links/0/kind/${name}"*
@@ -133,7 +131,7 @@ check_gen_index () { # gen_index iff diff
     [ -d "$links/$name/" ] || { chkerr "$0 $FUNCNAME : not a directory '$links/$name/'" ; exit 1 ;}
     # if listing time is different than dir time, gen_index
     [ -e "$wdp/${name}.list" ] \
-        && expr "$(ckstat "$wdp/${name}.list" | awk '{print $5}' )" '=' "$(ckstat "$links/$name/" | awk '{print $5}' )" >/dev/null \
+        && expr "$(cksh -x "$wdp/${name}.list" | awk '{print $5}' )" '=' "$(cksh -x "$links/$name/" | awk '{print $5}' )" >/dev/null \
         && { $verb "No change, skipping $name" ; return 0 ;} # ie return if no change or continue
     gen_index
     } # check_gen_index
@@ -303,7 +301,7 @@ $links/${name}/[0-z]*,*mp3             $music/${name}/${name}.tab
                                        $music/${name}/${name}.stat.time
                                        $music/${name}/${name}.stat.pitch
                                        $music/${name}/${name}.list
-                                       $music/${name}/${name}.ckstat
+                                       $music/${name}/${name}.cksh
 
 release exclude:
 
