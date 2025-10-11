@@ -34,7 +34,7 @@ while IFS= read a ; do
 spin2 1263edf2 00000180
 formfile b646d543 00000fe1
 formfilestats c8598f5f 00000389
-cksh 1e282ba4 00000bad
+cksh cb42d24d 00000e2e
 EOF
 
 [ -e $HOME/sub/markdown.awk ] || { echo "$0 : markdown.awk not found" 1>&2 ; dep_help_sub ; exit 1 ;}
@@ -131,7 +131,7 @@ check_gen_index () { # gen_index iff diff
     [ -d "$links/$name/" ] || { chkerr "$0 $FUNCNAME : not a directory '$links/$name/'" ; exit 1 ;}
     # if listing time is different than dir time, gen_index
     [ -e "$wdp/${name}.list" ] \
-        && expr "$(cksh -x "$wdp/${name}.list" | awk '{print $5}' )" '=' "$(cksh -x "$links/$name/" | awk '{print $5}' )" >/dev/null \
+        && expr "$(cksh -x0 "$wdp/${name}.list" | awk '{print $5}' )" '=' "$(cksh -x0 "$links/$name/" | awk '{print $5}' )" >/dev/null \
         && { $verb "No change, skipping $name" ; return 0 ;} # ie return if no change or continue
     gen_index
     } # check_gen_index
