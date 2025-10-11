@@ -148,41 +148,42 @@ path_prepend() { # prepend $1 if not already in path
   || export PATH="${1}:${PATH}" ;}
 
 cksh () { # return sortable stat and hash data for args OR stdin file list
-  # rev 68e59742 20251007 orig 6305e87b ckstat ckstatsum cks
+  # rev 68e9ff40 20251010 orig 6305e87b ckstat ckstatsum cks
   # (c) 2017-2025 George Georgalis <george@galis.org> unlimited use with this notice
-  local f= fs= OS= n=2 x= xoflen=3 ol= opt= OPTIND=
+  local f= fs= OS= n=2 x=3 ol= opt= OPTARG= OPTIND=
   while getopts ":012345n:x:h" opt; do case "$opt" in
-    0|1|2|3|4|5) n="$opt" ;; n) n="$OPTARG" ;;
-    x) [[ "$OPTARG" =~ ^[0-9]+$ ]] && [ "$OPTARG" -le 64 ] \
-         && { [ "$OPTARG" -eq 0 ] && x=skip || xoflen="$OPTARG" ;} \
-         || { chkerr "$FUNCNAME : -x requires 0-64, got '$OPTARG'" ; return 1 ;} ;;
-    :) [ "$OPTARG" = "x" ] && x=skip \
-         || { chkerr "$FUNCNAME : option -$OPTARG requires argument" ; return 1 ;} ;;
+    0|1|2|3|4|5) n="$opt" ;; n) n="$OPTARG" ;; x) x="$OPTARG" ;;
+    :) case "$OPTARG" in n) n=0 ;; x) x=0 ;; esac ;;
     h) sed 's/^[ ]\{6\}//' <<eof
         Usage: $FUNCNAME [-NUM] [-n NUM] [-x [LEN]] [FILE...]
-        Output: inode links hash size mdate filename
-          -n NUM    Omit NUM leading fields: 0-5, default: 2
-          -x [0]    Skip hash calculation (faster, uses '.' placeholder)
-          -x [1-64] Set XOF output length (default: 3)
+        Output: inode links shake256 size mdate filename
+          -n [NUM]  Omit NUM leading fields: 0-5 (bare: 0, default: 2)
+          -x [NUM]  XOF hash length: 0=skip, 1-64 (bare: 0, default: 3)
           --        End options; remaining args treated as filenames
           -h        Show help
-        Reads filenames from arguments or stdin. Hash auto-skipped when n>2.
+        Reads filenames from arguments or stdin.
 eof
        return 0 ;;
-    *) { chkerr "invalid option '$opt'" ; return 1;}
+    ?) { chkerr "$FUNCNAME : invalid option '$OPTARG' (68e9fa9a)" ; return 1;}
     esac
   done
   shift $((OPTIND - 1))
-  [[ "$n" =~ ^[0-5]$ ]] || { chkerr "$FUNCNAME : n must be 0-5" ; return 1 ;}
-  ((n>2)) && x=skip || true # don't calculate hash if field is truncated
-  [ "$x" ] && { _hash () { echo . ;} ;} || { _hash () { openssl shake256 -xoflen "$xoflen" -hex <"$f" 2>/dev/null ;} ; ol=$((xoflen*2)) ;}
+  # Validate n and x input
+  [[ "$n" =~ ^[0-9]+$ ]] && [ "$n" -ge 0 ] && [ "$n" -le 5 ] \
+    || { chkerr "$FUNCNAME : -n requires 0-5, got '$n' (68e9fbb2)" ; return 1; }
+  [[ "$x" =~ ^[0-9]+$ ]] && [ "$x" -ge 0 ] && [ "$x" -le 64 ] \
+    || { chkerr "$FUNCNAME : -x requires 0-64, got '$x' (68e9fc22)" ; return 1; }
+  ((n>2)) && x=0 || true # don't calculate hash if field is omited
+  ((x==0)) && { _hash () { echo . ;} ;} || { _hash () { openssl shake256 -xoflen "$x" -hex <"$f" 2>/dev/null ;} ; ol=$((x*2)) ;}
+  # use the correct stat options per OS
   read OS < <(uname) ; [ "$OS" = "Linux" ] && _stat() { stat -c %i\ %h\ %s\ %Y "$1" ;} || true
   [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat() { stat -f %i\ %l\ %z\ %m "$1" ;} || true
-  ((n==0)) && { [ "$x" ] && _awk () { awk '{printf "%8x %2x . % 8x %08x ",$1,$2,$3,$4}' ;} \
+  # define local _awk function according to 9 potential printf variations
+  ((n==0)) && { ((x==0)) && _awk () { awk '{printf "%8x %2x . % 8x %08x ",$1,$2,$3,$4}' ;} \
              || _awk () { awk -v ol="$ol" '{printf "%8x %2x %0"ol"s % 8x %08x ",$1,$2,$5,$3,$4}' ;} ;} || true
-  ((n==1)) && { [ "$x" ] && _awk () { awk '{printf ". %2x . % 8x %08x ",$2,$3,$4}' ;} \
+  ((n==1)) && { ((x==0)) && _awk () { awk '{printf ". %2x . % 8x %08x ",$2,$3,$4}' ;} \
              || _awk () { awk -v ol="$ol" '{printf ". %2x %0"ol"s % 8x %08x ",$2,$5,$3,$4}' ;} ;} || true
-  ((n==2)) && { [ "$x" ] && _awk () { awk '{printf ". . . % 8x %08x ",$3,$4}' ;} \
+  ((n==2)) && { ((x==0)) && _awk () { awk '{printf ". . . % 8x %08x ",$3,$4}' ;} \
              || _awk () { awk -v ol="$ol" '{printf ". . %0"ol"s % 8x %08x ",$5,$3,$4}' ;} ;} || true
   ((n==3)) && _awk () { awk '{printf ". . . % 8x %08x ",$3,$4}' ;} || true
   ((n==4)) && _awk () { awk '{printf ". . . . %08x ",$4}' ;} || true
