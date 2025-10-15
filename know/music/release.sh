@@ -6,41 +6,37 @@
 set -e
 
 dep_help_skel () { echo '# ><> eval "$(curl -fsSL https://github.com/georgalis/pub/blob/master/skel/.profile)" <><' 1>&2
-    echo 'export -f devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue chkexit logexit validfn' 1>&2 ;}
+    echo 'export -f devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue ' 1>&2 ;}
 dep_help_sub () { echo '# ><> eval "$(curl -fsSL https://github.com/georgalis/pub/blob/master/sub/fn.bash)" <><' 1>&2
-    echo 'export -f cksh formfile formfilestats spin2' 1>&2 ;}
+    echo 'export -f cksh vfn formfile formfilestats spin2' 1>&2 ;}
 
-test "$(declare -f validfn 2>/dev/null)" || { echo "$0 : validfn not defined" 1>&2 ; dep_help_skel ; exit 1 ;}
+test "$(declare -f vfn 2>/dev/null)" || { echo "$0 : vfn not defined" 1>&2 ; dep_help_sub ; exit 1 ;}
 while IFS= read a ; do
-    validfn $a && true || { echo "$0 : validfn error : $a" 1>&2 ; dep_help_skel ; exit 1 ;}
+    vfn $a && true || { echo "$0 : vfn error : $a (68f02595)" 1>&2 ; dep_help_skel ; exit 1 ;}
     done <<EOF
-devnul 216e1370 0000001d
-stderr 7ccc5704 00000037
-chkstd ee4aa465 00000032
-chkwrn 2683d3d3 0000005c
-logwrn f279f00e 0000005f
-chkerr 4f18299d 0000005b
-logerr 2db98372 0000005e
-chkexit e6d9b430 0000005a
-logexit 235b98c9 0000005d
-chktrue 1f11f91d 0000005c
-validfn 6fcde5cc 0000046d
-validex a652b330 000004fc
+devnul   0eb7cdd2bfb59cd4e2743c0c8d22db1b6b711dc5f70eafc51d841d67aeb850adb5f24f6561829a1c55d3fe9a62a89ceb
+stderr   e010b0e704f67ee4d5fc8227d32030bfa06e60be9a49daf0b4c91c6eee9671bc2a17a3d517b8da4e20b7946ea302c130
+chkstd   66c5e827c43c8291eb471d1bb61067f6323b2cf3fc5fd9f56f9b4b8516a9e574f44d4c0d614853512894ca651af9caa8
+chkwrn   3acc570671ddfd9b5c0eeca64a2c7541b4559d9c3e1edae841c2317bba84a9a55c90455b86deafaf32d592a8f48c5726
+logwrn   1775beeee82daa381b314944b9a1963381c9291bbc9884ef27ce99cb762a80a7bb8f5c0d5e1c9586b6a12f15a919b150
+chkerr   50195549cedb329654b8cd279d5e471a536488ebfd3045b4589d05e20c0072faecf4b89566df11144369f437821a27d5
+logerr   8420e3638ccde6b2c86820d4460e059edcfcb00e2f3ba065e5270bf57e66abce058c88ea95168f3345539ea536abad79
+chktrue  6053b8cfa998834844f9dd687af4753b96d2f2e14cf6c51c22dac7165daaf2405e4637bd82096c81165e54728d1d5d3b
 EOF
-
 while IFS= read a ; do
-    validfn $a && true || { echo "$0 : validfn error : $a" 1>&2 ; dep_help_sub ; exit 1 ;}
+    vfn $a && true || { echo "$0 : vfn error : $a (68f025e2)" 1>&2 ; dep_help_sub ; exit 1 ;}
     done <<EOF
-spin2 1263edf2 00000180
-formfile b646d543 00000fe1
-formfilestats c8598f5f 00000389
-cksh cb42d24d 00000e2e
+spin2          28662d7740b68992e46be02bd4e8820f78e2963889b8658a32f87cbd78f4574210e74783a369c3ef1b6b4f0a86b5a179
+formfile       64e9bbfdcfb593a9f36b2a7bc9c94cd78c98fb52ef8b4850020f9c4196466e4d3b053ab9a0cc86d8701332f3c9323c28
+formfilestats  52ca5d599803115ca6570d3e668ce76e56fdba2c7b9f6ede921e739b4475f42915f4fdd5a6523b10f1bb28395af4400c
+cksh           41b8f3f40c3f54424276e8611c6b4fce634d3a064c0e9dbb4b96d48eccb8f976fb3c5b4ec38faecfb0856cbfb0e011e4
+vfn            3f41bca80c09a17a3f2ee414d56d9ed5306ea525e74e619f0dc000c4adda61cf6abd9118f3c316baf568e35e69aa0a69
 EOF
 
 [ -e $HOME/sub/markdown.awk ] || { echo "$0 : markdown.awk not found" 1>&2 ; dep_help_sub ; exit 1 ;}
 
-ps | grep -E "^[ ]*$$" | grep -q bash || chkexit "$0 : Not bash"
-test -d "$links"                      || chkexit "$0 : not a directory links='$links'"
+ps | grep -E "^[ ]*$$" | grep -q bash || { chkerr "$0 : Not bash" ; exit 1 ;}
+test -d "$links"                      || { chkerr "$0 : not a directory links='$links'" ; exit 1 ;}
 export links # we will need it in sub-shells and pipelines
 
 f="$0"
@@ -81,17 +77,6 @@ gen_index () { # in pwd, for "$links/$name/"
     comma_mp3.sh "$links/$name"
     cp -f "$links/$name/0," $wdp/${name}.view
     touch -r "$wdp/${name}.list" $wdp/${name}.view "$links/$name"
-
-#   $verb ${name}.tab ; $verb2 tmp "$wdp/%/$t/${name}.tab"
-#   cat "$wdp/${name}.list" | while IFS= read a ; do
-#       b="$(verb2=devnull ; formfile "$a" )"
-#       sed -e 's/   .*_^/ _^/' -e "s/'//" -e 's/^\(.*\)\( _^.*\)/\2 \1/' -e 's/^\(.*\),\([^ ]*\)/\2 \1 /' <<<"$b" \
-#           | awk '{printf "%-85s %-18s",$1,$2;$1="";$2="";$3="";print}'
-#       spin2
-#       done | sort -f >"$wdp/%/$t/${name}.tab"
-#   spin2 0
-#   touch -r "$wdp/${name}.list" "$wdp/%/$t/${name}.tab"
-#   mv "$wdp/%/$t/${name}.tab" "$wdp/$name"
 
     $verb ${name}/stat.time.list ; $verb2 tmp "$wdp/%/$t/${name}.stat.time"
     formfilestats "$links/$name" >"$wdp/%/$t/${name}.stat.time"
@@ -145,7 +130,7 @@ kind_curate_rsync () { # rsync $links/0/kind/$name/
     # https://discussions.apple.com/thread/254383328
     # https://github.com/WayneD/rsync/issues/412
     # --bwlimit="5.2m" seems to stop micro sd overheating...
-    rsync -aP --delete --modify-window=1 --bwlimit="5.2m" $links/0/kind/${name}* "/Volumes/CURATE/kind/" \
+    rsync -aP --delete --modify-window=1 --bwlimit="5.8m" $links/0/kind/${name}* "/Volumes/CURATE/kind/" \
         | grep -vE '((^sending|^sent|^total) |^$|^\./$)' || true
 #       cd $links/0/kind/ && find . -type f -path "./${name}*" -exec touch -r \{\} "/Volumes/CURATE/kind/"\{\} \;
     } # kind_curate_rsync

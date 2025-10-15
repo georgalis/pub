@@ -146,28 +146,30 @@ validfn () { #:> validate function, compare unit hash vs operation env hash
 		EOF
     return 1 ;}
     } # validfn
-# Now that validfn is defined, run the framework on expected functions...
-#
-# eg first, generate hashes of known functions...
-#   for f in devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue chkexit logexit siffx validfn ; do validfn $f ; done
-#
-# then run validfn on that data to report if the functions have ever change
-# print help if hash unit does not match hash from env --insecure
-test "$(declare -f validfn 2>/dev/null)" || { echo "$0 : validfn not defined (6542c8ca)" 1>&2 ; _help_sub ; return 1 ;}
-while IFS= read a ; do
-        validfn $a && true || { echo "validfn error : $a (6542c8d6)" 1>&2 ; _help_skel ; break 1 ;}
-        done <<EOF
-devnul 216e1370 0000001d
-stderr 7ccc5704 00000037
-chkstd ee4aa465 00000032
-chkwrn 2683d3d3 0000005c
-logwrn f279f00e 0000005f
-chkerr 4f18299d 0000005b
-logerr 2db98372 0000005e
-chktrue 1f11f91d 0000005c
-siffx c20a9040 000002f7
-validfn 6fcde5cc 0000046d
-EOF
+# only use vfn the openssl based validfn replacement
+# #
+# # Now that validfn is defined, run the framework on expected functions...
+# #
+# # eg first, generate hashes of known functions...
+# #   for f in devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue chkexit logexit siffx validfn ; do validfn $f ; done
+# #
+# # then run validfn on that data to report if the functions have ever change
+# # print help if hash unit does not match hash from env --insecure
+# test "$(declare -f validfn 2>/dev/null)" || { echo "$0 : validfn not defined (6542c8ca)" 1>&2 ; _help_sub ; return 1 ;}
+# while IFS= read a ; do
+#         validfn $a && true || { echo "validfn error : $a (6542c8d6)" 1>&2 ; _help_skel ; break 1 ;}
+#         done <<EOF
+# devnul 216e1370 0000001d
+# stderr 7ccc5704 00000037
+# chkstd ee4aa465 00000032
+# chkwrn 2683d3d3 0000005c
+# logwrn f279f00e 0000005f
+# chkerr 4f18299d 0000005b
+# logerr 2db98372 0000005e
+# chktrue 1f11f91d 0000005c
+# siffx c20a9040 000002f7
+# validfn 6fcde5cc 0000046d
+# EOF
 
 vfn () { #:> verify function against shake256 xoflen hash, or generate hash
   # rev 677ab05a-20250108_132329 ./sub/fn.bash
@@ -175,13 +177,12 @@ vfn () { #:> verify function against shake256 xoflen hash, or generate hash
   # hash inputs. the bash interpreter version (shell) provided by apple
   # is circa 2006, and not compatible with the current bash versions.
   # for cross-platform compatibility, and bug fixes, install a current
-  # stable version of bash, on macos
+  # stable version of bash, on macos; and openssl which supports shake265 xoflen
   # if arg1 ${*:-} ; help
   [ -z "$1" -o "$1" = '-h' -o "$1" = '--help' ] && {
     cat 1>&2 <<-EOF
-	: $FUNCNAME VERIFY FUNCTION usage:
 	  $FUNCNAME {function}        ; returns {function-name} {hash}
-	  $FUNCNAME {function} {hash} ; return no error, if hash match
+	  $FUNCNAME {function} {hash} ; return no error, if hash matches function
 	: the former is intended to provide hash data for the latter,
 	: env xoflen sets the shake256 hash length, or it is determined from input
 	: xoflen=5 sets a 40-bit hash (8x), vs a default 256-bit hash (xoflen=32)
@@ -207,11 +208,11 @@ vfn () { #:> verify function against shake256 xoflen hash, or generate hash
   echo ">>> $0 : internal error (677da024) <<<" >&2
   return 1
   } # vfn 677da1f9 20250107_135153; fnhash Jul 28, 2023; validfn Feb 8, 2020 sub/func.bash
-# now that vfn is defined, run the function qualifier on dep functions
-# from .profile, raise help on err; first, generate 384-bit
-# reference hashes (xoflen=48) of the functions...
+# Now that vfn is defined, qualify .profile baseline functions
+# against 384-bit reference hash (xoflen=48); raise help on error.
+# Gather reference hash data:
 #   for f in devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue siffx validfn vfn ; do xoflen=48 vfn $f ; done
-# then run vfn with xoflen=3 with the reference hash data, for a
+# then run vfn with xoflen=3 with against reference hash data, for a
 # lightweight 24-bit qualification of the functions, from the reference
 # hash data, ---for more frequent integrity checks, based on stronger
 # reference hashes
@@ -227,6 +228,7 @@ logerr   8420e3638ccde6b2c86820d4460e059edcfcb00e2f3ba065e5270bf57e66abce058c88e
 chktrue  6053b8cfa998834844f9dd687af4753b96d2f2e14cf6c51c22dac7165daaf2405e4637bd82096c81165e54728d1d5d3b
 siffx    faf13db46a77326a019ca42325f2d1b4ab3c410c39bc36f3294baf2da85d53f11af2a1738d055eaaaee78333654a8c3e
 validfn  4240a107e4f699a97fde04d53403dbb9e4a06452fe72c2b5781258ea3a242d288faac045458f35efc61cecde3cbefc34
+vfn      3f41bca80c09a17a3f2ee414d56d9ed5306ea525e74e619f0dc000c4adda61cf6abd9118f3c316baf568e35e69aa0a69
 EOF
 
 fnhash () { # gen validfn data from env and fn names in file (arg1), for repo commit comments
