@@ -231,7 +231,6 @@ chkexit  95f639509bf0fd473fb5188531b7138201ce2691b2ca8744c535eb764ab756abca5b5db
 logexit  669f2138af0e8ec67d469796abd822cec889640de3d529fa8ff5af876d30fcdf56a4a6d77baba81c951fe4d33d86ed6d
 siffx    faf13db46a77326a019ca42325f2d1b4ab3c410c39bc36f3294baf2da85d53f11af2a1738d055eaaaee78333654a8c3e
 validfn  4240a107e4f699a97fde04d53403dbb9e4a06452fe72c2b5781258ea3a242d288faac045458f35efc61cecde3cbefc34
-vfn      edc7e32d2cb89b32c15255a675dec8f82d8470bd792be28c887549ba73e6c75ca4a3ac70498919619bbb2d05431592d8
 EOF
 
 fnhash () { # gen validfn data from env and fn names in file (arg1), for repo commit comments
@@ -314,6 +313,59 @@ gcfg () { # report all the git config and where it comes from, repo dir may be s
       done | sort
   cd "$e" ; cd "$p" # restore the working dir and the old working dir
   } # 665104f8-20240524_142150
+
+cksh () { # return sortable stat and hash data for args OR stdin file list
+  # rev 68e9ff40 20251010 orig 6305e87b ckstat ckstatsum cks
+  # (c) 2017-2025 George Georgalis <george@galis.org> unlimited use with this notice
+  local f= fs= OS= n=2 x=3 ol= opt= OPTARG= OPTIND=
+  while getopts ":012345n:x:h" opt; do case "$opt" in
+    0|1|2|3|4|5) n="$opt" ;; n) n="$OPTARG" ;; x) x="$OPTARG" ;;
+    :) case "$OPTARG" in n) n=0 ;; x) x=0 ;; esac ;;
+    h) sed 's/^[ ]\{6\}//' <<eof
+        Usage: $FUNCNAME [-NUM] [-n [NUM]] [-x [LEN]] [FILE...]
+        Output: inode links shake256 size mdate filename
+          -n [NUM]  Omit NUM leading fields: 0-5 (bare: 0, default: 2)
+          -x [LEN]  XOF hash length: 0=skip, 1-64 (bare: 0, default: 3)
+          --        End options; remaining args treated as filenames
+          -h        Show help
+        Reads filenames from arguments or stdin.
+eof
+       return 0 ;;
+    ?) { chkerr "$FUNCNAME : invalid option '$OPTARG' (68e9fa9a)" ; return 1;}
+    esac
+  done
+  shift $((OPTIND - 1))
+  # Validate n and x input
+  [[ "$n" =~ ^[0-9]+$ ]] && [ "$n" -ge 0 ] && [ "$n" -le 5 ] \
+    || { chkerr "$FUNCNAME : -n requires 0-5, got '$n' (68e9fbb2)" ; return 1; }
+  [[ "$x" =~ ^[0-9]+$ ]] && [ "$x" -ge 0 ] && [ "$x" -le 64 ] \
+    || { chkerr "$FUNCNAME : -x requires 0-64, got '$x' (68e9fc22)" ; return 1; }
+  ((n>2)) && x=0 || true # don't calculate hash if field is omited
+  ((x==0)) && { _hash () { echo . ;} ;} || { _hash () { openssl shake256 -xoflen "$x" -hex <"$f" 2>/dev/null ;} ; ol=$((x*2)) ;}
+  # use the correct stat options per OS
+  read OS < <(uname) ; [ "$OS" = "Linux" ] && _stat() { stat -c %i\ %h\ %s\ %Y "$1" ;} || true
+  [ "$OS" = "Darwin" -o "$OS" = "NetBSD" ] && _stat() { stat -f %i\ %l\ %z\ %m "$1" ;} || true
+  # define local _awk function according to 9 potential printf variations
+  ((n==0)) && { ((x==0)) && _awk () { awk '{printf "%8x %2x . % 8x %08x ",$1,$2,$3,$4}' ;} \
+             || _awk () { awk -v ol="$ol" '{printf "%8x %2x %0"ol"s % 8x %08x ",$1,$2,$5,$3,$4}' ;} ;} || true
+  ((n==1)) && { ((x==0)) && _awk () { awk '{printf ". %2x . % 8x %08x ",$2,$3,$4}' ;} \
+             || _awk () { awk -v ol="$ol" '{printf ". %2x %0"ol"s % 8x %08x ",$2,$5,$3,$4}' ;} ;} || true
+  ((n==2)) && { ((x==0)) && _awk () { awk '{printf ". . . % 8x %08x ",$3,$4}' ;} \
+             || _awk () { awk -v ol="$ol" '{printf ". . %0"ol"s % 8x %08x ",$5,$3,$4}' ;} ;} || true
+  ((n==3)) && _awk () { awk '{printf ". . . % 8x %08x ",$3,$4}' ;} || true
+  ((n==4)) && _awk () { awk '{printf ". . . . %08x ",$4}' ;} || true
+  ((n==5)) && _awk () { awk '{printf ". . . . . "}' ;} || true
+  while [ $# -gt 0 ]; do fs+="$1"$'\n' ; shift ; done ; fs="${fs%$'\n'}" ; [ -z "$fs" ] && read -d '' fs || true
+  # generate _stat/_hash/ls composite, stream through _awk field extractor
+  while IFS= read f; do _awk < <( tr '\n' ' ' < <( _stat "$f" ; awk '{print $2}' < <(_hash))) \
+      && sed -e 's/[*%]$//' < <(ls -dF "$f") \
+      || { chkerr "$FUNCNAME : internal error '$f'" ; return 1 ;}
+    done <<<"$fs" # dir, sym, etc like regular files
+    # sed to purge executable and "whiteout" file symbols from listing decoration
+    # shake256 -xoflen 3 is okay for integrity check, and compatible with longer crypto reference (requires newer openssl)
+    # extract filenames with spaces from output: awk '{print substr($0, index($0,$6))}'
+  } # cksh
+
 
 which ci >/dev/null 2>&1 && {
 _rcs () { # local rcs function
@@ -504,30 +556,35 @@ ctt () { #:> always truncate lines to width
         awk -v cols="$((cols))" 'length > cols{$0=substr($0,0,cols)""}1'
     } # ct formally cattrunc
 
-__mksymdir () { # symlink directories named _* into {arg1}/__ while
+_mksymdir () { # symlink directories named _* into {arg1}/_
+  # rev: 68ec2900 20251012 151726 PDT Sun 03:17 PM 12 Oct
   local a= base=
   [ "$1" ] || { cat <<eof
-  Provide a base directory as arg1, $FUNCNAME
-  will symlink directories named _* into {base}/__/ while
-  pruning at that level and removing previous symlinks.
-  Duplicates are not symlinked, and recorded (as regex) in {base}/dup.err
-  687c7ea1-20250719_222855
+  $FUNCNAME will symlink directories named _* into "{arg1}/_/"
+  sans their leading '_' while pruning the search on those
+  directories, any previous symlinks are removed, duplicates
+  are not symlinked, but recorded in {arg1}/_/duplicate.err
+  68ec254f 20251012 150141
 eof
   return 1 ;}
   ( cdphy "$1" || { chkerr "not a directory: '$1' (687c45fe)" ; return 1 ;}
-  rm -rf "__/%%" && mkdir -p "__/%%"
-  cd __
-  uniq -d < <(sort < <(sed -e 's|.*/|/|' -e 's|$|$|' < <(find -L .. -type d -name _\* -prune ))) >./dup.err
-  while IFS= read a ; do
-    base=${a##*/} ; base=${base#_}
-    ln -s "$a" "./%%/$base"
-    touch -hr "$a" "./%%/$base"
-    done < <(sed -e '/^\.\.\/__/d' < <(grep -vf ./dup.err < <(find -L .. -type d -name _\* -prune)))
-  find ./dup.err -empty -exec rm {} \;
-  cd ..
-  find ./__ -mindepth 1 -maxdepth 1 -type l -exec rm {} \;
-  find ./__/%% -type l -exec mv {} ./__ \;
-  rm -rf ./__/%%
+    rm -rf "_/%%" && mkdir -p "_/%%" # reset tmp directory
+    cd _
+    uniq -d < <(sort < <(sed -e 's|.*/|/|' -e 's|$|$|' < <(find -L .. -type d -name _\* -prune ))) \
+      >././duplicate.err # record duplicates as regex for exclusion
+    while IFS= read a ; do
+      base=${a##*/} ; base=${base#_}
+      ln -s "$a" "./%%/$base"
+      touch -hr "$a" "./%%/$base"
+      # filter the duplicates, and also the target directory from the find
+      done < <(sed -e '/^\.\.\/_/d' < <(grep -vf ./duplicate.err < <(find -L .. -type d -name _\* -prune)))
+    find ./duplicate.err -empty -exec rm {} \; # delete the error file if empty
+    cd ..
+    find ./_ -mindepth 1 -maxdepth 1 -type l -exec rm {} \; # remove prior symlinks
+    find ./_/%% -type l -exec mv {} ./_ \;
+    rm -rf ./_/%%
+    find ./_ -maxdepth 1 -type l -exec readlink {} \; >>_/link.log \
+      && sort -u ./_/link.log >./_/link.log~ && mv -f ./_/link.log~ ./_/link.log
   ) ;} # 68bc9211 20250906 125655 PDT Sat 12:56 PM 6 Sep
 
 # "$ytdl" --abort-on-error --yes-playlist \
@@ -642,6 +699,67 @@ _yt_list () { # ytdl wrapper function for playlist
   # organize files manually...
   find "$d/" -maxdepth 1 -name 00${xs},\*
   } # _yt_list _youtube_list 20220516
+_yt_list () { # ytdl wrapper function for playlist
+  # Download audio, subtitles, metadata and generate yaml summary
+  # rev 68e7bcc8 20251009
+  # refitting _yt
+  local id="$1" d="${2:-}" ytdl=${ytdl:-yt-dlp}
+  local tmp_json= xs= existing= resp= json_path= count= base_name= acodec= media_file= audio_file= playlist_dir=
+  [ "$id" ] || read -p "youtube id: " id
+  [ "$id" ] || { chkerr "$FUNCNAME : no id? (6542c9d2)" ; return 1 ;}
+  read id < <(sed -e 's/[?&]si=[[:alnum:]_-]\{16\}[&]*//' -e 's/\?$//' <<<"$id") # squash trackers from url
+  d="${d:-.}"
+  [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d' (6542c606)" ; return 1 ;}
+  mkdir -p "$d/@/tmp/ytdl" # "$d"/{@/{,meta},orig}
+  tmp_json="$(cd "$d/@/tmp/ytdl" && mktemp ytdl.json-XXXX)"
+  read xs < <(sed -e 's/^@4[0]*//' -e 's/[[:xdigit:]]\{8\} $//' < <(tai64n <<<'')) \
+    || { chkerr "$FUNCNAME : failed to set xs (6674c2fd)" ; return 1 ;}
+  # Check for existing files using temp json metadata
+  { $ytdl --dump-json --no-write-comments -- "$id" \
+    || { chkerr "$FUNCNAME : failed to load json '$id' (676c4aad)" ; return 1 ;}
+    } >"$d/@/tmp/ytdl/$tmp_json"
+# read -d '' id acodec < <(jq -r '[.id, .acodec] | @tsv' "$d/@/tmp/ytdl/$tmp_json") || true
+# read -d '' existing < <(sort < <(find -E "$links" -regex "$links/.*/(tmp|0)" -prune -false -o -name "*${id}*" )) || true
+# [ "$existing" ] && { echo "$existing" ; read -p "files found, continue (N/y) " resp ; [ "$resp" = "y" ] || return 1 ;} || true
+  # Download content with original audio format
+  chktrue "$tmp_json"
+  $ytdl --write-info-json --write-comments --write-sub --write-auto-sub \
+    --sub-langs "en,en-US,en-GB,en-AU" --write-thumbnail --restrict-filenames \
+    -f bestaudio --extract-audio --abort-on-error --playlist-start 1 \
+    -o "$d/00${xs},%(playlist_title)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(upload_date)s_^%(id)s.%(ext)s" -- "$id"
+# organize files manually...
+find "$d/00${xs},"* 
+  # Get downloaded json path and organize files
+  read -d '' json_path < <(find "$d/00${xs},"* -maxdepth 1 -name "*.json") || true
+chktrue "$json_path"
+  [ "$json_path" ] || { chkerr "$FUNCNAME : not found '$d/*${id}*json' (676c546a)" ; return 1 ;}
+  read count < <(wc -l <<<"$id")
+  chktrue "json count $count"
+  chktrue "$tmp_json"
+  #[ "$count" = 1 ] || { chkerr "$FUNCNAME : unexpected json count '$count' for id '${id}' (676c5734)" ; return 1 ;}
+  # Move files to final locations
+  read -d '' acodec < <(jq -r '.acodec' "$json_path" ) || true
+  read -d '' playlist_dir < <(find "$d/" -maxdepth 1 -name "00${xs},*" -type d)
+  mkdir -p "$playlist_dir/orig" "$playlist_dir/@/meta"
+  find "$playlist_dir" -maxdepth 1 -mindepth 1 \
+    \( -name "*.json" -o -name "*.webp" -o -name "*.jpg" -o -name "*.vtt" \) \
+    -exec mv {} "$playlist_dir/@/meta/" \;
+# read -d '' media_file < <(find "$d/" -mindepth 1 -maxdepth 1 -name "00${xs},*${id}*") || true
+# read count < <(wc -l <<<"$media_file")
+# [ "$count" = 1 ] || { chkerr "$FUNCNAME : unexpected media_file count '$count' for id '$d/00${xs},*${id}*' (676c6f29)" ; return 1 ;}
+# [ -f "$media_file" ] || { chkerr "$FUNCNAME : media_file not found '$d/00${xs},*${id}*' (676c6dcb)" ; return 1 ;}
+ #audio_file="${media_file/%webm/$acodec}"
+ #[ "$media_file" = "$audio_file" ] || mv "${media_file}" "${audio_file}" # maybe webm will never show again... or not.
+  #read ext < <(sed -e '/^  Stream /!d' -e 's/.* Audio: //' -e 's/,.*//' < <(ffprobe "$audio_file" 2>&1 ))
+ #ln -f "$audio_file" "$d/@/_^${id}.${acodec}"
+ #mv -f "$audio_file" "$d/orig/"
+chkwrn x 68e7c8f4 media_file: ln -f "$media_file" "$d/@/_^${id}.${acodec}"
+# ln -f "$media_file" "$d/@/_^${id}.${acodec}"
+chkwrn x 68e7c902 media_file: mv -f "$media_file" "$d/orig/"
+# mv -f "$media_file" "$d/orig/"
+  # Generate yaml summary
+# _yt_json2txt "$d/@/meta/00${xs},"*".json" "$d/@/_^${id}.${acodec}" "$d"
+  } # _yt _youtube 20220516
 
 
 _yt_com () { # if set use $ytdl_tmpl
@@ -775,8 +893,8 @@ _yt () { # ytdl wrapper functions
   # Download content with original audio format
   $ytdl --write-info-json --write-comments --write-sub --write-auto-sub \
     --sub-langs "en,en-US,en-GB,en-AU" --write-thumbnail --restrict-filenames \
-    -f bestaudio --extract-audio --abort-on-error --no-playlist \
-    -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" -- "$id"
+    -f bestaudio --extract-audio --no-playlist \
+    -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" -- "$id" # --abort-on-error 
   # Get downloaded json path and organize files
   read -d '' json_path < <(find "$d/" -maxdepth 1 -name "*${id}*.json") || true
   [ "$json_path" ] || { chkerr "$FUNCNAME : not found '$d/*${id}*json' (676c546a)" ; return 1 ;}
@@ -1335,15 +1453,6 @@ formfilestats () { # accept dir(s) as args, report unique formfile time and pitc
  #    #b=$(sed -e 's/,.*//' <<<$in)
  #     echo "spectrogram -o ./png/${in##*/}.png"
  #     }
-
-masterlink () {
-verb2=chkwrn
-  [ "$1" ] && local hash="$1" || { chkerr "$FUNCNAME : no hash (6542c7e0)" ; return 1 ;}
-  [ "$2" ] || local dir="$links/_ln" && local dir="$2"
-  dot4find "$hash" \
-    | grep -vE '(.vtt$|.json$)' | cksh -x  | sort -k5 | head -n1 \
-    | awk -v m="$dir/$hash" '{print "ln",$5,m}'
- }
 
 
 # The lack tone functions generate a drone intended to add aesthetic to a noisy environment.
