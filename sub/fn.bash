@@ -165,8 +165,6 @@ logwrn f279f00e 0000005f
 chkerr 4f18299d 0000005b
 logerr 2db98372 0000005e
 chktrue 1f11f91d 0000005c
-chkexit e6d9b430 0000005a
-logexit 235b98c9 0000005d
 siffx c20a9040 000002f7
 validfn 6fcde5cc 0000046d
 EOF
@@ -212,7 +210,7 @@ vfn () { #:> verify function against shake256 xoflen hash, or generate hash
 # now that vfn is defined, run the function qualifier on dep functions
 # from .profile, raise help on err; first, generate 384-bit
 # reference hashes (xoflen=48) of the functions...
-#   for f in devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue chkexit logexit siffx validfn vfn ; do xoflen=48 vfn $f ; done
+#   for f in devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue siffx validfn vfn ; do xoflen=48 vfn $f ; done
 # then run vfn with xoflen=3 with the reference hash data, for a
 # lightweight 24-bit qualification of the functions, from the reference
 # hash data, ---for more frequent integrity checks, based on stronger
@@ -227,8 +225,6 @@ logwrn   1775beeee82daa381b314944b9a1963381c9291bbc9884ef27ce99cb762a80a7bb8f5c0
 chkerr   50195549cedb329654b8cd279d5e471a536488ebfd3045b4589d05e20c0072faecf4b89566df11144369f437821a27d5
 logerr   8420e3638ccde6b2c86820d4460e059edcfcb00e2f3ba065e5270bf57e66abce058c88ea95168f3345539ea536abad79
 chktrue  6053b8cfa998834844f9dd687af4753b96d2f2e14cf6c51c22dac7165daaf2405e4637bd82096c81165e54728d1d5d3b
-chkexit  95f639509bf0fd473fb5188531b7138201ce2691b2ca8744c535eb764ab756abca5b5db2ef5d88c9924ad33804960e87
-logexit  669f2138af0e8ec67d469796abd822cec889640de3d529fa8ff5af876d30fcdf56a4a6d77baba81c951fe4d33d86ed6d
 siffx    faf13db46a77326a019ca42325f2d1b4ab3c410c39bc36f3294baf2da85d53f11af2a1738d055eaaaee78333654a8c3e
 validfn  4240a107e4f699a97fde04d53403dbb9e4a06452fe72c2b5781258ea3a242d288faac045458f35efc61cecde3cbefc34
 EOF
