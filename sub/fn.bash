@@ -6,15 +6,14 @@
 #
 # For bash compatible shells
 #
-# https://github.com/georgalis/pub/blob/master/sub/fn.bash
+# https://github.com/georgalis/pub/blob/main/sub/fn.bash
 
 _help_skel() {
   cat 1>&2 <<'eof'
 >>>---
   eval "$(curl -fsSL --insecure \
-    https://raw.githubusercontent.com/georgalis/pub/master/skel/.profile)"
-  export -f devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue \
-    chkexit logexit siffx
+    https://raw.githubusercontent.com/georgalis/pub/main/skel/.profile)"
+  export -f devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue siffx
 ---<<<
 eof
   }
@@ -633,7 +632,7 @@ _yt_vid () { # ytdl wrapper functions for video
     -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" -- "$id"
   # Get downloaded json path and organize files
   read -d '' json_path < <(find "$d/" -maxdepth 1 -name "*${id}*.json") || true
-  [ "$json_path" ] || { chkerr "$FUNCNAME : not found '$d/*${id}*json' (676c546a)" ; return 1 ;}
+  [ "$json_path" ] || { chkerr "$FUNCNAME : not found '$d/*${id}*json' (68f12702)" ; return 1 ;}
   read count < <(wc -l <<<"$id")
   [ "$count" = 1 ] || { chkerr "$FUNCNAME : unexpected json count '$count' for id '${id}' (676c5734)" ; return 1 ;}
   # Move files to final locations
@@ -664,39 +663,6 @@ _yt_vid () { # ytdl wrapper functions for video
 #    --abort-on-error --no-playlist \
 #    -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" -- "$id"
 
-_yt_list () { # ytdl wrapper function for playlist
-  # Download audio, subtitles, metadata and generate yaml summary
-  # rev 677027f9 20241228_083153
-  local id="$1" d="${2:-}" ytdl=${ytdl:-yt-dlp}
-  local tmp_json= xs= existing= resp= json_path= count= base_name= acodec= media_file= audio_file=
-  [ "$id" ] || read -p "youtube id: " id
-  [ "$id" ] || { chkerr "$FUNCNAME : no id? (6542c9d2)" ; return 1 ;}
-  read id < <(sed -e 's/[?&]si=[[:alnum:]_-]\{16\}[&]*//' -e 's/\?$//' <<<"$id") # squash trackers from url
-  d="${d:-.}"
-  [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d' (6542c606)" ; return 1 ;}
-  mkdir -p "$d/@/tmp/ytdl"
-  tmp_json="$(cd "$d/@/tmp/ytdl" && mktemp ytdl.json-XXXX)"
-  read xs < <(sed -e 's/^@4[0]*//' -e 's/[[:xdigit:]]\{8\} $//' < <(tai64n <<<'')) \
-    || { chkerr "$FUNCNAME : failed to set xs (6674c2fd)" ; return 1 ;}
-  # Check for existing files using temp json metadata
-  { $ytdl --dump-json --no-write-comments -- "$id" \
-    || { chkerr "$FUNCNAME : failed to load json '$id' (676c4aad)" ; return 1 ;}
-    } >"$d/@/tmp/ytdl/$tmp_json"
-  read -d '' id acodec < <(jq -r '[.id, .acodec] | @tsv' "$d/@/tmp/ytdl/$tmp_json") || true
-  read -d '' existing < <(sort < <(find -E "$links" -name "*${id}*" \
-    \! -regex "$links/.*(tmp|0)/.*")) || true
-  [ "$existing" ] && { echo "$existing"
-    read -p "files found, continue (N/y) " resp
-    [ "$resp" = "y" ] || return 1 ;} || true
-  # Download content with original audio format
-  $ytdl --abort-on-error --yes-playlist \
-    --write-info-json --write-comments --write-sub --write-auto-sub \
-    --sub-langs "en,en-US,en-GB,en-AU" --write-thumbnail --restrict-filenames \
-    -f bestaudio --extract-audio --abort-on-error --playlist-start 1 \
-    -o "$d/00${xs},%(playlist_title)s/%(playlist_index)s,%(title)s-%(playlist_title)s-%(upload_date)s_^%(id)s.%(ext)s" -- "$id"
-  # organize files manually...
-  find "$d/" -maxdepth 1 -name 00${xs},\*
-  } # _yt_list _youtube_list 20220516
 _yt_list () { # ytdl wrapper function for playlist
   # Download audio, subtitles, metadata and generate yaml summary
   # rev 68e7bcc8 20251009
@@ -730,7 +696,7 @@ find "$d/00${xs},"*
   # Get downloaded json path and organize files
   read -d '' json_path < <(find "$d/00${xs},"* -maxdepth 1 -name "*.json") || true
 chktrue "$json_path"
-  [ "$json_path" ] || { chkerr "$FUNCNAME : not found '$d/*${id}*json' (676c546a)" ; return 1 ;}
+  [ "$json_path" ] || { chkerr "$FUNCNAME : not found '$d/*${id}*json' (68f126df)" ; return 1 ;}
   read count < <(wc -l <<<"$id")
   chktrue "json count $count"
   chktrue "$tmp_json"
@@ -805,44 +771,50 @@ _yt_txt () { # ytdl transcript wrapper
   read xs < <(sed -e 's/^@4[0]*//' -e 's/[[:xdigit:]]\{8\} $//' < <(tai64n <<<'')) \
     || { chkerr "$FUNCNAME : failed to set xs (6674c2fd)" ; return 1 ;}
   # Check for existing files using temp json metadata
-  { $ytdl --dump-json --no-write-comments -- "$id" \
-    || { chkerr "$FUNCNAME : failed to load json '$id' (676c4aad)" ; return 1 ;}
-    } >"$d/@/tmp/ytdl/$tmp_json"
-  read -d '' id acodec < <(jq -r '[.id, .acodec] | @tsv' "$d/@/tmp/ytdl/$tmp_json") || true
-  read -d '' existing < <(sort < <(find -E "$links" -name "*${id}*" \
-    \! -regex "$links/.*(tmp|0)/.*")) || true
-  [ "$existing" ] && { echo "$existing"
-    read -p "files found, continue (N/y) " resp
-    [ "$resp" = "y" ] || return 1 ;} || true
-  # Download content with original audio format
-  $ytdl --write-info-json --write-comments --write-sub --write-auto-sub \
-    --sub-langs "en,en-US,en-GB,en-AU" --restrict-filenames --skip-download \
-    --no-playlist \
-    -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" -- "$id"
+chktrue dump-json
+# { $ytdl --dump-json --no-write-comments -- "$id" \
+#   || { chkerr "$FUNCNAME : failed to load json '$id' (676c4aad)" ; return 1 ;}
+#   } >"$d/@/tmp/ytdl/$tmp_json"
+# read -d '' id acodec < <(jq -r '[.id, .acodec] | @tsv' "$d/@/tmp/ytdl/$tmp_json") || true
+# read -d '' existing < <(sort < <(find -E "$links" -name "*${id}*" \
+#   \! -regex "$links/.*(tmp|0)/.*")) || true
+# [ "$existing" ] && { echo "$existing"
+#   read -p "files found, continue (N/y) " resp
+#   [ "$resp" = "y" ] || return 1 ;} || true
+# # Download content with original audio format
+  sed -E '/comment .*repl.*(page|thread)/d' < <(tee "$d/@/tmp/ytdl/${tmp_json}.ytdl" \
+    < <($ytdl --write-info-json --write-comments --write-sub --write-auto-sub \
+      --sub-langs "en,en-US,en-GB,en-AU" --restrict-filenames --skip-download \
+      --no-playlist \
+      -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" -- "$id" ))
     # --abort-on-error 
   # Get downloaded json path and organize files
-  read -d '' json_path < <(find "$d/" -maxdepth 1 -name "*${id}*.json") || true
-  [ "$json_path" ] || { chkerr "$FUNCNAME : not found '$d/*${id}*json' (676c546a)" ; return 1 ;}
-  read count < <(wc -l <<<"$id")
-  [ "$count" = 1 ] || { chkerr "$FUNCNAME : unexpected json count '$count' for id '${id}' (676c5734)" ; return 1 ;}
+  read -rd '' subtitles json_path < <(sed -E '/\[info\].*(subtitles|JSON) to:/!d;s/.*to: //' "$d/@/tmp/ytdl/${tmp_json}.ytdl")
+chktrue "$d/@/tmp/ytdl/${tmp_json}.ytdl"
+chktrue subtitles=$subtitles
+chktrue json_path=$json_path
+# read -d '' json_path < <(find "$d/" -maxdepth 1 -name "*${id}*.json") || true
+# [ -d "$d/$json_path" ] || { chkerr "$FUNCNAME : not found '$d/*${id}*json' (676c546a)" ; return 1 ;}
+# read count < <(wc -l <<<"$id")
+# [ "$count" = 1 ] || { chkerr "$FUNCNAME : unexpected json count '$count' for id '${id}' (676c5734)" ; return 1 ;}
     # ~~~
-    $verb chkwrn "ytdl_vtt=$ytdl_vtt"
-    uniq < <(sed -e '/align:start position/d' -e 's/<[^>]*>//g' -e '/ --> /d' -e '/^ [ ]*$/d' -e '/^$/d' "$ytdl_vtt") >"${ytdl_vtt}.txt" \
-      && mv "${ytdl_vtt}.txt" "$d" || { chkerr "$FUNCNAME : could not create '$d/${ytdl_vtt}.txt' (6674c795)" ; return 1 ;}
-    chktrue "$d/${ytdl_vtt##*/}.txt"
-    $verb chkwrn "ytdl_json=$ytdl_json"
+#   $verb chkwrn "ytdl_vtt=$ytdl_vtt"
+    # make txt from vtt
+    uniq < <(sed -e '/align:start position/d' -e 's/<[^>]*>//g;/ --> /d;/^ [ ]*$/d;/^$/d;s/&nbsp;/ /g' "$d/$subtitles") >"$d/${subtitles}.txt" \
+      && mv "$d/${subtitles}" "$d/@/meta/" || { chkerr "$FUNCNAME : could not create '$d/${subtitles}.txt' (6674c795)" ; return 1 ;}
+chktrue "$d/${subtitles}.txt"
+#   $verb chkwrn "ytdl_json=$ytdl_json"
     yq -y 'del(.formats, .thumbnails, .thumbnail, .age_limit, ._format_sort_fields,
                .automatic_captions, .playable_in_embed, .is_live, .was_live, .tbr,
                .format, .format_id, .format_note, .protocol,
                .width, .height, .resolution, .fps, .vcodec, .vbr, .aspect_ratio )
-         | del(.comments[]? | (._time_text, .author_thumbnail, .author_is_verified))' "$ytdl_json" >"${ytdl_json}.yml" \
-      && mv "${ytdl_json}.yml" "$d" || { chkerr "$FUNCNAME : could not create '$d/${ytdl_json}.yml' (6674c7fe)" ; return 1 ;}
-    chktrue "$d/${ytdl_json##*/}.yml"
+         | del(.comments[]? | (._time_text, .author_thumbnail, .author_is_verified))' "$d/$json_path" >"$d/${json_path}.yml" \
+      && mv "$d/$json_path" "$d/@/meta" || { chkerr "$FUNCNAME : could not create '$d/${json_path}.yml' (6674c7fe)" ; return 1 ;}
+#   chktrue "$d/${ytdl_json##*/}.yml"
 # jq  '.comments[] | del(.author_thumbnail, .author_is_uploader, .author_is_verified,.author_url,._time_text,.author_id)' /Users/geo/kdb/6/7/9/4/7/v/0067947083,The_French_Way_of_War-20250121_^iIHgkQNzXqA.info.json > /Users/geo/kdb/6/7/9/4/7/v/0067947083,The_French_Way_of_War-20250121_^iIHgkQNzXqA.info.com.json
-
   # Move files to final locations
-  find "$d/" -maxdepth 1 -name "00${xs},*" \( -name "*.json" -o -name "*.webp" \
-    -o -name "*.jpg" -o -name "*.vtt" \) -exec mv {} "$d/@/meta/" \;
+# find "$d/" -maxdepth 1 -name "00${xs},*" \( -name "*.json" -o -name "*.webp" \
+#   -o -name "*.jpg" -o -name "*.vtt" \) -exec mv {} "$d/@/meta/" \;
 # read -d '' media_file < <(find "$d" -mindepth 1 -maxdepth 1 -name "00${xs},*${id}*") || true
 # [ -f "$media_file" ] || { chkerr "$FUNCNAME : media_file not found '$d/00${xs},*${id}*' (676c6dcb)" ; return 1 ;}
 # read count < <(wc -l <<<"$media_file")
@@ -850,8 +822,8 @@ _yt_txt () { # ytdl transcript wrapper
  #audio_file="${media_file/%webm/$acodec}"
  #[ "$media_file" = "$audio_file" ] || mv "${media_file}" "${audio_file}" # maybe webm will never show again... or not.
   #read ext < <(sed -e '/^  Stream /!d' -e 's/.* Audio: //' -e 's/,.*//' < <(ffprobe "$audio_file" 2>&1 ))
-chkerr  was: ln -f "$audio_file" "$d/@/_^${id}.${acodec}"
-chkerr  was: mv -f "$audio_file" "$d/orig/"
+#chkerr  was: ln -f "$audio_file" "$d/@/_^${id}.${acodec}"
+#chkerr  was: mv -f "$audio_file" "$d/orig/"
   # Generate yaml summary
   # _yt_json2txt "$d/@/meta/00${xs},"*".json" "$d/@/_^${id}.${acodec}" "$d"
   # that was for track division...
@@ -861,7 +833,9 @@ chkerr  was: mv -f "$audio_file" "$d/orig/"
     channel_follower_count, uploader, uploader_id, uploader_url, upload_date, timestamp, fulltitle, duration_string, epoch,
     comments: (.comments | map( if .is_favorited then {is_favorited: true, like_count, text} else {like_count, text} end)
       | sort_by([(.is_favorited // false | not), -.like_count]))
-    }' "$json_path" >"${json_path/%info.json/com.yml}"
+    }' "$d/@/meta/$json_path" >"$d/${json_path/%info.json/com.yml}"
+chktrue "$d/${json_path/%info.json/com.yml}"
+chktrue "$d/${json_path}.yml"
   } # _yt_txt _youtube_txt 66749f14-20240620_142842
 
 _yt () { # ytdl wrapper functions
@@ -895,7 +869,7 @@ _yt () { # ytdl wrapper functions
     -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" -- "$id" # --abort-on-error 
   # Get downloaded json path and organize files
   read -d '' json_path < <(find "$d/" -maxdepth 1 -name "*${id}*.json") || true
-  [ "$json_path" ] || { chkerr "$FUNCNAME : not found '$d/*${id}*json' (676c546a)" ; return 1 ;}
+  [ "$json_path" ] || { chkerr "$FUNCNAME : not found '$d/*${id}*json' (68f12717)" ; return 1 ;}
   read count < <(wc -l <<<"$id")
   [ "$count" = 1 ] || { chkerr "$FUNCNAME : unexpected json count '$count' for id '${id}' (676c5734)" ; return 1 ;}
   # Move files to final locations
@@ -1220,11 +1194,11 @@ EOF
                    :measured_I=${measured_I}:measured_TP=${measured_TP}
                    :measured_LRA=${measured_LRA}:measured_thresh=${measured_thresh}
                    :offset=${off}:i=${i}:tp=${tp}:lra=${lra}" \
-          -ar 48000 -f flac "${inpath}/tmp/${infile}${secn}${lnn}.flac~" 2>&1 | awk '/^{/,0' \
+          -ar 48000 -f flac "${inpath}/tmp/${infile}${secn}${lnn}.~.flac" 2>&1 | awk '/^{/,0' \
           | jq -r '. | "measured_I=\(.input_i) measured_TP=\(.input_tp) measured_LRA=\(.input_lra) measured_thresh=\(.input_thresh) linear=\(.linear)\nout_i_LUFS=\(.output_i) out_tp_dBTP=\(.output_tp)   out_lra_LU=\(.output_lra)     out_tr_LUFS=\(.output_thresh) offset_LU=\(.target_offset)"'
     } >"${inpath}/tmp/${infile}${secn}${lnn}.meas~" \
     && { # only rotate {flac,meas} on no error
-        mv -f "${inpath}/tmp/${infile}${secn}${lnn}.flac~" "${inpath}/tmp/${infile}${secn}${lnn}.flac"
+        mv -f "${inpath}/tmp/${infile}${secn}${lnn}.~.flac" "${inpath}/tmp/${infile}${secn}${lnn}.flac"
         mv -f "${inpath}/tmp/${infile}${secn}${lnn}.meas~" "${inpath}/tmp/${infile}${secn}${lnn}.meas"
         while IFS= read a ; do ${verb2} "$a" ; done       <"${inpath}/tmp/${infile}${secn}${lnn}.meas"
         } || {                         chkerr "$FUNCNAME : '${inpath}/tmp/${infile}${secn}${lnn}.{flac,meas}' (6675e2b2)"  ; return 1 ;}
@@ -1248,28 +1222,28 @@ EOF
     local out="${infile}${secn}${tn}${pn}${fhzn}${cn}${Fn}${cfn}${lnn}"
       [ -e "${inpath}/tmp/${out}.wav" ] || { # master sans volume
         $verb "${inpath}/tmp/${out}.wav"
-        $verb2   $rb -q $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav~"
-             { { $rb -q $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac" "${inpath}/tmp/${out}.wav~" 2>&1 \
-                                                          && mv -f "${inpath}/tmp/${out}.wav~" "${inpath}/tmp/${out}.wav"
+        $verb2   $rb -q $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac"    "${inpath}/tmp/${out}.wav"
+             { { $rb -q $tc $pc $fhzc $cc $Fn $cfc "${inpath}/tmp/${infile}${secn}${lnn}.flac"    "${inpath}/tmp/${out}.~.wav" 2>&1 \
+                                                          && mv -f "${inpath}/tmp/${out}.~.wav" "${inpath}/tmp/${out}.wav"
                } | while IFS= read a ; do ${verb} "$a" ; done ;} || { chkerr \
-                "$rb    $tc $pc $fhzc $cc $Fn $cfc '${inpath}/tmp/${infile}${secn}${lnn}.flac' '${inpath}/tmp/${out}.wav~' (6542c978)" ; return 1 ;}
+                "$rb    $tc $pc $fhzc $cc $Fn $cfc '${inpath}/tmp/${infile}${secn}${lnn}.flac' '${inpath}/tmp/${out}.~.wav' (6542c978)" ; return 1 ;}
         } # final master, sans sox volume
       # apply volume and make an mp3 --- hopefully the input is not clipped already!
       $verb2 "$(hms2sec $(ffprobe -hide_banner  -loglevel info  "${inpath}/tmp/${out}.wav" 2>&1 | sed -e '/Duration/!d' -e 's/,.*//' -e 's/.* //') ) seconds rubberband"
       $verb "${inpath}/tmp/${out}${vn}.mp3"
-      $verb2         sox "${inpath}/tmp/${out}.wav" "${inpath}/tmp/${out}${vn}.tmp.mp3" $vc
-               { {   sox "${inpath}/tmp/${out}.wav" "${inpath}/tmp/${out}${vn}.tmp.mp3" $vc 2>&1 \
-                                           && mv -f "${inpath}/tmp/${out}${vn}.tmp.mp3" "${inpath}/tmp/${out}${vn}.mp3"
+      $verb2         sox "${inpath}/tmp/${out}.wav" "${inpath}/tmp/${out}${vn}.~.mp3" $vc
+               { {   sox "${inpath}/tmp/${out}.wav" "${inpath}/tmp/${out}${vn}.~.mp3" $vc 2>&1 \
+                                           && mv -f "${inpath}/tmp/${out}${vn}.~.mp3" "${inpath}/tmp/${out}${vn}.mp3"
                  } | while IFS= read a ; do ${verb} "$a" ; done ;} || { chkerr \
-                    "sox '${inpath}/tmp/${out}.wav' '${inpath}/tmp/${out}${vn}.tmp.mp3' $vc (66761b47)" ; return 1 ;}
+                    "sox '${inpath}/tmp/${out}.wav' '${inpath}/tmp/${out}${vn}.~.mp3' $vc (66761b47)" ; return 1 ;}
     } || { # no rb input parms (only seconds start/stop, volume, or neither)
         # verb2 same as above "output flac seconds" "${inpath}/tmp/${out}.flac"
         $verb "${inpath}/tmp/${out}${vn}.mp3"
-        $verb2         sox "${inpath}/tmp/${out}.flac" "${inpath}/tmp/${out}${vn}.tmp.mp3" $vc
-               { {     sox "${inpath}/tmp/${out}.flac" "${inpath}/tmp/${out}${vn}.tmp.mp3" $vc 2>&1 \
-                                              && mv -f "${inpath}/tmp/${out}${vn}.tmp.mp3" "${inpath}/tmp/${out}${vn}.mp3"
+        $verb2         sox "${inpath}/tmp/${out}.flac" "${inpath}/tmp/${out}${vn}.~.mp3" $vc
+               { {     sox "${inpath}/tmp/${out}.flac" "${inpath}/tmp/${out}${vn}.~.mp3" $vc 2>&1 \
+                                              && mv -f "${inpath}/tmp/${out}${vn}.~.mp3" "${inpath}/tmp/${out}${vn}.mp3"
                  } | while IFS= read a ; do ${verb} "$a" ; done ;} || { chkerr \
-                      "sox '${inpath}/tmp/${out}.flac' '${inpath}/tmp/${out}${vn}.tmp.mp3' $vc (66761be1)" ; return 1 ;}
+                      "sox '${inpath}/tmp/${out}.flac' '${inpath}/tmp/${out}${vn}.~.mp3' $vc (66761be1)" ; return 1 ;}
          }
     # prepend output filename
     $verb "./loss/${prependt}${out}${vn}.mp3"
@@ -1436,21 +1410,37 @@ formfilestats () { # accept dir(s) as args, report unique formfile time and pitc
 
 # export c=100 ; rm -rf png/* ; for a in *Couperin-kbd*mp3 ; do b=$(sed -e 's/.*,//' <<<$a) ; echo $b ; done | sort | while read b ; do a=$(ls *$b) ; c=$(( ++c )) ; sox $a -n remix - trim 0 =3 -3 spectrogram -o png/${c},${a}.png ; echo -n .  ; done
 
- # # verb=chkwrn p=4 c=1 ss=434 to=471.2 cmp=cps1 v=9db f2rb2mp3 @/_^NPk-cE047PU.opus 52r,Couperin-kbd_01-Gmaj-Etcheverry-07_Menuet
- # formfilespec () { # generate spectrograph for ss-1 to ss+3 and to-3 to to+1
- #    #local p="${1%/*}" f="${1##*/}"
- #     local in="$1"
- #     mkdir -p "./png"
- #     set $( formfile "${in##*/}" | sed -e 's/.*f2rb2mp3//' )
- #     local orig=$1 pass=$2
- #     [ -e "$orig" ] || { chkwrn "$orig not found (6542c564)" ; return 1 ;}
- #     echo -n "sox $orig -n remix - trim "
- #     set $(formfile "${in##*/}" | sed -e 's/f2rb2mp3.*//' )
- #     #dc -e "$ss 1-p $ss 3+p $to 3-p $to 1+p" | tr '\n' ' ' | sed -e 's/^/=/' -e 's/ / =/g' -e  's/=$//'
- #     dc -e "$ss 1-p $ss 3+p $to 3-p $to 1+p" | sed -e 's/^/=/' | tr '\n' ' '
- #    #b=$(sed -e 's/,.*//' <<<$in)
- #     echo "spectrogram -o ./png/${in##*/}.png"
- #     }
+  # cd $link ; 
+ # rm -rf tmp/png && mkdir -p tmp/png
+ # { export c=100 ; while read a ; do c=$(( ++c )) ; sox $a -n spectrogram -d 5 --o tmp/png/${c},${a}.png ; tmp/png/${c},${a}.png ; done }
+
+# export x=$(xs) ; find . -maxdepth 1 -name \*y4DCSsWXAog\*mp3 | sort -k2 -t'^' -V | { export b=100 ; while read a ; do b=$(( ++b )) ; sox $a -n spectrogram -d 5 -o tmp/png/${x}-${b},${a#./}.png ; echo "tmp/png/${x}-${b},${a#./}.png" ; done } | while read a ; do echo $a ; qffplay -hide_banner -loglevel error -top 52 $a || break 1 ; done
+# read xs < <(printf '%x\n' $EPOCHSECONDS) ; find . -maxdepth 1 -name \*y4DCSsWXAog\*mp3 | sort -k2 -t'^' -V | { while read a ; do sox $a -n spectrogram -d 5 -o tmp/png/${x},${a#./}.png ; echo "tmp/png/${x},${a#./}.png" ; done } | while read a ; do b=${a%.png} ; echo ${b#*,} ; ffplay -hide_banner -loglevel error -top 52 $a || break 1 ; done
+
+formfilespec () { # visual review of {link} audio heads/tails
+ cd $link 
+  # | awk '{a[i++]=$0} END {for (j=i-1; j>=0;) print a[j--] }' \
+ # rev: 68f662cd 20251020 092643 PDT
+ local count= last= id= track=0
+ [[ "$1" =~ ^[0-9]+$ ]] && count=$1 || count=10
+ export verb=chkwrn count track
+ sed 's/.*_^//;s/\..*//' < <(ls *mp3) | sort -u | head -n $count | tail \
+  | { while read a ; do 
+    find . -maxdepth 1 -name "*${a}*mp3" | sort -t'^' -k2 -V ; done ;} \
+  | while read a ; do
+    read id < <(sed 's/.*_^//;s/\..*//' <<<"$a")
+    [ "$last" ] || last="$id"
+    [ "$id" = "$last" ] && track=$((++track)) || { count=$((++count)) track=1 last="$id";}
+    sox $a -n spectrogram -d 180000s -o tmp/png/${a#./}.png &
+    sox $a -n spectrogram -S -7.5 -o tmp/png/${a#./}-.png
+  # echo tmp/png/${a#./}.png ; echo tmp/png/${a#./}-.png 
+    find . -maxdepth 1 -name "*${id}*mp3" | sort -t"^" -k2 -V | cat -n
+    echo "$track/$count ($id)"
+    formfile $a
+    ffplay -hide_banner -loglevel error -top 52 tmp/png/${a#./}.png || break 1
+    ffplay -hide_banner -loglevel error -top 52 tmp/png/${a#./}-.png || break 1
+    done
+  }
 
 
 # The lack tone functions generate a drone intended to add aesthetic to a noisy environment.
