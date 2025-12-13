@@ -54,8 +54,8 @@ verb2="devnul"
 while IFS= read a ; do
     validex $a && true || { echo "$0 : validex error : $a (643eb771)" 1>&2 ; exit 2 ;}
     done <<EOF
-comma_mp3.sh d7802124 00001513
 EOF
+# comma_mp3.sh d7802124 00001513
 
 gen_index () { # in pwd, for "$links/$name/"
     $verb $links/$name ; $verb2 "$links/$name" "$wdp/$name"
@@ -90,9 +90,9 @@ gen_index () { # in pwd, for "$links/$name/"
 
     $verb ${name}.cksh ; $verb2 tmp "$wdp/%/$t/${name}.cksh"
     cat "$wdp/${name}.list" | while IFS= read a ; do
-        cksh $links/$name/$a | awk -v f="${a##*,}" '{$6=f; printf ". . %6s %08s %s %s\n",$3,$4,$5,f}'
+        cksh -n2 $links/$name/$a
         spin2
-        done >"$wdp/%/$t/${name}.cksh~"
+        done | awk -v f="${a##*,}" '{$6=f; printf ". . %s %08s %s %s\n",$3,$4,$5,f}' >"$wdp/%/$t/${name}.cksh~"
     spin2 0
     sort -k 6 -u "$wdp/%/$t/${name}.cksh~" >"$wdp/%/$t/${name}.cksh"
     touch -r "$wdp/${name}.list" "$wdp/%/$t/${name}.cksh"
@@ -116,7 +116,7 @@ check_gen_index () { # gen_index iff diff
     [ -d "$links/$name/" ] || { chkerr "$0 $FUNCNAME : not a directory '$links/$name/'" ; exit 1 ;}
     # if listing time is different than dir time, gen_index
     [ -e "$wdp/${name}.list" ] \
-        && expr "$(cksh -x0 "$wdp/${name}.list" | awk '{print $5}' )" '=' "$(cksh -x0 "$links/$name/" | awk '{print $5}' )" >/dev/null \
+        && expr "$(cksh -n3 "$wdp/${name}.list" | awk '{print $5}' )" '=' "$(cksh -n3 "$links/$name/" | awk '{print $5}' )" >/dev/null \
         && { $verb "No change, skipping $name" ; return 0 ;} # ie return if no change or continue
     gen_index
     } # check_gen_index
@@ -130,7 +130,8 @@ kind_curate_rsync () { # rsync $links/0/kind/$name/
     # https://discussions.apple.com/thread/254383328
     # https://github.com/WayneD/rsync/issues/412
     # --bwlimit="5.2m" seems to stop micro sd overheating...
-    rsync -aP --delete --modify-window=1 --bwlimit="5.8m" $links/0/kind/${name}* "/Volumes/CURATE/kind/" \
+    # --bwlimit="7.8m" to micro sd overheating...
+    rsync -aP --delete --modify-window=1 --bwlimit="6.8m" $links/0/kind/${name}* "/Volumes/CURATE/kind/" \
         | grep -vE '((^sending|^sent|^total) |^$|^\./$)' || true
 #       cd $links/0/kind/ && find . -type f -path "./${name}*" -exec touch -r \{\} "/Volumes/CURATE/kind/"\{\} \;
     } # kind_curate_rsync
