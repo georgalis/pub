@@ -110,8 +110,6 @@ NetBSD:
     update release: |
         pkgsrc="$p/pkgsrc-release" && cd "$pkgsrc" \
             && pkgtag="$(sed 's/^T//' <$pkgsrc/CVS/Tag)"
-#           && LOCALBASE="$p/$(sed 's/^Tpkgsrc/pkg/' <$pkgsrc/CVS/Tag)-$(uname -msr | tr ' ' '_' )" \
-
         { date ; pwd ; cvs -q upd -dP -r $pkgtag . 2>&1 ;} \
             | sed -e '/\/work$/d' -e "s/^/$pkgtag /" | tee -a "$pkgsrc/cvs.log"
     bootstrap: |
@@ -325,7 +323,7 @@ main:
           && { echo "This may take a few minutes before output..." ; date
                read Tag < <(sed -l 's/^T//' ./CVS/Tag)
                cd "$pkgsrc" \
-               && { date ; pwd ; )
+               && { date ; pwd 
                   cvs -q upd -dP -r $Tag . 2>&1 ;} \
                | sed '/\/work$/d' | tee -a ./cvs.log ;} \
           || { echo "'pkgsrc' not found: no '$pkgsrc/CVS/Tag'" 1>&2 ; false ;}

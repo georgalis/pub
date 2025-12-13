@@ -1,14 +1,85 @@
-### pkgsrc packages
-### cf bootstrap ~/vcs/pub/boot/pkgsrc.yml
 ---
+meta:
+  ks: pkgsrc packages
+  kp: ~/vcs/pub/boot
+  kf: pkgsrc-pkg.yml
+  kj: ~/vcs/pub/boot/pkgsrc_guide.md
+  kr: ~/vcs/pub/boot/pkgsrc_fn.sh
+main:
+# non-exclusive package groups
+
+# tr '\t' '\n' < <(yq --raw-output '.main|.heirloom|@tsv')
+
+# could be in pkgsrc, but not: tai64n tai64nlocal tai64nrev, multitee, 
+
+  # for descriptions, see manpages at https://github.com/Projeto-Pindorama/heirloom-ng
+  # pathchk, valid path, use portable character set (alphanumerics, dot, underscore, and minus) and _POSIX_NAME_MAX and _POSIX_PATH_MAX, plus local % @ = + , ^
+  # psrinfo, processor data, use /proc/cpuinfo /proc/stat
+  heirloom: 
+    - archivers/heirloom-tar
+    - lang/heirloom-awk
+    - misc/heirloom-cal
+    - misc/heirloom-od
+    - misc/heirloom-printenv
+    - misc/heirloom-printf
+    - misc/heirloom-sleep
+    - misc/heirloom-time
+    - shells/heirloom-sh
+    - sysutils/heirloom-chmod
+    - sysutils/heirloom-chown
+    - sysutils/heirloom-dd
+    - sysutils/heirloom-du
+    - sysutils/heirloom-env
+    - sysutils/heirloom-file
+    - sysutils/heirloom-find
+    - sysutils/heirloom-hostname
+    - sysutils/heirloom-id
+    - sysutils/heirloom-join
+    - sysutils/heirloom-kill
+    - sysutils/heirloom-listusers
+    - sysutils/heirloom-ln
+    - sysutils/heirloom-logins
+    - sysutils/heirloom-logname
+    - sysutils/heirloom-ls
+    - sysutils/heirloom-mkdir
+    - sysutils/heirloom-mkfifo
+    - sysutils/heirloom-nice
+    - sysutils/heirloom-nohup
+    - sysutils/heirloom-od
+    - sysutils/heirloom-ps
+    - sysutils/heirloom-renice
+    - sysutils/heirloom-sort
+    - sysutils/heirloom-split
+    - sysutils/heirloom-tail
+    - sysutils/heirloom-touch
+    - sysutils/heirloom-tr
+    - sysutils/heirloom-uname
+    - sysutils/heirloom-users
+    - sysutils/heirloom-who
+    - sysutils/heirloom-whoami
+    - sysutils/heirloom-xargs
+    - sysutils/heirloom-yes
+    - textproc/heirloom-bdiff
+    - textproc/heirloom-cut
+    - textproc/heirloom-fold
+    - textproc/heirloom-grep
+    - textproc/heirloom-head
+    - textproc/heirloom-join
+    - textproc/heirloom-sed
+    - textproc/heirloom-uniq
+    - textproc/heirloom-wc
+    - time/heirloom-date
+    - mail/heirloom-mailx
+    - math/heirloom-factor
+    - sysutils/heirloom-tsort
+
+    
 read: cat ./pkgsrc-pkg.yml | sed -e "/X $(uname)/d" -e '/X xtra/d' -e '/:/d' -e 's/#.*//' -e '/^---/d' -e '/^\.\.\./d' -e 's/ //g' -e '/^$/d'
 packages:
-    min: |
+  min: |
         devel/scmcvs
-
         pkgtools/pkglint4   # no go dependency, the old version of pkglint
-#       pkgtools/pkglint4   # depends on go, actively maintained
-
+        #       pkgtools/pkglint4   # depends on go, actively maintained
         misc/tmux
         shells/bash
         editors/vim
@@ -36,7 +107,7 @@ packages:
         net/tcpdump
         net/speedtest-cli
         net/mtr
-
+        #
         security/netpgp
         security/netpgpverify
         security/pcsc-tools
@@ -48,15 +119,15 @@ packages:
         audio/sox
         net/rclone
         chat/irssi
-#       misc/getopt
-#       www/lighttpd
-#       meta-pkgs/pkg_developer
-
+        #       misc/getopt
+        #       www/lighttpd
+        #       meta-pkgs/pkg_developer
+        #
         multimedia/ffplay6  # X Darwin dep: devel/gobject-introspection error: 'gitypes.h' file not found with <angled> include; use "quotes" instead
         multimedia/ffmpeg6  # X Darwin dep: devel/gobject-introspection error: 'gitypes.h' file not found with <angled> include; use "quotes" instead
         graphics/graphviz   # X Darwin graphics/netpbm ld: library 'netpbm' not found, @mach-0 s/lib/dylib/?
         graphics/gnuplot    # X Darwin dep: ../devel/gobject-introspection/build-err.yml <header> vs "header"
-
+        #
         sysutils/lsof   # X Darwin
         sysutils/strace # X Darwin
         net/gh              # X xtra
@@ -68,9 +139,9 @@ packages:
         net/paris-traceroute # X Darwin, Server.cc:126:9: error: assigning to 'int' from incompatible type
         misc/tailspin       # X Darwin, dep: lang/rust installed package archivers/xz, same error
 
-    special: |
+  special: |
         parallel/slurm-wlm # X xtra
-    lua_mod: |
+  lua_mod: |
         textproc/lua-cjson
         devel/lua-argparse
         databases/lua-ldap          # X xtra
@@ -106,87 +177,87 @@ packages:
 # */opt/pkgsrc-reltag/multimedia/ffmpeg6
 
 
-
-pkgsrc is an unix operating system agnostic package manager, a repository of makefiles and patches such that after bootstrap, packages may be compiled and run on the host without depending on host/vendor libraries or packages. pkgsrc packages depend on pkgsrc packages. in addition to the HEAD branch, pkgsrc uses quarterly release tags to stay close to upstream package versions, and reduce dependency package patching.
-
-one deployment technique, is to bootstrap each new release tag in a unique prefix. in this way, validated dependencies can be maintained on systems that also follow the release tags. users can run the release tag or an older tag according to their needs.
-
-upstream packages may have a primary user base in Linux, BSD, or Darwin (Mac); and they may only test builds on their primary platform. This can cause problems for the platform agnostic package manager. Each upstream release requires per platform patch development when upstream focuses on only one platform
-
-When a package fails on a platform, the flexibility of pkgsrc allows for any of multiple solutions.
-- the user can create a problem report for the package maintainer to address in HEAD and the next tag
-- the extracted source can be hand edited and fixed to build the package and install
-- the user can identify the fix in PR for the package maintainer to implement with pkgsrc patching patterns
-- the user can implement pkgsrc patching patterns for local build and install, and submit for inclusion in future release
-
-The following have presented themselves to me across multiple packages, that is to say I have seen these issues enough times that I don't precisly remember if I've seen them in the same or different packages before.
-
-
-- packages that use '--' as an argument to GNU 'ar' will (generally) build when the '--' is removed from the makefile invocation.
-- packages that use <header> to reference header.h should instead use "header"
-- packages that require /usr/bin/clang (like lang/gcc12) may not find dependancies (like devel/gmp) when installed in a pkgsrc prefix, vs the platform root prefix
-- packages that depend on other packages may include src but cannot find, nor when installed from pkgsrc
-- pkgsrc may not include approprate patches for Mach-O dylib plist files, when upstream uses lib files
-
-That is to say the following have been fixed in at least one of the prior tags, but today they are broken again, due to the reocurring pattern.
-
-- graphics/graphviz   # X Darwin dep: graphics/netpbm ld: library 'netpbm' not found, @mach-0 s/lib/dylib/?
-- mail/neomutt        # X Darwin dep: graphics/netpbm ld: library 'netpbm' not found, @mach-0 s/lib/dylib/?
-- net/nmap            # X Darwin dep: lang/gcc12 configure: error: gmp.h can't be found, or is unusable.
-- misc/tailspin       # X Darwin dep: lang/rust includes xz but cannot be found, nor the installed archivers/xz
-- graphics/gnuplot    # X Darwin dep: devel/gobject-introspection <header> vs "header"
-- multimedia/ffmpeg6  # X Darwin dep: devel/gobject-introspection error: 'gitypes.h' file not found with <angled> include; use "quotes" instead
-- multimedia/ffplay6  # X Darwin dep: devel/gobject-introspection error: 'gitypes.h' file not found with <angled> include; use "quotes" instead
-- net/paris-traceroute # X Darwin, Server.cc:126:9: error: assigning to 'int' from incompatible type (how could this work elsewhere?)
-
-I've never successfully built tailspin or paris-traceroute on Darwin, but for all the others I have completed a build and installed the package, as the following binaries in old bootstrap prefixes show.
-
-/opt/pkg-2022Q4/bin/dot
-/opt/pkg-2022Q4/bin/ffmpeg5
-/opt/pkg-2022Q4/bin/ffplay5
-/opt/pkg-2022Q4/bin/nmap
-/opt/pkg-2023Q3-sdk-14.2/bin/dot
-/opt/pkg-2023Q3-sdk-14.2/bin/gnuplot
-/opt/pkg-2023Q3-sdk-14.2/bin/neomutt
-/opt/pkg-2023Q3-sdk-14.2/bin/nmap
-/opt/pkg-2023Q4-sdk-14.2/bin/dot
-/opt/pkg-2023Q4-sdk-14.2/bin/ffmpeg6
-/opt/pkg-2023Q4-sdk-14.2/bin/ffplay6
-/opt/pkg-2023Q4-sdk-14.2/bin/neomutt
-/opt/pkg-2023Q4-sdk-14.2/bin/nmap
-/opt/pkg-657a9f42-sdk-14.2/bin/ffmpeg6 (HEAD at 2023-12-13 22:22:48)
-/opt/pkg-657a9f42-sdk-14.2/bin/ffplay6 (HEAD at 2023-12-13 22:22:48)
-
-So, now with pkg-2024Q3, if I want to use any of these: dot (graphviz), ffmpeg5, ffmpeg6, ffplay5, ffplay6, ffplay6, gnuplot, neomutt, or nmap; I have a few choices. I can use one of the earlier mentioned problem reports and patch fixups, or I can use a binary from an old tag bootstrap.
-
-The answer is probablty I'll use a bit of all the posibilities; but for the sake of this discussion
-
-
-The most common of these build issues, "gnu syntax on bsd tools," "Darwin dylib PLIST fail," '<angled> include vs "quotes"' and "lib not found" probably have a very standard best way to create a package patch, even if automating it is not feasible. But, since this isn't what I usually do, I can never remember the steps. I have to lookup the patch build targets recipies, http://kflu.github.io/2021/07/19/2021-07-19-pkgsrc-survival-guide/ then invent my own way to patch upstream for Darwin only, and even if I patch the right files, the package maintainer almost certainly will prefer different method, syntax, or patch file nomenclature and reimplement my careful patch staging and testing.
-
-
-Could someone build a doc that explains the best way to resolve these reocurring problems? Most of the time I spend on this type of patches is reverse engineering the makefile include fragments, and refreshing my packaging chops. And still wondering, should I patch the upstream or the pkgsrc package data? It's frustrating when after that effort, two tags later when an upstream rev is folded in the PLIST, gnu, lib path, or dylib errors return. I would prefer helping a patch uplift, but some that I've done were hard to do, and now it looks like it needs to be done again. Definately would be easier to just use my old dot file.
-
-
-
-
-ontents
-
- - BOOTSTRAPPING
- - PARALLEL BUILD
- - USEFUL TARGETS, GETTING HELP
- - USEFUL PKG TOOLS
- - DISTFILES, FETCHING ETC
- - BUILD OPTIONS
- - USEFUL ENVIRONMENT VARS
- - TROUBLESHOOTING
- - BUILD PHASES
- - Use pkgsrc along side Joyent pkgsrc binary distribution
- - Rebuild only changed files
-
-
-now revise this unrelated forum post for most effective acceptance. this is for a technical audience that understands systems and programming, they operate well with verbatim file paths and error messages and concise language to explain the broader situation, they will understand the request before they have finished reading it. Don't get into unnecessary background knowledge, or try to explain technical terms unnecessarily. the url is a third party link which goes into detail about the makefile targets for generating pkgsrc patchsets, eg makesum, makepatchsum, makedistinfo, and print-PLIST.
-
-
-
-/opt/pkg-2024Q3-670fa-Darwin_22.6.0_arm64-14.2/bin/bmake
+text: >
+  pkgsrc is an unix operating system agnostic package manager, a repository of makefiles and patches such that after bootstrap, packages may be compiled and run on the host without depending on host/vendor libraries or packages. pkgsrc packages depend on pkgsrc packages. in addition to the HEAD branch, pkgsrc uses quarterly release tags to stay close to upstream package versions, and reduce dependency package patching.
+    
+  one deployment technique, is to bootstrap each new release tag in a unique prefix. in this way, validated dependencies can be maintained on systems that also follow the release tags. users can run the release tag or an older tag according to their needs.
+    
+  upstream packages may have a primary user base in Linux, BSD, or Darwin (Mac); and they may only test builds on their primary platform. This can cause problems for the platform agnostic package manager. Each upstream release requires per platform patch development when upstream focuses on only one platform
+    
+  When a package fails on a platform, the flexibility of pkgsrc allows for any of multiple solutions.
+  - the user can create a problem report for the package maintainer to address in HEAD and the next tag
+  - the extracted source can be hand edited and fixed to build the package and install
+  - the user can identify the fix in PR for the package maintainer to implement with pkgsrc patching patterns
+  - the user can implement pkgsrc patching patterns for local build and install, and submit for inclusion in future release
+    
+  The following have presented themselves to me across multiple packages, that is to say I have seen these issues enough times that I don't precisly remember if I've seen them in the same or different packages before.
+    
+    
+  - packages that use '--' as an argument to GNU 'ar' will (generally) build when the '--' is removed from the makefile invocation.
+  - packages that use <header> to reference header.h should instead use "header"
+  - packages that require /usr/bin/clang (like lang/gcc12) may not find dependancies (like devel/gmp) when installed in a pkgsrc prefix, vs the platform root prefix
+  - packages that depend on other packages may include src but cannot find, nor when installed from pkgsrc
+  - pkgsrc may not include approprate patches for Mach-O dylib plist files, when upstream uses lib files
+    
+  That is to say the following have been fixed in at least one of the prior tags, but today they are broken again, due to the reocurring pattern.
+    
+  - graphics/graphviz   # X Darwin dep: graphics/netpbm ld: library 'netpbm' not found, @mach-0 s/lib/dylib/?
+  - mail/neomutt        # X Darwin dep: graphics/netpbm ld: library 'netpbm' not found, @mach-0 s/lib/dylib/?
+  - net/nmap            # X Darwin dep: lang/gcc12 configure: error: gmp.h can't be found, or is unusable.
+  - misc/tailspin       # X Darwin dep: lang/rust includes xz but cannot be found, nor the installed archivers/xz
+  - graphics/gnuplot    # X Darwin dep: devel/gobject-introspection <header> vs "header"
+  - multimedia/ffmpeg6  # X Darwin dep: devel/gobject-introspection error: 'gitypes.h' file not found with <angled> include; use "quotes" instead
+  - multimedia/ffplay6  # X Darwin dep: devel/gobject-introspection error: 'gitypes.h' file not found with <angled> include; use "quotes" instead
+  - net/paris-traceroute # X Darwin, Server.cc:126:9: error: assigning to 'int' from incompatible type (how could this work elsewhere?)
+    
+  I've never successfully built tailspin or paris-traceroute on Darwin, but for all the others I have completed a build and installed the package, as the following binaries in old bootstrap prefixes show.
+    
+  /opt/pkg-2022Q4/bin/dot
+  /opt/pkg-2022Q4/bin/ffmpeg5
+  /opt/pkg-2022Q4/bin/ffplay5
+  /opt/pkg-2022Q4/bin/nmap
+  /opt/pkg-2023Q3-sdk-14.2/bin/dot
+  /opt/pkg-2023Q3-sdk-14.2/bin/gnuplot
+  /opt/pkg-2023Q3-sdk-14.2/bin/neomutt
+  /opt/pkg-2023Q3-sdk-14.2/bin/nmap
+  /opt/pkg-2023Q4-sdk-14.2/bin/dot
+  /opt/pkg-2023Q4-sdk-14.2/bin/ffmpeg6
+  /opt/pkg-2023Q4-sdk-14.2/bin/ffplay6
+  /opt/pkg-2023Q4-sdk-14.2/bin/neomutt
+  /opt/pkg-2023Q4-sdk-14.2/bin/nmap
+  /opt/pkg-657a9f42-sdk-14.2/bin/ffmpeg6 (HEAD at 2023-12-13 22:22:48)
+  /opt/pkg-657a9f42-sdk-14.2/bin/ffplay6 (HEAD at 2023-12-13 22:22:48)
+    
+  So, now with pkg-2024Q3, if I want to use any of these: dot (graphviz), ffmpeg5, ffmpeg6, ffplay5, ffplay6, ffplay6, gnuplot, neomutt, or nmap; I have a few choices. I can use one of the earlier mentioned problem reports and patch fixups, or I can use a binary from an old tag bootstrap.
+    
+  The answer is probablty I'll use a bit of all the posibilities; but for the sake of this discussion
+    
+    
+  The most common of these build issues, "gnu syntax on bsd tools," "Darwin dylib PLIST fail," '<angled> include vs "quotes"' and "lib not found" probably have a very standard best way to create a package patch, even if automating it is not feasible. But, since this isn't what I usually do, I can never remember the steps. I have to lookup the patch build targets recipies, http://kflu.github.io/2021/07/19/2021-07-19-pkgsrc-survival-guide/ then invent my own way to patch upstream for Darwin only, and even if I patch the right files, the package maintainer almost certainly will prefer different method, syntax, or patch file nomenclature and reimplement my careful patch staging and testing.
+    
+    
+  Could someone build a doc that explains the best way to resolve these reocurring problems? Most of the time I spend on this type of patches is reverse engineering the makefile include fragments, and refreshing my packaging chops. And still wondering, should I patch the upstream or the pkgsrc package data? It's frustrating when after that effort, two tags later when an upstream rev is folded in the PLIST, gnu, lib path, or dylib errors return. I would prefer helping a patch uplift, but some that I've done were hard to do, and now it looks like it needs to be done again. Definately would be easier to just use my old dot file.
+    
+    
+    
+    
+  Contents
+    
+   - BOOTSTRAPPING
+   - PARALLEL BUILD
+   - USEFUL TARGETS, GETTING HELP
+   - USEFUL PKG TOOLS
+   - DISTFILES, FETCHING ETC
+   - BUILD OPTIONS
+   - USEFUL ENVIRONMENT VARS
+   - TROUBLESHOOTING
+   - BUILD PHASES
+   - Use pkgsrc along side Joyent pkgsrc binary distribution
+   - Rebuild only changed files
+    
+    
+  now revise this unrelated forum post for most effective acceptance. this is for a technical audience that understands systems and programming, they operate well with verbatim file paths and error messages and concise language to explain the broader situation, they will understand the request before they have finished reading it. Don't get into unnecessary background knowledge, or try to explain technical terms unnecessarily. the url is a third party link which goes into detail about the makefile targets for generating pkgsrc patchsets, eg makesum, makepatchsum, makedistinfo, and print-PLIST.
+    
+    
+    
+  /opt/pkg-2024Q3-670fa-Darwin_22.6.0_arm64-14.2/bin/bmake
