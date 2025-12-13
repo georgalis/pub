@@ -54,8 +54,14 @@ for a in {0..31} ; do export n=$(base 32 $a)
                     | sed -e '/Duration/!d' -e 's/.*Duration of//' -e 's/Duration[ ]*:/1 file:/' -e 's/ = .*//' -e 's/\...$//' \
                     | tail -n1 ) # eg "1 file: 00:06:02" or " 80 files: 05:24:37"
               fdur="$*"
-              { printf "${n} $fdur " ; hms2sec "${fdur#*: }" ;} | awk '{printf "%29s %6s %3s %-6s %s sec "," ","  \\"$1"\\",$2,$3,$5}'
-              kdb_xs2h $(printf "%x" $(hms2sec "${fdur#*: }")) | sed -e 's/.*(/(/' -e 's/ )/)/'
+              hms="${fdur#*: }"
+              { printf "$fdur " ; hms2sec "$hms" ;} | awk -v hms="$hms" -v n="$n" '{
+                split(hms, t, ":");
+                if (t[1] == "00") time_str = sprintf("(%s m %s s)", t[2], t[3]);
+                else time_str = sprintf("(%s h %s m %s s)", t[1], t[2], t[3]);
+                printf "%3s %-6s %s sec %s \\%s\\\n", $1, $2, $4, time_str, n;
+              }'
+#  30 files: 10598 sec (02 h 56 m 38 s) \6\
               )
     # iff there are files (and not on/off ramp), use or create default comma file
     [ "$d" ] && { # init ${n},~ with an existing header
@@ -76,15 +82,21 @@ for a in {0..31} ; do export n=$(base 32 $a)
       find . -maxdepth 1 -name ${n}\*.mp3 | while read b ; do spin2
         sed -e 's/.*,//' -e 's/-.*//' <<<"$b"; done | sort -u \
           | while read c; do export c # count and calculate per artist duration
-#chkwrn "$PWD/${n}xx,$c"
               spin2
               set $(soxi $(find . -maxdepth 1 -name ${n}\*,${c}\*\.mp3 ) \
                     | sed -e '/Duration/!d' -e 's/.*Duration of//' -e 's/Duration[ ]*:/1 file:/' -e 's/ = .*//' -e 's/\...$//' \
                     | tail -n1 ) # eg "1 file: 00:06:02" or " 80 files: 05:24:37"
               fdur="$*"
-              { printf "${c} $fdur " ; hms2sec "${fdur#*: }" ;} | sed -e 's/://' | awk '{printf "%36s %3s %-6s %s sec ",$1,$2,$3,$5}'
-              kdb_xs2h $(printf "%x" $(hms2sec "${fdur#*: }")) | sed -e 's/.*(/(/' -e 's/ )/)/'
-              done | sort -rnk 4 >>${n},~
+              hms="${fdur#*: }"
+              { printf "$fdur " ; hms2sec "$hms" ;} | sed -e 's/://' | awk -v hms="$hms" -v artist="$c" '{
+                split(hms, t, ":");
+                if (t[1] == "00") time_str = sprintf("(%s m %s s)", t[2], t[3]);
+                else time_str = sprintf("(%s h %s m %s s)", t[1], t[2], t[3]);
+                line = sprintf("%3s %-6s %s sec %s", $1, $2, $4, time_str);
+                printf "%-38s %s\n", line, artist;
+              }'
+#  5 files  3320 sec (55 m 20 s)         Telemann
+              done | sort -rnk 3 >>${n},~
 
         # wrap up and move tmp files to finish
         mv -f "${n},~" "${n},"
