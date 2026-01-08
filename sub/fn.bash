@@ -84,6 +84,8 @@ first_bash
 # any earlier, and we would see it twice...
 uptime
 
+[ "$BASH_VERSION" = '3.2.57(1)-release' ] && { chkerr "Darwin bash fails validation, cannot load functions, install newer bash" ; return 1 ;}
+
 validex () { #:> validate executable, compare unit hash vs operation env hash
     [ "$1" ] || {
       cat 1>&2 <<-EOF
@@ -226,8 +228,8 @@ chkerr   50195549cedb329654b8cd279d5e471a536488ebfd3045b4589d05e20c0072faecf4b89
 logerr   8420e3638ccde6b2c86820d4460e059edcfcb00e2f3ba065e5270bf57e66abce058c88ea95168f3345539ea536abad79
 chktrue  6053b8cfa998834844f9dd687af4753b96d2f2e14cf6c51c22dac7165daaf2405e4637bd82096c81165e54728d1d5d3b
 siffx    faf13db46a77326a019ca42325f2d1b4ab3c410c39bc36f3294baf2da85d53f11af2a1738d055eaaaee78333654a8c3e
-validfn  4240a107e4f699a97fde04d53403dbb9e4a06452fe72c2b5781258ea3a242d288faac045458f35efc61cecde3cbefc34
-vfn      3f41bca80c09a17a3f2ee414d56d9ed5306ea525e74e619f0dc000c4adda61cf6abd9118f3c316baf568e35e69aa0a69
+vfn      1fb48802cdc5f8b8965a549bc7b893bcbeb36e609f4807aa444a94494b281b468b95d55a359333db0800f1b37ab815cc
+validfn  78e0807ecc00ee5789ee0a6b8e33890a30205983ccb265debe04f52737f782d93d7f75424a08c330a5d8d8071f3c80c7
 EOF
 
 fnhash () { # gen validfn data from env and fn names in file (arg1), for repo commit comments
@@ -461,6 +463,17 @@ tss () { # timestamp highres and pass through args
       echo "$a" ;}
       # 64c471f9 00000000 20230728 1857 13.00000
       # 64c47234 17284a94 20230728 1858 02.38851
+tss () { # timestamp high resolution
+  local ts xs xss ; read -r ts < <(tai64n <<<'')
+  read -r xs xss < <(awk '{
+    gsub(/^@4[0]*/,"")
+    print substr($0,1,8), substr($0,9,8)
+    }' <<<"$ts")
+  printf '%s %s ' "$xs" "$xss"
+  tai64nlocal <<<"$ts"
+  # tss
+  # 695c05da 04fa19ec 2026-01-05 10:41:20.083499500
+  }
 
 ts () { # timestamp lowres and pass through args
     local a="$*"
@@ -474,6 +487,15 @@ ts () { # timestamp lowres and pass through args
       # 64c47437 20230728 1906 Fri 28 Jul PDT
       # 64c47688 20230728 1916 Fri 28 Jul PDT
 
+ts () { # timestamp, low resolution, human (tai vs unix seconds err)
+  local ts xs sec ; read -r ts < <(tai64n <<<'')
+  read -r xs < <(awk '{gsub(/^@4[0]*/,""); print substr($0,1,8)}' <<<"$ts")
+  read -r sec < <(printf '%d' "0x${xs}")
+  printf '%s ' "$xs" ; date -r "$sec" +"%Y%m%d %H%M%S %Z %a %I:%M %p %e %b %Y"
+  # echo ${ ts ;} # removes space before day <10...
+  # 695c0404 20260105 103340 PST Mon 10:33 AM 5 Jan 2026
+  }
+
 tj () { # journal timestamp, [tai sec]-yyyymmdd_hhmmss {args}
     local a ; read a < <(tai64n <<<"$*")
     sed -e 's/[-:]//g' -e 's/\.[^ ]*//' -e 's/ /_/' -e "s/^/${a:9:8}-/" < <(tai64nlocal <<<"$a")
@@ -484,6 +506,9 @@ tjj () { # journal timestamp [tai sec]-yyyymmdd_hhmmss (hh:mm PM Sun dd mth PDT)
     read b < <(date -j -f "%Y%m%d %H%M%S" "$b" "+(%I:%M %p %a %e %b %Z)")
     sed -e 's/[-:]//g' -e 's/\.[^ ]*//' -e 's/ /_/' -e "s/^/${a:9:8}-/" -e "s/ / $b /" < <(tai64nlocal <<<"$a")
     } # 6625d8a4-20240421_202514 tjj
+
+
+
 
 which tmux >/dev/null 2>&1 && \
 tmu () { # tmux intuitive wrapper
@@ -623,10 +648,12 @@ _yt_vid () { # ytdl wrapper functions for video
   # https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#format-selection
   $ytdl --write-info-json --write-comments --write-sub --write-auto-sub \
     --sub-langs "en,en-US,en-GB,en-AU" --write-thumbnail --restrict-filenames \
+    --ffmpeg-location $(which ffmpeg8) \
     -f bv*+ba/b                 --abort-on-error --no-playlist \
     -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" -- "$id"
   # also breakout the audio
   "$ytdl" --restrict-filenames \
+    --ffmpeg-location $(which ffmpeg8) \
     --extract-audio --keep-video \
     -f bv*+ba/b --abort-on-error --no-playlist \
     -o "$d/00${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" -- "$id"
@@ -937,7 +964,7 @@ chkwrn "$dx" "$id"
   touch -r "$dx/nulltime" "$json_path" # aligns with $dx
   # Move files to final locations
 # read acodec < <(jq -r '.acodec | @text' "$json_path" ) || { chkerr "$FUNCNAME : acodec key not found '$json_path' (6915168f)" ; return 1 ;} # bad test
-  # sometimes ext, other times acodec
+# sometimes ext, other times acodec...
   read ext < <(jq -r '.ext | @text' "$json_path" ) || { chkerr "$FUNCNAME : ext key not found '$json_path' (6928c8f4)" ; return 1 ;} # bad test
   [ "$ext" = "webm" ] && read ext < <(jq -r '.acodec | @text' "$json_path" || { chkerr "$FUNCNAME : ext key not found '$json_path' (692905aa)" ; return 1 ;} )
 # read -d '' media_file < <(find "$dx/" -mindepth 1 -maxdepth 1 -name "*${id}.${acodec}") || true
@@ -951,21 +978,20 @@ chkwrn "$dx" "$id"
   # rm -f "$dx/nulltime" # "$dx/tmp.json"
   } # _yt _youtube 20220516
 
-   #awk 'P=$0{printf "\n_a=%s\n_r=%s\n\n",P,P}' >>"${json_file}.txt~" <(
   _yt_json2txt () { # fixup youtube .info.json to yaml txt and sort files
     # rev 691531e1 20251112 171815 PST
     local json_file="$1" media_master="$2" txt_dir="${3:-.}" verb="${verb:-devnul}"
     local json= xs= id= file_ext= duration= title= fulltitle= chapters= description= comments= metadata=
-    # read xs < <(awk '{print $5}' < <(cksh -3 "$json_file"))
     xs="${json_file##*/}"; xs="${xs%%,*}" # extract xs from filename
+    [ "$json_file" ]    || { chkerr "usage: $FUNCNAME"' "$json" "$media_master" "$txt_dir" (6957abb9)' ; return 1 ;}
+    [ "$media_master" ] || { chkerr "usage: $FUNCNAME"' "$json" "$media_master" "$txt_dir" (6957abce)' ; return 1 ;}
     [ -f "$json_file" ] || { chkerr "$FUNCNAME : json_file not found '$json_file' (676c648c)" ; return 1 ;}
-#   [ -f "${json_file}.txt" ] && { chkerr "$FUNCNAME : exists '${json_file}.txt' (676c64d2)" ; return 1 ;}
     [ -f "${txt_dir}/00${json_file##*/}.txt" ] && { chkerr "$FUNCNAME : exists '${txt_dir}/00${json_file##*/}.txt' (677b4682)" ; return 1 ;}
     read -rd '' json <"$json_file" || true ; $verb "json from $json_file"
     read -r id file_ext duration < <(jq -r '[.id, .ext, .duration_string] | @tsv' <<<"$json" || chkwrn "missing .id, .ext, .duration_string")
     read -rd '' title       < <(jq -r '.title' <<<"$json" || chkwrn "missing title") || true ; $verb title
     read -rd '' fulltitle   < <(jq -r '.fulltitle' <<<"$json" || chkwrn "missing fulltitle") || true ; $verb fulltitle
-    read -rd '' chapters    < <(yq -ry -w10000 '.chapters[] | {ss: .start_time, to: .end_time, ooo: .title}' <<<"$json" || chkwrn "missing chapters") || true ; $verb chapters
+    read -rd '' chapters    < <(yq -ry -w10000 '.chapters[] | {ss: .start_time, to: .end_time, ooo: .title}' <<<"$json" && $verb chapters || chkerr "$FUNCNAME : chapters")
     read -rd '' description < <(yq -r '.description' <<<"$json" || chkwrn "missing description") || true ; $verb description
     read -rd '' author_comments < <(yq -r '.comments | sort_by(.timestamp) | .[] | select(.author_is_uploader == true) | .text' <<<"$json") || true ; $verb comments
     read -rd '' metadata    < <(yq -ry \
@@ -1093,16 +1119,14 @@ f2rb2mp3 () ( # subshell function "file to rubberband to mp3", transcoding/tunin
   # https://github.com/georgalis/pub/blob/master/skel/.profile
   # https://github.com/georgalis/pub/blob/master/sub/func.bash
   while IFS= read fndata ; do
-    validfn $fndata || { echo "validfn error : $fndata" 1>&2 ; return 1 ;}
+    vfn $fndata || { echo "vfn error : $fndata" 1>&2 ; return 1 ;}
   done <<EOF
-# pub/skel/.profile 20220105
-devnul 216e1370 0000001d
-stderr 7ccc5704 00000037
-chkwrn 2683d3d3 0000005c
-chkerr 4f18299d 0000005b
-# pub/sub/fn.bash 20220105
-hms2sec aea30e0e 000001e3
-prependf a38214fb 000001c8
+devnul    0eb7cdd2bfb59cd4e2743c0c8d22db1b6b711dc5f70eafc51d841d67aeb850adb5f24f6561829a1c
+stderr    e010b0e704f67ee4d5fc8227d32030bfa06e60be9a49daf0b4c91c6eee9671bc2a17a3d517b8da4e
+chkwrn    3acc570671ddfd9b5c0eeca64a2c7541b4559d9c3e1edae841c2317bba84a9a55c90455b86deafaf
+chkerr    50195549cedb329654b8cd279d5e471a536488ebfd3045b4589d05e20c0072faecf4b89566df1114
+hms2sec   be736dc3c9e5b0d9bdbbf41bbefa21129765bee0df238e2b93512b21f1bc63f8ef14dc0cb8c014e1
+prependf  128e42cf71d16c606e92252a9ab30c20586014a970553f8c4ab6c45b8b7da31f4f50629909460e90
 EOF
   which rubberband-r3 >/dev/null 2>&1 && [ "$c" = "r3" ] && [ -z "$rb" ] && { rb=rubberband-r3 ;}
   which rubberband-r3 >/dev/null 2>&1 && [ -z "$c" ] && [ -z "$rb" ] && { rb=rubberband-r3 c=r3 ;}
@@ -1138,7 +1162,7 @@ EOF
 #   echo "# crisp:  0=mushy 1=piano 2=smooth 3=MULTITIMBRAL 4=two-sources 5=standard 6=percussive "
     echo "# Formant y/''  CenterFocus y/'' vol 0db/'' frequency (bhz|chz|N)/'' reverse y/''"
     echo "# cmp= $(declare -f $FUNCNAME | sed -e '/compand/!d' -e '/sed/d' -e 's/=.*//' -e 's/local//' | tr -s ' \n' '|')"
-#   declare -f $FUNCNAME | sed -e '/compand/!d' -e '/sed/d' | while IFS= read a ; do ${verb2} "$a" ; done
+#   awk '{print  2**(-$1/12)}' <<<0.996 pitch to time ; awk '{print -12 * log($1) / log(2) }' <<<0.944 time to pitch"
     echo "# ss= to= t= p= f= c= F= CF= off= tp= lra= i= cmp= v= f2rb2mp3 {file-in} {prepend-out}"
     echo "# ss=$ss to=$to t=$t p=$p f=$f c=$c F=$F CF=$CF off=$off tp=$tp lra=$lra i=$i cmp=$cmp v=$v f2rb2mp3 {file-in} {prepend-out}"
     return 0
@@ -1195,7 +1219,7 @@ EOF
   null="$(mktemp "${inpath}/tmp/nulltime-XXXXX")"
   null="${null##*/}" # basename
   local vn='' vc='' # init "volume name" and "volume command"
-  expr "$v" : "^[-]*[[:digit:]]*db$" >/dev/null || local v=4db # init sane default, if no env overide
+  [[ "$v" =~ ^-?[0-9]*db$ ]] || local v=4db # init sane default, if no env overide
   [ "$cmpn" ] && vn="-$cmpn" vc="$cmpc" || true # sox compand is basically a volume adjustment...
   [ "$v" ] && { vn="${vn}-v${v}" vc="${vc} vol ${v} dither" ;} || true # set vol name (vn) and vol command (vc) if needed
   [ "$rev" = "y" ] && vn="${vn}-rev" vc="$vc reverse"
@@ -1216,13 +1240,12 @@ EOF
   [ -f "${inpath}/tmp/${infile}${secn}.meas" -a -f  "${inpath}/tmp/${infile}${secn}.flac" ] \
     || { # measure for EBU R128 loudness normalization
         { echo "# ${infile}${secn}.meas infile secn meas flac"
-          #$verb2 "loudnorm in: loudnorm=print_format=json... $secc -i $infilep > ${inpath}/tmp/${infile}${secn}.flac~"
-          $verb2 @ffmpeg -hide_banner -loglevel info -y $secc -i "$infilep"
-          ffmpeg -hide_banner -loglevel info -y $secc -i "$infilep" \
+          $verb2 ffmpeg -hide_banner -loglevel info -y $secc -i "$infilep"
+                 ffmpeg -hide_banner -loglevel info -y $secc -i "$infilep" \
             -af "highpass=f=6:p=2, lowpass=f=22000:p=2, aresample=48000,
                  aformat=channel_layouts=stereo,
                  loudnorm=print_format=json" \
-            -ar 48000 -f flac "${inpath}/tmp/${infile}${secn}.flac~" 2>&1 | awk '/^{/,0' \
+            -ar 48000 -f flac "${inpath}/tmp/${infile}${secn}.flac~" 2>&1 | awk '/^{/,/^}/' \
             | jq -r '. | "measured_I=\(.input_i) measured_TP=\(.input_tp) measured_LRA=\(.input_lra) measured_thresh=\(.input_thresh) linear=\(.linear)\nout_i_LUFS=\(.output_i) out_tp_dBTP=\(.output_tp)   out_lra_LU=\(.output_lra)     out_tr_LUFS=\(.output_thresh) offset_LU=\(.target_offset)"'
         } >"${inpath}/tmp/${infile}${secn}.meas~" \
        && {
@@ -1258,7 +1281,7 @@ EOF
                    :measured_I=${measured_I}:measured_TP=${measured_TP}
                    :measured_LRA=${measured_LRA}:measured_thresh=${measured_thresh}
                    :offset=${off}:i=${i}:tp=${tp}:lra=${lra}" \
-          -ar 48000 -f flac "${inpath}/tmp/${infile}${secn}${lnn}.~.flac" 2>&1 | awk '/^{/,0' \
+          -ar 48000 -f flac "${inpath}/tmp/${infile}${secn}${lnn}.~.flac" 2>&1 | awk '/^{/,/^}/' \
           | jq -r '. | "measured_I=\(.input_i) measured_TP=\(.input_tp) measured_LRA=\(.input_lra) measured_thresh=\(.input_thresh) linear=\(.linear)\nout_i_LUFS=\(.output_i) out_tp_dBTP=\(.output_tp)   out_lra_LU=\(.output_lra)     out_tr_LUFS=\(.output_thresh) offset_LU=\(.target_offset)"'
     } >"${inpath}/tmp/${infile}${secn}${lnn}.meas~" \
     && { # only rotate {flac,meas} on no error
@@ -2213,7 +2236,8 @@ rotatefile () { #P> keep at least n backups, and delete files older than m secon
         rotatefile_secs="$((18 * 60 * 60 * 24 ))" rotatefile_keep="7"'
     declare -f chkerr >/dev/null 2>&1  || { echo "$FUNCNAME : chkerr unavailable (630bacd0)" 1>&2 ; return 1 ;}
     declare -f validfn >/dev/null 2>&1 || { echo "$FUNCNAME : validfn unavailable (630c4002)" 1>&2 ; return 1 ;}
-    validfn cksh 1e282ba4 00000bad     || { chkerr "$FUNCNAME : unexpected cksh (630bab5c)" ; return 1 ;}
+    declare -f vfn >/dev/null 2>&1     || { echo "$FUNCNAME : vfn unavailable (693f5dcf)" 1>&2 ; return 1 ;}
+    vfn cksh 41b8f3f40c3f54424276e8611c6b4fce634d3a064c0e9dbb4b96d48eccb8f976 || { chkerr "$FUNCNAME : unexpected vfn cksh (693f5e2a)" ; return 1 ;}
     which tai64n >/dev/null            || { chkerr "$FUNCNAME : tai64n not in path (630bb522)" ; return 1 ;}
     xs () { sed -e 's/^@4[0]*//' -e 's/.\{9\}$//' < <(tai64n <<<'') ;}
     term_pleft () { local str= char='-'
