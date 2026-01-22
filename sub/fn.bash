@@ -569,10 +569,10 @@ _mksymdir () { # symlink directories named _* into {arg1}/_
   # rev: 68ec2900 20251012 151726 PDT Sun 03:17 PM 12 Oct
   local a= base=
   [ "$1" ] || { cat <<eof
-  $FUNCNAME will symlink directories named _* into "{arg1}/_/"
-  sans their leading '_' while pruning the search on those
-  directories, any previous symlinks are removed, duplicates
-  are not symlinked, but recorded in {arg1}/_/duplicate.err
+  $FUNCNAME : symlink directories named _* into "{arg1}/_/"
+  sans their leading '_' while pruning the search on them;
+  previous symlinks are removed, duplicates are not symlinked
+  and recorded in {arg1}/_/duplicate.err
   68ec254f 20251012 150141
 eof
   return 1 ;}
@@ -580,7 +580,7 @@ eof
     rm -rf "_/%%" && mkdir -p "_/%%" # reset tmp directory
     cd _
     uniq -d < <(sort < <(sed -e 's|.*/|/|' -e 's|$|$|' < <(find -L .. -type d -name _\* -prune ))) \
-      >././duplicate.err # record duplicates as regex for exclusion
+      >./duplicate.err # record duplicates as regex for exclusion
     while IFS= read a ; do
       base=${a##*/} ; base=${base#_}
       ln -s "$a" "./%%/$base"
