@@ -1,5 +1,14 @@
 #!/usr/bin/awk -f
 
+# rev 6985fbed 20260206 063411 PST Fri 06:34 AM 6 Feb
+# A new make_anchor_id() function implementing GitHub's slug algorithm (lowercase, spaces
+# to hyphens, strip non-alphanumeric except hyphens, collapse consecutive hyphens, trim)
+# Modifications to parse_header() to extract {#custom-id} when present, otherwise call
+# make_anchor_id(), and emit the id attribute on the heading tag
+#
+# In a heading: {#foo} sets the <h*> tag's id attribute
+# Inline anywhere else: {#foo} emits <a id="foo"></a> as a zero-width anchor point
+#
 # git@github.com:knazarov/markdown.awk.git
 # commit ac6e5e934a0988c873172fe5ef0614e9dcd689ea (HEAD -> master, origin/master, origin/HEAD)
 # Author: Konstantin Nazarov <mail@knazarov.com>
@@ -13,23 +22,73 @@ BEGIN {
 	first_paragraph = 1
 }
 
-function parse_header(str,    hnum, content) {
+function make_anchor_id(str,    id, i, c) {
+	id = "";
+	str = str;
+	# lowercase: map A-Z to a-z
+	for (i=1; i<=length(str); i++) {
+		c = substr(str, i, 1);
+		if (c >= "A" && c <= "Z")
+			c = sprintf("%c", index("ABCDEFGHIJKLMNOPQRSTUVWXYZ", c) + 96);
+		if ((c >= "a" && c <= "z") || (c >= "0" && c <= "9"))
+			id = id c;
+		else if (c == " " || c == "-")
+			id = id "-";
+	}
+	# collapse consecutive hyphens
+	while (index(id, "--") > 0)
+		gsub(/--/, "-", id);
+	# trim leading/trailing hyphens
+	gsub(/^-+/, "", id);
+	gsub(/-+$/, "", id);
+	return id;
+}
+
+function parse_header(str,    hnum, content, anchor) {
 	if (substr(str, 1, 1) == "#") {
 		gsub(/ *#* *$/, "", str);
 		match(str, /#+/);
 		hnum = RLENGTH;
 
 		gsub(/^#+ */, "", str);
+		# extract {#custom-id} if present
+		anchor = "";
+		if (match(str, /[[:space:]]*\{#[^}]+\}$/)) {
+			anchor = substr(str, RSTART, RLENGTH);
+			str = substr(str, 1, RSTART - 1);
+			gsub(/^[[:space:]]*\{#/, "", anchor);
+			gsub(/\}$/, "", anchor);
+		}
 		content = parse_line(str);
-		return "<h" hnum ">" content "</h" hnum ">";
+		if (anchor == "")
+			anchor = make_anchor_id(str);
+		return "<h" hnum " id=\"" anchor "\">" content "</h" hnum ">";
 	}
 	if (match(body, /^[^\n]+\n=+$/)) {
 		gsub(/\n=+$/, "", str);
-		return "<h1>" parse_line(str) "</h1>"
+		anchor = "";
+		if (match(str, /[[:space:]]*\{#[^}]+\}$/)) {
+			anchor = substr(str, RSTART, RLENGTH);
+			str = substr(str, 1, RSTART - 1);
+			gsub(/^[[:space:]]*\{#/, "", anchor);
+			gsub(/\}$/, "", anchor);
+		}
+		if (anchor == "")
+			anchor = make_anchor_id(str);
+		return "<h1 id=\"" anchor "\">" parse_line(str) "</h1>"
 	}
 	if (match(body, /^[^\n]+\n-+$/)) {
 		gsub(/\n-+$/, "", str);
-		return "<h2>" parse_line(str) "</h2>"
+		anchor = "";
+		if (match(str, /[[:space:]]*\{#[^}]+\}$/)) {
+			anchor = substr(str, RSTART, RLENGTH);
+			str = substr(str, 1, RSTART - 1);
+			gsub(/^[[:space:]]*\{#/, "", anchor);
+			gsub(/\}$/, "", anchor);
+		}
+		if (anchor == "")
+			anchor = make_anchor_id(str);
+		return "<h2 id=\"" anchor "\">" parse_line(str) "</h2>"
 	}
 	return "";
 }
@@ -344,6 +403,11 @@ function parse_line(str,    result, end, i, c) {
 		else if (c == "\\" && is_escape_sequence(str, i)) {
 			result = result escape_text(substr(str, i+1, 1));
 		    i = i + 1;
+		}
+		else if (c == "{" && match(substr(str, i), /^\{#[A-Za-z][A-Za-z0-9._-]*\}/)) {
+			anchor = substr(str, i + 2, RLENGTH - 3);
+			result = result "<a id=\"" anchor "\"></a>";
+			i = i + RLENGTH - 1;
 		}
 		else if (c == "[" && is_link(str, i)) {
 			link = extract_link(str, i);
