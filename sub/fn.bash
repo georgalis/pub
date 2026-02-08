@@ -454,42 +454,24 @@ _rcs () { # local rcs function
 # find -E /mnt \( -regex '/mnt(/local|/%|/bak)' -prune -type f \) -o -type f
 
 tss () { # timestamp high resolution
-  # 695c05da 04fa19ec 2026-01-05 10:41:20.083499500
-  local ts xs xss ; read -r ts < <(tai64n <<<'')
-  read -r xs xss < <(awk '{ gsub(/^@4[0]*/,"");print substr($0,1,8), substr($0,9,8) }' <<<"$ts")
-  printf '%s %s ' "$xs" "$xss"
-  tai64nlocal <<<"$ts" ;}
-
-ts () { # timestamp, low resolution, human (tai vs unix seconds err)
-  # 695c0404 20260105 103340 PST Mon 10:33 AM 5 Jan 2026
-  local ts xs sec ; read -r ts < <(tai64n <<<'')
-  read -r xs < <(awk '{gsub(/^@4[0]*/,""); print substr($0,1,8)}' <<<"$ts")
-  read -r sec < <(printf '%d' "0x${xs}")
-  printf '%s ' "$xs" ; date -r "$sec" +"%Y%m%d %H%M%S %Z %a %I:%M %p %e %b %Y" ;}
-
-
-tss () { # timestamp high resolution
-  # 695c05da 04fa19ec 2026-01-05 10:41:20.083499500
+  # revn: 69891681 117f2234 PST 2026-02-08 15:04:23.293544500
+  # orig: 695c05da 04fa19ec 2026-01-05 10:41:20.083499500
   local ts xs xss nsec hr
   command -v tai64n &>/dev/null && { read -r ts < <(tai64n <<<'')
-    read -r xs xss < <(awk '{ gsub(/^@4[0]*/,"");print substr($0,1,8), substr($0,9,8) }' <<<"$ts")
-    printf '%s %s ' "$xs" "$xss"
-    tai64nlocal <<<"$ts"
-  } || { read -r ts < <(date +%s)
-    read -r nsec < <(date +%N 2>/dev/null || printf '0')
-    [[ $nsec == N ]] && nsec=0  # Darwin: %N unsupported
-    read -r hr < <(date +'%Y-%m-%d %H:%M:%S')
+    read -r xs xss < <(awk '{gsub(/^@4[0]*/,"");print substr($0,1,8), substr($0,9,8)}' <<<"$ts")
+    xargs < <(printf '%s %s ' "$xs" "$xss"; date "+%Z" ; tai64nlocal <<<"$ts")
+  } || { read -r ts nsec hr < <(date "+%s %N %Y-%m-%d %H:%M:%S")
     printf '%08x %08x %s.%09d\n' "$ts" "$nsec" "$hr" "$nsec" ;} ;}
 
 ts () { # timestamp, low resolution, human (tai vs unix seconds err)
-  # 695c0404 20260105 103340 PST Mon 10:33 AM 5 Jan 2026
+  # rev: 6986b502 20260206 194402 PST Fri 07:44 PM 6 Feb 2026
+  # org: 695c0404 20260105 103340 PST Mon 10:33 AM 5 Jan 2026
   local ts xs sec
   command -v tai64n &>/dev/null && { read -r ts < <(tai64n <<<'')
     read -r xs < <(awk '{gsub(/^@4[0]*/,""); print substr($0,1,8)}' <<<"$ts")
     read -r sec < <(printf '%d' "0x${xs}")
-  } || { read -r sec < <(date +%s)
-    read -r xs < <(printf '%08x' "$sec") ;}
-  printf '%s ' "$xs" ; date -r "$sec" +"%Y%m%d %H%M%S %Z %a %I:%M %p %e %b %Y" ;}
+  } || { read -r sec < <(date +%s); read -r xs < <(printf '%08x' "$sec") ;}
+  xargs < <(date -r "$sec" +"$xs %Y%m%d %H%M%S %Z %a %I:%M %p %e %b %Y") ;}
 
 tj () { # journal timestamp, [tai sec]-yyyymmdd_hhmmss {args}
     local a ; read a < <(tai64n <<<"$*")
