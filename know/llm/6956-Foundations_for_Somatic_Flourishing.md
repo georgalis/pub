@@ -4,6 +4,8 @@
 
 *A guide for building regulatory capacity as introduction to, supplement for, or continuation of clinical care*
 
+(c) George Georgalis <george@galis.org> unlimited use with this notice 69570585 20260101 153845 PST Thu 1 Jan 2026
+
 ---
 
 ## Contents
