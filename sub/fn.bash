@@ -464,14 +464,20 @@ tss () { # timestamp high resolution
     printf '%08x %08x %s.%09d\n' "$ts" "$nsec" "$hr" "$nsec" ;} ;}
 
 ts () { # timestamp, low resolution, human (tai vs unix seconds err)
-  # rev: 6986b502 20260206 194402 PST Fri 07:44 PM 6 Feb 2026
+  # gnu/bsd date, optionally accepts 8-char hex or integer arg
+  # rev: 698925da 20260208 161002 PST Sun 04:10 PM 8 Feb 2026
   # org: 695c0404 20260105 103340 PST Mon 10:33 AM 5 Jan 2026
-  local ts xs sec
-  command -v tai64n &>/dev/null && { read -r ts < <(tai64n <<<'')
-    read -r xs < <(awk '{gsub(/^@4[0]*/,""); print substr($0,1,8)}' <<<"$ts")
-    read -r sec < <(printf '%d' "0x${xs}")
-  } || { read -r sec < <(date +%s); read -r xs < <(printf '%08x' "$sec") ;}
-  xargs < <(date -r "$sec" +"$xs %Y%m%d %H%M%S %Z %a %I:%M %p %e %b %Y") ;}
+  local ts xs sec dfmt
+  date --version &>/dev/null 2>&1 && dfmt='date -d' || dfmt='date -r'
+  [[ -n "${1:-}" ]] && { [[ "$1" =~ ^[0-9a-fA-F]{8}$ ]] \
+    && { read xs < <(tr 'A-F' 'a-f' <<<"$1"); read -r sec < <(printf '%d\n' "0x${xs}")
+    } || { [[ "$1" =~ ^[0-9]+$ ]] && { sec="$1"; read -r xs < <(printf '%08x' "$sec")
+      } || { printf 'ts: expected 8-char hex or integer\n' >&2; return 1 ;} ;}
+  } || { command -v tai64n &>/dev/null && { read -r ts < <(tai64n <<<'')
+      read -r xs < <(awk '{gsub(/^@4[0]*/,""); print substr($0,1,8)}' <<<"$ts")
+      read -r sec < <(printf '%d' "0x${xs}")
+    } || { read -r sec < <(date +%s); read -r xs < <(printf '%08x' "$sec") ;} ;}
+  xargs < <($dfmt "$sec" +"$xs %Y%m%d %H%M%S %Z %a %I:%M %p %e %b %Y") ;}
 
 tj () { # journal timestamp, [tai sec]-yyyymmdd_hhmmss {args}
     local a ; read a < <(tai64n <<<"$*")
