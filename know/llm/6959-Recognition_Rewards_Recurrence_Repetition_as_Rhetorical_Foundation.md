@@ -2,6 +2,10 @@
 
 Patterned recurrence creates meaning beyond the sum of its instances. This reference examines alliteration and repetition as rhetorical instruments operating across multiple scales---from syllable to corpus---tracing their function in concept solidification, structural coherence, mnemonic reinforcement, and the preparation of material for reader adoption. The phrase repeated becomes the phrase retained; the concept consolidated becomes the concept available for engagement.
 
+(c) 2026 George Georgalis <george@galis.org> unlimited use with this notice
+<br>original 695947d4 20260103 084612 PST Sat 08:46 AM 3 Jan 2026
+<br>revision 696bede5 20260117 121533 PST Sat 12:15 PM 17 Jan 2026
+
 ---
 
 ## Contents
@@ -12,6 +16,7 @@ Patterned recurrence creates meaning beyond the sum of its instances. This refer
 - [Document-Scale Repetition: Thematic Architecture](#document-scale-repetition-thematic-architecture)
 - [Concept Repetition Across Documents: Dimensional Rotation](#concept-repetition-across-documents-dimensional-rotation)
 - [Uncovering Repetition: Analysis and Activation](#uncovering-repetition-analysis-and-activation)
+- [A Soliloquy: Repetition and LLM Prompting](#a-soliloquy-repetition-and-llm-prompting)
 
 ---
 
