@@ -2,6 +2,11 @@
 
 Freud's 1910 "Leonardo da Vinci and a Memory of His Childhood" represents **pioneering speculative psychobiography** - methodologically audacious yet fundamentally compromised by translation error, biographical inaccuracy, and theoretical nascency. The work emerges from psychoanalysis's heroic-interpretive phase, wherein universal symbolic frameworks dominated particular contextual understanding.
 
+(c) 2024 George Georgalis <george@galis.org> unlimited use with this notice
+<br>original 68cf4f1b 20250920 180427 PDT Sat 06:04 PM 20 Sep 2025
+
+---
+
 ### Original Analysis: Foundational Misreading
 
 The 1910 text pivots on catastrophic mistranslation: *nibbio* (kite) rendered as *Geier* (vulture), spawning elaborate Egyptian mythological interpretation where none existed. Freud constructed psychosexual developmental narrative from this error - maternal fixation, homosexual orientation, artistic sublimation - projecting Victorian sexual anxieties onto Renaissance consciousness through spurious symbolic universalism.
