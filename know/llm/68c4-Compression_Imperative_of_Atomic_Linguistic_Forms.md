@@ -2,7 +2,14 @@
 
 Phrase-as-lemma (PAL) constructions treat entire phrases as single words grammatically: "a don't-mess-with-me driver" instead of "a driver who won't let people mess with them." This represents just one manifestation of a broader phenomenon where we intelligently express developed experiences.
 
+(c) 2025 George Georgalis <george@galis.org> unlimited use with this notice
+<br>original 68c44ee5 20250912 094837 PDT Fri 09:48 AM 12 Sep 2025
+<br>revision 69898a93 20260208 231947 PST Sun 11:19 PM 8 Feb 2026
+
+---
+
 Consider how we condense complex experiences into brief expressions. "A please-don't-dump-me dance" compresses what might otherwise require 89 words of psychological description: *"A pattern of behavior exhibited by someone in a romantic relationship who senses their partner's waning interest and responds with increasingly desperate attempts to appear valuable, involving exaggerated enthusiasm, unusual domestic competence displays, and forced casual mentions of how 'fine' they would be if the relationship ended, all performed with barely concealed anxiety manifesting in specific physical tells."* The PAL version forces listeners to supply their own embodied knowledge, creating cultural recognition rather than explanation.
+
 
 ## Embodied Compression and Somatic Triggers
 
