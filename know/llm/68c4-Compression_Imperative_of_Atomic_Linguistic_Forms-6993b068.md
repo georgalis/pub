@@ -76,9 +76,9 @@ This essay is based on
 Goldberg, Adele E., and Shahar Shirtz.
 The English phrase-as-lemma construction: When a phrase masquerades as a word, people play along.
 Language 101, no. 2 (2025): 291-320. 
-(https://dx.doi.org/10.1353/lan.2025.a962899)[https://dx.doi.org/10.1353/lan.2025.a962899].
+[https://dx.doi.org/10.1353/lan.2025.a962899](https://dx.doi.org/10.1353/lan.2025.a962899).
 
 and inspired by
 
 Linguists just made a breakthrough in defining a 'word' No, really;
-languagejones, (https://youtu.be/tfnANe2YUwM)[https://youtu.be/tfnANe2YUwM]
+languagejones, [https://youtu.be/tfnANe2YUwM](https://youtu.be/tfnANe2YUwM)
