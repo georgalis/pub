@@ -3,8 +3,8 @@
 Phrase-as-lemma (PAL) constructions treat entire phrases as single words grammatically: "a don't-mess-with-me driver" instead of "a driver who won't let people mess with them." This represents just one manifestation of a broader phenomenon where we intelligently express developed experiences.
 
 (c) 2025 George Georgalis <george@galis.org> unlimited use with this notice
-<br>original 68c44ee5 20250912 094837 PDT Fri 09:48 AM 12 Sep 2025
 <br>revision 69898a93 20260208 231947 PST Sun 11:19 PM 8 Feb 2026
+<br>original 68c44ee5 20250912 094837 PDT Fri 09:48 AM 12 Sep 2025
 
 ---
 
