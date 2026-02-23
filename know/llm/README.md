@@ -22,6 +22,7 @@ radical variations, challenges of modern synthesis capability.
   <br>A soliloquy of singularity, and the inspiration of the other essays
 * 66cf [Spectrum of Cognitive and Emotional Alignments](./66cf-A_Transformative_Journey_Through_Cognition_and_Emotion.yml.html);
   <br>The inquiry leading to the _Transformative Journey Through Cognition and Emotion_
+* 6717 [Preventing the Technical Debt Avalanche: Essential Early-Stage Controls](6717-tech_debt_prevention_framework.yml.html)
 * 6839 [Worship and Glorification of the Holy Spirit in Eastern Orthodox Theology](./6839-Nicene_Creed_Analysis.md.html)
 * 68c4 [The Compression Imperative: Why Communication Creates Atomic Forms](./68c4-Compression_Imperative_of_Atomic_Linguistic_Forms.md.html)
   * 68c4 [Academic Documentation of "Doy" Family Expressions: A Comprehensive Research Finding 68d0286b](./68c4-Doy_Family_Expressions_Research_Finding-68d0286b.html)
