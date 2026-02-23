@@ -18,15 +18,15 @@ radical variations, challenges of modern synthesis capability.
 
 ## [Composition Presentation and Curated index](https://github.galis.org/know/llm/)
 
-* [A Transformative Journey Through Cognition and Emotion](./A_Transformative_Journey_Through_Cognition_and_Emotion.md.html)
+* [A Transformative Journey Through Cognition and Emotion](./A_Transformative_Journey_Through_Cognition_and_Emotion.md)
   <br>A soliloquy of singularity, and the inspiration of the other essays
 * 66cf [Spectrum of Cognitive and Emotional Alignments](./66cf-A_Transformative_Journey_Through_Cognition_and_Emotion.yml.html);
   <br>The inquiry leading to the _Transformative Journey Through Cognition and Emotion_
 * 6717 [Preventing the Technical Debt Avalanche: Essential Early-Stage Controls](6717-tech_debt_prevention_framework.yml.html)
-* 6839 [Worship and Glorification of the Holy Spirit in Eastern Orthodox Theology](./6839-Nicene_Creed_Analysis.md.html)
-* 68c4 [The Compression Imperative: Why Communication Creates Atomic Forms](./68c4-Compression_Imperative_of_Atomic_Linguistic_Forms.md.html)
+* 6839 [Worship and Glorification of the Holy Spirit in Eastern Orthodox Theology](./6839-Nicene_Creed_Analysis-6839390e.md)
+* 68c4 [The Compression Imperative: Why Communication Creates Atomic Forms](./68c4-Compression_Imperative_of_Atomic_Linguistic_Forms-6993b068.md)
   * 68c4 [Academic Documentation of "Doy" Family Expressions: A Comprehensive Research Finding 68d0286b](./68c4-Doy_Family_Expressions_Research_Finding-68d0286b.html)
-* 68cf [Epochal Contrast in Psychoanalytic Methodology: Leonardo's Analysis Across Centuries](./68cf-Psychoanalytic_reinterpretation_of_Leonardo.md.html)
+* 68cf [Epochal Contrast in Psychoanalytic Methodology: Leonardo's Analysis Across Centuries](./68cf-Psychoanalytic_reinterpretation_of_Leonardo.md)
 * 68f3 [Ultra-High-Speed Camera System for Filming Light Propagation: A Technical Implementation Guide](./68f3-Laser_pulse_propagation_visualization_technique.html)
 * 6919 [When the Body Remembers What the Mind Cannot Access](./6919-When_the_Body_Remembers_what_the_Mind_Cannot_Access-6919efb7.html)
 * 6947 [Federated Learning Covenant](./6947-federated_learning_covenant.yml.html)

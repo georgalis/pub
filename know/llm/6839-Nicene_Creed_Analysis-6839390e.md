@@ -1,6 +1,12 @@
 # Analysis of συμπροσκυνούμενον καὶ συνδοξαζόμενον: Worship and Glorification of the Holy Spirit in Eastern Orthodox Theology
 
-## Introduction: The Linguistic Challenge of Divine Mystery
+(c) 2025 George Georgalis <george@galis.org> unlimited use with this notice
+<br>revision 6839390e 20250529 215022 PDT Thu 09:50 PM 29 May 2025
+<br>original 68390148 20250529 175224 PDT Thu 05:52 PM 29 May 2025
+
+---
+
+## The Linguistic Challenge of Divine Mystery
 
 The phrase "τὸ σὺν Πατρὶ καὶ Υἱῷ συμπροσκυνούμενον καὶ συνδοξαζόμενον" represents one of the most theologically dense and linguistically precise expressions in the Nicene-Constantinopolitan Creed. These two participles—συμπροσκυνούμενον (symproskynóumenon) and συνδοξαζόμενον (syndoxazómenon)—articulate something fundamentally ineffable: the nature of divine worship and the Holy Spirit's full participation in the Godhead.
 
@@ -143,7 +149,7 @@ The very letters and syllables serve completeness and purity of the message:
 - The parallel participle endings (-ούμενον) establish grammatical and theological equality
 - The present tense opens a window into eternal divine life
 
-## Conclusion: The Gift of Divine Revelation
+## The Gift of Divine Revelation
 
 The phrase συμπροσκυνούμενον καὶ συνδοξαζόμενον stands as divinely inspired testimony to the Holy Spirit's full divinity and the unified worship of the Trinity. The hypostasis of the Church, established by Christ, received this symbol of faith as eternal truth—not as product of human deliberation but as gift of divine revelation codified through the Tradition of Church beliefs.
 
