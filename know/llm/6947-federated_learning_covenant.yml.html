@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="ascii">
+<style>
+body{font-family:sans-serif;font-size:14px;line-height:1.5;
+     max-width:60em;margin:1em auto;color:#222}
+.kv{margin:0.15em 0}
+.k{font-weight:bold}
+.nest{margin-left:1.5em}
+ul{margin:0.2em 0 0.2em 1.5em;padding-left:1em}
+li{margin:0.1em 0}
+pre{background:#f4f4f4;padding:0.5em;margin:0.2em 0 0.2em 1.5em;
+    white-space:pre-wrap;font-size:13px}
+.yn{color:#999;font-style:italic}
+.yb{color:#c44}
+.yi{color:#36d}
+.ys{color:#333}
+.ya{font-size:0.8em;color:#888}
+article{border-top:1px solid #ccc;margin-top:1em;
+        padding-top:0.5em}
+</style>
+</head><body>
+<article>
+<div class="kv"><span class="k">Meta:</span></div>
+<div class="nest">
+<div class="kv"><span class="k">Title:</span> <span class="ys">Federated Learning: The Covenant of Distributed Witness</span></div>
+<div class="kv"><span class="k">Revision:</span> <span class="ys">3.0</span></div>
+<div class="kv"><span class="k">Format:</span> <span class="ys">Section headings as keys, paragraph content as values</span></div>
+<div class="kv"><span class="k">Footnote Convention:</span> <span class="ys">Parenthetical circumflex numerals (^N)</span></div>
+</div>
+<div class="kv"><span class="k">Main:</span></div>
+<div class="nest">
+<div class="kv"><span class="k">The Central Tension:</span></div>
+<pre>Machine learning's appetite for data confronts an immovable object:
+data cannot always move. Privacy law, competitive interest, bandwidth
+constraint, and sheer volume conspire to keep information tethered to
+its origin. Federated learning resolves this impasse not by
+circumventing the constraint but by inverting the paradigm---the model
+travels to the data rather than data traveling to the model.
+
+The architecture resembles less a central granary receiving tribute
+than a network of scholars who study their local libraries, then
+convene to synthesize insight without photocopying a single page.
+</pre>
+<div class="kv"><span class="k">The Allegory of the Cartographers Guild:</span></div>
+<pre>Consider a guild of cartographers scattered across an unmapped
+continent. Each member surveys only their immediate territory---one
+charts coastal inlets, another mountain passes, a third the meandering
+courses of rivers. The guild master in the capital city seeks a
+complete map but cannot compel members to ship their surveys; the
+documents are too voluminous, too sensitive (revealing strategic
+resources), and the roads too dangerous.
+
+The solution: each cartographer studies their terrain, then distills
+observations into improved techniques of mapmaking---better methods
+for estimating elevation from shadow, superior conventions for
+depicting vegetation density. These methodological refinements travel
+to the capital. The guild master synthesizes them into an updated Ars
+Cartographica, which returns to all members. No survey leaves its
+province; yet every cartographer benefits from continental-scale
+learning.
+
+This is federated learning. The surveys are raw training data; the
+methodological refinements are gradient updates or model weight deltas;
+the Ars Cartographica is the global model; the guild master is the
+aggregation function.
+</pre>
+<div class="kv"><span class="k">The Guild Master and the Ars Cartographica:</span></div>
+<pre>The guild master's responsibility accrues in several dimensions beyond
+data assembly.
+
+Policy arbitration: When cartographers submit conflicting
+conventions---one preferring contour intervals of ten meters, another
+of twenty---the guild master must adjudicate. Adjudication may follow
+explicit rules (weight by surveyed area, defer to coastal expertise
+for maritime regions) or require discretionary judgment when rules
+prove insufficient.
+
+Quality assurance: The guild master must detect corrupted or malicious
+submissions. A cartographer who deliberately misrepresents terrain (a
+poisoning attack in federated terms) degrades the Ars Cartographica
+for all. Detection requires domain expertise, anomaly identification,
+and sometimes human review of flagged contributions.
+
+Versioning and provenance: Each edition of the Ars Cartographica must
+trace to its contributing refinements. When errors surface, the guild
+master must identify which contribution introduced the fault and
+whether remediation requires full recomputation or targeted correction.
+
+Governance communication: The guild master publishes criteria for
+contribution acceptance, methodological standards, and dispute
+resolution procedures. Members must understand expectations before
+distilling surveys into refinements.
+
+In automated systems, these responsibilities translate to algorithmic
+design, monitoring infrastructure, and governance frameworks. In
+developmental phases, human operators perform these functions
+manually---designing aggregation logic, reviewing anomalous updates,
+documenting provenance, drafting participation agreements. The guild
+master function is an automation target requiring substantial prior
+process maturation.
+</pre>
+<div class="kv"><span class="k">Architecture - Nodes, Aggregator, and the Circulation of Wisdom:</span></div>
+<pre>The federated architecture comprises three functional elements: local
+nodes, the aggregation function, and the communication protocol
+binding them.
+
+Local nodes represent the computational instantiation of client
+participation. Each client---whether a hospital system holding clinical
+notes, an enterprise with proprietary documents, or a consumer device
+with personal messages---operates one or more nodes. The distinction
+is essential: the client is an organizational entity making governance
+decisions (participation consent, data selection, privacy thresholds);
+the node is the hardware-software system executing training
+computations. Clients bear responsibility; nodes perform work.
+
+The aggregation function coordinates learning rounds:
+
+1. Distribution: Current global model parameters propagate to
+participating nodes.
+
+2. Local training: Each node fine-tunes on its private data, producing
+weight updates---the mathematical residue of what local data taught.
+
+3. Upload: Nodes transmit only the updates, the difference between
+locally trained parameters and the starting point.
+
+4. Aggregation: The aggregation function combines updates (commonly
+via weighted averaging, as in FedAvg (^1)) to produce an improved
+global model.
+
+5. Iteration: The cycle repeats until convergence.
+
+In mature deployments, steps 1-5 execute automatically. In practice,
+organizations must first develop manual processes for each step:
+defining participation criteria, validating update integrity, handling
+node failures, adjudicating edge cases. Software automation
+encapsulates these processes once well-understood. The aggregation
+function represents substantial manual process development before
+automation becomes feasible---policy must precede code.
+
+Raw training data never crosses the node boundary. What circulates is
+synthesized pattern---the model's learned adjustments, abstracted from
+any individual example.
+</pre>
+<div class="kv"><span class="k">The Symbolism of the Threshold:</span></div>
+<pre>The node boundary operates as a threshold in the ritual sense: a
+liminal space where transformation occurs. Raw experience---the
+documents, images, and records held locally---cannot pass outward in
+original form. It must first transmute into gradient, a mathematical
+residue capturing what the data taught without preserving what the
+data was.
+
+This transmutation involves human decisions prior to automation: which
+data to include in training, how to preprocess it, what privacy
+thresholds to enforce. The threshold is not merely a software boundary
+but a governance boundary requiring human policy before machine
+execution.
+
+The transmutation remains imperfect. Gradient updates can, under
+adversarial conditions, leak information about training examples
+(membership inference, model inversion attacks). Threshold guardians
+are therefore enlisted:
+
+Differential privacy: Noise injection into gradients, calibrated to
+bound the influence any single example exerts on the final model---a
+statistical veil ensuring plausible deniability.
+
+Secure aggregation: Cryptographic protocols allowing the aggregation
+function to compute the sum of updates without observing any
+individual contribution---the guild master receives only synthesized
+consensus, never any single cartographer's refinement.
+
+The threshold metaphor illuminates the fundamental trade-off: more
+rigorous privacy (thicker veil) degrades model utility; thinner veils
+risk exposure. Federated learning occupies a regime between full
+centralization (no veil, maximum utility, minimum privacy) and pure
+isolation (impenetrable veil, no collective learning).
+</pre>
+<div class="kv"><span class="k">The Landscape of Non-Identical Distribution:</span></div>
+<pre>Centralized training draws from a heterogeneous data lake---a
+commingled reservoir aggregating examples from diverse sources,
+populations, and contexts. The lake's heterogeneity is managed through
+shuffling, stratification, and sampling to approximate a coherent
+training distribution.
+
+Federated learning confronts a fragmented archipelago: each node's
+data reflects a homogeneous local landscape with accentuated purpose.
+The pediatric clinic sees only children; the geriatric ward sees only
+the elderly; the occupational health center sees only working-age
+adults with industrial exposures. Each local dataset is internally
+consistent---homogeneous---but collectively, the archipelago exhibits
+radical statistical heterogeneity (non-IID data).
+
+The parable of the regional physicians: Three physicians train
+diagnostic models. One practices in a pediatric clinic (patients under
+12), another in a geriatric ward (patients over 70), the third in an
+occupational health center (working-age adults exposed to industrial
+hazards). Each local model becomes expert in its cohort but develops
+blind spots---the pediatric model misinterprets arthritis; the
+geriatric model underweights sports injuries.
+
+Naive averaging of their updates produces a model that underperforms
+on all three populations, a form of catastrophic forgetting at the
+aggregate level. The global model lurches toward whichever node
+trained longest or contributed largest gradients, leaving minority
+cohorts underserved.
+
+Solutions include:
+
+FedProx (^2): A regularization term penalizing divergence from the
+global model, preventing any node from straying too far.
+
+Personalization layers: Maintaining shared backbone parameters while
+allowing node-specific heads that adapt to local distribution.
+
+Client selection strategies: Sampling nodes to balance representation
+rather than weighting by data volume alone.
+
+Each solution requires human judgment in design: which regularization
+strength, which layers to share, which sampling criteria. Automation
+follows process maturity.
+</pre>
+<div class="kv"><span class="k">Federated Learning for Large Language Models:</span></div>
+<pre>Scaling federated learning to LLM contexts introduces specific
+challenges and opportunities.
+
+The challenge of model size: A 7-billion-parameter model requires
+approximately 14 GB in half-precision. Transmitting full weight
+updates per round overwhelms most network connections. Mitigation
+strategies include:
+
+Low-rank adaptation (LoRA): Training only a small set of
+rank-decomposed update matrices, reducing transmission volume by
+orders of magnitude.
+
+Gradient compression: Sparsification, quantization, and error-feedback
+mechanisms to shrink update payloads.
+
+Partial model updates: Training only select layers (attention heads,
+embedding layers) per round.
+
+The opportunity of personalization: LLMs trained federatively can
+adapt to user-specific linguistic patterns, domain vocabularies, and
+stylistic preferences without centralizing sensitive text. A keyboard
+application learns individual typing habits across millions of
+devices; the global model improves next-word prediction generally,
+while local adaptation captures idiolect.
+
+The tension of alignment: Federated fine-tuning for instruction-
+following or value alignment faces a distributed principal problem:
+whose values? If nodes represent heterogeneous populations with
+conflicting preferences, the aggregated model may produce incoherent
+or self-contradictory behaviors.
+</pre>
+<div class="kv"><span class="k">The Tension of Alignment Expanded:</span></div>
+<pre>The guild master synthesizes conflicting refinements into an Ars
+Cartographica that may satisfy no faction fully---a political rather
+than purely technical challenge. The guild master's discretion becomes
+paramount:
+
+Weighting policy: Should all nodes contribute equally, or should
+contributions weight by data volume, data quality, or client
+importance? Each choice encodes values.
+
+Conflict resolution: When one client's update contradicts another's,
+the guild master must decide: average (blur both), select (privilege
+one), or reject (require clarification). No algorithm resolves this
+without embedded human judgment.
+
+Transparency obligations: Clients may demand to know how their
+contributions influenced the final model. The guild master must
+maintain audit trails and, in some regulatory contexts, provide
+explanations.
+
+Opt-out and remediation: When a client withdraws consent, can their
+influence be removed from the model? Machine unlearning remains an
+active research area; the guild master must define policy even where
+technical solutions are immature.
+
+These responsibilities illustrate why the aggregation function
+requires substantial manual process development. Automation
+encapsulates policy; policy must be designed, debated, and documented
+by humans before code can execute it.
+</pre>
+<div class="kv"><span class="k">The Imagery of Flow and Fortress:</span></div>
+<pre>The federated network is a constellation of walled cities connected by
+guarded roads. Within each city, citizens (data points) live and work;
+their activities inform the local council (training process). The
+council distills policy improvements (gradient updates) and dispatches
+envoys to the capital (aggregation function). The capital publishes
+revised statutes (updated global model), which envoys carry home.
+
+No citizen ever leaves their city. No outsider enters. Yet the law of
+the land improves through coordinated abstraction.
+
+This imagery clarifies both the power and the limitation: federated
+learning protects location of data but not necessarily influence of
+data. An adversarial envoy (poisoned client) can inject malicious
+updates; the capital must authenticate envoys and scrutinize
+contributions. The guards at the gate represent validation logic,
+anomaly detection, and---in developmental phases---human reviewers
+inspecting suspicious updates.
+</pre>
+<div class="kv"><span class="k">Alternative Topologies Beyond Client-Server:</span></div>
+<pre>The guild-and-capital model assumes a trusted coordinator.
+Decentralized (peer-to-peer) variants eliminate this single point of
+trust:
+
+Gossip protocols: Nodes exchange updates with neighbors, propagating
+improvements virally without central aggregation.
+
+Blockchain-Mediated Federated Learning (BCFL): Updates commit to a
+distributed ledger, with aggregation computed by consensus algorithm.
+The blockchain serves as an immutable audit trail and removes the need
+for a trusted central aggregator, though at substantial computational
+and latency cost.
+
+These architectures trade coordination efficiency for trust
+minimization---appropriate when no party should hold aggregation
+power, but incurring higher communication overhead and convergence
+latency.
+
+Peer-to-peer variants require even more careful manual process design:
+without a central guild master, every node must implement validation,
+versioning, and conflict resolution. Decentralization distributes
+responsibility but does not eliminate it.
+</pre>
+<div class="kv"><span class="k">Boundaries - What Federated Learning Cannot Claim:</span></div>
+<pre>Federated learning is not a panacea for privacy:
+
+1. Model inversion remains possible: Sufficiently powerful adversaries
+with access to the trained model can sometimes reconstruct training
+data characteristics.
+
+2. Membership inference: Attackers may determine whether a specific
+example appeared in training, even without accessing raw data.
+
+3. Gradient leakage: Without additional protections (differential
+privacy, secure aggregation), transmitted gradients can reveal
+surprising amounts of information.
+
+Federated learning provides architectural privacy (data does not leave
+node) but not informational privacy (protection against all
+inference). The two must be distinguished; conflation breeds false
+assurance.
+
+Furthermore, federated learning does not eliminate the need for trust;
+it redistributes trust. Clients must trust the aggregation function to
+behave as specified. Nodes must trust that updates from peers are not
+malicious. The guild master must trust that clients have not corrupted
+their local data. Each trust assumption requires governance, audit,
+and often human oversight before automation can reliably substitute.
+</pre>
+<div class="kv"><span class="k">The Covenant's Terms:</span></div>
+<pre>Federated learning constitutes a covenant among data custodians: we
+shall improve our collective capacity for prediction and generation
+without surrendering custody of our charges. The covenant succeeds to
+the degree that:
+
+Aggregation protocols resist adversarial manipulation.
+
+Privacy-enhancing technologies bound information leakage.
+
+Heterogeneous data distributions are accommodated rather than
+suppressed.
+
+Communication efficiency permits participation by resource-constrained
+nodes.
+
+The LLM instantiation of this covenant enables language models trained
+on distributed private corpora---clinical notes, legal documents,
+personal communications---without centralizing sensitive text. The
+model learns the form of such writing, its patterns and regularities,
+while the substance remains sequestered.
+</pre>
+<div class="kv"><span class="k">Coda:</span></div>
+<pre>The cartographers never ship their surveys. The physicians never share
+their patient records. The citizens never leave their walled cities.
+Yet knowledge propagates, models improve, and collective intelligence
+emerges from the synthesis of distilled experience.
+
+This outcome is not automatic. Experts guard their wisdom as
+jealously as they guard their secrets---both represent competitive
+advantage, hard-won insight, and irreplaceable investment. Why should
+they contribute refinements to a shared Ars Cartographica when
+hoarding preserves advantage?
+
+The answer draws from an older disclosure tradition. In 1853, the
+locksmith A. C. Hobbs addressed the objection that publishing
+lock-picking techniques rewarded dishonesty: &quot;Rogues are very keen in
+their profession, and know already much more than we can teach them
+respecting their several kinds of roguery... If a lock is not so
+inviolable as it has hitherto been deemed to be, surely it is to the
+interest of honest persons to know this fact, because the dishonest
+are tolerably certain to be the first to apply the knowledge
+practically; and the spread of the knowledge is necessary to give fair
+play to those who might suffer by ignorance.&quot; (^3)
+
+The same logic animates federated participation. Adversaries already
+probe vulnerabilities; they already exploit model weaknesses; they
+already aggregate what they can. The question is whether honest
+parties---those with legitimate data, lawful purposes, and aligned
+interests---will pool their methodological refinements to produce
+defenses and capabilities that no isolated participant could achieve.
+Withholding wisdom does not preserve it; it merely cedes the field to
+those less scrupulous.
+
+Participation in the covenant thus becomes a matter of enlightened
+collective interest rather than naive generosity. The guild master
+must demonstrate that contributors receive fair value: access to a
+global model superior to any local training, audit rights confirming
+their influence was incorporated, and governance mechanisms ensuring
+the aggregation serves shared rather than extractive ends. Without
+these assurances, the archipelago remains isolated, each island
+hoarding its maps while adversaries chart the waters between.
+
+Federated learning operationalizes the hard-won insight that wisdom
+can travel while secrets stay home---but only when all parties
+consent, when governance is credible, and when the exchange is
+demonstrably equitable. The covenant holds not by assumption but by
+design, maintenance, and ongoing renegotiation among those who
+recognize that isolation, however comfortable, leaves honest parties
+at the mercy of those who share no such restraint.
+</pre>
+<div class="kv"><span class="k">Glossary:</span></div>
+<div class="nest">
+<div class="kv"><span class="k">Node:</span></div>
+<pre>The computational instantiation through which an organizational
+stakeholder (client) participates in federated learning. A node is
+hardware and software; the client is the human organizational entity
+that owns, operates, and governs that node. Nodes execute training;
+clients determine policy, authorize participation, and bear
+responsibility for data governance.
+</pre>
+<div class="kv"><span class="k">Client:</span></div>
+<pre>The organizational stakeholder---hospital system, enterprise, mobile
+device user---whose data resides locally and who elects to
+participate in federated learning. Clients make governance decisions;
+nodes execute computational tasks. A client may operate multiple
+nodes.
+</pre>
+<div class="kv"><span class="k">Aggregation Server:</span></div>
+<pre>The coordinating function that synthesizes weight updates from
+participating nodes into an improved global model. In mature
+deployments, this function is automated; in developmental phases,
+substantial manual process design, validation, and oversight is
+required. The aggregation server represents an automation target, not
+an assumption of existing automation.
+</pre>
+<div class="kv"><span class="k">Gradient Update:</span></div>
+<pre>The mathematical difference between a model's parameters before and
+after local training---a distillation of what the local data taught
+without preserving the data itself. Gradients are the currency of
+federated exchange.
+</pre>
+<div class="kv"><span class="k">Global Model:</span></div>
+<pre>The synthesized model incorporating aggregated updates from all
+participating nodes. The collective artifact that no single client
+could produce alone.
+</pre>
+<div class="kv"><span class="k">Differential Privacy:</span></div>
+<pre>A mathematical framework guaranteeing that the influence of any
+single training example on the final model remains bounded, typically
+through calibrated noise injection into gradient updates.
+</pre>
+<div class="kv"><span class="k">Secure Aggregation:</span></div>
+<pre>Cryptographic protocols enabling computation of aggregate statistics
+(e.g., summed gradients) without revealing any individual
+contribution to the aggregator.
+</pre>
+<div class="kv"><span class="k">Non-IID Data:</span></div>
+<pre>Non-identically and independently distributed data. In federated
+contexts, each client's local data reflects distinct population
+characteristics, temporal windows, or usage patterns---violating the
+assumption of homogeneous sampling that centralized training enjoys.
+</pre>
+<div class="kv"><span class="k">FedAvg:</span></div>
+<pre>Federated Averaging. The canonical aggregation algorithm proposed by
+McMahan et al. (^1), which computes weighted averages of client model
+updates proportional to local dataset size.
+</pre>
+<div class="kv"><span class="k">FedProx:</span></div>
+<pre>A regularization-enhanced variant of FedAvg (^2) that penalizes
+divergence between local and global models, mitigating the
+pathological effects of heterogeneous data distributions.
+</pre>
+<div class="kv"><span class="k">Blockchain-Mediated Federated Learning (BCFL):</span></div>
+<pre>A decentralized federated learning architecture where model updates
+are committed to a distributed ledger and aggregation is computed via
+blockchain consensus mechanisms. BCFL eliminates the need for a
+trusted central aggregator, providing immutable audit trails and
+tamper-resistant update verification, at the cost of increased
+computational overhead, energy consumption, and convergence latency.
+</pre>
+<div class="kv"><span class="k">LoRA (Low-Rank Adaptation):</span></div>
+<pre>A parameter-efficient fine-tuning technique that trains only small
+rank-decomposed matrices rather than full model weights, reducing
+communication costs in federated LLM training by orders of magnitude.
+</pre>
+<div class="kv"><span class="k">Model Inversion Attack:</span></div>
+<pre>An adversarial technique that reconstructs training data
+characteristics from model parameters or outputs, demonstrating that
+architectural privacy (data staying local) does not guarantee
+informational privacy (protection against inference).
+</pre>
+<div class="kv"><span class="k">Membership Inference Attack:</span></div>
+<pre>An adversarial technique that determines whether a specific example
+was included in a model's training data, exploiting subtle
+differences in model behavior on seen versus unseen examples.
+</pre>
+</div>
+<div class="kv"><span class="k">References:</span></div>
+<div class="nest">
+<ul>
+<li>
+<div class="kv"><span class="k">Footnote:</span> <span class="ys">(^1)</span></div>
+<div class="kv"><span class="k">Citation:</span></div>
+<pre>McMahan, H. B., et al. &quot;Communication-Efficient Learning of Deep
+Networks from Decentralized Data.&quot; AISTATS 2017.</pre>
+<div class="kv"><span class="k">URL:</span> <span class="ys">https://arxiv.org/abs/1602.05629</span></div>
+</li>
+<li>
+<div class="kv"><span class="k">Footnote:</span> <span class="ys">(^2)</span></div>
+<div class="kv"><span class="k">Citation:</span></div>
+<pre>Li, T., et al. &quot;Federated Optimization in Heterogeneous Networks.&quot;
+MLSys 2020.</pre>
+<div class="kv"><span class="k">URL:</span> <span class="ys">https://arxiv.org/abs/1812.06127</span></div>
+</li>
+<li>
+<div class="kv"><span class="k">Footnote:</span> <span class="ys">(^3)</span></div>
+<div class="kv"><span class="k">Citation:</span></div>
+<pre>Hobbs, A. C. &quot;Rudimentary Treatise on the Construction of Locks.&quot;
+J. Weale, 1853, p. 2.</pre>
+<div class="kv"><span class="k">URL:</span> <span class="ys">https://archive.org/details/locks00telerich</span></div>
+</li>
+</ul>
+</div>
+</div>
+</article>
+</body></html>

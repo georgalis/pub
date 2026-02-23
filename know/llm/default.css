@@ -1,0 +1,146 @@
+/* default.css --- typographic presentation for markdown.awk HTML output
+ *
+ * Targets standard HTML element selectors only; no custom classes or
+ * divisions. Every selector corresponds to markup emitted by the parser:
+ * html, body, h1-h6, p, a, em, strong, blockquote, pre, code, ul, ol,
+ * li, img, hr.
+ *
+ * (c) 2026 George Georgalis <george@galis.org> unlimited use with this notice
+ */
+
+/* --- Document root and body --- */
+html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+body {
+    max-width: 48em;
+    margin: 2em auto;
+    padding: 0 1.5em;
+    font-family: "B612", serif, "Hoefler Text", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman";
+    line-height: 1.6;
+    color: #1a1a1a;
+    background-color: #fdfdfd;
+}
+
+/* --- Headings --- */
+h1, h2, h3, h4, h5, h6 {
+    line-height: 1.25;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    color: #111;
+}
+
+h1 { font-size: 2em;    margin-top: 0; border-bottom: 1px solid #ddd; padding-bottom: 0.3em; }
+h2 { font-size: 1.5em;  border-bottom: 1px solid #eee; padding-bottom: 0.25em; }
+h3 { font-size: 1.25em; }
+h4 { font-size: 1.1em;  }
+h5 { font-size: 1em;    font-weight: 600; }
+h6 { font-size: 0.9em;  font-weight: 600; color: #555; }
+
+/* --- Paragraphs --- */
+p {
+    margin: 0 0 1em 0;
+    orphans: 3;
+    widows: 3;
+}
+
+/* --- Links --- */
+a {
+    color: #1a5276;
+    text-decoration: none;
+    border-bottom: 1px solid #aed6f1;
+}
+
+a:hover, a:focus {
+    color: #0e3450;
+    border-bottom-color: #0e3450;
+}
+
+a:visited {
+    color: #4a235a;
+    border-bottom-color: #d2b4de;
+}
+
+/* --- Inline emphasis --- */
+em {
+    font-style: italic;
+}
+
+strong {
+    font-weight: 700;
+    color: #111;
+}
+
+/* --- Blockquotes --- */
+blockquote {
+    margin: 1em 0;
+    padding: 0.5em 1.25em;
+    border-left: 4px solid #bbb;
+    color: #444;
+    background-color: #f7f7f7;
+}
+
+blockquote p:last-child {
+    margin-bottom: 0;
+}
+
+/* --- Code: inline and block --- */
+code {
+    font-family: "Intel One Mono", "SF Mono", "Menlo", "Consolas",
+                 "Liberation Mono", monospace;
+    font-size: 0.875em;
+    padding: 0.15em 0.35em;
+    background-color: #f0f0f0;
+    border-radius: 3px;
+}
+
+pre {
+    margin: 1em 0;
+    padding: 1em;
+    overflow-x: auto;
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    line-height: 1.45;
+}
+
+pre code {
+    padding: 0;
+    background-color: transparent;
+    border-radius: 0;
+    font-size: 0.85em;
+}
+
+/* --- Lists --- */
+ul, ol {
+    margin: 0 0 1em 0;
+    padding-left: 2em;
+}
+
+li {
+    margin-bottom: 0.3em;
+}
+
+li > ul, li > ol {
+    margin-top: 0.3em;
+    margin-bottom: 0;
+}
+
+/* --- Images --- */
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 1em 0;
+}
+
+/* --- Horizontal rules --- */
+hr {
+    border: none;
+    border-top: 1px solid #ccc;
+    margin: 2em 0;
+}
