@@ -2,7 +2,7 @@
 
 Freud's 1910 "Leonardo da Vinci and a Memory of His Childhood" represents **pioneering speculative psychobiography** - methodologically audacious yet fundamentally compromised by translation error, biographical inaccuracy, and theoretical nascency. The work emerges from psychoanalysis's heroic-interpretive phase, wherein universal symbolic frameworks dominated particular contextual understanding.
 
-(c) 2024 George Georgalis <george@galis.org> unlimited use with this notice
+(c) 2025 George Georgalis <george@galis.org> unlimited use with this notice
 <br>original 68cf4f1b 20250920 180427 PDT Sat 06:04 PM 20 Sep 2025
 
 ---

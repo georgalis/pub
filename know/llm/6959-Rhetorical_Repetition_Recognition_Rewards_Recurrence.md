@@ -1,4 +1,4 @@
-# Recognition Rewards Recurrence: Repetition as Rhetorical Foundation
+# Rhetorical Repetition: Recognition Rewards Recurrence
 
 Patterned recurrence creates meaning beyond the sum of its instances. This reference examines alliteration and repetition as rhetorical instruments operating across multiple scales---from syllable to corpus---tracing their function in concept solidification, structural coherence, mnemonic reinforcement, and the preparation of material for reader adoption. The phrase repeated becomes the phrase retained; the concept consolidated becomes the concept available for engagement.
 
