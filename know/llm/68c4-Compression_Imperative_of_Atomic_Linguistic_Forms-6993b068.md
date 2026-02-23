@@ -2,7 +2,7 @@
 
 Phrase-as-lemma (PAL) constructions treat entire phrases as single words grammatically: "a don't-mess-with-me driver" instead of "a driver who won't let people mess with them." This represents just one manifestation of a broader phenomenon where we intelligently express developed experiences.
 
-(c) 2025 George Georgalis <george@galis.org> unlimited use with this notice
+(c) 2026 George Georgalis <george@galis.org> unlimited use with this notice
 <br>revision 69898a93 20260208 231947 PST Sun 11:19 PM 8 Feb 2026
 <br>original 68c44ee5 20250912 094837 PDT Fri 09:48 AM 12 Sep 2025
 
@@ -73,12 +73,12 @@ Condensing represents adaptive optimization rather than linguistic laziness. New
 
 This essay is based on
 
-THE ENGLISH PHRASE-AS-LEMMA CONSTRUCTION: WHEN A PHRASE MASQUERADES AS A WORD, PEOPLE PLAY ALONG;
-Adele E. Goldberg, Princeton University and Shahar Shirtz, Arizona State University;
-LANGUAGE, VOLUME 101, NUMBER 2 (2025).
+Goldberg, Adele E., and Shahar Shirtz.
+The English phrase-as-lemma construction: When a phrase masquerades as a word, people play along.
+Language 101, no. 2 (2025): 291-320. 
+(https://dx.doi.org/10.1353/lan.2025.a962899)[https://dx.doi.org/10.1353/lan.2025.a962899].
 
 and inspired by
 
-Linguists just made a breakthrough in defining a 'word' No, really 
-languagejones
-https://youtu.be/tfnANe2YUwM
+Linguists just made a breakthrough in defining a 'word' No, really;
+languagejones, (https://youtu.be/tfnANe2YUwM)[https://youtu.be/tfnANe2YUwM]
