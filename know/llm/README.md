@@ -32,7 +32,7 @@ radical variations, challenges of modern synthesis capability.
 * 6956 [Foundations for Somatic Flourishing.md](./6956-Foundations_for_Somatic_Flourishing.md)
 * 6959 [Recognition Rewards Recurrence: Repetition as Rhetorical Foundation.md](6959-Recognition_Rewards_Recurrence_Repetition_as_Rhetorical_Foundation.md)
 
-Source files: [https://github.com/georgalis/pub/know/llm/](https://github.com/georgalis/pub/know/llm/)
+Source files: [https://github.com/georgalis/pub/tree/main/know/llm/](https://github.com/georgalis/pub/tree/main/know/llm/)
 
 The evolving corpus reflects not only technological capability but
 an epistemological shift: as synthesis transforms into discovery
