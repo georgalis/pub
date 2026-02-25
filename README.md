@@ -1,16 +1,16 @@
 # georgalis @ Github 
 
 _The way I roll..._
-```
+<pre><tt>
 git archive --prefix ./pub/ main | gzip -c | ssh remote "tar xzf -"
-```
+</tt></pre>
 or
-```
+<pre><tt>
 h=srv r="$HOME/vcs/pub" t=$(cd /tmp && mktemp -d ./gitarch-XXXX)
 cd "${r}" && git archive --prefix ${PWD##*/}/ HEAD | tar -C "/tmp/${t}" -xzf - \
  && rsync -vrtcpz --chmod=Fa-w "/tmp/${t}/${PWD##*/}/" root@${h}:/usr/local/${PWD##*/}/ \
  && rm -rf "/tmp/${t}/"
-```
+</tt></pre>
 
 ###### Shortcuts to major ./pub components
 

@@ -7,14 +7,7 @@
 </head>
 <body>
 <h1 id="georgalis-github">georgalis @ Github</h1>
-<p><em>The way I roll...</em> <code>
-git archive --prefix ./pub/ main | gzip -c | ssh remote "tar xzf -"
-</code> or <code>
-h=srv r="$HOME/vcs/pub" t=$(cd /tmp &amp;&amp; mktemp -d ./gitarch-XXXX)
-cd "${r}" &amp;&amp; git archive --prefix ${PWD##*/}/ HEAD | tar -C "/tmp/${t}" -xzf - \
- &amp;&amp; rsync -vrtcpz --chmod=Fa-w "/tmp/${t}/${PWD##*/}/" root@${h}:/usr/local/${PWD##*/}/ \
- &amp;&amp; rm -rf "/tmp/${t}/"
-</code></p>
+<p><em>The way I roll...</em> <pre><tt> git archive --prefix ./pub/ main | gzip -c | ssh remote "tar xzf -" </tt></pre> or <pre><tt> h=srv r="$HOME/vcs/pub" t=$(cd /tmp &amp;&amp; mktemp -d ./gitarch-XXXX) cd "${r}" &amp;&amp; git archive --prefix ${PWD##<em>/}/ HEAD | tar -C "/tmp/${t}" -xzf - \  &amp;&amp; rsync -vrtcpz --chmod=Fa-w "/tmp/${t}/${PWD##</em>/}/" root@${h}:/usr/local/${PWD##*/}/ \  &amp;&amp; rm -rf "/tmp/${t}/" </tt></pre></p>
 <h6 id="shortcuts-to-major-pub-components">Shortcuts to major ./pub components</h6>
 <p><a href="https://github.com/georgalis/pub/">root</a> (<a href="https://pub.iuxta.com/">docs</a>)</p>
 <ul>
