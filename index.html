@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h1 id="georgalis-github">georgalis @ Github</h1>
+<p><em>The way I roll...</em> <code>
+git archive --prefix ./pub/ main | gzip -c | ssh remote "tar xzf -"
+</code> or <code>
+h=srv r="$HOME/vcs/pub" t=$(cd /tmp &amp;&amp; mktemp -d ./gitarch-XXXX)
+cd "${r}" &amp;&amp; git archive --prefix ${PWD##*/}/ HEAD | tar -C "/tmp/${t}" -xzf - \
+ &amp;&amp; rsync -vrtcpz --chmod=Fa-w "/tmp/${t}/${PWD##*/}/" root@${h}:/usr/local/${PWD##*/}/ \
+ &amp;&amp; rm -rf "/tmp/${t}/"
+</code></p>
+<h6 id="shortcuts-to-major-pub-components">Shortcuts to major ./pub components</h6>
+<p><a href="https://github.com/georgalis/pub/">root</a> (<a href="https://pub.iuxta.com">docs</a>)</p>
+<ul>
+<li><a href="./know/README.md.html#edification">./know/</a> corporeal resources</li>
+<li><a href="./know/llm/README.md.html">./know/llm/</a> Synthesized Essays</li>
+<li><a href=".//know/music/README.md.html#music-curation">./know/music/</a> Musical Playlists</li>
+<li><a href="./know/music/5fb3-deja-muse.md.html#5fb3-deja-muse">./know/music/5fb3-deja-muse.md.html</a> A 2020 Musical Playlist</li>
+<li><a href="./know/Nevermind.pdf">./know/Nevermind.pdf</a> life management</li>
+<li><a href="./know/Operations.pdf">./know/Operations.pdf</a> Proceeding Operations, brief graphical format</li>
+<li><a href="./know/ProOps/README.md.html#proceeding-operations-framework">./know/ProOps</a> Proceeding Operations Framework, text detail</li>
+<li><a href="./boot">./boot</a> bootstrap scripts for various OS</li>
+<li><a href="./boot/nbsd/rc.sh">./boot/nbsd/rc.sh</a> invoke NetBSD bootstrap with CI/CD enhancements</li>
+<li><a href="./boot/nbsd/tai64n-inst.sh">./boot/nbsd/tai64n-inst.sh</a> tai64n and tai64nlocal installer</li>
+<li><a href="./mkinst/skel-inst.sh">./mkinst/skel-inst.sh</a> backup and install skel files</li>
+<li><a href="./skel">./skel</a> default user env (enhanced replacement)</li>
+<li><a href="./src/gpw">./src/gpw</a> pronounceable password generator</li>
+<li><a href="./src/multitee/multitee-3.0a/">./src/multitee/multitee-3.0a/</a> build multitee-3.0 with modern compilers</li>
+<li><a href="./sub/backlink.sh">./sub/backlink.sh</a> rsync hardlink snapshot backups</li>
+<li><a href="./sub/cc2netblock.sh">./sub/cc2netblock.sh</a> Country-Code to CIDR translator</li>
+<li><a href="./sub/fn.bash">./sub/fn.bash</a> functions to enhance bash shell</li>
+<li><a href="./sub/prequeue">./sub/prequeue</a> in transaction, smtp filter</li>
+</ul>
+<h6 id="other-repositories">Other repositories</h6>
+<ul>
+<li><a href="https://github.com/georgalis/felidae">../felidae</a> Felidae AI/ML image classifier</li>
+<li><a href="https://github.com/georgalis/colab-61cc/pull/1">rust translation</a> PR for <a href="https://github.com/georgalis/colab-61cc/tree/tint/tint">nm2rgb.py</a></li>
+</ul>
+<h3 id="public-comments">Public comments</h3>
+<ul>
+<li>OSX Ventura rsync to msdos/usb fail --- <a href="https://discussions.apple.com/thread/254383328">apple discussion 254383328</a>, breaks rsync maintenance of IoT micro sd flash memory, <a href="https://github.com/WayneD/rsync/issues/412">github rsync issue</a></li>
+</ul>
+<ul>
+<li><a href="https://discussions.apple.com/thread/254233125">_mbsetupuser uses /bin/bash</a> --- Macs ship with a 2007 version of bash, supported or not?</li>
+</ul>
+<ul>
+<li>Github Copilot docs update? Not today... <a href="https://github.com/community/community/discussions/19579">Issue #19579</a> <a href="https://github.com/github/docs/pull/18833">PR #18833</a></li>
+</ul>
+<ul>
+<li>[https://github.com/tmux/tmux/issues/3220](tmux/tmux #3220) Add a comand line option to disable acl checking... nope!</li>
+</ul>
+<ul>
+<li>rmind/npf #113 <a href="https://github.com/rmind/npf/issues/113#issuecomment-1157142538">Solution</a> Refer to range of IPs and use of wildcards</li>
+</ul>
+<ul>
+<li> skafdasschaf/latex-pgfgantt #7 <a href="https://github.com/skafdasschaf/latex-pgfgantt/issues/7#issuecomment-1149038354">Request/Alternative</a> High resolution time for gantt event analytics with pgfgantt</li>
+</ul>
+<ul>
+<li> dylanaraps/pure-bash-bible #127 <a href="https://github.com/dylanaraps/pure-bash-bible/pull/127#issuecomment-1081019748">Hint</a> exit behavior in functions</li>
+</ul>
+<ul>
+<li>Homebrew/brew #6637 <a href="https://github.com/Homebrew/brew/issues/6637#issuecomment-545629991">Solution</a> 'keep' packages and 'orphaned' dependencies... </li>
+</ul>
+<ul>
+<li>dylanaraps/pure-bash-bible #82 <a href="https://github.com/dylanaraps/pure-bash-bible/issues/82#issuecomment-534194819">Reference</a> more rationale for not using #!/bin/bash? </li>
+</ul>
+<ul>
+<li>pyenv/pyenv #1359 <a href="https://github.com/pyenv/pyenv/pull/1359#issuecomment-504700287">Reference</a> Update shell configuration info in README </li>
+</ul>
+<ul>
+<li>pyenv/pyenv #1347 <a href="https://github.com/pyenv/pyenv/issues/1347#issuecomment-504034842">Reference</a> is putting <code>eval "$(pyenv init -)"</code> in <code>~/.bash_profile</code> really a good suggestion? </li>
+</ul>
+<ul>
+<li>usnistgov/OSCAL #349 <a href="https://github.com/usnistgov/OSCAL/issues/349#issuecomment-546127937">Alternative</a> Consider using leading zeros in OSCAL Content Identifiers </li>
+</ul>
+<ul>
+<li><a href="https://github.com/search?q=commenter%3Ageorgalis">All Github Comments</a></li>
+</ul>
+</body>
+</html>
