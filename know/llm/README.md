@@ -1,5 +1,6 @@
 
-# Procession and Evolution: LLM-Synthesized Essay
+# Procession and Evolution
+## LLM-Synthesized Essay
 
 (c) 2026 George Georgalis <george@galis.org> unlimited use with this notice
 
