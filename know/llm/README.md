@@ -16,7 +16,7 @@ radical variations, challenges of modern synthesis capability.
 
 ---
 
-## [Curated Composition and Presentation](https://github.galis.org/know/llm/)
+## [Curated Presentation](https://pub.iuxta.com/know/llm/)
 
 * [A Transformative Journey Through Cognition and Emotion](./A_Transformative_Journey_Through_Cognition_and_Emotion.md) 66cfa8ec
   <br>A soliloquy of singularity, and the inspiration of the other essays
@@ -32,8 +32,10 @@ radical variations, challenges of modern synthesis capability.
 * 6947 [Federated Learning Covenant](./6947-federated_learning_covenant.yml.html) 69479d38
 * 6956 [Foundations for Somatic Flourishing.md](./6956-Foundations_for_Somatic_Flourishing.md) 6993b557
 * 6959 [Rhetorical Repetition: Recognition Rewards Recurrence](./6959-Rhetorical_Repetition_Recognition_Rewards_Recurrence.md) 69938a6f
+* 69a3 [Disposition Topology and Prompt Identity](./69a3-disposition_topology.md) 69a4ef1a
 
-Source files: [https://github.com/georgalis/pub/tree/main/know/llm/](https://github.com/georgalis/pub/tree/main/know/llm/)
+
+<!-- Source files: [https://github.com/georgalis/pub/tree/main/know/llm/](https://github.com/georgalis/pub/tree/main/know/llm/) -->
 
 The evolving corpus reflects not only technological capability but
 an epistemological shift: as synthesis transforms into discovery
