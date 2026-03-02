@@ -5,34 +5,41 @@ _The way I roll..._
 git archive --prefix ./pub/ main | gzip -c | ssh remote "tar xzf -"
 </tt></pre>
 or
-<pre><tt>
+
+<pre><code> 
+```
 h=srv r="$HOME/vcs/pub" t=$(cd /tmp && mktemp -d ./gitarch-XXXX)
 cd "${r}" && git archive --prefix ${PWD##*/}/ HEAD | tar -C "/tmp/${t}" -xzf - \
  && rsync -vrtcpz --chmod=Fa-w "/tmp/${t}/${PWD##*/}/" root@${h}:/usr/local/${PWD##*/}/ \
  && rm -rf "/tmp/${t}/"
-</tt></pre>
+```
+</pre></code> 
 
-###### Shortcuts to major ./pub components
 
-[root](https://github.com/georgalis/pub/) ([docs](https://pub.iuxta.com/))
+###### Shortcuts to major [./pub](https://pub.iuxta.com/) components
+
 * [./know/](./know/#edification) corporeal resources
 * [./know/llm/](./know/llm/) LLM Synthesized Essays
-* [./know/music/](.//know/music/README.md#music-curation) Musical Playlists
+* [./know/music/](./know/music/README.md#music-curation) Musical Playlists
 * [./know/music/5fb3-deja-muse.md](./know/music/5fb3-deja-muse.md#5fb3-deja-muse) A 2020 Musical Playlist
 * [./know/Nevermind.pdf](./know/Nevermind.pdf) life management
 * [./know/Operations.pdf](./know/Operations.pdf) Proceeding Operations, brief graphical format
 * [./know/ProOps](./know/ProOps/#proceeding-operations-framework) Proceeding Operations Framework, text detail
+
 * [./boot](./boot) bootstrap scripts for various OS
 * [./boot/nbsd/rc.sh](./boot/nbsd/rc.sh) invoke NetBSD bootstrap with CI/CD enhancements
 * [./boot/nbsd/tai64n-inst.sh](./boot/nbsd/tai64n-inst.sh) tai64n and tai64nlocal installer
+
 * [./mkinst/skel-inst.sh](./mkinst/skel-inst.sh) backup and install skel files
+
 * [./skel](./skel) default user env (enhanced replacement)
-* [./src/gpw](./src/gpw) pronounceable password generator
-* [./src/multitee/multitee-3.0a/](./src/multitee/multitee-3.0a/) build multitee-3.0 with modern compilers
 * [./sub/backlink.sh](./sub/backlink.sh) rsync hardlink snapshot backups
 * [./sub/cc2netblock.sh](./sub/cc2netblock.sh) Country-Code to CIDR translator
 * [./sub/fn.bash](./sub/fn.bash) functions to enhance bash shell
 * [./sub/prequeue](./sub/prequeue) in transaction, smtp filter
+
+* [./src/gpw](./src/gpw) pronounceable password generator
+* [./src/multitee/multitee-3.0a/](./src/multitee/multitee-3.0a/) build multitee-3.0 with modern compilers
 
 ###### Other repositories
 * [../felidae](https://github.com/georgalis/felidae) Felidae AI/ML image classifier
