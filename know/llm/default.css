@@ -2,24 +2,33 @@
  *
  * Targets standard HTML element selectors only; no custom classes or
  * divisions. Every selector corresponds to markup emitted by the parser:
- * html, body, h1-h6, p, a, em, strong, blockquote, pre, code, ul, ol,
- * li, img, hr.
+ * html, body, h1-h6, p, a, em, strong, small, blockquote, pre, code,
+ * ul, ol, li, img, hr.
+ *
+ * Font loading: primary fonts via Google Fonts; fallback stacks cover
+ * offline or blocked-CDN cases. B612 (body), EB Garamond (headings),
+ * Cormorant Garamond (small/caption), Intel One Mono (monospace).
+ *
+ * Targets modern CSS only; no legacy-browser accommodation.
  *
  * (c) 2026 George Georgalis <george@galis.org> unlimited use with this notice
  */
 
-/* --- Document root and body --- */
+/* --- Web fonts --- */
+@import url('https://fonts.googleapis.com/css2?family=B612:ital,wght@0,400;0,700;1,400;1,700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Cormorant+Garamond:ital,wght@1,400;1,600&family=Intel+One+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+
+/* --- Document root --- */
 html {
-    font-size: 16px;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
 }
 
+/* --- Body --- */
 body {
-    max-width: 48em;
+    max-width: 46em;
     margin: 2em auto;
     padding: 0 1.5em;
-    font-family: "B612", serif, "Hoefler Text", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman";
+    font-family: "B612", Varidian, sans-serif;
     line-height: 1.6;
     color: #1a1a1a;
     background-color: #fdfdfd;
@@ -27,10 +36,9 @@ body {
 
 /* --- Headings --- */
 h1, h2, h3, h4, h5, h6 {
+    font-family: "EB Garamond", "Hoefler Text", "Iowan Old Style", Palatino, Georgia, serif;
     line-height: 1.25;
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    margin-top: 1.5em;
-    margin-bottom: 0.5em;
+    margin-block: 1.5em 0.5em;
     color: #111;
 }
 
@@ -43,7 +51,7 @@ h6 { font-size: 0.9em;  font-weight: 600; color: #555; }
 
 /* --- Paragraphs --- */
 p {
-    margin: 0 0 1em 0;
+    margin: 0 0 1em;
     orphans: 3;
     widows: 3;
 }
@@ -52,10 +60,10 @@ p {
 a {
     color: #1a5276;
     text-decoration: none;
-    border-bottom: 1px solid #aed6f1;
+ /* border-bottom: 1px solid #aed6f1; */
 }
 
-a:hover, a:focus {
+a:is(:hover, :focus) {
     color: #0e3450;
     border-bottom-color: #0e3450;
 }
@@ -67,12 +75,16 @@ a:visited {
 
 /* --- Inline emphasis --- */
 em {
-    font-style: italic;
+    font-style: italic;   
+    font-size: 1.20em;
+    font-family: "Cormorant Garamond", "Hoefler Text", Palatino, Georgia, serif;
 }
+strong { font-weight: 700; color: #111; }
 
-strong {
-    font-weight: 700;
-    color: #111;
+/* --- Small / caption text --- */
+small {
+    font-size: 0.85em;
+    color: #555;
 }
 
 /* --- Blockquotes --- */
@@ -84,51 +96,34 @@ blockquote {
     background-color: #f7f7f7;
 }
 
-blockquote p:last-child {
-    margin-bottom: 0;
-}
+blockquote p:last-child { margin-bottom: 0; }
 
-/* --- Code: inline and block --- */
-code {
-    font-family: "Intel One Mono", "SF Mono", "Menlo", "Consolas",
-                 "Liberation Mono", monospace;
-    font-size: 0.875em;
-    padding: 0.15em 0.35em;
-    background-color: #f0f0f0;
-    border-radius: 3px;
-}
-
+/* --- Code: block --- */
 pre {
+    font-family: "Intel One Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: 0.875em;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border-radius: 4px;
     margin: 1em 0;
     padding: 1em;
-    overflow-x: auto;
-    background-color: #f5f5f5;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    line-height: 1.45;
+    overflow: auto;
+    white-space: pre;
 }
 
-pre code {
-    padding: 0;
-    background-color: transparent;
-    border-radius: 0;
-    font-size: 0.85em;
-}
+/* --- Code: inline inherits pre's family when nested, resets otherwise --- */
+pre code { font-family: inherit; white-space: inherit; }
 
 /* --- Lists --- */
 ul, ol {
-    margin: 0 0 1em 0;
+    margin: 0 0 1em;
     padding-left: 2em;
 }
 
-li {
-    margin-bottom: 0.3em;
-}
+li { margin-bottom: 0.3em; }
 
-li > ul, li > ol {
-    margin-top: 0.3em;
-    margin-bottom: 0;
-}
+li > ul,
+li > ol { margin-block: 0.3em 0; }
 
 /* --- Images --- */
 img {

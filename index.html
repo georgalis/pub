@@ -8,13 +8,13 @@
 <body>
 <h1 id="georgalis-github">georgalis @ Github</h1>
 <p><em>The way I roll...</em> <pre><tt> git archive --prefix ./pub/ main | gzip -c | ssh remote "tar xzf -" </tt></pre> or</p>
-<p><pre><code>  <code>
+<p><pre><code> <code>
 h=srv r="$HOME/vcs/pub" t=$(cd /tmp &amp;&amp; mktemp -d ./gitarch-XXXX)
 cd "${r}" &amp;&amp; git archive --prefix ${PWD##*/}/ HEAD | tar -C "/tmp/${t}" -xzf - \
  &amp;&amp; rsync -vrtcpz --chmod=Fa-w "/tmp/${t}/${PWD##*/}/" root@${h}:/usr/local/${PWD##*/}/ \
  &amp;&amp; rm -rf "/tmp/${t}/"
-</code> </pre></code> </p>
-<h6 id="shortcuts-to-major-pubhttpspubiuxtacom-components">Shortcuts to major <a href="https://pub.iuxta.com/">./pub</a> components</h6>
+</code> </pre></code></p>
+<h3 id="shortcuts-to-major-pubhttpspubiuxtacom-components">Shortcuts to major <a href="https://pub.iuxta.com/">./pub</a> components</h3>
 <ul>
 <li><a href="./know/#edification">./know/</a> corporeal resources</li>
 <li><a href="./know/llm/">./know/llm/</a> LLM Synthesized Essays</li>
@@ -43,7 +43,7 @@ cd "${r}" &amp;&amp; git archive --prefix ${PWD##*/}/ HEAD | tar -C "/tmp/${t}" 
 <li><a href="./src/gpw">./src/gpw</a> pronounceable password generator</li>
 <li><a href="./src/multitee/multitee-3.0a/">./src/multitee/multitee-3.0a/</a> build multitee-3.0 with modern compilers</li>
 </ul>
-<h6 id="other-repositories">Other repositories</h6>
+<h4 id="other-repositories">Other repositories</h4>
 <ul>
 <li><a href="https://github.com/georgalis/felidae">../felidae</a> Felidae AI/ML image classifier</li>
 <li><a href="https://github.com/georgalis/colab-61cc/pull/1">rust translation</a> PR for <a href="https://github.com/georgalis/colab-61cc/tree/tint/tint">nm2rgb.py</a></li>

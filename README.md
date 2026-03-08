@@ -6,17 +6,17 @@ git archive --prefix ./pub/ main | gzip -c | ssh remote "tar xzf -"
 </tt></pre>
 or
 
-<pre><code> 
+<pre><code>
 ```
 h=srv r="$HOME/vcs/pub" t=$(cd /tmp && mktemp -d ./gitarch-XXXX)
 cd "${r}" && git archive --prefix ${PWD##*/}/ HEAD | tar -C "/tmp/${t}" -xzf - \
  && rsync -vrtcpz --chmod=Fa-w "/tmp/${t}/${PWD##*/}/" root@${h}:/usr/local/${PWD##*/}/ \
  && rm -rf "/tmp/${t}/"
 ```
-</pre></code> 
+</pre></code>
 
 
-###### Shortcuts to major [./pub](https://pub.iuxta.com/) components
+### Shortcuts to major [./pub](https://pub.iuxta.com/) components
 
 * [./know/](./know/#edification) corporeal resources
 * [./know/llm/](./know/llm/) LLM Synthesized Essays
@@ -41,7 +41,7 @@ cd "${r}" && git archive --prefix ${PWD##*/}/ HEAD | tar -C "/tmp/${t}" -xzf - \
 * [./src/gpw](./src/gpw) pronounceable password generator
 * [./src/multitee/multitee-3.0a/](./src/multitee/multitee-3.0a/) build multitee-3.0 with modern compilers
 
-###### Other repositories
+#### Other repositories
 * [../felidae](https://github.com/georgalis/felidae) Felidae AI/ML image classifier
 * [rust translation](https://github.com/georgalis/colab-61cc/pull/1) PR for [nm2rgb.py](https://github.com/georgalis/colab-61cc/tree/tint/tint)
 
