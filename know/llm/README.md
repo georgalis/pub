@@ -72,7 +72,6 @@ weaknesses.
 
 ---
 
-<em>
 _Indexing uses the acquisition time as a hexadecimal Unix-seconds
 prefix, typically four characters but not fixed; for example,
 "68cf" denotes mid-day on 20 September 2025, within roughly an
@@ -82,6 +81,5 @@ while preserving the original index at the start of the filename; eg
 `68c4-Doy_Family_Expressions-68d0286b.md` The scheme memorializes the
 inception as index. <!-- and captures any revision id, in a chronologically
 sortable form, while mapping associated supporting material.-->_
-</em>
 
 
