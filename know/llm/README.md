@@ -23,18 +23,21 @@ radical variations, challenges of modern synthesis capability.
   <br>A soliloquy of singularity, and the inspiration of the other essays
 * 66cf [Spectrum of Cognitive and Emotional Alignments](./66cf-A_Transformative_Journey_Through_Cognition_and_Emotion.yml.html) <!--66cfa8ec-->
   <br>The inquiry leading to the _Transformative Journey_
-* 6717 [Preventing the Technical Debt Avalanche: Essential Early-Stage Controls](6717-tech_debt_prevention_framework.yml.html) <!--672d453c-->
+* 6717 [Preventing the Technical Debt Avalanche: Essential Early-Stage Controls](6717-tech_debt_prevention_framework.yml.html) [^rf] <!--672d453c-->
 * 6839 [Worship and Glorification of the Holy Spirit in Eastern Orthodox Theology](./6839-Nicene_Creed_Analysis.md) <!--6839390e-->
 * 68c4 [The Compression Imperative: Why Communication Creates Atomic Forms](./68c4-Compression_Imperative_of_Atomic_Linguistic_Forms.md) <!--69898a93-->
-* 68c4 [Academic Documentation of "Doy" Family Expressions: A Comprehensive Research Finding](./68c4-Doy_Family_Expressions_Research_Finding.md) <!--6993eda1-->
+* 68c4 [Academic Documentation of "Doy" Family Expressions: A Comprehensive Research Finding](./68c4-Doy_Family_Expressions_Research_Finding.md) [^rf] <!--6993eda1-->
 * 68cf [Epochal Contrast in Psychoanalytic Methodology: Leonardo's Analysis Across Centuries](./68cf-Psychoanalytic_reinterpretation_of_Leonardo.md) <!--68cf4f1b-->
 * 68f3 [Ultra-High-Speed Camera System for Filming Light Propagation: A Technical Implementation Guide](./68f3-Laser_pulse_propagation_visualization_technique.html) <!--68f32cb0-->
 * 6919 [When the Body Remembers What the Mind Cannot Access](./6919-When_the_Body_Remembers_what_the_Mind_Cannot_Access.html) <!--6919efb7-->
 * 6947 [Federated Learning Covenant](./6947-federated_learning_covenant.yml.html) <!--69479d38-->
 * 6956 [Foundations for Somatic Flourishing.md](./6956-Foundations_for_Somatic_Flourishing.md) <!--6993b557-->
 * 6959 [Rhetorical Repetition: Recognition Rewards Recurrence](./6959-Rhetorical_Repetition_Recognition_Rewards_Recurrence.md) <!--69938a6f-->
-* 69a3 [Disposition Topology and Prompt Identity](./69a3-disposition_topology.md) <!--69a4ef1a-->
+* 69a3 [Disposition Topology and Prompt Identity](./69a3-disposition_topology.md) [^rf] <!--69a4ef1a-->
+* 69b5 [Character Creator: Attribute Spectra Reference](./69b5-character-creator-spectra.md) <!-- 69b5e4e0 -->
+* 69b5 [Character Selector](69b5-character-selector.yml) <!-- 69b5e4e0 -->
 
+[^rf]: Revision forthcoming
 
 <!-- Source files: [https://github.com/georgalis/pub/tree/main/know/llm/](https://github.com/georgalis/pub/tree/main/know/llm/) -->
 
@@ -75,11 +78,12 @@ weaknesses.
 _Indexing uses the acquisition time as a hexadecimal Unix-seconds
 prefix, typically four characters but not fixed; for example,
 "68cf" denotes mid-day on 20 September 2025, within roughly an
-eight-hour window. <!-- Revisions generally employ an eight-character
+eight-hour window._
+<!-- Revisions generally employ an eight-character
 id inserted before the file extension for full-second resolution,
 while preserving the original index at the start of the filename; eg
 `68c4-Doy_Family_Expressions-68d0286b.md` The scheme memorializes the
-inception as index. <!-- and captures any revision id, in a chronologically
-sortable form, while mapping associated supporting material.-->_
+inception as index. and captures any revision id, in a chronologically
+sortable form, while mapping associated supporting material.-->
 
 
