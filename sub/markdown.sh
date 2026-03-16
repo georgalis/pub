@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# (c) 2026 George Georgalis <george@galis.org> unlimited use with this notice
-#
 # markdown.sh --- Bash envelope for markdown.awk Markdown-to-HTML renderer
 #
 # Validates input, invokes the embedded awk translator, writes output to
@@ -82,7 +80,23 @@ awk '
 #   Metadata skip      A leading block of "key: value" lines (front matter) is
 #                      silently consumed rather than rendered.
 #
+#   Tables              GFM pipe-delimited tables with optional column alignment.
+#                      A table block is a contiguous run of | prefixed lines
+#                      where the second row is a separator (|---|...|). Header
+#                      cells emit <th>, body cells <td>. Alignment is encoded
+#                      in the separator row via colon placement:
+#                        |---| or |----| default (no align attribute)
+#                        |:--|        align="left"
+#                        |--:|        align="right"
+#                        |:-:|        align="center"
+#                      Cell content passes through parse_line() for inline
+#                      markup. The align= attribute is emitted directly on
+#                      <th> and <td> elements with no CSS dependency.
+#
 # (c) 2026 George Georgalis <george@galis.org> unlimited use with this notice
+# rev 69b76f75 20260315 194821 PDT Sun --- enumerated list rendering
+#                                      --- GFM table parsing with column alignment
+#                                      --- fenced code language tag, class="language-xxx" on <code>
 # rev 69af931f 20260309 204223 PDT Mon --- footnote [^label] references and definitions
 # rev 69af8c41 20260309 201305 PDT Mon --- bash envelope, /default.css + ./default.css cascade
 # rev 699baa0b 20260222 171451 PST Sun --- fixup italic hyperlinks etc
@@ -117,6 +131,13 @@ BEGIN {
 	print "<head>"
 	print "<meta charset=\"utf-8\">"
 	print "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
+	# minimal table presentation defaults; element selectors (lowest specificity)
+	# placed before external stylesheets so /default.css and ./default.css
+	# override without !important or specificity escalation
+	print "<style>"
+	print "table { border-collapse: collapse; }"
+	print "th, td { border: 1px solid #999; padding: 0.3em 0.6em; }"
+	print "</style>"
 	print "<link rel=\"stylesheet\" href=\"/default.css\">"
 	print "<link rel=\"stylesheet\" href=\"./default.css\">"
 	print "</head>"
@@ -375,11 +396,11 @@ function parse_list(str,    buf, result, i, ind, line, lines, indent, is_bullet)
 			result = result "</li>\n"
 
 		# detect mid-list type transitions (bullet <-> ordered)
-		if (is_bullet && match(line, /[[:space:]]*[[:digit:]]+\.[[:space:]]/)) {
+		if (is_bullet && match(line, /^[[:space:]]*[[:digit:]]+\.[[:space:]]/)) {
 			is_bullet = 0;
 			result = result "</ul>\n<ol>\n";
 		}
-		if (is_bullet == 0 && match(line, /[[:space:]]*[-+*][[:space:]]/)) {
+		if (is_bullet == 0 && match(line, /^[[:space:]]*[-+*][[:space:]]/)) {
 			is_bullet = 1;
 			result = result "</ol>\n<ul>\n";
 		}
@@ -798,11 +819,24 @@ function parse_blockquote(str,    i, lines, line, buf, result) {
 # --- Code Block Parser ---
 # Handles fenced (``` delimited) and indented (4-space prefix) code blocks.
 # Content is entity-escaped but not otherwise parsed for inline markup.
-function parse_code(str,    i, lines, result) {
+# Fenced blocks may include an optional language identifier after the opening
+# fence (eg ```bash, ```python). When present, the language is emitted as a
+# class="language-xxx" attribute on the <code> element per CommonMark convention,
+# enabling CSS or JS-based syntax highlighters (highlight.js, Prism, etc.)
+# without requiring the parser itself to perform highlighting.
+function parse_code(str,    i, lines, result, lang) {
 	# fenced code block: ``` ... ```
 	if (match(str, /^```.*```$/)) {
-		gsub(/^```/, "", str);           # strip opening fence (and optional lang tag)
+		# extract optional language tag from opening fence line
+		lang = "";
+		if (match(str, /^```[^\n]+\n/)) {
+			lang = substr(str, 4, RSTART + RLENGTH - 5);
+			gsub(/[[:space:]].*/, "", lang);  # first word only
+		}
+		gsub(/^```[^\n]*\n?/, "", str);  # strip opening fence and lang tag
 		gsub(/\n```$/, "", str);         # strip closing fence
+		if (lang != "")
+			return "<pre><code class=\"language-" lang "\">" escape_text(str) "</code></pre>";
 		return "<pre><code>" escape_text(str) "</code></pre>";
 	}
 	# indented code block: 4-space prefix per line
@@ -820,6 +854,105 @@ function parse_code(str,    i, lines, result) {
 	}
 
 	return "";
+}
+
+# --- Table Detection ---
+# A valid GFM table block requires at least two rows where the second row is
+# a separator: cells containing only dashes, colons, and spaces (eg |---|:--:|).
+# Both the header and separator rows must begin with |.
+function is_table(str,    lines, sep, ncells) {
+	split(str, lines, "\n");
+	if (length(lines) < 2)
+		return 0;
+	if (substr(lines[1], 1, 1) != "|")
+		return 0;
+	sep = lines[2];
+	if (substr(sep, 1, 1) != "|")
+		return 0;
+	# separator row: only |, -, :, and spaces after stripping
+	gsub(/[\| :-]/, "", sep);
+	return (sep == "");
+}
+
+# --- Table Parser ---
+# Parses a pipe-delimited GFM table block into <table> with <thead> and <tbody>.
+# Row 1 is the header (<th>), row 2 is the separator (consumed for alignment
+# extraction), rows 3+ are body (<td>). Each cell passes through parse_line()
+# for inline markup.
+#
+# Alignment extraction from separator cells:
+#   :--- or :----   align="left"
+#   ---: or ----:   align="right"
+#   :--: or :---:   align="center"
+#   --- or ----     no attribute (browser default)
+#
+# The align= attribute is emitted directly on <th> and <td> elements so
+# tables render correctly with no external CSS dependency.
+function parse_table(str,    lines, nlines, cells, ncells, aligns, nalign, \
+                            i, j, cell, sep, result) {
+	split(str, lines, "\n");
+	nlines = length(lines);
+
+	# --- extract alignment from separator row (row 2) ---
+	sep = lines[2];
+	gsub(/^\|/, "", sep);            # strip leading pipe
+	gsub(/\|$/, "", sep);            # strip trailing pipe
+	nalign = split(sep, cells, "|");
+	for (j = 1; j <= nalign; j++) {
+		cell = cells[j];
+		gsub(/^[[:space:]]+/, "", cell);
+		gsub(/[[:space:]]+$/, "", cell);
+		if (match(cell, /^:/) && match(cell, /:$/))
+			aligns[j] = "center";
+		else if (match(cell, /:$/))
+			aligns[j] = "right";
+		else if (match(cell, /^:/))
+			aligns[j] = "left";
+		else
+			aligns[j] = "";
+	}
+
+	result = "<table>\n<thead>\n<tr>";
+
+	# --- header row (row 1) ---
+	sep = lines[1];
+	gsub(/^\|/, "", sep);
+	gsub(/\|$/, "", sep);
+	ncells = split(sep, cells, "|");
+	for (j = 1; j <= ncells; j++) {
+		cell = cells[j];
+		gsub(/^[[:space:]]+/, "", cell);
+		gsub(/[[:space:]]+$/, "", cell);
+		if (j <= nalign && aligns[j] != "")
+			result = result "<th align=\"" aligns[j] "\">" parse_line(cell) "</th>";
+		else
+			result = result "<th>" parse_line(cell) "</th>";
+	}
+	result = result "</tr>\n</thead>\n<tbody>";
+
+	# --- body rows (row 3+) ---
+	for (i = 3; i <= nlines; i++) {
+		if (lines[i] == "")
+			continue;
+		sep = lines[i];
+		gsub(/^\|/, "", sep);
+		gsub(/\|$/, "", sep);
+		ncells = split(sep, cells, "|");
+		result = result "\n<tr>";
+		for (j = 1; j <= ncells; j++) {
+			cell = cells[j];
+			gsub(/^[[:space:]]+/, "", cell);
+			gsub(/[[:space:]]+$/, "", cell);
+			if (j <= nalign && aligns[j] != "")
+				result = result "<td align=\"" aligns[j] "\">" parse_line(cell) "</td>";
+			else
+				result = result "<td>" parse_line(cell) "</td>";
+		}
+		result = result "</tr>";
+	}
+
+	result = result "\n</tbody>\n</table>";
+	return result;
 }
 
 # --- Metadata Detection ---
@@ -849,7 +982,7 @@ function parse_block(str) {
 	if (match(str, /^<!--/) && match(str, /-->$/))
 		return str;
 
-	if (match(str, /^```\n.*```$/) || match(str, /^    /)) {
+	if (match(str, /^```[^\n]*\n.*```$/) || match(str, /^    /)) {
 		return parse_code(str);
 	}
 	if (substr(str, 1, 1) == "#" || match(body, /^[^\n]+\n[-=]+$/)) {
@@ -858,13 +991,17 @@ function parse_block(str) {
 	else if (substr(str, 1, 1) == ">") {
 		return parse_blockquote(str);
 	}
+	# table: must test before HR since separator rows resemble ---
+	else if (is_table(str)) {
+		return parse_table(str);
+	}
 	else if ( \
 		match(str, /^([[:space:]]*\*){3,}[[:space:]]*$/) ||
 		match(str, /^([[:space:]]*-){3,}[[:space:]]*$/) ||
 		match(str, /^([[:space:]]*_){3,}[[:space:]]*$/)) {
 			return "<hr />";
 	}
-	else if (match(str, /^[-+*][[:space:]]/) || match(str, /^[[:digit:]]\.[[:space:]]/)) {
+	else if (match(str, /^[-+*][[:space:]]/) || match(str, /^[[:digit:]]+\.[[:space:]]/)) {
 		return parse_list(str);
 	}
 	# footnote definition [^label]: content --- collected for terminal emission
@@ -919,11 +1056,17 @@ function line_continues(body, line) {
 		return 1;
 
 	# fenced code: absorb everything until closing ```
-	if (match(body, /^```\n/) && !match(body, /\n```$/))
+	# opening fence may include a language tag (eg ```bash); [^\n]* permits
+	# optional non-newline characters between the fence and the first newline
+	if (match(body, /^```[^\n]*\n/) && !match(body, /\n```$/))
 		return 1;
 
 	# HTML comment: absorb everything until closing -->
 	if (match(body, /^<!--/) && !match(body, /-->$/))
+		return 1;
+
+	# table: pipe-prefixed lines continue as a table block
+	if (match(body, /^\|/) && match(line, /^\|/))
 		return 1;
 
 	# ATX heading: single-line block, does not continue
