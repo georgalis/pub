@@ -2,7 +2,7 @@
 # Operational identity selection for LLM response disposition
 #
 # (c) 2026 George Georgalis <george@galis.org> unlimited use with this notice
-# revision 69b8f9c6 20260317 000646 PDT Mon 12:06 AM 17 Mar 2026
+# revision 69b8f9c6 20260316 235046 PDT Mon 11:50 PM 16 Mar 2026
 # original 69b5e4e0 20260314 154448 PDT Sat 03:44 PM 14 Mar 2026
 #
 # This file is the sole LLM input governing response identity selection.
