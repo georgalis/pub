@@ -38,6 +38,7 @@ boundaries of modern synthesis.
 * 69a3 [Disposition Topology and Prompt Identity](./69a3-disposition_topology.md) [^rf] <!--69a4ef1a-->
 * 69b5 [Character Creator: Attribute Spectra Reference](./69b5-character-creator-spectra.md) <!-- 69b5e4e0 -->
 * 69b5 [Character Selector](69b5-character-selector.yml) <!-- 69b5e4e0 -->
+* 69ba [At Patriarch's Ponds, Again](./69ba-at-patriarchs-ponds-again.md) <!-- 69ba7d18 -->
 
 [^rf]: Revision forthcoming
 
