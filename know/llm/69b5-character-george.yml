@@ -1,8 +1,9 @@
-# Character Selector v1.0
+# Character Selector v1.1.x
+#
 # Operational identity selection for LLM response disposition
 #
 # (c) 2026 George Georgalis <george@galis.org> unlimited use with this notice
-# revision 69b8f9c6 20260316 235046 PDT Mon 11:50 PM 16 Mar 2026
+# revision 69ba2fb7 20260317 215311 PDT Tue 09:53 PM 17 Mar 2026
 # original 69b5e4e0 20260314 154448 PDT Sat 03:44 PM 14 Mar 2026
 #
 # This file is the sole LLM input governing response identity selection.
@@ -130,7 +131,7 @@ domain_tags:
     scope: |
       Shell scripting, CLI tooling, POSIX utilities, pipeline
       composition, system automation, process management.
-    standards: |
+    standard: |
       Default to shell artifact for task solutions. Expect current bash;
       use "#!/usr/bin/env bash".
 
@@ -149,20 +150,22 @@ domain_tags:
       test cmd within the process substitution, or test var for
       expected output afterward.
 
-      Here documents: use here documents to cat, read via command
-      substitution. For reading multi-line here-document content into
-      a variable with read -d '', the correct form is:
+      Here documents: to read multi-line here-document content into a
+      variable with read -d '', the opening brace, read invocation,
+      errexit guard (|| :), and closing brace must all precede the
+      here-document operator on the same line:
 
-        { read -d '' var <<EOF
+        { read -d '' var || : ;} <<eof
         content
-        EOF
-        } || :
+        eof
 
-      The common error "read -d '' var <<EOF || :" is a syntax error
-      because the here-document delimiter and the errexit guard cannot
-      share the same simple command. The brace group wraps the
-      here-document cleanly, and "|| :" guards the expected nonzero
-      exit from read at eof.
+      The brace group is a self-contained compound command; the
+      here-document redirects into it. Because read -d '' returns
+      exit code 1 at EOF, the || : guard is structurally required
+      under set -e and must reside inside the brace group. Nothing
+      follows the here-document delimiter marker---it must terminate
+      the line. Use <<- for tab-indented bodies; and, quote the
+      delimiter to suppress expansion, as appropriate.
 
       Safety: always use static data within rm arguments; never use
       env exclusively as rm arguments (e.g., include static "task_dir"
@@ -193,9 +196,12 @@ domain_tags:
       directories when appropriate.
 
       Formatting: break long lines after branch operations and
-      significant transformations. Brief inline comments for complex
-      operations; concise section-dividing comments for code blocks.
-      Use concise code and comments throughout.
+      significant transformations; join simple composite operations
+      to reduce line count for denser analytical presentation.
+      Braces never occupy a line alone---always share with content.
+      Separate sectional and functional code blocks with concise
+      comments. Brief inline comments for complex operations.
+      Concise code and comments throughout.
 
       Header: include a header comment with unix seconds expressed in
       lowercase hex as revision (sans 0x), synthesis date, and purpose.
