@@ -1,15 +1,24 @@
 #!/usr/bin/env bash
-# rev 695f5300 20260107 --- yt-dlp wrapper suite for media download and organization
-# synthesized from _yt_nvtt/_yt_json2txt canonical forms
+#
+# (c) 2026 George Georgalis <george@galis.org> unlimited use with this notice
+# rev 69befaeb 20260321 130915 PDT Sat 01:09 PM 21 Mar 2026 --- playlist management
+# rev 695f5300 20260107 224728 PST Wed 10:47 PM 7 Jan 2026 --- yt-dlp wrapper suite for media download and organization
+# synthesized from canonical forms of audio tools
+# revision: https://github.com/georgalis/pub/blob/7520c3c0e4301e8698e64d669f1f8df4b4ecbe06/sub/fn.bash#L377
+# original: Feb 4, 2020 https://github.com/georgalis/pub/commit/0fa259132d6ea282c012115138727ab780b47a56
 #
 # Directory Architecture:
 #   $d/                                    root (default ./)
-#   $d/00${xs},{template}.info.json.txt    f2rb2mp3 staging data
+#   $d/00${xs},{template}.info.json.txt    f2rb2mp3 staging data (single track)
 #   $d/@/_^{id}.{ext}                      hardlinked media (programmatic access)
 #   $d/foli/{xs_maj}/{xs_min}/             folio per download timestamp
 #     {xs},{template}.{ext}                original media + metadata + thumbnails
 #     {xs},{template}.com.yml              comment yaml (unless --nyc)
 #   Playlist: {xs}{playlist_index},{template}.{ext} in shared folio
+#     {xs},playlist_^{playlist_id}.meta.json   playlist metadata (--dump-single-json)
+#     {xs}{n},{template}.info.json.txt         per-track staging (in folio, sans 00)
+#     $d/00{xs}0,{playlist_title}-^{playlist_id}.list.txt   aggregated staging
+#     Retry: reuses existing foli, new list.txt gets current session xs
 #
 # xs derivation: ts function (hex epoch), header via ts_header
 # Timestamps: original files use epoch mtime, derived files use ts mtime
@@ -26,6 +35,7 @@ _yt () { # ytdl wrapper: download media, organize folio, create staging txt
   local opt_only_vtt= opt_only_srt=
   local xs= xs_date= xs_time= dx= existing= json_path= ext= media_file=
   local ts_touchtime= epoch= epoch_touchtime=
+  local playlist_id= playlist_title= opt_retry= retry_items= existing_xs= new_xs=
   local OPTIND=1 OPTARG= opt=
 
   # --- help dispatch
@@ -93,21 +103,71 @@ _yt () { # ytdl wrapper: download media, organize folio, create staging txt
   ts_header="$ts_out"
   # construct touchtime CCYYMMDDhhmm.SS from xs_date (CCYYMMDD) and xs_time (hhmmSS)
   ts_touchtime="${xs_date}${xs_time:0:4}.${xs_time:4:2}"
+  new_xs="$xs" # preserve current session xs for retry staging txt naming
 
-  # --- folio setup
-  read dx < <(nbsed "s/\(....\)/\1\//;s:^:$d/foli/:" <<<"$xs") # eg ./foli/695f/4d58
+  # --- @ dir setup (needed for all paths including retry)
   [ -d "$d/@" ] || mkdir -p "$d/@" || { chkerr "$FUNCNAME : cannot mkdir '$d/@' (695f5009)" ; return 1 ;}
-  [ -d "$dx" ] && { chkerr "$FUNCNAME : race collision '$dx' (695f500a)" ; return 1 ;} || true
-  mkdir -p "$dx" || { chkerr "$FUNCNAME : cannot mkdir '$dx' (695f500b)" ; return 1 ;}
 
-  # --- pre-check: extract id and acodec, check for existing in $kdb
-  read id ext < <($ytdl --no-playlist --no-warnings --ignore-config --no-check-formats --geo-bypass \
-    --print id --print "%(acodec)s" -- "$id") \
-    || { chkerr "$FUNCNAME : failed to load data '$id' (695f500c)" ; return 1 ;}
-  read -d '' existing < <(sort -r < <(find -E "$kdb" -regex "$kdb/.*/(tmp|0)" -prune -false -o -name "*${id}*")) || true
-  [ "$existing" ] && { echo "$existing"
-    read -p "files found, continue (N/y) "
-    [ "$REPLY" = "y" ] || return 1 ;} || true
+  # --- pre-check: playlist resolution or single-track id extraction
+  local yt_root="${yt_root:-${d}/..}"
+  [ "$opt_playlist" ] && {
+    # preserve id as playlist URL for download; extract playlist_id and playlist_title
+    { read playlist_id ; read playlist_title ;} < <($ytdl --flat-playlist --no-warnings --ignore-config \
+      --print playlist_id --print playlist_title -- "$id" | head -2)
+    [ "$playlist_id" ] || { chkerr "$FUNCNAME : no playlist_id from '$id' (695f5017)" ; return 1 ;}
+    # duplicate check against marker files in yt_root
+    [ -d "$yt_root" ] || yt_root="${d}/.."
+    read -d '' existing < <(find "$yt_root" -name "*playlist_^${playlist_id}.meta.json" 2>/dev/null \
+      | sort -r) || :
+    [ "$existing" ] && {
+      echo "$existing"
+      read -n1 -p "playlist found, (a)bort/(c)ontinue/(r)etry missing? " ; echo
+      case "$REPLY" in
+        c) ;; # fresh download to new foli
+        r) # retry missing tracks into existing foli
+          existing_xs="${existing##*/}" ; existing_xs="${existing_xs%%,*}"
+          local existing_dx="${existing%/*}"
+          local expected=() missing_items=() line= pi= ud= tid=
+          readarray -t expected < <($ytdl --flat-playlist --no-warnings --ignore-config \
+            --print "%(playlist_index)s %(upload_date)s %(id)s" -- "$id")
+          for line in "${expected[@]}" ; do
+            read pi ud tid <<<"$line"
+            if [ "$ud" = "NA" ] || [ -z "$ud" ] ; then
+              read -d '' _ < <(find "$existing_dx/" -maxdepth 1 \
+                -name "*_^${tid}.info.json" 2>/dev/null) \
+                || missing_items+=("$pi")
+            else
+              read -d '' _ < <(find "$existing_dx/" -maxdepth 1 \
+                -name "*-${ud}_^${tid}.info.json" 2>/dev/null) \
+                || missing_items+=("$pi")
+            fi
+          done
+          [ ${#missing_items[@]} -eq 0 ] && { echo "no missing tracks" ; return 0 ;}
+          printf -v retry_items '%s,' "${missing_items[@]}"
+          retry_items="${retry_items%,}"
+          echo "${#missing_items[@]} missing: items $retry_items"
+          dx="$existing_dx" ; xs="$existing_xs" ; opt_retry=1
+          ;;
+        *) return 1 ;;
+      esac
+    } || :
+  } || {
+    # single-track: resolve id and acodec, check kdb for duplicates
+    read id ext < <($ytdl --no-playlist --no-warnings --ignore-config --no-check-formats --geo-bypass \
+      --print id --print "%(acodec)s" -- "$id") \
+      || { chkerr "$FUNCNAME : failed to load data '$id' (695f500c)" ; return 1 ;}
+    read -d '' existing < <(sort -r < <(find -E "$kdb" -regex "$kdb/.*/(tmp|0)" -prune -false -o -name "*${id}*")) || :
+    [ "$existing" ] && { echo "$existing"
+      read -p "files found, continue (N/y) "
+      [ "$REPLY" = "y" ] || return 1 ;} || :
+  }
+
+  # --- folio setup (skip for retry, existing foli reused)
+  [ "$opt_retry" ] || {
+    read dx < <(nbsed "s/\(....\)/\1\//;s:^:$d/foli/:" <<<"$xs") # eg ./foli/695f/4d58
+    [ -d "$dx" ] && { chkerr "$FUNCNAME : race collision '$dx' (695f500a)" ; return 1 ;} || :
+    mkdir -p "$dx" || { chkerr "$FUNCNAME : cannot mkdir '$dx' (695f500b)" ; return 1 ;}
+  }
 
   # --- only-vtt mode (download vtt + json, create txt)
   [ "$opt_only_vtt" ] && {
@@ -172,7 +232,9 @@ _yt () { # ytdl wrapper: download media, organize folio, create staging txt
 
   # --- execute download: audio first (produces linkable file), then video if requested
   # note: nbsed exit isolated to prevent SIGPIPE from aborting ytdl
-  $ytdl $ytdl_opts -f bestaudio --extract-audio --abort-on-error \
+  local dl_items=
+  [ "$opt_retry" ] && dl_items="--playlist-items $retry_items"
+  $ytdl $ytdl_opts $dl_items -f bestaudio --extract-audio --abort-on-error \
     $extractor_args \
     -o "$tmpl" -- "$id" 2>&1 \
     | { nbsed -l '/^\[youtube\] Sleeping/d;/API JSON reply thread/d;/replies API JSON page/d;/Downloading video thumbnail/d;/Video Thumbnail .* does not exist/d' || true ;}
@@ -181,68 +243,110 @@ _yt () { # ytdl wrapper: download media, organize folio, create staging txt
   [ "$opt_video" ] && {
     local ffmpeg_loc=
     read ffmpeg_loc < <(which ffmpeg8 2>/dev/null || which ffmpeg) || true
+    local vid_pl_opt=--no-playlist
+    [ "$opt_playlist" ] && vid_pl_opt=--yes-playlist
     $ytdl --restrict-filenames --no-warnings \
       ${ffmpeg_loc:+--ffmpeg-location "$ffmpeg_loc"} \
-      -f "$opt_video_res" --abort-on-error --no-playlist \
+      -f "$opt_video_res" --abort-on-error $vid_pl_opt $dl_items \
       -o "$tmpl" -- "$id" 2>&1 \
       | { nbsed -l '/^\[youtube\] Sleeping/d;/Downloading video thumbnail/d' || true ;}
   } || true
 
-  # --- locate json and media
-  read -d '' json_path < <(find "$dx/" -maxdepth 1 -name "*${id}.info.json") || true
-  [ -e "$json_path" ] || { chkerr "$FUNCNAME : json not found '$dx/*${id}.info.json' (695f5011)" ; return 1 ;}
+  # --- playlist marker file (skip for retry, marker already exists)
+  [ "$opt_playlist" ] && [ -z "$opt_retry" ] && {
+    $ytdl --flat-playlist --no-warnings --ignore-config --dump-single-json -- "$id" \
+      | jq 'del(.entries)' >"$dx/${xs},playlist_^${playlist_id}.meta.json"
+    touch -t "$ts_touchtime" "$dx/${xs},playlist_^${playlist_id}.meta.json"
+  } || :
 
-  # --- extract epoch from json for original file timestamps
-  read epoch < <(jq -r '.timestamp // empty' "$json_path") || true
-  [ "$epoch" ] && epoch_touchtime=$(date -r "$epoch" +"%Y%m%d%H%M.%S") || epoch_touchtime="$ts_touchtime"
+  # --- per-track post-processing (unified iteration: N=1 for single, N=many for playlist)
+  local json_files=() jf= track_id= track_ext= track_media=
+  readarray -t json_files < <(find "$dx/" -maxdepth 1 -name "*.info.json" \
+    ! -name "*.meta.json" | sort)
+  [ ${#json_files[@]} -gt 0 ] || { chkerr "$FUNCNAME : no json files in '$dx/' (695f5019)" ; return 1 ;}
 
-  # --- set timestamps: ts mtime on json (derived), epoch mtime on originals
-  touch -t "$ts_touchtime" "$json_path"
+  for jf in "${json_files[@]}" ; do
+    # --- extract track_id from json
+    read track_id < <(jq -r '.id // empty' "$jf") \
+      || { chkwrn "$FUNCNAME : no id in '$jf' (695f501a)" ; continue ;}
 
-  # --- determine audio extension from json (acodec for extracted audio file)
-  read ext < <(jq -r '.acodec | @text' "$json_path") || { chkerr "$FUNCNAME : acodec key not found (695f5012)" ; return 1 ;}
-  # fallback: check actual file if acodec yields unexpected value
-  [ "$ext" = "none" ] || [ "$ext" = "null" ] && {
-    read -d '' media_file < <(find "$dx/" -mindepth 1 -maxdepth 1 -name "*${id}.*" \
-      \( -name "*.opus" -o -name "*.m4a" -o -name "*.mp3" -o -name "*.webm" \) | head -1) || true
-    [ -f "$media_file" ] && ext="${media_file##*.}" || ext="opus"
-  } || true
+    # --- extract epoch for original file timestamps
+    read epoch < <(jq -r '.timestamp // empty' "$jf") || :
+    [ "$epoch" ] && epoch_touchtime=$(date -r "$epoch" +"%Y%m%d%H%M.%S") \
+      || epoch_touchtime="$ts_touchtime"
 
-  # --- locate and link audio media
-  read -d '' media_file < <(find "$dx/" -mindepth 1 -maxdepth 1 -name "*${id}.${ext}") || true
-  [ -f "$media_file" ] || { chkerr "$FUNCNAME : media not found '$dx/*${id}.${ext}' (695f5013)" ; return 1 ;}
+    # --- set ts mtime on json (derived file)
+    touch -t "$ts_touchtime" "$jf"
 
-  # --- set epoch mtime on original media, thumbnails, vtt
-  touch -t "$epoch_touchtime" "$media_file"
-  find "$dx/" -maxdepth 1 \( -name "*.webp" -o -name "*.jpg" -o -name "*.png" -o -name "*.vtt" \) \
-    -exec touch -t "$epoch_touchtime" {} \; 2>/dev/null || true
+    # --- determine audio extension from json
+    read track_ext < <(jq -r '.acodec | @text' "$jf") || track_ext=
+    [ "$track_ext" = "none" ] || [ "$track_ext" = "null" ] || [ -z "$track_ext" ] && {
+      read -d '' track_media < <(find "$dx/" -mindepth 1 -maxdepth 1 -name "*${track_id}.*" \
+        \( -name "*.opus" -o -name "*.m4a" -o -name "*.mp3" -o -name "*.webm" \) | head -1) || :
+      [ -f "$track_media" ] && track_ext="${track_media##*.}" || track_ext="opus"
+    } || :
 
-  # --- hardlink media
-  ln -f "$media_file" "$d/@/_^${id}.${ext}"
+    # --- locate audio media
+    read -d '' track_media < <(find "$dx/" -mindepth 1 -maxdepth 1 \
+      -name "*${track_id}.${track_ext}") || :
+    [ -f "$track_media" ] || { chkwrn "$FUNCNAME : media not found '*${track_id}.${track_ext}' (695f501b)" ; continue ;}
 
-  # --- generate staging txt (ts mtime applied inside function)
-  _yt_json_txt "$json_path" "$d/@/_^${id}.${ext}" "$d" "$ts_touchtime" "$ts_header"
+    # --- set epoch mtime on original media and thumbnails
+    touch -t "$epoch_touchtime" "$track_media"
+    find "$dx/" -maxdepth 1 -name "*${track_id}*" \
+      \( -name "*.webp" -o -name "*.jpg" -o -name "*.png" \) \
+      -exec touch -t "$epoch_touchtime" {} \; 2>/dev/null || :
 
-  # --- generate comment yaml (unless --nyc)
-  [ "$opt_nyc" ] || {
-    local com_opts=
-    [ "$opt_utf8" ] && com_opts="$com_opts -u"
-    [ "$opt_no_expand" ] && com_opts="$com_opts -x"
-    _yt_com_json_yml $com_opts "$json_path" "$ts_touchtime" || $verb "comment extraction skipped"
-  }
+    # --- hardlink media
+    ln -f "$track_media" "$d/@/_^${track_id}.${track_ext}"
 
-  # --- process vtt transcript if downloaded
-  [ "$opt_vtt" ] && {
-    local vtt_files=() vtt_file=
-    readarray -t vtt_files < <(find "$dx/" -maxdepth 1 -name "*${id}*.vtt" 2>/dev/null)
-    if [ ${#vtt_files[@]} -gt 0 ] ; then
-      for vtt_file in "${vtt_files[@]}" ; do
-        _yt_vtt_txt "$vtt_file" && touch -t "$ts_touchtime" "${vtt_file}.txt" || chkwrn "$FUNCNAME : vtt_txt failed '$vtt_file' (695f5014)"
+    # --- staging txt: playlist -> folio (sans 00 prefix); single -> $d (with 00 prefix)
+    [ "$opt_playlist" ] && {
+      [ -f "$dx/${jf##*/}.txt" ] && {
+        $verb "staging txt exists, skipping: $dx/${jf##*/}.txt"
+      } || {
+        _yt_json_txt "$jf" "$d/@/_^${track_id}.${track_ext}" "$dx" "$ts_touchtime" "$ts_header"
+        mv "$dx/00${jf##*/}.txt" "$dx/${jf##*/}.txt"
+      }
+    } || {
+      [ -f "$d/00${jf##*/}.txt" ] && {
+        $verb "staging txt exists, skipping: $d/00${jf##*/}.txt"
+      } || {
+        _yt_json_txt "$jf" "$d/@/_^${track_id}.${track_ext}" "$d" "$ts_touchtime" "$ts_header"
+      }
+    }
+
+    # --- comment yaml (unless --nyc)
+    [ "$opt_nyc" ] || {
+      local com_opts=
+      [ "$opt_utf8" ] && com_opts="$com_opts -u"
+      [ "$opt_no_expand" ] && com_opts="$com_opts -x"
+      _yt_com_json_yml $com_opts "$jf" "$ts_touchtime" || $verb "comment extraction skipped for $track_id"
+    }
+
+    # --- vtt transcript if downloaded
+    [ "$opt_vtt" ] && {
+      local track_vtts=()
+      readarray -t track_vtts < <(find "$dx/" -maxdepth 1 -name "*${track_id}*.vtt" 2>/dev/null)
+      for vtt_file in "${track_vtts[@]}" ; do
+        touch -t "$epoch_touchtime" "$vtt_file"
+        _yt_vtt_txt "$vtt_file" && touch -t "$ts_touchtime" "${vtt_file}.txt" \
+          || chkwrn "$FUNCNAME : vtt_txt failed '$vtt_file' (695f5014)"
       done
-    else
-      chkwrn "$FUNCNAME : no vtt files found for transcript (695f5015)"
-    fi
-  } || true
+    } || :
+
+  done
+
+  # --- playlist aggregate: strip metadata, concatenate to .list.txt
+  [ "$opt_playlist" ] && {
+    local safe_title=
+    read safe_title < <(printf '%s' "$playlist_title" \
+      | tr -cs 'A-Za-z0-9_.-' '_' | sed 's/__*/_/g;s/^_//;s/_$//')
+    local list_file="$d/00${new_xs}0,${safe_title}-^${playlist_id}.list.txt"
+    awk '/^--- metadata/{nextfile}; {print}' "$dx/"*info.json.txt >"$list_file"
+    touch -t "$ts_touchtime" "$list_file"
+    chktrue "$list_file"
+  } || :
 
   } # _yt 695f5000
 
@@ -264,6 +368,9 @@ ARGUMENTS
 
 OPTIONS
   -p        Treat input as playlist (shared folio, padded index prefix)
+              Duplicate check against $yt_root (or ../DIR) for marker file
+              If existing playlist found, prompt: (a)bort/(c)ontinue/(r)etry
+              Retry: download missing tracks into existing foli
   -s        Download SRT subtitles (English variants)
   -t        Download VTT subtitles (English variants), create transcript
   -v        Download 720p60 video
@@ -281,7 +388,13 @@ OPTIONS
 OUTPUT STRUCTURE
   ./foli/{xs_maj}/{xs_min}/   folio with media, json, thumbnails, com.yml
   ./@/_^{id}.{ext}            hardlink for programmatic access
-  ./00{xs},{tmpl}.info.json.txt   f2rb2mp3 staging data
+  ./00{xs},{tmpl}.info.json.txt   f2rb2mp3 staging data (single track)
+  Playlist:
+    {foli}/{xs},playlist_^{playlist_id}.meta.json   playlist metadata marker
+    {foli}/{xs}{n},{tmpl}.info.json.txt              per-track staging (in folio)
+    ./00{xs}0,{playlist_title}-^{playlist_id}.list.txt   aggregated staging
+      (per-track staging minus metadata sections, concatenated)
+    Retry: reuses existing foli, new list.txt gets current session xs
 
 TIMESTAMPS
   Original files (media, vtt, thumbnails): epoch mtime from json
@@ -290,6 +403,7 @@ TIMESTAMPS
 ENVIRONMENT
   ytdl      Path to yt-dlp binary (default: yt-dlp)
   kdb       Knowledge database directory for duplicate detection (required)
+  yt_root   Root directory for playlist duplicate check (default: DIR/..)
 
 HELPER FUNCTIONS
   _yt_json_txt JSON MEDIA DIR [TOUCHTIME] [TS_HEADER]   Extract metadata to staging txt
@@ -299,7 +413,8 @@ HELPER FUNCTIONS
 EXAMPLES
   _yt dQw4w9WgXcQ                 Download audio + metadata
   _yt -tv dQw4w9WgXcQ ./music     Download with VTT + 720p video
-  _yt -p PLxyz123 ./playlists     Download playlist
+  _yt -p PLxyz123 ./playlists     Download playlist (all tracks)
+  _yt -p PLxyz123 ./playlists     Retry: re-run same command, select (r)
   _yt -j dQw4w9WgXcQ ./meta       JSON-only download
   _yt --ot dQw4w9WgXcQ ./subs     VTT subtitles only + transcript
 EOF
