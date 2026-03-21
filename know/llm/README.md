@@ -41,6 +41,7 @@ boundaries of modern synthesis.
 * 69ba [At Patriarch's Ponds, Again](./69ba-at-patriarchs-ponds-again.md) <!-- 69ba7d18 -->
 
 [^rf]: Revision forthcoming
+<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
 
 <!-- Source files: [https://github.com/georgalis/pub/tree/main/know/llm/](https://github.com/georgalis/pub/tree/main/know/llm/) -->
 
@@ -58,7 +59,7 @@ once hindered by the prohibitive effort of manual composition, now
 made accessible through the LLM's capacity for rapid, coherent
 synthesis. Take, for instance, Freud's 1910 essay Leonardo da Vinci
 and a Memory of His Childhood: methodologically daring yet undermined
-by biographical errors, cultural projection, and mistranslation-nibbio
+by biographical errors, cultural projection, and mistranslation---nibbio
 (kite) transformed into Geier (vulture), birthing an elaborate but
 unfounded mythological reading. Modern insight into psychology,
 analytical bias, and Renaissance context now permits a clearer
@@ -84,7 +85,7 @@ weaknesses.
 _Indexing uses the acquisition time as a hexadecimal Unix-seconds
 prefix, typically four characters but not fixed; for example, "68cf"
 denotes a roughly eight-hour window centered on mid-day, 20 September
-2025._
+2025, the first four digits of epoch seconds == 1758408401 == 0x68cf2ed1 == 20250920 154641 PDT Sat 03:46 PM 20 Sep 2025._
 <!-- Revisions generally employ an eight-character
 id inserted before the file extension for full-second resolution,
 while preserving the original index at the start of the filename; eg

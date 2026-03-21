@@ -75,9 +75,11 @@ a:visited {
 
 /* --- Inline emphasis --- */
 em {
-    font-style: italic;   
-    font-size: 1.20em;
     font-family: "Cormorant Garamond", "Hoefler Text", Palatino, Georgia, serif;
+    font-style: italic;
+    font-size: 1.20em;
+    font-weight: 505;
+    line-height: 0.8;
 }
 strong { font-weight: 700; color: #111; }
 
