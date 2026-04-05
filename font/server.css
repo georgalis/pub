@@ -1,188 +1,238 @@
+
+/* default.css --- typographic presentation for markdown.awk HTML output
+ *
+ * Targets standard HTML element selectors only; no custom classes or
+ * divisions. Every selector corresponds to markup emitted by the parser:
+ * html, body, h1-h6, p, a, em, strong, small, blockquote, pre, code,
+ * ul, ol, li, img, hr.
+ *
+ * Font loading: primary fonts via Google Fonts; fallback stacks cover
+ * offline or blocked-CDN cases. B612 (body), EB Garamond (headings),
+ * Cormorant Garamond (small/caption), Intel One Mono (monospace).
+ *
+ * Targets modern CSS only; no legacy-browser accommodation.
+ *
+ * (c) 2026 George Georgalis <george@galis.org> unlimited use with this notice
+ */
+
+/* --- Web fonts --- */
+
+/* don't use google fonts...
+@import url('https://fonts.googleapis.com/css2?family=B612:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Intel+One+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=B612:ital,wght@0,400;0,700;1,400;1,700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Intel+One+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+*/
+
 /*
-selector: https://gwfh.mranftl.com/fonts/b612?subsets=latin
-download: https://gwfh.mranftl.com/api/fonts/b612?download=zip&subsets=latin&variants=700,regular,italic,700italic&formats=woff2
-
-selector: https://gwfh.mranftl.com/fonts/eb-garamond?subsets=latin-ext
-download: https://gwfh.mranftl.com/api/fonts/eb-garamond?download=zip&subsets=latin-ext&variants=500,600,700,800,regular,italic,500italic,600italic,700italic,800italic&formats=woff2
-
-selector: https://gwfh.mranftl.com/fonts/intel-one-mono?subsets=latin
-download: https://gwfh.mranftl.com/api/fonts/intel-one-mono?download=zip&subsets=latin&variants=300,500,600,700,300italic,regular,italic,500italic,600italic,700italic&formats=woff2
-
 font-display: https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display
 src: Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+
 */
 
-/* self-hosted B612 */
-@font-face { /* b612-regular - latin */
-  font-display: swap;
-  font-family: 'B612';
-  font-style: normal;
-  font-weight: 400;
-  src: url('/font/b612-v13-latin-regular.woff2') format('woff2');
-}
-@font-face { /* b612-italic - latin */
-  font-display: swap;
-  font-family: 'B612';
-  font-style: italic;
-  font-weight: 400;
-  src: url('/font/b612-v13-latin-italic.woff2') format('woff2');
-}
-@font-face { /* b612-700 - latin */
-  font-display: swap;
-  font-family: 'B612';
-  font-style: normal;
-  font-weight: 700;
-  src: url('/font/b612-v13-latin-700.woff2') format('woff2');
-}
-@font-face { /* b612-700italic - latin */
-  font-display: swap;
-  font-family: 'B612';
-  font-style: italic;
-  font-weight: 700;
-  src: url('/font/b612-v13-latin-700italic.woff2') format('woff2');
-}
+/*
+selector: https://gwfh.mranftl.com/fonts/eb-garamond?subsets=latin-ext
+download: https://gwfh.mranftl.com/api/fonts/eb-garamond?download=zip&subsets=latin-ext&variants=500,600,700,800,regular,italic,500italic,600italic,700italic,800italic&formats=woff2
+*/
 
-/* self-hosted Intel One Mono */
-@font-face { /* intel-one-mono-300 - latin */
-  font-display: swap;
-  font-family: 'Intel One Mono';
-  font-style: normal;
-  font-weight: 300;
-  src: url('/font/intel-one-mono-v2-latin-300.woff2') format('woff2');
-}
-@font-face { /* intel-one-mono-300italic - latin */
-  font-display: swap;
-  font-family: 'Intel One Mono';
-  font-style: italic;
-  font-weight: 300;
-  src: url('/font/intel-one-mono-v2-latin-300italic.woff2') format('woff2');
-}
-@font-face { /* intel-one-mono-regular - latin */
-  font-display: swap;
-  font-family: 'Intel One Mono';
-  font-style: normal;
-  font-weight: 400;
-  src: url('/font/intel-one-mono-v2-latin-regular.woff2') format('woff2');
-}
-@font-face { /* intel-one-mono-italic - latin */
-  font-display: swap;
-  font-family: 'Intel One Mono';
-  font-style: italic;
-  font-weight: 400;
-  src: url('/font/intel-one-mono-v2-latin-italic.woff2') format('woff2');
-}
-@font-face { /* intel-one-mono-500 - latin */
-  font-display: swap;
-  font-family: 'Intel One Mono';
-  font-style: normal;
-  font-weight: 500;
-  src: url('/font/intel-one-mono-v2-latin-500.woff2') format('woff2');
-}
-@font-face { /* intel-one-mono-500italic - latin */
-  font-display: swap;
-  font-family: 'Intel One Mono';
-  font-style: italic;
-  font-weight: 500;
-  src: url('/font/intel-one-mono-v2-latin-500italic.woff2') format('woff2');
-}
-@font-face { /* intel-one-mono-600 - latin */
-  font-display: swap;
-  font-family: 'Intel One Mono';
-  font-style: normal;
-  font-weight: 600;
-  src: url('/font/intel-one-mono-v2-latin-600.woff2') format('woff2');
-}
-@font-face { /* intel-one-mono-600italic - latin */
-  font-display: swap;
-  font-family: 'Intel One Mono';
-  font-style: italic;
-  font-weight: 600;
-  src: url('/font/intel-one-mono-v2-latin-600italic.woff2') format('woff2');
-}
-@font-face { /* intel-one-mono-700 - latin */
-  font-display: swap;
-  font-family: 'Intel One Mono';
-  font-style: normal;
-  font-weight: 700;
-  src: url('/font/intel-one-mono-v2-latin-700.woff2') format('woff2');
-}
-@font-face { /* intel-one-mono-700italic - latin */
-  font-display: swap;
-  font-family: 'Intel One Mono';
-  font-style: italic;
-  font-weight: 700;
-  src: url('/font/intel-one-mono-v2-latin-700italic.woff2') format('woff2');
-}
-
-/* self-hosted EB Garamond */
 @font-face { /* eb-garamond-regular - latin-ext */
   font-display: swap;
   font-family: 'EB Garamond';
   font-style: normal;
   font-weight: 400;
-  src: url('/font/eb-garamond-v32-latin-ext-regular.woff2') format('woff2');
+  src: url('./eb-garamond-v32-latin-ext-regular.woff2') format('woff2');
 }
+
 @font-face { /* eb-garamond-italic - latin-ext */
   font-display: swap;
   font-family: 'EB Garamond';
   font-style: italic;
   font-weight: 400;
-  src: url('/font/eb-garamond-v32-latin-ext-italic.woff2') format('woff2');
+  src: url('./eb-garamond-v32-latin-ext-italic.woff2') format('woff2');
 }
+
 @font-face { /* eb-garamond-500 - latin-ext */
   font-display: swap;
   font-family: 'EB Garamond';
   font-style: normal;
   font-weight: 500;
-  src: url('/font/eb-garamond-v32-latin-ext-500.woff2') format('woff2');
+  src: url('./eb-garamond-v32-latin-ext-500.woff2') format('woff2');
 }
+
 @font-face { /* eb-garamond-500italic - latin-ext */
   font-display: swap;
   font-family: 'EB Garamond';
   font-style: italic;
   font-weight: 500;
-  src: url('/font/eb-garamond-v32-latin-ext-500italic.woff2') format('woff2');
+  src: url('./eb-garamond-v32-latin-ext-500italic.woff2') format('woff2');
 }
+
 @font-face { /* eb-garamond-600 - latin-ext */
   font-display: swap;
   font-family: 'EB Garamond';
   font-style: normal;
   font-weight: 600;
-  src: url('/font/eb-garamond-v32-latin-ext-600.woff2') format('woff2');
+  src: url('./eb-garamond-v32-latin-ext-600.woff2') format('woff2');
 }
+
 @font-face { /* eb-garamond-600italic - latin-ext */
   font-display: swap;
   font-family: 'EB Garamond';
   font-style: italic;
   font-weight: 600;
-  src: url('/font/eb-garamond-v32-latin-ext-600italic.woff2') format('woff2');
+  src: url('./eb-garamond-v32-latin-ext-600italic.woff2') format('woff2');
 }
+
 @font-face { /* eb-garamond-700 - latin-ext */
   font-display: swap;
   font-family: 'EB Garamond';
   font-style: normal;
   font-weight: 700;
-  src: url('/font/eb-garamond-v32-latin-ext-700.woff2') format('woff2');
+  src: url('./eb-garamond-v32-latin-ext-700.woff2') format('woff2');
 }
+
 @font-face { /* eb-garamond-700italic - latin-ext */
   font-display: swap;
   font-family: 'EB Garamond';
   font-style: italic;
   font-weight: 700;
-  src: url('/font/eb-garamond-v32-latin-ext-700italic.woff2') format('woff2');
+  src: url('./eb-garamond-v32-latin-ext-700italic.woff2') format('woff2');
 }
+
 @font-face { /* eb-garamond-800 - latin-ext */
   font-display: swap;
   font-family: 'EB Garamond';
   font-style: normal;
   font-weight: 800;
-  src: url('/font/eb-garamond-v32-latin-ext-800.woff2') format('woff2');
+  src: url('./eb-garamond-v32-latin-ext-800.woff2') format('woff2');
 }
+
 @font-face { /* eb-garamond-800italic - latin-ext */
   font-display: swap;
   font-family: 'EB Garamond';
   font-style: italic;
   font-weight: 800;
-  src: url('/font/eb-garamond-v32-latin-ext-800italic.woff2') format('woff2');
+  src: url('./eb-garamond-v32-latin-ext-800italic.woff2') format('woff2');
+}
+
+/*
+selector: https://gwfh.mranftl.com/fonts/b612?subsets=latin
+download: https://gwfh.mranftl.com/api/fonts/b612?download=zip&subsets=latin&variants=700,regular,italic,700italic&formats=woff2
+*/
+
+@font-face { /* b612-regular - latin */
+  font-display: swap;
+  font-family: 'B612';
+  font-style: normal;
+  font-weight: 400;
+  src: url('./b612-v13-latin-regular.woff2') format('woff2');
+}
+
+@font-face { /* b612-italic - latin */
+  font-display: swap;
+  font-family: 'B612';
+  font-style: italic;
+  font-weight: 400;
+  src: url('./b612-v13-latin-italic.woff2') format('woff2');
+}
+
+@font-face { /* b612-700 - latin */
+  font-display: swap;
+  font-family: 'B612';
+  font-style: normal;
+  font-weight: 700;
+  src: url('./b612-v13-latin-700.woff2') format('woff2');
+}
+
+@font-face { /* b612-700italic - latin */
+  font-display: swap;
+  font-family: 'B612';
+  font-style: italic;
+  font-weight: 700;
+  src: url('./b612-v13-latin-700italic.woff2') format('woff2');
+}
+
+/*
+selector: https://gwfh.mranftl.com/fonts/intel-one-mono?subsets=latin
+download: https://gwfh.mranftl.com/api/fonts/intel-one-mono?download=zip&subsets=latin&variants=300,500,600,700,300italic,regular,italic,500italic,600italic,700italic&formats=woff2
+*/
+
+@font-face { /* intel-one-mono-300 - latin */
+  font-display: swap;
+  font-family: 'Intel One Mono';
+  font-style: normal;
+  font-weight: 300;
+  src: url('./intel-one-mono-v2-latin-300.woff2') format('woff2');
+}
+
+@font-face { /* intel-one-mono-300italic - latin */
+  font-display: swap;
+  font-family: 'Intel One Mono';
+  font-style: italic;
+  font-weight: 300;
+  src: url('./intel-one-mono-v2-latin-300italic.woff2') format('woff2');
+}
+
+@font-face { /* intel-one-mono-regular - latin */
+  font-display: swap;
+  font-family: 'Intel One Mono';
+  font-style: normal;
+  font-weight: 400;
+  src: url('./intel-one-mono-v2-latin-regular.woff2') format('woff2');
+}
+
+@font-face { /* intel-one-mono-italic - latin */
+  font-display: swap;
+  font-family: 'Intel One Mono';
+  font-style: italic;
+  font-weight: 400;
+  src: url('./intel-one-mono-v2-latin-italic.woff2') format('woff2');
+}
+
+@font-face { /* intel-one-mono-500 - latin */
+  font-display: swap;
+  font-family: 'Intel One Mono';
+  font-style: normal;
+  font-weight: 500;
+  src: url('./intel-one-mono-v2-latin-500.woff2') format('woff2');
+}
+
+@font-face { /* intel-one-mono-500italic - latin */
+  font-display: swap;
+  font-family: 'Intel One Mono';
+  font-style: italic;
+  font-weight: 500;
+  src: url('./intel-one-mono-v2-latin-500italic.woff2') format('woff2');
+}
+
+@font-face { /* intel-one-mono-600 - latin */
+  font-display: swap;
+  font-family: 'Intel One Mono';
+  font-style: normal;
+  font-weight: 600;
+  src: url('./intel-one-mono-v2-latin-600.woff2') format('woff2');
+}
+
+@font-face { /* intel-one-mono-600italic - latin */
+  font-display: swap;
+  font-family: 'Intel One Mono';
+  font-style: italic;
+  font-weight: 600;
+  src: url('./intel-one-mono-v2-latin-600italic.woff2') format('woff2');
+}
+
+@font-face { /* intel-one-mono-700 - latin */
+  font-display: swap;
+  font-family: 'Intel One Mono';
+  font-style: normal;
+  font-weight: 700;
+  src: url('./intel-one-mono-v2-latin-700.woff2') format('woff2');
+}
+
+@font-face { /* intel-one-mono-700italic - latin */
+  font-display: swap;
+  font-family: 'Intel One Mono';
+  font-style: italic;
+  font-weight: 700;
+  src: url('./intel-one-mono-v2-latin-700italic.woff2') format('woff2');
 }
 

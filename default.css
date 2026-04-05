@@ -5,9 +5,9 @@
  * html, body, h1-h6, p, a, em, strong, small, blockquote, pre, code,
  * ul, ol, li, img, hr.
  *
- * Font loading: primary fonts via Google Fonts; fallback stacks cover
- * offline or blocked-CDN cases. B612 (body), EB Garamond (headings),
- * Cormorant Garamond (small/caption), Intel One Mono (monospace).
+ * Font loading: self-hosted via server.css @font-face declarations;
+ * fallback stacks cover offline or missing-font cases.
+ * B612 (body), EB Garamond (headings, emphasis), Intel One Mono (code).
  *
  * Targets modern CSS only; no legacy-browser accommodation.
  *
@@ -16,13 +16,8 @@
 
 /* --- Web fonts --- */
 
-@import url('/font/server.css');
-/* use google fonts for local development...
-@import url('https://fonts.googleapis.com/css2?family=B612:ital,wght@0,400;0,700;1,400;1,700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Intel+One+Mono:ital,wght@0,400;0,700;1,400&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=B612:ital,wght@0,400;0,700;1,400;1,700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Cormorant+Garamond:ital,wght@1,400;1,600&family=Intel+One+Mono:ital,wght@0,400;0,700;1,400&display=swap');
-*/
+@import url('./font/server.css');
+/*
 
 /* --- Document root --- */
 html {
@@ -32,7 +27,7 @@ html {
 
 /* --- Body --- */
 body {
-    max-width: 41em;
+    max-width: 42em;
     margin: 2em auto;
     padding: 0 1.5em;
     font-family: "B612", Varidian, sans-serif;
@@ -82,13 +77,14 @@ a:visited {
 
 /* --- Inline emphasis --- */
 em {
-    font-family: "Cormorant Garamond", "Hoefler Text", Palatino, Georgia, serif;
+    font-family: "EB Garamond", "Hoefler Text", Palatino, Georgia, serif;
     font-style: italic;
-    font-size: 1.25em;
-    font-weight: 505;
-    line-height: 0.8;
+    font-size: 1.20em;
+    font-weight: 500;
+    line-height: 1;
 }
-strong { font-weight: 700; color: #446; }
+strong { font-weight: 700;
+}
 
 /* --- Small / caption text --- */
 small {
