@@ -15,7 +15,14 @@
  */
 
 /* --- Web fonts --- */
+
+@import url('/font/server.css');
+/* use google fonts for local development...
+@import url('https://fonts.googleapis.com/css2?family=B612:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Intel+One+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=B612:ital,wght@0,400;0,700;1,400;1,700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Cormorant+Garamond:ital,wght@1,400;1,600&family=Intel+One+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+*/
 
 /* --- Document root --- */
 html {
@@ -25,13 +32,13 @@ html {
 
 /* --- Body --- */
 body {
-    max-width: 46em;
+    max-width: 41em;
     margin: 2em auto;
     padding: 0 1.5em;
     font-family: "B612", Varidian, sans-serif;
     line-height: 1.6;
-    color: #1a1a1a;
-    background-color: #fdfdfd;
+    color: #1a1a00;
+    background-color: #fdfded;
 }
 
 /* --- Headings --- */
@@ -39,7 +46,7 @@ h1, h2, h3, h4, h5, h6 {
     font-family: "EB Garamond", "Hoefler Text", "Iowan Old Style", Palatino, Georgia, serif;
     line-height: 1.25;
     margin-block: 1.5em 0.5em;
-    color: #111;
+    color: #330;
 }
 
 h1 { font-size: 2em;    margin-top: 0; border-bottom: 1px solid #ddd; padding-bottom: 0.3em; }
@@ -47,7 +54,7 @@ h2 { font-size: 1.5em;  border-bottom: 1px solid #eee; padding-bottom: 0.25em; }
 h3 { font-size: 1.25em; }
 h4 { font-size: 1.1em;  }
 h5 { font-size: 1em;    font-weight: 600; }
-h6 { font-size: 0.9em;  font-weight: 600; color: #555; }
+h6 { font-size: 0.9em;  font-weight: 600; color: #550; }
 
 /* --- Paragraphs --- */
 p {
@@ -77,11 +84,11 @@ a:visited {
 em {
     font-family: "Cormorant Garamond", "Hoefler Text", Palatino, Georgia, serif;
     font-style: italic;
-    font-size: 1.20em;
+    font-size: 1.25em;
     font-weight: 505;
     line-height: 0.8;
 }
-strong { font-weight: 700; color: #111; }
+strong { font-weight: 700; color: #446; }
 
 /* --- Small / caption text --- */
 small {
