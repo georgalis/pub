@@ -94,6 +94,7 @@ awk '
 #                      <th> and <td> elements with no CSS dependency.
 #
 # (c) 2026 George Georgalis <george@galis.org> unlimited use with this notice
+# rev 69d38b8e 20260406 033132 PDT Mon --- HTML Entity Passthrough in parse_line
 # rev 69b76f75 20260315 194821 PDT Sun --- enumerated list rendering
 #                                      --- GFM table parsing with column alignment
 #                                      --- fenced code language tag, class="language-xxx" on <code>
@@ -759,6 +760,13 @@ function parse_line(str,    result, end, i, c) {
 			image = extract_image(str, i);
 			result = result parse_image(image);
 		    i = i + length(image) - 1; 
+		}
+		# HTML entity passthrough: &name; &#nnn; &#xHHH;
+		# authored entities in prose pass through verbatim; bare &
+		# falls through to escape_text() in the literal-text handler
+		else if (c == "&" && match(substr(str, i), /^&(#[0-9]+|#x[0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*);/)) {
+			result = result substr(str, i, RLENGTH);
+			i = i + RLENGTH - 1;
 		}
 		# literal text
 		else {
