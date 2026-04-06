@@ -44,10 +44,10 @@ h1, h2, h3, h4, h5, h6 {
     color: #330;
 }
 
-h1 { font-size: 2em;    margin-top: 0; border-bottom: 1px solid #ddd; padding-bottom: 0.3em; }
-h2 { font-size: 1.5em;  border-bottom: 1px solid #eee; padding-bottom: 0.25em; }
-h3 { font-size: 1.25em; }
-h4 { font-size: 1.1em;  }
+h1 { font-size: 2.4em;    margin-top: 0; border-bottom: 1px solid #ddd; padding-bottom: 0.3em; }
+h2 { font-size: 1.57em;  border-bottom: 1px solid #eee; padding-bottom: 0.25em; }
+h3 { font-size: 1.28em; }
+h4 { font-size: 1.0em;  }
 h5 { font-size: 1em;    font-weight: 600; }
 h6 { font-size: 0.9em;  font-weight: 600; color: #550; }
 
@@ -84,6 +84,7 @@ em {
     line-height: 1;
 }
 strong { font-weight: 700;
+    color: #443c44;
 }
 
 /* --- Small / caption text --- */
