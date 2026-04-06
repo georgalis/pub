@@ -25,23 +25,22 @@ boundaries of modern synthesis.
   <br>A soliloquy of singularity, and the inspiration of the other essays
 * [Spectrum of Cognitive and Emotional Alignments](./66cf-A_Transformative_Journey_Through_Cognition_and_Emotion.yml.html) <!--66cfa8ec-->
   <br>The inquiry leading to the _Transformative Journey_, and the first indexed composition
-* [Preventing the Technical Debt Avalanche: Essential Early-Stage Controls](6717-tech_debt_prevention_framework.yml.html) [^rf] <!--672d453c-->
+* [Preventing the Technical Debt Avalanche: Essential Early-Stage Controls](6717-tech_debt_prevention_framework.yml.html) [^*] <!--672d453c-->
 * [Worship and Glorification of the Holy Spirit in Eastern Orthodox Theology](./6839-Nicene_Creed_Analysis.md) <!--6839390e-->
 * [The Compression Imperative: Why Communication Creates Atomic Forms](./68c4-Compression_Imperative_of_Atomic_Linguistic_Forms.md) <!--69898a93-->
-* [Academic Documentation of "Doy" Family Expressions: A Comprehensive Research Finding](./68c4-Doy_Family_Expressions_Research_Finding.md) [^rf] <!--6993eda1-->
+* [Academic Documentation of "Doy" Family Expressions: A Comprehensive Research Finding](./68c4-Doy_Family_Expressions_Research_Finding.md) [^*] <!--6993eda1-->
 * [Epochal Contrast in Psychoanalytic Methodology: Leonardo's Analysis Across Centuries](./68cf-Psychoanalytic_reinterpretation_of_Leonardo.md) <!--68cf4f1b-->
 * [Ultra-High-Speed Camera System for Filming Light Propagation: A Technical Implementation Guide](./68f3-Laser_pulse_propagation_visualization_technique.html) <!--68f32cb0-->
 * [When the Body Remembers What the Mind Cannot Access](./6919-When_the_Body_Remembers_what_the_Mind_Cannot_Access.html) <!--6919efb7-->
 * [Federated Learning Covenant](./6947-federated_learning_covenant.yml.html) <!--69479d38-->
 * [Foundations for Somatic Flourishing](./6956-Foundations_for_Somatic_Flourishing.md) <!--6993b557-->
 * [Rhetorical Repetition: Recognition Rewards Recurrence](./6959-Rhetorical_Repetition_Recognition_Rewards_Recurrence.md) <!--69938a6f-->
-* [Disposition Topology and Prompt Identity](./69a3-disposition_topology.md) [^rf] <!--69a4ef1a-->
+* [Disposition Topology and Prompt Identity](./69a3-disposition_topology.md) [^*] <!--69a4ef1a-->
 * [Character Creator: Attribute Spectra Reference](./69b5-character-creator-spectra.md) <!-- 69b5e4e0 -->
 * [Character Selector](69b5-character-selector.yml) <!-- 69b5e4e0 -->
 * [At Patriarch's Ponds, Again](./69ba-at-patriarchs-ponds-again.md) <!-- 69ba7d18 -->
 
-[^rf]: Revision forthcoming
-<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+[^*]: Revision forthcoming
 
 <!-- Source files: [https://github.com/georgalis/pub/tree/main/know/llm/](https://github.com/georgalis/pub/tree/main/know/llm/) -->
 
