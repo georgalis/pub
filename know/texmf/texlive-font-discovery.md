@@ -153,7 +153,7 @@ cat > "$sample_file" <<'TEXDOC'
 \documentclass[10pt]{article}
 \usepackage[T1]{fontenc}
 \usepackage[margin=0.75in]{geometry}
-\newcommand{\showfont}[2]{%
+\newcommand{\showfont}[2]{
   \par\noindent\texttt{#1 / #2}\par
   {\fontfamily{#2}\selectfont
     The quick brown fox jumps over the lazy dog. 0123456789\par
