@@ -1,5 +1,11 @@
 # TexLive Font Discovery
 
+(c) 2026 George Georgalis <george@galis.org> unlimited use with this notice
+<!--
+revs: 69d3a0ce 20260406 050222 PDT Mon 05:02 AM 6 Apr 2026 --- texlive-font-discovery.md
+orig: 668973c5 20240706 094141 PDT Sat 09:41 AM 6 Jul 2024 --- texlive-font-package-lister.sh
+-->
+
 Identifying installed fonts in a TexLive environment is difficult because
 font metadata is distributed across `.sty` packages (which set document
 defaults) and `.fd` definition files (which declare available weight/shape
@@ -22,8 +28,9 @@ texlive-font-discovery.sh [-t sample.tex] [-u]
 
 ```bash
 #!/usr/bin/env bash
+# (c) 2026 George Georgalis <george@galis.org> unlimited use with this notice
 # revs: 69d3a0ce 20260406 050222 PDT Mon 05:02 AM 6 Apr 2026 --- texlive-font-discovery.sh
-# orig: 668973c5 20240706 094141 PDT Sat 09:41 AM 6 Jul 2024 texlive-font-package-lister.sh
+# orig: 668973c5 20240706 094141 PDT Sat 09:41 AM 6 Jul 2024 --- texlive-font-package-lister.sh
 # discover installed texlive font packages (.sty) and family definitions (.fd)
 # tsv output: phase 1 font packages, phase 2 font families
 set -euo pipefail

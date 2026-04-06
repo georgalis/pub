@@ -1,5 +1,11 @@
 # True Type Fonts in TexLive User Environment
 
+(c) 2026 George Georgalis <george@galis.org> unlimited use with this notice
+<!--
+revs: 69d39acd 20260406 043645 PDT Mon 04:36 AM 6 Apr 2026 --- revised into markdown
+orig: 67208428 20241028 234352 PDT Mon 11:43 PM 28 Oct 2024 --- fonts.yml
+-->
+
 Adding True Type Fonts to a LaTeX user environment is easy with the `autoinst` program,
 from <https://ctan.org/tex-archive/fonts/utilities/fontools/> and bundled with TexLive;
 only a few manual steps are required. These instructions are for a
