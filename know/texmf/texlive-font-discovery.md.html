@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h1 id="texlive-font-discovery">TexLive Font Discovery</h1>
+<p>Identifying installed fonts in a TexLive environment is difficult because font metadata is distributed across <code>.sty</code> packages (which set document defaults) and <code>.fd</code> definition files (which declare available weight/shape combinations). This script scans both system and user <code>texmf</code> trees to produce a machine-parseable inventory of installed font packages and font family definitions, with an optional sample <code>.tex</code> document for visual confirmation.</p>
+<h2 id="usage">Usage</h2>
+<pre><code>texlive-font-discovery.sh [-t sample.tex] [-u]
+  -t FILE  generate sample tex document rendering each discovered family
+  -u       scan user texmf only (default: system + user)</code></pre>
+<h2 id="script">Script</h2>
+<pre><code class="language-bash">#!/usr/bin/env bash
+# r: 69d2f780 | 2026-04-06 | texlive-font-discovery.sh
+# discover installed texlive font packages (.sty) and family definitions (.fd)
+# tsv output: phase 1 font packages, phase 2 font families
+set -euo pipefail
+
+usage() { sed -n '3,5s/^# //p' "$0" ; exit 1 ; }
+
+# --- platform texmf root resolution ---
+declare -a roots=()
+texmf_user= texmf_sys= user_only=0 sample_file=
+
+read -r texmf_user &lt; &lt;(
+  case $(uname) in
+    Darwin)     echo "$HOME/Library/texmf" ;;
+    *BSD|Linux) echo "$HOME/texmf" ;;
+  esac
+)
+
+while getopts "t:uh" opt ; do
+  case $opt in
+    t) sample_file="$OPTARG" ;;
+    u) user_only=1 ;;
+    *) usage ;;
+  esac
+done
+
+# system texlive: newest versioned directory
+[ "$user_only" -eq 0 ] &amp;&amp; {
+  read -r texmf_sys &lt; &lt;(
+    find /usr/local/texlive -maxdepth 1 -type d -name '[0-9]*' 2&gt;/dev/null \
+      | sort -rn | head -1 ; echo
+  )
+  texmf_sys="${texmf_sys%$'\n'}"
+  [ -d "$texmf_sys/texmf-dist" ] &amp;&amp; roots+=("$texmf_sys/texmf-dist")
+}
+[ -d "$texmf_user" ] &amp;&amp; roots+=("$texmf_user")
+
+[ ${#roots[@]} -eq 0 ] &amp;&amp; {
+  echo "error: no texmf directories found" &gt;&amp;2 ; exit 1
+}
+
+echo "# texmf roots: ${roots[*]}"
+
+# --- phase 1: font packages (.sty files setting rm/sf/tt defaults) ---
+# fonts intended for document-level use set \rmdefault, \sfdefault,
+# or \ttdefault; this heuristic filters utility packages
+scan_packages() {
+  local root="$1"
+  find "$root/tex/latex" -type f -name '*.sty' 2&gt;/dev/null \
+    | sort | while read -r sty ; do
+      grep -qE '\\(rm|sf|tt)default' "$sty" 2&gt;/dev/null || continue
+      read -r pkg &lt; &lt;(basename "$sty" .sty)
+      # which default(s) does it set
+      read -r -d '' cls &lt; &lt;(
+        sed -n -E 's/.*\\(rm|sf|tt)default.*/\1/p' "$sty" \
+          | sort -u | paste -sd, - ; echo
+      ) || true
+      cls="${cls%$'\n'}" ; cls="${cls%,}"
+      # version from ProvidesPackage
+      read -r -d '' ver &lt; &lt;(
+        sed -n 's/.*\\ProvidesPackage{[^}]*}\[\([^]]*\)\].*/\1/p' "$sty" \
+          | head -1 ; echo
+      ) || true
+      ver="${ver%$'\n'}"
+      printf "%s\t%s\t%s\t%s\n" "$pkg" "${cls:--}" "${ver:--}" "$sty"
+    done
+}
+
+echo ""
+echo "# --- font packages ---"
+echo "# package\tclass\tversion\tpath"
+for r in "${roots[@]}" ; do scan_packages "$r" ; done
+
+# --- phase 2: font families from .fd (font definition) files ---
+# each .fd declares \DeclareFontShape{encoding}{family}{weight}{shape}
+# extract per-file: encoding, family, unique weights, unique shapes
+scan_families() {
+  local root="$1"
+  find "$root/tex/latex" -type f -name '*.fd' 2&gt;/dev/null \
+    | sort | while read -r fd ; do
+      sed -n 's/.*\\DeclareFontShape{\([^}]*\)}{\([^}]*\)}{\([^}]*\)}{\([^}]*\)}.*/\1\t\2\t\3\t\4/p' "$fd" \
+        | awk -F'\t' '
+          NR == 1 { enc = $1; fam = $2 }
+          { wt[$3] = 1; sh[$4] = 1 }
+          END {
+            if (enc == "") exit
+            w = ""; for (k in wt) w = (w == "") ? k : w "," k
+            s = ""; for (k in sh) s = (s == "") ? k : s "," k
+            printf "%s\t%s\t%s\t%s\t%s\n", enc, fam, w, s, FILENAME
+          }
+        ' fd="$fd" || true
+    done | sort -t'	' -k2,2 -k1,1
+}
+
+echo ""
+echo "# --- font families ---"
+echo "# encoding\tfamily\tweights\tshapes\tpath"
+for r in "${roots[@]}" ; do scan_families "$r" ; done
+
+# --- optional: generate sample tex document ---
+[ -z "$sample_file" ] &amp;&amp; exit 0
+
+# validate output path
+read -r safe &lt; &lt;(
+  printf '%s' "$sample_file" \
+    | sed -n '/^[A-Za-z0-9._\/-]*$/p'
+) || true
+[ -z "$safe" ] &amp;&amp; {
+  echo "error: unsafe characters in output path" &gt;&amp;2 ; exit 1
+}
+
+# collect unique enc:family pairs across all roots
+declare -a fam_pairs=()
+for r in "${roots[@]}" ; do
+  while IFS=$'\t' read -r enc fam _wts _shs _path ; do
+    fam_pairs+=("$enc:$fam")
+  done &lt; &lt;(scan_families "$r")
+done
+
+cat &gt; "$sample_file" &lt;&lt;'TEXDOC'
+\documentclass[10pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.75in]{geometry}
+\newcommand{\showfont}[2]{%
+  \par\noindent\texttt{#1 / #2}\par
+  {\fontfamily{#2}\selectfont
+    The quick brown fox jumps over the lazy dog. 0123456789\par
+    \textbf{Bold:} The quick brown fox jumps over the lazy dog.\par
+    \textit{Italic:} The quick brown fox jumps over the lazy dog.\par
+  }\medskip\hrule\medskip
+}
+\begin{document}
+\section*{Installed Font Samples}
+Generated by \texttt{texlive-font-discovery.sh}.\medskip\hrule\medskip
+TEXDOC
+
+printf '%s\n' "${fam_pairs[@]}" | sort -u \
+  | while IFS=: read -r enc fam ; do
+      printf '\\showfont{%s}{%s}\n' "$enc" "$fam"
+    done &gt;&gt; "$sample_file"
+
+echo '\end{document}' &gt;&gt; "$sample_file"
+echo "# sample tex written: $sample_file" &gt;&amp;2
+echo "# compile: pdflatex $sample_file" &gt;&amp;2</code></pre>
+<h2 id="output-format">Output Format</h2>
+<p>Phase 1 (font packages) produces tab-separated fields: package name, class (<code>rm</code>, <code>sf</code>, <code>tt</code>, or comma-joined), version string, file path.</p>
+<p>Phase 2 (font families) produces tab-separated fields: encoding, family name, comma-joined weight codes, comma-joined shape codes, file path.</p>
+<p>Both phases are prefixed with <code>#</code> comment headers suitable for downstream parsing with <code>grep -v '^#'</code> or <code>awk</code> column extraction.</p>
+<h2 id="sample-document">Sample Document</h2>
+<p>The <code>-t</code> flag writes a <code>.tex</code> file that renders every discovered font family in normal, bold, and italic with pangram text. Compile with <code>pdflatex</code> for visual comparison. Fonts that lack a bold or italic shape will fall back to the nearest available substitute per NFSS rules---this is expected and diagnostic (a missing shape in the sample confirms the <code>.fd</code> weight/shape inventory from phase 2).</p>
+</body>
+</html>

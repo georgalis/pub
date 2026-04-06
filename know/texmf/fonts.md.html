@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h1 id="true-type-fonts-in-texlive-user-environment">True Type Fonts in TexLive User Environment</h1>
+<p>Adding True Type Fonts to a LaTeX user environment is easy with the <code>autoinst</code> program, from &lt;https://ctan.org/tex-archive/fonts/utilities/fontools/&gt; and bundled with TexLive; only a few manual steps are required. These instructions are for a user env install (and the sudo root averse). The steps are:</p>
+<ol>
+<li>Populating a directory with the (.ttf) font files</li>
+<li>Running the <code>autoinst</code> command on the font files</li>
+<li>Creating map config data</li>
+<li>Running <code>texhash</code> and <code>updmap</code></li>
+<li>Confirming available fonts, weights, and shapes, with a demo tex file</li>
+</ol>
+<h2 id="obtaining-and-organizing-font-files">Obtaining and Organizing Font Files</h2>
+<p>Obtain your TTF files, typically distributed within a zip file. For each font, create a directory <code>{FontName}</code> and extract the zip files into it. A TeX and Metafont directory <code>texmf</code> is used to store fonts and styles. On Darwin, <code>~/Library/texmf</code>; other POSIX systems, use <code>~/texmf</code>. Throughout this document <code>$texmf</code> refers to the path on your system. Fonts are separated into three directories by classification: <code>sf</code> (serif), <code>ss</code> (sans serif), and <code>tt</code> (typewriter/monospace). This separation is required because <code>autoinst</code> needs a classification flag (<code>-serif</code>, <code>-sanserif</code>, <code>-typewriter</code>) to generate correct font metadata, and grouping by class allows batch processing per directory.</p>
+<pre><code class="language-bash">case $(uname) in Darwin) texmf="$HOME/Library/texmf" ;; *BSD|Linux ) texmf="$HOME/texmf" ;; esac
+mkdir -p $texmf/fonts/truetype/{sf,ss,tt}
+mv {FontName1} "$texmf/fonts/truetype/tt"
+mv {FontName2} "$texmf/fonts/truetype/ss"
+mv {FontName3} "$texmf/fonts/truetype/sf"</code></pre>
+<h3 id="purge-and-bootstrap">Purge and bootstrap</h3>
+<p>For iterative development---clean redeployment when changing which fonts to install---purge the user fonts environment and restore the TTF source files. This block also documents the totality of directory paths managed by this procedure: <code>$texmf/fonts</code> is the only tree modified, and <code>~/kdb/fonts/</code> is the canonical source archive with <code>sf/</code>, <code>ss/</code>, and <code>tt/</code> subdirectories matching the layout above.</p>
+<pre><code class="language-bash"># purge user fonts environment (assumes only ttf fonts installed as user)
+rm -rf $texmf/fonts
+# restore ttf source from canonical archive
+mkdir -p              $texmf/fonts/truetype
+rsync -a ~/kdb/fonts/ $texmf/fonts/</code></pre>
+<h2 id="running-autoinst">Running autoinst</h2>
+<p>Use the <code>autoinst</code> command to install the font. There are many options but you are probably only interested in <code>-serif</code> <code>-sanserif</code> <code>-typewriter</code>; the other options are usually guessed correctly. <code>pdflatex</code> does not support variable font features---if your font has <code>{fontname}/static/*ttf</code> files, use them; otherwise with LaTeX, you only get one font from variable ttf files.</p>
+<h3 id="generalized-install-loop">Generalized install loop</h3>
+<p>Use wildcards to install all fonts in each group with the correct option. The loop prefers static ttf files when available.</p>
+<pre><code class="language-bash">cd "$texmf/fonts/truetype"
+eval "$(
+{ # loop on font classes, create autoinst commands, prefer static ttf files
+  for fontclass in sf:serif ss:sanserif tt:typewriter ; do
+    fontdir="${fontclass%%:*}" ; fontflag="${fontclass##*:}"
+    [ -d "$fontdir" ] &amp;&amp; { cd "$fontdir"
+      find . -type d -path \*/static -prune -o -name \*.ttf \
+        -exec dirname \{\} \; | sort -u | while read fpath ; do
+          [ -d "$fpath/static" ] &amp;&amp; fpath="$fpath/static"
+          echo "cd $PWD &amp;&amp; echo '### $fontdir/$fpath' &amp;&amp; autoinst -$fontflag $fpath/*ttf"
+          done # fpath
+    cd .. ;} ; done # fontclass
+   echo "cd $PWD" ;} # end of loop to create autoinst commands
+ )" # eval</code></pre>
+<h3 id="concrete-example">Concrete example</h3>
+<pre><code class="language-bash">autoinst -typewriter tt/IntelOneMono/ttf/*ttf
+autoinst -sanserif   ss/B612/*ttf
+autoinst -serif      sf/PlayfairDisplay/static/*ttf
+autoinst -serif      sf/IBMPlexSerif/*ttf
+autoinst -serif      sf/HeptaSlab/static/*ttf
+autoinst -serif      sf/Fraunces/static/*ttf
+autoinst -serif      sf/Domine/static/*ttf
+autoinst -serif      sf/CrimsonText/*ttf
+autoinst -serif      sf/CormorantGaramond/*ttf
+autoinst -serif      sf/Arvo/*ttf</code></pre>
+<p>The last step produces log files helpful for determining font names:</p>
+<pre><code>playfair.log                     frauncesseventwopt.log              frauncesninept.log
+intelonemono.log                 frauncesonefourfourptsupersoft.log  domine.log
+ibmplexserif.log                 frauncesonefourfourptsoft.log       crimsontext.log
+heptaslab.log                    frauncesonefourfourpt.log           cormorantgaramond.log
+frauncesseventwoptsupersoft.log  frauncesnineptsupersoft.log         bsixonetwo.log
+frauncesseventwoptsoft.log       frauncesnineptsoft.log              arvo.log</code></pre>
+<h2 id="creating-map-config-data">Creating Map Config Data</h2>
+<p>Set the paths and create the directory, then write an <code>updmap.cfg</code> file with the map files created by <code>autoinst</code>.</p>
+<pre><code class="language-bash">a="$texmf/fonts/map"
+v="$(tlmgr --version | sed -e '/version/!d' -e 's/.*version //')"
+case $(uname) in
+  Darwin) b="$HOME/Library/texlive/$v/texmf-config/web2c" ;;
+  Linux|*BSD)    b="$HOME/.texlive/$v/texmf-config/web2c" ;;
+esac
+[ -d "$a" ] &amp;&amp; { mkdir -p "$b"
+  find "$a" -type f -name \*map -exec basename \{\} \; \
+    | sed 's/^/Map /' &gt;"$b/updmap.cfg" ;}</code></pre>
+<h2 id="running-texhash-and-updmap">Running texhash and updmap</h2>
+<p>Rebuild the <code>ls-R</code> filename databases with <code>texhash</code>, and configure the user env fonts (and administratively installed fonts) with the <code>updmap</code> command. This step may take tens of seconds. Repeat this step in the future to add new administratively installed fonts.</p>
+<pre><code class="language-bash">texhash $texmf
+updmap --user</code></pre>
+<h2 id="using-fonts-in-documents">Using Fonts in Documents</h2>
+<p>Reference the style package file (<code>.sty</code>) and use the respective font commands. For package name hints:</p>
+<pre><code class="language-bash">find ./texmf/tex/latex/ -mtime -1 -name \*sty -exec grep ProvidesPackage \{\} \;</code></pre>
+<hr />
+<h1 id="font-reference">Font Reference</h1>
+<h2 id="font-selection-terminology">Font Selection Terminology</h2>
+<p>LaTeX addresses fonts through four independent axes. <em>Family</em> identifies the typeface design (e.g., Cormorant Garamond, Intel One Mono). <em>Encoding</em> specifies the character mapping table (T1 for European Latin, OT1 for the legacy 7-bit scheme). <em>Weight</em> and <em>shape</em> together describe what most users call a font's "style"---weight controls thickness (light through ultra bold), while shape controls posture and variant (upright, italic, small caps). A common confusion: "bold italic" is not a single attribute but the intersection of weight <code>b</code> and shape <code>it</code>. <em>Figure style</em> governs numeral rendering---whether digits align in columns (tabular) or flow with prose (proportional), and whether they sit on the baseline (lining) or have ascenders and descenders (oldstyle). These four axes are selected independently in LaTeX, which is why the commands below specify each axis separately rather than naming a monolithic "font style."</p>
+<h2 id="style-and-definition-files">Style and Definition Files</h2>
+<p>The <code>.sty</code> file contains font family declarations, usually defines commands for accessing different weights/shapes, and may include <code>\DeclareFontFamily</code> statements.</p>
+<p>The <code>.fd</code> (Font Definition) files contain <code>\DeclareFontShape</code> commands that map between LaTeX font shapes/weights and actual font files.</p>
+<p>Format:</p>
+<pre><code class="language-latex">\DeclareFontShape{&lt;encoding&gt;}{&lt;family&gt;}{&lt;shape&gt;}{&lt;weight&gt;}{&lt;font file&gt;}{}</code></pre>
+<p>Note the combinations of shapes and weights. Selection command:</p>
+<pre><code class="language-latex">\fontfamily{fontname-TLF}\fontseries{&lt;weight&gt;}\fontshape{&lt;shape&gt;}\selectfont</code></pre>
+<p>The examples below demonstrate the least ambiguous selection syntax for each axis; this is also the modern approach and offers the most flexibility.</p>
+<h2 id="figure-styles">Figure Styles</h2>
+<table>
+<thead>
+<tr><th align="left">Abbreviation</th><th align="left">Name</th><th align="left">Characteristics</th></tr>
+</thead>
+<tbody>
+<tr><td align="left">TLF</td><td align="left">Tabular Lining Figures</td><td align="left">fixed-width, all-caps height</td></tr>
+<tr><td align="left">TOsF</td><td align="left">Tabular Oldstyle Figures</td><td align="left">fixed-width, with ascenders/descenders</td></tr>
+<tr><td align="left">LF / CLF</td><td align="left">Proportional Lining Figures</td><td align="left">variable-width, all-caps height</td></tr>
+<tr><td align="left">OsF / POsF</td><td align="left">Proportional Oldstyle Figures</td><td align="left">variable-width, with ascenders/descenders</td></tr>
+</tbody>
+</table>
+<h3 id="via-package-options">Via package options</h3>
+<pre><code class="language-latex">\usepackage[osf]{fontname}    % oldstyle figures
+\usepackage[lf]{fontname}     % lining figures
+\usepackage[tosf]{fontname}   % tabular oldstyle
+\usepackage[tlf]{fontname}    % tabular lining</code></pre>
+<h3 id="via-font-commands">Via font commands</h3>
+<pre><code class="language-latex">\fontfamily{fontname-TLF}\selectfont  % tabular lining
+\fontfamily{fontname-TOsF}\selectfont % tabular oldstyle
+\fontfamily{fontname-LF}\selectfont   % proportional lining
+\fontfamily{fontname-OsF}\selectfont  % proportional oldstyle</code></pre>
+<h3 id="common-use-cases">Common use cases</h3>
+<table>
+<thead>
+<tr><th align="left">Context</th><th align="left">Recommended</th></tr>
+</thead>
+<tbody>
+<tr><td align="left">Tables/financial data</td><td align="left">TLF (aligned columns)</td></tr>
+<tr><td align="left">Body text</td><td align="left">OsF (blends with lowercase)</td></tr>
+<tr><td align="left">Headlines</td><td align="left">LF (matches caps)</td></tr>
+<tr><td align="left">Technical material</td><td align="left">TLF (consistent spacing)</td></tr>
+</tbody>
+</table>
+<p>Switching styles mid-document:</p>
+<pre><code class="language-latex">{\addfontfeatures{Numbers=OldStyle} Text with oldstyle figures}</code></pre>
+<h2 id="shape-codes">Shape Codes</h2>
+<table>
+<thead>
+<tr><th align="left">Code</th><th align="left">Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td align="left">n</td><td align="left">normal/regular</td></tr>
+<tr><td align="left">it</td><td align="left">italic</td></tr>
+<tr><td align="left">sl</td><td align="left">slanted</td></tr>
+<tr><td align="left">sc</td><td align="left">small caps</td></tr>
+<tr><td align="left">b</td><td align="left">bold</td></tr>
+<tr><td align="left">bi</td><td align="left">bold italic</td></tr>
+<tr><td align="left">bx</td><td align="left">bold extended</td></tr>
+</tbody>
+</table>
+<h2 id="weight-codes">Weight Codes</h2>
+<table>
+<thead>
+<tr><th align="left">Code</th><th align="left">Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td align="left">ul</td><td align="left">ultra light</td></tr>
+<tr><td align="left">el</td><td align="left">extra light</td></tr>
+<tr><td align="left">l</td><td align="left">light</td></tr>
+<tr><td align="left">m</td><td align="left">medium</td></tr>
+<tr><td align="left">sb</td><td align="left">semibold</td></tr>
+<tr><td align="left">b</td><td align="left">bold</td></tr>
+<tr><td align="left">eb</td><td align="left">extra bold</td></tr>
+<tr><td align="left">ub</td><td align="left">ultra bold</td></tr>
+</tbody>
+</table>
+<h2 id="optical-sizes-and-point-sizes">Optical Sizes and Point Sizes</h2>
+<p>LaTeX fonts are typically available in any size because they are scalable vector fonts. However, some fonts have optical sizes---different designs optimized for different size ranges. These are usually indicated in the <code>.fd</code> file with size ranges:</p>
+<pre><code class="language-latex">\DeclareFontShape{T1}{fontname-TLF}{m}{n}{
+  &lt;-8&gt; fontname-light
+  &lt;8-14&gt; fontname-regular
+  &lt;14-&gt; fontname-display
+}{}</code></pre>
+<h3 id="standard-size-commands">Standard size commands</h3>
+<pre><code class="language-latex">{\tiny Text}          % Typically 5pt
+{\scriptsize Text}    % Typically 7pt
+{\footnotesize Text}  % Typically 8pt
+{\small Text}         % Typically 9pt
+{\normalsize Text}    % Typically 10pt
+{\large Text}         % Typically 12pt
+{\Large Text}         % Typically 14pt
+{\LARGE Text}         % Typically 17pt
+{\huge Text}          % Typically 20pt
+{\Huge Text}          % Typically 25pt</code></pre>
+<h3 id="exact-sizes-and-scaling">Exact sizes and scaling</h3>
+<pre><code class="language-latex">% Exact size with leading
+{\fontsize{12}{14}\selectfont Text} % 12pt with 14pt leading
+
+% Package-level scaling
+\usepackage[scale=1.2]{fontname}  % Scales all sizes by 1.2
+
+% Font declaration scaling
+\DeclareFontFamily{T1}{fontname-TLF}[Scale=1.2]{}
+
+% Relative scaling between fonts
+\usepackage[scale=MatchLowercase]{fontname}  % Scales to match x-height of main font
+\usepackage[scale=MatchUppercase]{fontname}  % Scales to match caps height</code></pre>
+<h2 id="drop-caps-lettrine">Drop Caps (Lettrine)</h2>
+<p>Decorative initial capital letters (drop caps) with ornamentation or simply larger, with subsequent lines wrapping around them.</p>
+<pre><code class="language-latex">% Preamble
+\usepackage{lettrine}
+
+% Document
+\lettrine[options]{Initial}{Following text}</code></pre>
+</body>
+</html>

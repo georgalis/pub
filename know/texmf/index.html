@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h1 id="texmf">texmf</h1>
+<p>Documentation and tooling for TexLive user environment management---font integration, discovery, and document composition in <code>pdflatex</code> workflows across Darwin, BSD, and Linux platforms.</p>
+<p>All procedures target the user-context <code>texmf</code> tree (<code>~/Library/texmf</code> on Darwin, <code>~/texmf</code> elsewhere) and require no root privileges.</p>
+<h2 id="contents">Contents</h2>
+<ul>
+<li><a href="fonts.md">fonts.md</a> --- TTF font installation via <code>autoinst</code> into user <code>texmf</code>, including iterative purge/bootstrap, <code>updmap.cfg</code> generation, and font selection reference (families, weights, shapes, figure styles, optical sizes, lettrine)</li>
+</ul>
+<ul>
+<li><a href="texlive-font-discovery.md">texlive-font-discovery.md</a> --- script to inventory installed font packages (<code>.sty</code>) and family definitions (<code>.fd</code>) with optional sample <code>.tex</code> generation for visual confirmation</li>
+</ul>
+</body>
+</html>
