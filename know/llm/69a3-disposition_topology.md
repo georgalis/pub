@@ -1,12 +1,16 @@
 # Disposition Topology and Prompt Identity
 
-## A Guidance and Standard for Composing LLM Prompt Strategy
+## A Guidance and Standard for LLM Prompt Strategy
 
 
 (c) 2026 George Georgalis <george@galis.org> unlimited use with this notice
+<!--
 <br>original 69a4ef1a 20260301 175954 PST Sun 05:59 PM 1 Mar 2026
+-->
 
 ---
+
+## Preface
 
 *This document is dense by design. It introduces a vocabulary for understanding how language models respond to different kinds of prompting, and it develops that vocabulary into a practical framework for composing prompts that produce genuinely better outputs---not incrementally better, but structurally different in kind. The material rewards multiple readings; concepts introduced early become operative tools in later sections, and the full architecture becomes visible only when its components have been individually understood.*
 

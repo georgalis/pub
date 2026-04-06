@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h1 id="font-directory">Font Directory</h1>
+<p>Self-hosted woff2 web fonts serving three distinct typographic registers: a humanist serif for hierarchy and emphasis, an aviation-derived sans for body text, and an accessibility-focused monospace for code.</p>
+<p><code>@font-face</code> declarations live in <code>faces.css</code>. Consuming stylesheets import it as <code>@import url('./font/faces.css')</code>. All <code>url()</code> paths are relative---the fonts load under both <code>http(s)://</code> and <code>file://</code> protocols without modification.</p>
+<hr />
+<h2 id="eb-garamond">EB Garamond</h2>
+<p>Revival of Claude Garamond's mid-16th-century roman types paired with Robert Granjon's italic, sourced from the 1592 Egenolff-Berner specimen sheet printed by Conrad Berner in Frankfurt. Initiated in 2011 by Georg Mayr-Duffner (Austria) under the SIL Open Font License; bold weights completed by Octavio Pardo from 2017 onward. The "EB" abbreviates Egenolff-Berner, identifying the specific historical specimen rather than the broader Garamond tradition<sup><a href="#fn-1">[1]</a></sup>.</p>
+<p>Old-style serif construction: moderate stroke contrast, oblique stress axis, bracketed serifs, calligraphic italic with pronounced cursive movement. The latin-ext subset carried here supports diacritics across Central and Eastern European languages.</p>
+<p><strong>Typographic role:</strong> headings in upright weights; inline emphasis in italic. Two registers of one family---hierarchy through scale, emphasis through posture.</p>
+<p><style> @font-face {   font-family: 'EB Garamond Specimen';   src: url('eb-garamond-v32-latin-ext-regular.woff2') format('woff2');   font-weight: 400; font-style: normal; } @font-face {   font-family: 'EB Garamond Specimen';   src: url('eb-garamond-v32-latin-ext-italic.woff2') format('woff2');   font-weight: 400; font-style: italic; } @font-face {   font-family: 'EB Garamond Specimen';   src: url('eb-garamond-v32-latin-ext-700.woff2') format('woff2');   font-weight: 700; font-style: normal; } </style></p>
+<p><div style="font-family: 'EB Garamond Specimen', Georgia, serif; font-size: 1.5em; line-height: 1.4; margin: 1em 0;"> <div style="font-weight: 700; margin-bottom: 0.25em;">The quick brown fox jumps over the lazy dog</div> <div style="font-weight: 400;">Garamond's types represent a touchstone to which designers have returned ever since.</div> <div style="font-style: italic;">Granjon's italic---calligraphic movement within typographic discipline.</div> </div></p>
+<h3 id="weights-hosted">Weights hosted</h3>
+<table>
+<thead>
+<tr><th>Weight</th><th>Style</th><th>File</th></tr>
+</thead>
+<tbody>
+<tr><td>400</td><td>normal</td><td><code>eb-garamond-v32-latin-ext-regular.woff2</code></td></tr>
+<tr><td>400</td><td>italic</td><td><code>eb-garamond-v32-latin-ext-italic.woff2</code></td></tr>
+<tr><td>500</td><td>normal</td><td><code>eb-garamond-v32-latin-ext-500.woff2</code></td></tr>
+<tr><td>500</td><td>italic</td><td><code>eb-garamond-v32-latin-ext-500italic.woff2</code></td></tr>
+<tr><td>600</td><td>normal</td><td><code>eb-garamond-v32-latin-ext-600.woff2</code></td></tr>
+<tr><td>600</td><td>italic</td><td><code>eb-garamond-v32-latin-ext-600italic.woff2</code></td></tr>
+<tr><td>700</td><td>normal</td><td><code>eb-garamond-v32-latin-ext-700.woff2</code></td></tr>
+<tr><td>700</td><td>italic</td><td><code>eb-garamond-v32-latin-ext-700italic.woff2</code></td></tr>
+<tr><td>800</td><td>normal</td><td><code>eb-garamond-v32-latin-ext-800.woff2</code></td></tr>
+<tr><td>800</td><td>italic</td><td><code>eb-garamond-v32-latin-ext-800italic.woff2</code></td></tr>
+</tbody>
+</table>
+<hr />
+<h2 id="b612">B612</h2>
+<p>Commissioned by Airbus in 2010 through a research collaboration with ENAC (Ecole Nationale de l'Aviation Civile) and Universite de Toulouse III, designed by Nicolas Chauveau and Thomas Paillot at Intactile DESIGN with typographic research by Jean-Luc Vinot. The name references asteroid B-612 from Saint-Exupery's <em>Le Petit Prince</em>---an aviator's literary tradition naming an aviator's typeface<sup><a href="#fn-2">[2]</a></sup>.</p>
+<p>Engineered for cockpit display legibility under degraded conditions: low ambient light, oblique viewing angles, vibration, high cognitive load. Design features include ink traps (repurposed as light traps for screen rendering), uniform stroke weight for consistent glyph density, and generous internal counters. The font underwent empirical validation for reduced visual fatigue and cognitive load in critical information display. Published under the Eclipse Public License via the Polarsys project in 2017; awarded the Observeur du Design Industry Star in 2018.</p>
+<p><strong>Typographic role:</strong> body text. The font's optimization for sustained reading under adverse conditions translates directly to comfortable long-form screen reading---the cockpit discipline serves the reader.</p>
+<p><style> @font-face {   font-family: 'B612 Specimen';   src: url('b612-v13-latin-regular.woff2') format('woff2');   font-weight: 400; font-style: normal; } @font-face {   font-family: 'B612 Specimen';   src: url('b612-v13-latin-italic.woff2') format('woff2');   font-weight: 400; font-style: italic; } @font-face {   font-family: 'B612 Specimen';   src: url('b612-v13-latin-700.woff2') format('woff2');   font-weight: 700; font-style: normal; } </style></p>
+<p><div style="font-family: 'B612 Specimen', sans-serif; font-size: 1em; line-height: 1.6; margin: 1em 0;"> <div style="font-weight: 400; margin-bottom: 0.25em;">The quick brown fox jumps over the lazy dog</div> <div style="font-weight: 700; margin-bottom: 0.25em;">Bold: Altitude 3500ft --- Heading 270 --- IAS 250kt</div> <div style="font-style: italic;">Italic: Designed for clarity when clarity is not optional.</div> </div></p>
+<h3 id="weights-hosted">Weights hosted</h3>
+<table>
+<thead>
+<tr><th>Weight</th><th>Style</th><th>File</th></tr>
+</thead>
+<tbody>
+<tr><td>400</td><td>normal</td><td><code>b612-v13-latin-regular.woff2</code></td></tr>
+<tr><td>400</td><td>italic</td><td><code>b612-v13-latin-italic.woff2</code></td></tr>
+<tr><td>700</td><td>normal</td><td><code>b612-v13-latin-700.woff2</code></td></tr>
+<tr><td>700</td><td>italic</td><td><code>b612-v13-latin-700italic.woff2</code></td></tr>
+</tbody>
+</table>
+<hr />
+<h2 id="intel-one-mono">Intel One Mono</h2>
+<p>Designed by Frere-Jones Type in partnership with Intel and VMLY&amp;R, released 2023 under the SIL Open Font License. Distinguished from other developer monospace fonts by its explicit co-design methodology: a panel of low-vision and legally blind developers provided iterative feedback across more than a dozen live coding sessions, identifying character differentiation failures invisible to normally-sighted testers<sup><a href="#fn-3">[3]</a></sup>.</p>
+<p>Key design characteristics: reduced x-height (counter to monospace convention) to amplify ascender/descender differentiation and create more distinctive word shapes; exaggerated delimiters (braces, brackets, parentheses, slashes) for rapid syntactic parsing; aggressive character individuation---the <code>M</code>/<code>N</code>, <code>e</code>/<code>c</code>, <code>x</code>/<code>y</code>, and <code>I</code>/<code>l</code>/<code>1</code> confusability sets receive specific corrective treatment. The steep italics are unusually expressive for a monospace family. Covers 200+ Latin-script languages.</p>
+<p><strong>Typographic role:</strong> preformatted code blocks and inline code. The accessibility-first design methodology makes the font legible at the reduced sizes typical of code presentation within prose contexts.</p>
+<p><style> @font-face {   font-family: 'Intel One Mono Specimen';   src: url('intel-one-mono-v2-latin-regular.woff2') format('woff2');   font-weight: 400; font-style: normal; } @font-face {   font-family: 'Intel One Mono Specimen';   src: url('intel-one-mono-v2-latin-italic.woff2') format('woff2');   font-weight: 400; font-style: italic; } @font-face {   font-family: 'Intel One Mono Specimen';   src: url('intel-one-mono-v2-latin-700.woff2') format('woff2');   font-weight: 700; font-style: normal; } </style></p>
+<p><div style="font-family: 'Intel One Mono Specimen', monospace; font-size: 0.9em; line-height: 1.5; margin: 1em 0;"> <div style="font-weight: 400; margin-bottom: 0.25em;">The quick brown fox jumps over the lazy dog</div> <div style="font-weight: 400; margin-bottom: 0.25em;">0O Il1| {}<a href=""></a> &amp;lt;= =&amp;gt; != === // /<em> </em>/</div> <div style="font-weight: 700; margin-bottom: 0.25em;">Bold: fn main() { println!("Hello, world!"); }</div> <div style="font-style: italic;">Italic: # comment --- clarity under cognitive load</div> </div></p>
+<h3 id="weights-hosted">Weights hosted</h3>
+<table>
+<thead>
+<tr><th>Weight</th><th>Style</th><th>File</th></tr>
+</thead>
+<tbody>
+<tr><td>300</td><td>normal</td><td><code>intel-one-mono-v2-latin-300.woff2</code></td></tr>
+<tr><td>300</td><td>italic</td><td><code>intel-one-mono-v2-latin-300italic.woff2</code></td></tr>
+<tr><td>400</td><td>normal</td><td><code>intel-one-mono-v2-latin-regular.woff2</code></td></tr>
+<tr><td>400</td><td>italic</td><td><code>intel-one-mono-v2-latin-italic.woff2</code></td></tr>
+<tr><td>500</td><td>normal</td><td><code>intel-one-mono-v2-latin-500.woff2</code></td></tr>
+<tr><td>500</td><td>italic</td><td><code>intel-one-mono-v2-latin-500italic.woff2</code></td></tr>
+<tr><td>600</td><td>normal</td><td><code>intel-one-mono-v2-latin-600.woff2</code></td></tr>
+<tr><td>600</td><td>italic</td><td><code>intel-one-mono-v2-latin-600italic.woff2</code></td></tr>
+<tr><td>700</td><td>normal</td><td><code>intel-one-mono-v2-latin-700.woff2</code></td></tr>
+<tr><td>700</td><td>italic</td><td><code>intel-one-mono-v2-latin-700italic.woff2</code></td></tr>
+</tbody>
+</table>
+<hr />
+<h2 id="typographic-strategy">Typographic Strategy</h2>
+<p>The three families occupy complementary perceptual registers tuned to their functional roles:</p>
+<p><strong>Temporal depth</strong> (EB Garamond): humanist forms from the 1540s--1560s carry the visual authority of long tradition---appropriate for headings that establish document structure, and for emphasis that signals interpretive weight within body text.</p>
+<p><strong>Operational clarity</strong> (B612): engineered for sustained reading under cognitive pressure, the sans-serif body text prioritizes fatigue reduction and information throughput over aesthetic refinement---the typeface disappears in service of the content.</p>
+<p><strong>Technical precision</strong> (Intel One Mono): accessibility-driven character individuation at code-presentation scale, where a single misread glyph changes semantics---the monospace register where visual ambiguity carries functional cost.</p>
+<p>Each font was designed for a context where misreading has consequences---the cockpit, the courtroom of typographic history, the code editor. A stylesheet that composes all three inherits that shared discipline as coherent legibility across registers.</p>
+<hr />
+<h2 id="licensing">Licensing</h2>
+<table>
+<thead>
+<tr><th>Family</th><th>License</th><th>Source</th></tr>
+</thead>
+<tbody>
+<tr><td>EB Garamond</td><td>SIL Open Font License 1.1</td><td><a href="https://github.com/octaviopardo/EBGaramond12">github.com/octaviopardo/EBGaramond12</a></td></tr>
+<tr><td>B612</td><td>Eclipse Public License 1.0</td><td><a href="https://github.com/polarsys/b612">github.com/polarsys/b612</a></td></tr>
+<tr><td>Intel One Mono</td><td>SIL Open Font License 1.1</td><td><a href="https://github.com/intel/intel-one-mono">github.com/intel/intel-one-mono</a></td></tr>
+</tbody>
+</table>
+<hr />
+
+
+
+<section id="footnotes">
+<hr />
+<ol>
+<li id="fn-1"><p>The Egenolff-Berner specimen of 1592 remains the primary documentary source for Garamond's roman types; the "EB" prefix distinguishes this digitization from the many Garamond revivals based on later (often misattributed) sources. Georg Mayr-Duffner's original work covered the 8pt and 12pt optical sizes; Octavio Pardo's continuation from 2017 added the five-weight range (Regular through ExtraBold) carried here. See <a href="https://googlefonts.github.io/ebgaramond-specimen/">googlefonts.github.io/ebgaramond-specimen</a>.</p></li>
+<li id="fn-2"><p>The Airbus research program validated B612 against existing cockpit fonts for legibility under vibration, low contrast, and high cognitive load. The font's ink traps---small indentations at stroke junctions---function as light traps on screen, preventing optical fill-in at small sizes or low resolution. See <a href="https://www.b612-font.com/">b612-font.com</a>.</p></li>
+<li id="fn-3"><p>Frere-Jones Type's co-design process with low-vision developers produced character differentiation strategies absent from conventionally-designed monospace fonts. The reduced x-height---contrary to the prevailing monospace trend of enlarged x-heights---was a direct finding from the accessibility panel: taller ascenders and descenders create more distinct word shapes for readers relying on peripheral or degraded vision. See <a href="https://www.intel.com/content/www/us/en/company-overview/one-monospace-font.html">intel.com/content/www/us/en/company-overview/one-monospace-font.html</a>.</p></li>
+</ol>
+</section>
+</body>
+</html>

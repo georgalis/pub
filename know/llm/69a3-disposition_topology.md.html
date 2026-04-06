@@ -12,9 +12,12 @@ th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
 </head>
 <body>
 <h1 id="disposition-topology-and-prompt-identity">Disposition Topology and Prompt Identity</h1>
-<h2 id="a-guidance-and-standard-for-composing-llm-prompt-strategy">A Guidance and Standard for Composing LLM Prompt Strategy</h2>
-<p>(c) 2026 George Georgalis &lt;george@galis.org&gt; unlimited use with this notice <br>original 69a4ef1a 20260301 175954 PST Sun 05:59 PM 1 Mar 2026</p>
+<h2 id="a-guidance-and-standard-for-llm-prompt-strategy">A Guidance and Standard for LLM Prompt Strategy</h2>
+<p>(c) 2026 George Georgalis &lt;george@galis.org&gt; unlimited use with this notice <!--
+<br>original 69a4ef1a 20260301 175954 PST Sun 05:59 PM 1 Mar 2026
+--></p>
 <hr />
+<h2 id="preface">Preface</h2>
 <p><em>This document is dense by design. It introduces a vocabulary for understanding how language models respond to different kinds of prompting, and it develops that vocabulary into a practical framework for composing prompts that produce genuinely better outputs---not incrementally better, but structurally different in kind. The material rewards multiple readings; concepts introduced early become operative tools in later sections, and the full architecture becomes visible only when its components have been individually understood.</em></p>
 <p><em>For immediate practical application, this document can be submitted directly as context alongside any complex prompt. A language model receiving this document as input can be asked to summarize relevant sections, recommend an identity topology for a specific task, or extract the appropriate persona specification for a given problem type. This is not redundant with the model's existing capabilities. Models do not innately apply the frameworks developed here---they default to training-distribution patterns unless explicitly constituted otherwise. The gap between a model's default response and the response produced from a well-composed identity is the gap this document exists to close.</em></p>
 <p><em>For sustained development, the Aspiration Classes (Section VII) and Worked Trajectories (Section IX) are the most directly consumable sections. Readers building a prompt engineering practice will find the failure geometries (Section III) increasingly useful as they encounter specific response pathologies and need to diagnose what went wrong. The alignment hierarchy (Section IV) provides the structural logic for why certain prompt approaches outperform others. Start where the need is sharpest; the rest will become relevant as the practice deepens.</em></p>

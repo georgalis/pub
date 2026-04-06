@@ -1,10 +1,10 @@
 # Analysis of συμπροσκυνούμενον καὶ συνδοξαζόμενον: Worship and Glorification of the Holy Spirit in Eastern Orthodox Theology
 
 (c) 2025 George Georgalis <george@galis.org> unlimited use with this notice
+<!--
 <br>revision 6839390e 20250529 215022 PDT Thu 09:50 PM 29 May 2025
 <br>original 68390148 20250529 175224 PDT Thu 05:52 PM 29 May 2025
-
----
+-->
 
 ## The Linguistic Challenge of Divine Mystery
 
@@ -68,7 +68,6 @@ The term δόξα carries multiple semantic layers:
 Eastern Orthodox theology embraces apophatic (negative) theology—the recognition that God transcends human categories. The terms συμπροσκυνούμενον and συνδοξαζόμενον represent kataphatic (positive) statements that paradoxically point to this ineffability:
 
 1. **Worship as Transformative Action**: While προσκυνέω denotes worship, Orthodox theology understands worship as truly human action infused with divine grace. Through worship, human nature transcends itself through glorification, participating in divine life while remaining authentically human.
-
 2. **Glory as Uncreated Light**: In Orthodox understanding, δόξα refers to the uncreated energies of God—divine activities distinguishable from but inseparable from the divine essence. This Palamite distinction means "glorification" involves participation in something beyond created reality.
 
 ### The Nature of Pneumatological Experience
@@ -94,9 +93,7 @@ In Orthodox practice, these terms find expression through:
 The Orthodox approach to icons illuminates these concepts through three essential principles:
 
 1. **Icons as Written Theology**: Icons are "written" (γράφω) rather than merely painted, because they inscribe theological truth in visual form. Just as the Creed articulates faith in words, icons articulate faith in color and form, both serving as windows to divine reality.
-
 2. **Veneration and Prototype**: When Orthodox Christians offer veneration (προσκύνησις) to icons, this honor passes to the prototype—the person depicted. This theological principle illuminates how worship offered to the Spirit is worship offered to God, as the Spirit is truly God.
-
 3. **The Spirit's Uncontainable Nature**: The Holy Spirit defies direct depiction not because of hiddenness but because of the Spirit's uncontainable, incorporeal nature. Wind, fire, dove—all symbols point to but cannot capture the Spirit who fills all things and is everywhere present.
 
 ## Linguistic Precision and Theological Humility
@@ -123,11 +120,8 @@ The passive construction (-ούμενον) indicates:
 Modern translations struggle with these terms in several crucial ways:
 
 1. **The Lost Prefix**: "Worshipped and glorified" completely omits the συν- prefix, losing the essential meaning of "together with." This prefix is not decorative but theologically crucial—it establishes that the Spirit receives the same worship as the Father and Son.
-
 2. **Passive Voice Richness**: English cannot capture the full semantic range of the Greek middle/passive voice. The -ούμενον ending suggests both receiving worship and being involved in the very act of worship—a reciprocal relationship foreign to English grammar.
-
 3. **Embodied Worship**: The physical, embodied dimension of προσκυνέω—the actual prostration, the kissing toward—disappears in translation. English "worship" has become largely conceptual, while the Greek term retains its concrete, bodily character.
-
 4. **Temporal Ambiguity**: The present tense in Greek points not to a moment in time but to eternal, ever-present reality. The Spirit is not merely "worshipped" at certain times but exists in an eternal state of receiving worship together with the Father and Son.
 
 ### Living the Creed in Contemporary Orthodox Practice
@@ -135,9 +129,7 @@ Modern translations struggle with these terms in several crucial ways:
 For Orthodox Christians seeking to understand their faith's Greek foundations, these terms reveal:
 
 1. **Theological Precision Through Divine Inspiration**: The synaxis (gathering) of the Church Fathers, guided by divine inspiration, articulated precise terminology that safeguards Orthodox faith. Each grammatical element serves to preserve revealed truth.
-
 2. **The Present Eternal**: The use of present tense reveals how the Creed speaks not of past beliefs but of eternal realities actively present. When we confess these words, we participate in the ongoing worship of the Trinity.
-
 3. **Participation Over Definition**: These terms invite us into mystery rather than offering exhaustive explanation. They are verbal icons that lead us into encounter with the living God.
 
 ## The Character of Letters and Practice
