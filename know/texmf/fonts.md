@@ -67,8 +67,7 @@ texlive-font-discovery.sh [-t sample.tex] [-e conservative|broader|probe] [-u]
 
 The TSV inventory (phases 1 and 2) is always unfiltered. The `-e` flag
 controls only the sample `.tex` output. Within each encoding scope,
-the sample applies four independent filters before writing `\showfont`
-entries:
+the sample applies three filters and a deduplication pass:
 
 **Encoding whitelist.** Conservative (default) restricts to T1, OT1,
 LY1---encodings renderable as Latin text under the document's
@@ -76,22 +75,26 @@ LY1---encodings renderable as Latin text under the document's
 LGR, T2A-C, T5, CS for extended-Latin, Cyrillic, Greek, and Vietnamese
 coverage. Probe passes all encodings unfiltered.
 
-**Numeral/ornament exclusion.** Families ending in `-Inf`, `-Sup`,
-`-Dnom`, `-Numr` (figure-only glyphs) and `-Orn` (ornament-only glyphs)
-are dropped---these render blank or numeral-only output in pangram text.
-
 **Bitmap exclusion.** Families matching known Metafont conventions
 (Computer Modern derivatives, Concrete, Almost European, LH Cyrillic,
-Washington, KC, and their clones) are dropped. Latin Modern (`lm*`),
-TeX Gyre (`q*`), PostScript base (`p*`), and TX/PX families are Type1
-and retained.
+Washington, KC, and their clones) are dropped from both showcase and
+reference. Latin Modern (`lm*`), TeX Gyre (`q*`), PostScript base
+(`p*`), and TX/PX families are Type1 and retained.
 
 **Figure-style deduplication.** Families differing only by figure-style
 suffix (`-TLF`, `-LF`, `-OsF`, `-TOsF`) are collapsed to a single
-representative per base typeface, preferring TLF (tabular lining) over
-LF, OsF, and TOsF. Encoding priority applies within each base: T1
-over OT1, OT1 over LY1. The result is one entry per distinct typeface
-design at its best available encoding.
+representative per base typeface for the visual showcase, preferring TLF
+(tabular lining) over LF, OsF, and TOsF. Encoding priority applies
+within each base: T1 over OT1, OT1 over LY1. Families with
+numeral-only suffixes (`-Inf`, `-Sup`, `-Dnom`, `-Numr`) and
+ornament-only suffixes (`-Orn`) are excluded from the showcase but
+appear in the reference appendix.
+
+**Reference appendix.** A trailing section lists every base family that
+has figure-style or glyph-class variants, showing which suffixes are
+available (e.g., `CormorantGaramond: TLF, LF, OsF, TOsF, Inf, Sup`).
+A legend defines each suffix. This enables locating specific figure
+styles and ornament sets by typeface without rendering each variant.
 
 
 ## Discovery Output Format
@@ -108,8 +111,12 @@ downstream parsing with `grep -v '^#'` or `awk` column extraction.
 
 ## Sample Document
 
-The `-t` flag writes a `.tex` file that renders every discovered
-font family in normal, bold, and italic with pangram text.
+The `-t` flag writes a `.tex` file with two sections: a visual
+showcase rendering one representative per typeface in normal, bold,
+and italic with pangram text, followed by a reference appendix
+listing all available figure-style and glyph-class variants per
+base family with a suffix legend.
+
 Compile with `pdflatex` for visual comparison. Fonts that lack
 a bold or italic shape will fall back to the nearest available
 substitute per NFSS rules---this is expected and diagnostic
