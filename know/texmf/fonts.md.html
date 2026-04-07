@@ -11,11 +11,59 @@ th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
 <link rel="stylesheet" href="./default.css">
 </head>
 <body>
-<h1 id="true-type-fonts-in-texlive-user-environment">True Type Fonts in TexLive User Environment</h1>
+<h1 id="texlive-user-font-management">TexLive User Font Management</h1>
 <p>(c) 2026 George Georgalis &lt;george@galis.org&gt; unlimited use with this notice <!--
 revs: 69d39acd 20260406 043645 PDT Mon 04:36 AM 6 Apr 2026 --- revised into markdown
 orig: 67208428 20241028 234352 PDT Mon 11:43 PM 28 Oct 2024 --- fonts.yml
 --></p>
+<p>Font integration, discovery, and document composition in <code>pdflatex</code> workflows for the user <code>texmf</code> environment.</p>
+<h2 id="contents">Contents</h2>
+<ul>
+<li><a href="#font-discovery">Font Discovery</a>
+<ul>
+<li><a href="#discovery-usage">Discovery Usage</a></li>
+<li><a href="#discovery-output-format">Discovery Output Format</a></li>
+<li><a href="#sample-document">Sample Document</a></li>
+</ul></li>
+<li><a href="#ttf-font-installation">TTF Font Installation</a>
+<ul>
+<li><a href="#obtaining-and-organizing-font-files">Obtaining and Organizing Font Files</a></li>
+<li><a href="#purge-and-bootstrap">Purge and Bootstrap</a></li>
+<li><a href="#running-autoinst">Running autoinst</a></li>
+<li><a href="#creating-map-config-data">Creating Map Config Data</a></li>
+<li><a href="#running-texhash-and-updmap">Running texhash and updmap</a></li>
+<li><a href="#using-fonts-in-documents">Using Fonts in Documents</a></li>
+</ul></li>
+<li><a href="#font-reference">Font Reference</a>
+<ul>
+<li><a href="#font-selection-terminology">Font Selection Terminology</a></li>
+<li><a href="#style-and-definition-files">Style and Definition Files</a></li>
+<li><a href="#figure-styles">Figure Styles</a></li>
+<li><a href="#shape-codes">Shape Codes</a></li>
+<li><a href="#weight-codes">Weight Codes</a></li>
+<li><a href="#optical-sizes-and-point-sizes">Optical Sizes and Point Sizes</a></li>
+<li><a href="#drop-caps-lettrine">Drop Caps (Lettrine)</a></li>
+</ul></li>
+</ul>
+<hr />
+<h1 id="font-discovery">Font Discovery</h1>
+<!--
+revs: 69d3a0ce 20260406 050222 PDT Mon 05:02 AM 6 Apr 2026 --- texlive-font-discovery.md
+orig: 668973c5 20240706 094141 PDT Sat 09:41 AM 6 Jul 2024 --- texlive-font-package-lister.sh
+-->
+<p>Identifying installed fonts in a TexLive environment is difficult because font metadata is distributed across <code>.sty</code> packages (which set document defaults) and <code>.fd</code> definition files (which declare available weight/shape combinations). The <a href="./texlive-font-discovery.sh">texlive-font-discovery.sh</a> script scans both system and user <code>texmf</code> trees to produce a machine-parseable inventory of installed font packages and font family definitions, with an optional sample <code>.tex</code> document for visual confirmation.</p>
+<h2 id="discovery-usage">Discovery Usage</h2>
+<pre><code>texlive-font-discovery.sh [-t sample.tex] [-u]
+  -t FILE  generate sample tex document rendering each discovered family
+  -u       scan user texmf only (default: system + user)</code></pre>
+<h2 id="discovery-output-format">Discovery Output Format</h2>
+<p>Phase 1 (font packages) produces tab-separated fields: package name, class (<code>rm</code>, <code>sf</code>, <code>tt</code>, or comma-joined), version string, file path.</p>
+<p>Phase 2 (font families) produces tab-separated fields: encoding, family name, comma-joined weight codes, comma-joined shape codes, file path.</p>
+<p>Both phases are prefixed with <code>#</code> comment headers suitable for downstream parsing with <code>grep -v '^#'</code> or <code>awk</code> column extraction.</p>
+<h2 id="sample-document">Sample Document</h2>
+<p>The <code>-t</code> flag writes a <code>.tex</code> file that renders every discovered font family in normal, bold, and italic with pangram text. Compile with <code>pdflatex</code> for visual comparison. Fonts that lack a bold or italic shape will fall back to the nearest available substitute per NFSS rules---this is expected and diagnostic (a missing shape in the sample confirms the <code>.fd</code> weight/shape inventory from phase 2).</p>
+<hr />
+<h1 id="ttf-font-installation">TTF Font Installation</h1>
 <p>Adding True Type Fonts to a LaTeX user environment is easy with the <code>autoinst</code> program, from &lt;https://ctan.org/tex-archive/fonts/utilities/fontools/&gt; and bundled with TexLive; only a few manual steps are required. These instructions are for a user env install (and the sudo root averse). The steps are:</p>
 <ol>
 <li>Populating a directory with the (.ttf) font files</li>
@@ -31,7 +79,7 @@ mkdir -p $texmf/fonts/truetype/{sf,ss,tt}
 mv {FontName1} "$texmf/fonts/truetype/tt"
 mv {FontName2} "$texmf/fonts/truetype/ss"
 mv {FontName3} "$texmf/fonts/truetype/sf"</code></pre>
-<h3 id="purge-and-bootstrap">Purge and bootstrap</h3>
+<h3 id="purge-and-bootstrap">Purge and Bootstrap</h3>
 <p>For iterative development---clean redeployment when changing which fonts to install---purge the user fonts environment and restore the TTF source files. This block also documents the totality of directory paths managed by this procedure: <code>$texmf/fonts</code> is the only tree modified, and <code>~/kdb/fonts/</code> is the canonical source archive with <code>sf/</code>, <code>ss/</code>, and <code>tt/</code> subdirectories matching the layout above.</p>
 <pre><code class="language-bash"># purge user fonts environment (assumes only ttf fonts installed as user)
 rm -rf $texmf/fonts

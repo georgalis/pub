@@ -1,32 +1,3 @@
-# TexLive Font Discovery
-
-(c) 2026 George Georgalis <george@galis.org> unlimited use with this notice
-<!--
-revs: 69d3a0ce 20260406 050222 PDT Mon 05:02 AM 6 Apr 2026 --- texlive-font-discovery.md
-orig: 668973c5 20240706 094141 PDT Sat 09:41 AM 6 Jul 2024 --- texlive-font-package-lister.sh
--->
-
-Identifying installed fonts in a TexLive environment is difficult because
-font metadata is distributed across `.sty` packages (which set document
-defaults) and `.fd` definition files (which declare available weight/shape
-combinations). This script scans both system and user `texmf` trees to
-produce a machine-parseable inventory of installed font packages and
-font family definitions, with an optional sample `.tex` document for
-visual confirmation.
-
-
-## Usage
-
-```
-texlive-font-discovery.sh [-t sample.tex] [-u]
-  -t FILE  generate sample tex document rendering each discovered family
-  -u       scan user texmf only (default: system + user)
-```
-
-
-## Script
-
-```bash
 #!/usr/bin/env bash
 # (c) 2026 George Georgalis <george@galis.org> unlimited use with this notice
 # revs: 69d3a0ce 20260406 050222 PDT Mon 05:02 AM 6 Apr 2026 --- texlive-font-discovery.sh
@@ -153,7 +124,7 @@ cat > "$sample_file" <<'TEXDOC'
 \documentclass[10pt]{article}
 \usepackage[T1]{fontenc}
 \usepackage[margin=0.75in]{geometry}
-\newcommand{\showfont}[2]{
+\newcommand{\showfont}[2]{%
   \par\noindent\texttt{#1 / #2}\par
   {\fontfamily{#2}\selectfont
     The quick brown fox jumps over the lazy dog. 0123456789\par
@@ -174,27 +145,3 @@ printf '%s\n' "${fam_pairs[@]}" | sort -u \
 echo '\end{document}' >> "$sample_file"
 echo "# sample tex written: $sample_file" >&2
 echo "# compile: pdflatex $sample_file" >&2
-```
-
-
-## Output Format
-
-Phase 1 (font packages) produces tab-separated fields:
-package name, class (`rm`, `sf`, `tt`, or comma-joined), version string, file path.
-
-Phase 2 (font families) produces tab-separated fields:
-encoding, family name, comma-joined weight codes, comma-joined shape codes, file path.
-
-Both phases are prefixed with `#` comment headers suitable for
-downstream parsing with `grep -v '^#'` or `awk` column extraction.
-
-
-## Sample Document
-
-The `-t` flag writes a `.tex` file that renders every discovered
-font family in normal, bold, and italic with pangram text.
-Compile with `pdflatex` for visual comparison. Fonts that lack
-a bold or italic shape will fall back to the nearest available
-substitute per NFSS rules---this is expected and diagnostic
-(a missing shape in the sample confirms the `.fd` weight/shape
-inventory from phase 2).

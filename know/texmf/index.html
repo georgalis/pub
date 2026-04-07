@@ -13,13 +13,16 @@ th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
 <body>
 <h1 id="texmf">texmf</h1>
 <p>Documentation and tooling for TexLive user environment management---font integration, discovery, and document composition in <code>pdflatex</code> workflows for user-context.</p>
-<p>(c) 2026 George Georgalis &lt;george@galis.org&gt; unlimited use with this notice <!-- orig: 20260406 051612 PDT Mon 05:16 AM 6 Apr 2026 --></p>
+<p>(c) 2026 George Georgalis &lt;george@galis.org&gt; unlimited use with this notice <!--
+revs: 69d547f1 20260407 110745 PDT Tue 11:07 AM 7 Apr 2026 --- script/md breakout
+orig: 20260406 051612 PDT Mon 05:16 AM 6 Apr 2026
+--></p>
 <h2 id="contents">Contents</h2>
 <ul>
-<li><a href="./fonts.md.html">fonts.md</a> --- TTF font installation via <code>autoinst</code> into user <code>texmf</code>, including iterative purge/bootstrap, <code>updmap.cfg</code> generation, and font selection reference (families, weights, shapes, figure styles, optical sizes, lettrine)</li>
+<li><a href="./fonts.md.html">fonts.md</a> --- user font management: discovery of installed font packages and family definitions, TTF installation via <code>autoinst</code> into user <code>texmf</code>, <code>updmap.cfg</code> generation, and font selection reference (families, weights, shapes, figure styles, optical sizes, lettrine)</li>
 </ul>
 <ul>
-<li><a href="./texlive-font-discovery.md.html">texlive-font-discovery.md</a> --- script to inventory installed font packages (<code>.sty</code>) and family definitions (<code>.fd</code>) with optional sample <code>.tex</code> generation for visual confirmation</li>
+<li><a href="./texlive-font-discovery.sh">texlive-font-discovery.sh</a> --- inventory installed font packages (<code>.sty</code>) and family definitions (<code>.fd</code>) across system and user <code>texmf</code> trees; optional sample <code>.tex</code> generation for visual confirmation</li>
 </ul>
 </body>
 </html>

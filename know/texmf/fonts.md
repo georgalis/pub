@@ -1,10 +1,95 @@
-# True Type Fonts in TexLive User Environment
+# TexLive User Font Management
 
 (c) 2026 George Georgalis <george@galis.org> unlimited use with this notice
 <!--
 revs: 69d39acd 20260406 043645 PDT Mon 04:36 AM 6 Apr 2026 --- revised into markdown
 orig: 67208428 20241028 234352 PDT Mon 11:43 PM 28 Oct 2024 --- fonts.yml
 -->
+
+Font integration, discovery, and document composition in `pdflatex`
+workflows for the user `texmf` environment.
+
+
+## Contents
+
+- [Font Discovery](#font-discovery)
+  - [Discovery Usage](#discovery-usage)
+  - [Discovery Output Format](#discovery-output-format)
+  - [Sample Document](#sample-document)
+- [TTF Font Installation](#ttf-font-installation)
+  - [Obtaining and Organizing Font Files](#obtaining-and-organizing-font-files)
+  - [Purge and Bootstrap](#purge-and-bootstrap)
+  - [Running autoinst](#running-autoinst)
+  - [Creating Map Config Data](#creating-map-config-data)
+  - [Running texhash and updmap](#running-texhash-and-updmap)
+  - [Using Fonts in Documents](#using-fonts-in-documents)
+- [Font Reference](#font-reference)
+  - [Font Selection Terminology](#font-selection-terminology)
+  - [Style and Definition Files](#style-and-definition-files)
+  - [Figure Styles](#figure-styles)
+  - [Shape Codes](#shape-codes)
+  - [Weight Codes](#weight-codes)
+  - [Optical Sizes and Point Sizes](#optical-sizes-and-point-sizes)
+  - [Drop Caps (Lettrine)](#drop-caps-lettrine)
+
+
+---
+
+
+# Font Discovery
+
+<!--
+revs: 69d547d6 20260407 110718 PDT Tue 11:07 AM 7 Apr 2026 --- integrate discovery intro with install
+revs: 69d3a0ce 20260406 050222 PDT Mon 05:02 AM 6 Apr 2026 --- texlive-font-discovery.md
+orig: 668973c5 20240706 094141 PDT Sat 09:41 AM 6 Jul 2024 --- texlive-font-package-lister.sh
+-->
+
+Identifying installed fonts in a TexLive environment is difficult because
+font metadata is distributed across `.sty` packages (which set document
+defaults) and `.fd` definition files (which declare available weight/shape
+combinations). The [texlive-font-discovery.sh](./texlive-font-discovery.sh)
+script scans both system and user `texmf` trees to produce a
+machine-parseable inventory of installed font packages and font family
+definitions, with an optional sample `.tex` document for visual
+confirmation.
+
+
+## Discovery Usage
+
+```
+texlive-font-discovery.sh [-t sample.tex] [-u]
+  -t FILE  generate sample tex document rendering each discovered family
+  -u       scan user texmf only (default: system + user)
+```
+
+
+## Discovery Output Format
+
+Phase 1 (font packages) produces tab-separated fields:
+package name, class (`rm`, `sf`, `tt`, or comma-joined), version string, file path.
+
+Phase 2 (font families) produces tab-separated fields:
+encoding, family name, comma-joined weight codes, comma-joined shape codes, file path.
+
+Both phases are prefixed with `#` comment headers suitable for
+downstream parsing with `grep -v '^#'` or `awk` column extraction.
+
+
+## Sample Document
+
+The `-t` flag writes a `.tex` file that renders every discovered
+font family in normal, bold, and italic with pangram text.
+Compile with `pdflatex` for visual comparison. Fonts that lack
+a bold or italic shape will fall back to the nearest available
+substitute per NFSS rules---this is expected and diagnostic
+(a missing shape in the sample confirms the `.fd` weight/shape
+inventory from phase 2).
+
+
+---
+
+
+# TTF Font Installation
 
 Adding True Type Fonts to a LaTeX user environment is easy with the `autoinst` program,
 from <https://ctan.org/tex-archive/fonts/utilities/fontools/> and bundled with TexLive;
@@ -39,7 +124,7 @@ mv {FontName2} "$texmf/fonts/truetype/ss"
 mv {FontName3} "$texmf/fonts/truetype/sf"
 ```
 
-### Purge and bootstrap
+### Purge and Bootstrap
 
 For iterative development---clean redeployment when changing which fonts
 to install---purge the user fonts environment and restore the TTF source
