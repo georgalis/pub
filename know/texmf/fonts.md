@@ -39,7 +39,6 @@ workflows for the user `texmf` environment.
 # Font Discovery
 
 <!--
-revs: 69d547d6 20260407 110718 PDT Tue 11:07 AM 7 Apr 2026 --- integrate discovery intro with install
 revs: 69d3a0ce 20260406 050222 PDT Mon 05:02 AM 6 Apr 2026 --- texlive-font-discovery.md
 orig: 668973c5 20240706 094141 PDT Sat 09:41 AM 6 Jul 2024 --- texlive-font-package-lister.sh
 -->
@@ -57,10 +56,19 @@ confirmation.
 ## Discovery Usage
 
 ```
-texlive-font-discovery.sh [-t sample.tex] [-u]
-  -t FILE  generate sample tex document rendering each discovered family
+texlive-font-discovery.sh [-t sample.tex] [-e conservative|broader|probe] [-u]
+  -t FILE  generate sample tex rendering each discovered family
+  -e MODE  encoding filter for sample (default: conservative)
+           conservative: T1,OT1,LY1  broader: +TS1,IL2,QX,L7x,LGR,T2A-C,T5,CS
+           probe: all encodings (math, symbol, CJK, scripts)
   -u       scan user texmf only (default: system + user)
 ```
+
+The TSV inventory (phases 1 and 2) is always unfiltered. The `-e` flag
+controls only the sample `.tex` output. Within each encoding scope,
+families are deduplicated with T1 preferred over OT1, OT1 over LY1,
+and remaining encodings in lexicographic order---each family appears
+once in the sample, at its highest-priority encoding.
 
 
 ## Discovery Output Format
@@ -84,6 +92,16 @@ a bold or italic shape will fall back to the nearest available
 substitute per NFSS rules---this is expected and diagnostic
 (a missing shape in the sample confirms the `.fd` weight/shape
 inventory from phase 2).
+
+The `-e` flag controls which encodings appear in the sample.
+The conservative default (T1, OT1, LY1) produces a manageable
+showcase of Latin text fonts compatible with the document's
+`\usepackage[T1]{fontenc}` preamble. The broader mode adds
+extended-Latin, Cyrillic, Greek, Vietnamese, and Czech/Slovak
+encodings---fonts with Latin glyph subsets will render the
+pangram, while those without will show substitution glyphs.
+Probe mode is unfiltered and includes math, symbol, CJK, and
+script encodings; expect rendering failures for non-text families.
 
 
 ---
