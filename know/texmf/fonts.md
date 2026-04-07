@@ -16,6 +16,7 @@ workflows for the user `texmf` environment.
   - [Discovery Usage](#discovery-usage)
   - [Discovery Output Format](#discovery-output-format)
   - [Sample Document](#sample-document)
+  - [Sample Filters](#sample-filters)
 - [TTF Font Installation](#ttf-font-installation)
   - [Obtaining and Organizing Font Files](#obtaining-and-organizing-font-files)
   - [Purge and Bootstrap](#purge-and-bootstrap)
@@ -66,9 +67,31 @@ texlive-font-discovery.sh [-t sample.tex] [-e conservative|broader|probe] [-u]
 
 The TSV inventory (phases 1 and 2) is always unfiltered. The `-e` flag
 controls only the sample `.tex` output. Within each encoding scope,
-families are deduplicated with T1 preferred over OT1, OT1 over LY1,
-and remaining encodings in lexicographic order---each family appears
-once in the sample, at its highest-priority encoding.
+the sample applies four independent filters before writing `\showfont`
+entries:
+
+**Encoding whitelist.** Conservative (default) restricts to T1, OT1,
+LY1---encodings renderable as Latin text under the document's
+`\usepackage[T1]{fontenc}` preamble. Broader adds TS1, IL2, QX, L7x,
+LGR, T2A-C, T5, CS for extended-Latin, Cyrillic, Greek, and Vietnamese
+coverage. Probe passes all encodings unfiltered.
+
+**Numeral/ornament exclusion.** Families ending in `-Inf`, `-Sup`,
+`-Dnom`, `-Numr` (figure-only glyphs) and `-Orn` (ornament-only glyphs)
+are dropped---these render blank or numeral-only output in pangram text.
+
+**Bitmap exclusion.** Families matching known Metafont conventions
+(Computer Modern derivatives, Concrete, Almost European, LH Cyrillic,
+Washington, KC, and their clones) are dropped. Latin Modern (`lm*`),
+TeX Gyre (`q*`), PostScript base (`p*`), and TX/PX families are Type1
+and retained.
+
+**Figure-style deduplication.** Families differing only by figure-style
+suffix (`-TLF`, `-LF`, `-OsF`, `-TOsF`) are collapsed to a single
+representative per base typeface, preferring TLF (tabular lining) over
+LF, OsF, and TOsF. Encoding priority applies within each base: T1
+over OT1, OT1 over LY1. The result is one entry per distinct typeface
+design at its best available encoding.
 
 
 ## Discovery Output Format
@@ -92,6 +115,15 @@ a bold or italic shape will fall back to the nearest available
 substitute per NFSS rules---this is expected and diagnostic
 (a missing shape in the sample confirms the `.fd` weight/shape
 inventory from phase 2).
+
+The sample macro renders bold and italic demo text (not just the
+labels) so that weight and shape differences are visible across the
+full pangram. A `\clearpage` fires every 30 entries to manage TeX
+font memory; if compilation still exhausts memory, use
+`pdflatex --extra-mem-top=10000000` to increase the allocation.
+
+
+## Sample Filters
 
 The `-e` flag controls which encodings appear in the sample.
 The conservative default (T1, OT1, LY1) produces a manageable
