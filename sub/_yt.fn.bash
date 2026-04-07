@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
 # (c) 2026 George Georgalis <george@galis.org> unlimited use with this notice
+# rev 69c9bcdb 20260329 165923 PDT Sun 04:59 PM 29 Mar 2026 --- playlist management
 # rev 69befaeb 20260321 130915 PDT Sat 01:09 PM 21 Mar 2026 --- playlist management
 # rev 695f5300 20260107 224728 PST Wed 10:47 PM 7 Jan 2026 --- yt-dlp wrapper suite for media download and organization
 # synthesized from canonical forms of audio tools
@@ -15,9 +16,10 @@
 #     {xs},{template}.{ext}                original media + metadata + thumbnails
 #     {xs},{template}.com.yml              comment yaml (unless --nyc)
 #   Playlist: {xs}{playlist_index},{template}.{ext} in shared folio
-#     {xs},playlist_^{playlist_id}.meta.json   playlist metadata (--dump-single-json)
+#     {xs},{playlist_title}-^{playlist_id}.meta.json   playlist metadata (--dump-single-json)
 #     {xs}{n},{template}.info.json.txt         per-track staging (in folio, sans 00)
 #     $d/00{xs}0,{playlist_title}-^{playlist_id}.list.txt   aggregated staging
+#     {xs},{playlist_title}-^{playlist_id}.unavail.yml   unavailable track manifest
 #     Retry: reuses existing foli, new list.txt gets current session xs
 #
 # xs derivation: ts function (hex epoch), header via ts_header
@@ -115,9 +117,12 @@ _yt () { # ytdl wrapper: download media, organize folio, create staging txt
     { read playlist_id ; read playlist_title ;} < <($ytdl --flat-playlist --no-warnings --ignore-config \
       --print playlist_id --print playlist_title -- "$id" | head -2)
     [ "$playlist_id" ] || { chkerr "$FUNCNAME : no playlist_id from '$id' (695f5017)" ; return 1 ;}
+    local safe_title=
+    read safe_title < <(printf '%s' "$playlist_title" \
+      | tr -cs 'A-Za-z0-9_.-' '_' | sed 's/__*/_/g;s/^_//;s/_$//')
     # duplicate check against marker files in yt_root
     [ -d "$yt_root" ] || yt_root="${d}/.."
-    read -d '' existing < <(find "$yt_root" -name "*playlist_^${playlist_id}.meta.json" 2>/dev/null \
+    read -d '' existing < <(find "$yt_root" -name "*-^${playlist_id}.meta.json" 2>/dev/null \
       | sort -r) || :
     [ "$existing" ] && {
       echo "$existing"
@@ -127,25 +132,42 @@ _yt () { # ytdl wrapper: download media, organize folio, create staging txt
         r) # retry missing tracks into existing foli
           existing_xs="${existing##*/}" ; existing_xs="${existing_xs%%,*}"
           local existing_dx="${existing%/*}"
-          local expected=() missing_items=() line= pi= ud= tid=
+          local expected=() missing_items=() unavail_items=() line= pi= ud= tid=
+          local unavail_file="$existing_dx/${existing_xs},${safe_title}-^${playlist_id}.unavail.yml"
           readarray -t expected < <($ytdl --flat-playlist --no-warnings --ignore-config \
             --print "%(playlist_index)s %(upload_date)s %(id)s" -- "$id")
           for line in "${expected[@]}" ; do
             read pi ud tid <<<"$line"
             if [ "$ud" = "NA" ] || [ -z "$ud" ] ; then
+              # unavailable track: no upload_date means yt-dlp cannot access it
               read -d '' _ < <(find "$existing_dx/" -maxdepth 1 \
                 -name "*_^${tid}.info.json" 2>/dev/null) \
-                || missing_items+=("$pi")
+                || unavail_items+=("$pi:$tid")
             else
               read -d '' _ < <(find "$existing_dx/" -maxdepth 1 \
                 -name "*-${ud}_^${tid}.info.json" 2>/dev/null) \
                 || missing_items+=("$pi")
             fi
           done
-          [ ${#missing_items[@]} -eq 0 ] && { echo "no missing tracks" ; return 0 ;}
+          # report unavailable tracks
+          [ ${#unavail_items[@]} -gt 0 ] && {
+            echo "${#unavail_items[@]} unavailable (private/deleted/geo-blocked):"
+            printf '  %s\n' "${unavail_items[@]}"
+            # write/update unavail manifest
+            { echo "playlist_id: $playlist_id"
+              echo "updated: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+              echo "unavailable:"
+              local ua= ; for ua in "${unavail_items[@]}" ; do
+                echo "  - index: ${ua%%:*}"
+                echo "    id: ${ua#*:}"
+              done
+            } >"$unavail_file"
+            touch -t "$ts_touchtime" "$unavail_file"
+          }
+          [ ${#missing_items[@]} -eq 0 ] && { echo "no missing downloadable tracks" ; return 0 ;}
           printf -v retry_items '%s,' "${missing_items[@]}"
           retry_items="${retry_items%,}"
-          echo "${#missing_items[@]} missing: items $retry_items"
+          echo "${#missing_items[@]} missing downloadable: items $retry_items"
           dx="$existing_dx" ; xs="$existing_xs" ; opt_retry=1
           ;;
         *) return 1 ;;
@@ -232,9 +254,10 @@ _yt () { # ytdl wrapper: download media, organize folio, create staging txt
 
   # --- execute download: audio first (produces linkable file), then video if requested
   # note: nbsed exit isolated to prevent SIGPIPE from aborting ytdl
-  local dl_items=
+  local dl_items= dl_err_mode=
   [ "$opt_retry" ] && dl_items="--playlist-items $retry_items"
-  $ytdl $ytdl_opts $dl_items -f bestaudio --extract-audio --abort-on-error \
+  [ "$opt_playlist" ] && dl_err_mode="--ignore-errors" || dl_err_mode="--abort-on-error"
+  $ytdl $ytdl_opts $dl_items -f bestaudio --extract-audio $dl_err_mode \
     $extractor_args \
     -o "$tmpl" -- "$id" 2>&1 \
     | { nbsed -l '/^\[youtube\] Sleeping/d;/API JSON reply thread/d;/replies API JSON page/d;/Downloading video thumbnail/d;/Video Thumbnail .* does not exist/d' || true ;}
@@ -247,7 +270,7 @@ _yt () { # ytdl wrapper: download media, organize folio, create staging txt
     [ "$opt_playlist" ] && vid_pl_opt=--yes-playlist
     $ytdl --restrict-filenames --no-warnings \
       ${ffmpeg_loc:+--ffmpeg-location "$ffmpeg_loc"} \
-      -f "$opt_video_res" --abort-on-error $vid_pl_opt $dl_items \
+      -f "$opt_video_res" $dl_err_mode $vid_pl_opt $dl_items \
       -o "$tmpl" -- "$id" 2>&1 \
       | { nbsed -l '/^\[youtube\] Sleeping/d;/Downloading video thumbnail/d' || true ;}
   } || true
@@ -255,8 +278,39 @@ _yt () { # ytdl wrapper: download media, organize folio, create staging txt
   # --- playlist marker file (skip for retry, marker already exists)
   [ "$opt_playlist" ] && [ -z "$opt_retry" ] && {
     $ytdl --flat-playlist --no-warnings --ignore-config --dump-single-json -- "$id" \
-      | jq 'del(.entries)' >"$dx/${xs},playlist_^${playlist_id}.meta.json"
-    touch -t "$ts_touchtime" "$dx/${xs},playlist_^${playlist_id}.meta.json"
+      | jq 'del(.entries)' >"$dx/${xs},${safe_title}-^${playlist_id}.meta.json"
+    touch -t "$ts_touchtime" "$dx/${xs},${safe_title}-^${playlist_id}.meta.json"
+  } || :
+
+  # --- playlist post-download: report unavailable tracks (initial download only)
+  [ "$opt_playlist" ] && [ -z "$opt_retry" ] && {
+    local pd_expected=() pd_line= pd_pi= pd_ud= pd_tid= pd_unavail=()
+    readarray -t pd_expected < <($ytdl --flat-playlist --no-warnings --ignore-config \
+      --print "%(playlist_index)s %(upload_date)s %(id)s" -- "$id")
+    for pd_line in "${pd_expected[@]}" ; do
+      read pd_pi pd_ud pd_tid <<<"$pd_line"
+      if [ "$pd_ud" = "NA" ] || [ -z "$pd_ud" ] ; then
+        read -d '' _ < <(find "$dx/" -maxdepth 1 -name "*_^${pd_tid}.info.json" 2>/dev/null) \
+          || pd_unavail+=("$pd_pi:$pd_tid")
+      else
+        read -d '' _ < <(find "$dx/" -maxdepth 1 -name "*-${pd_ud}_^${pd_tid}.info.json" 2>/dev/null) \
+          || pd_unavail+=("$pd_pi:$pd_tid")
+      fi
+    done
+    [ ${#pd_unavail[@]} -gt 0 ] && {
+      local unavail_file="$dx/${xs},${safe_title}-^${playlist_id}.unavail.yml"
+      echo "${#pd_unavail[@]} tracks unavailable (private/deleted/geo-blocked):"
+      printf '  %s\n' "${pd_unavail[@]}"
+      { echo "playlist_id: $playlist_id"
+        echo "updated: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+        echo "unavailable:"
+        local pd_ua= ; for pd_ua in "${pd_unavail[@]}" ; do
+          echo "  - index: ${pd_ua%%:*}"
+          echo "    id: ${pd_ua#*:}"
+        done
+      } >"$unavail_file"
+      touch -t "$ts_touchtime" "$unavail_file"
+    }
   } || :
 
   # --- per-track post-processing (unified iteration: N=1 for single, N=many for playlist)
@@ -339,9 +393,6 @@ _yt () { # ytdl wrapper: download media, organize folio, create staging txt
 
   # --- playlist aggregate: strip metadata, concatenate to .list.txt
   [ "$opt_playlist" ] && {
-    local safe_title=
-    read safe_title < <(printf '%s' "$playlist_title" \
-      | tr -cs 'A-Za-z0-9_.-' '_' | sed 's/__*/_/g;s/^_//;s/_$//')
     local list_file="$d/00${new_xs}0,${safe_title}-^${playlist_id}.list.txt"
     awk '/^--- metadata/{nextfile}; {print}' "$dx/"*info.json.txt >"$list_file"
     touch -t "$ts_touchtime" "$list_file"
@@ -390,9 +441,10 @@ OUTPUT STRUCTURE
   ./@/_^{id}.{ext}            hardlink for programmatic access
   ./00{xs},{tmpl}.info.json.txt   f2rb2mp3 staging data (single track)
   Playlist:
-    {foli}/{xs},playlist_^{playlist_id}.meta.json   playlist metadata marker
+    {foli}/{xs},{playlist_title}-^{playlist_id}.meta.json   playlist metadata marker
     {foli}/{xs}{n},{tmpl}.info.json.txt              per-track staging (in folio)
     ./00{xs}0,{playlist_title}-^{playlist_id}.list.txt   aggregated staging
+    {foli}/{xs},{playlist_title}-^{playlist_id}.unavail.yml   unavailable tracks
       (per-track staging minus metadata sections, concatenated)
     Retry: reuses existing foli, new list.txt gets current session xs
 
