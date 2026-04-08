@@ -39,6 +39,7 @@ boundaries of modern synthesis.
 * [Character Creator: Attribute Spectra Reference](./69b5-character-creator-spectra.md) <!-- 69b5e4e0 -->
 * [Character Selector](69b5-character-selector.yml) <!-- 69b5e4e0 -->
 * [At Patriarch's Ponds, Again](./69ba-at-patriarchs-ponds-again.md) <!-- 69ba7d18 -->
+* [Open Training Constraints: Economics, Architecture, and Nemotron 3 Super](./69d6-open-training-economics-architecture.md) <!-- 69d65753 -->
 
 [^*]: Revision forthcoming
 

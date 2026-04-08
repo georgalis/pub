@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h1 id="open-training-constraints-economics-architecture-and-nemotron-3-super">Open Training Constraints: Economics, Architecture, and Nemotron 3 Super</h1>
+<!-- # Nemotron 3 Super: Conceptual Architecture and the Economics of Open Training -->
+<p>(c) 2026 George Georgalis &lt;george@galis.org&gt; unlimited use with this notice <!--
+69d65753 20260408 062539 PDT Wed 06:25 AM 8 Apr 2026 open-training-economics-architecture-.md
+--></p>
+<h2 id="preface">Preface</h2>
+<p>This analysis asks a practical question of a research paper: does NVIDIA's Nemotron 3 Super<sup><a href="#fn-1">[1]</a></sup> move the frontier toward economically accessible, domain-customizable model training---and if so, how far?</p>
+<p>The answer is uneven, and worth knowing before investing in the details.</p>
+<p>On training economics, the advances are real but bounded. Pre-training in 4-bit precision roughly halves per-FLOP compute cost at demonstrated 25-trillion-token stability. Checkpoint merging eliminates ~16% of evaluation overhead. PivotRL<sup><a href="#fn-4">[4]</a></sup> reduces agentic post-training cost by reusing expert trajectories rather than generating expensive interactive rollouts. The open release of checkpoints, training recipes, and synthetic data pipelines makes domain-specific <em>post-training</em>---the economically accessible customization layer---reproducible for organizations with appropriate infrastructure.</p>
+<p>On the deeper aspiration---selecting training corpus sets per session, directing model behavior toward specific domains as a workflow operation rather than an infrastructure project---the paper does not deliver. Nemotron 3 Super produces fixed-weight artifacts. The gap between "build a domain-specialized variant through post-training" and "configure training inputs within a session workflow" remains architectural rather than merely economic.</p>
+<p>What the paper <em>does</em> contribute toward that aspiration are preconditions worth understanding. LatentMoE<sup><a href="#fn-3">[3]</a></sup> routes tokens through compressed latent spaces to conditionally-activated expert sub-networks---512 experts with 22 active per token---creating an architectural substrate where different inputs already activate different slices of the model's knowledge. The modular post-training pipeline provides documented intervention points for domain customization at each stage. These are steering surfaces, not steering mechanisms; the model contains the conditional structure but offers no interface for session-level control over it.</p>
+<p>The analysis that follows characterizes these contributions conceptually---what they accomplish and what they enable---with less emphasis on the specific synthesis engineering. The reader evaluating whether to study the technical report<sup><a href="#fn-1">[1]</a></sup> itself should find here a reliable map of what it contains, what it advances, and where it stops short.</p>
+<hr />
+<h2 id="contents">Contents</h2>
+<ul>
+<li><a href="#source-material">Source Material</a></li>
+<li><a href="#what-the-model-is">What the Model Is</a></li>
+<li><a href="#conceptual-architecture-three-interlocking-strategies">Conceptual Architecture: Three Interlocking Strategies</a>
+<ul>
+<li><a href="#expert-routing-in-compressed-space-latentmoe">Expert Routing in Compressed Space (LatentMoE)</a></li>
+<li><a href="#linear-time-sequence-modeling-with-sparse-attention-anchors">Linear-Time Sequence Modeling with Sparse Attention Anchors</a></li>
+<li><a href="#speculative-decoding-without-external-models-shared-weight-mtp">Speculative Decoding Without External Models (Shared-Weight MTP)</a></li>
+</ul></li>
+<li><a href="#training-economics-what-actually-changed">Training Economics: What Actually Changed</a>
+<ul>
+<li><a href="#pre-training-in-4-bit-precision">Pre-Training in 4-Bit Precision</a></li>
+<li><a href="#checkpoint-merging-as-evaluation-proxy">Checkpoint Merging as Evaluation Proxy</a></li>
+<li><a href="#modular-post-training-pipeline">Modular Post-Training Pipeline</a></li>
+<li><a href="#pivotrl-efficient-agentic-post-training">PivotRL: Efficient Agentic Post-Training</a></li>
+</ul></li>
+<li><a href="#the-customization-question-industry-specific-and-company-specific-training">The Customization Question</a>
+<ul>
+<li><a href="#what-the-paper-enables">What the Paper Enables</a></li>
+<li><a href="#what-the-paper-does-not-enable">What the Paper Does Not Enable</a></li>
+<li><a href="#pivotrl-as-partial-efficiency-answer">PivotRL as Partial Efficiency Answer</a></li>
+</ul></li>
+<li><a href="#the-per-session-corpus-selection-question">The Per-Session Corpus Selection Question</a>
+<ul>
+<li><a href="#the-aspiration">The Aspiration</a></li>
+<li><a href="#what-the-paper-introduces-toward-this">What the Paper Introduces Toward This</a></li>
+<li><a href="#the-remaining-gap">The Remaining Gap</a></li>
+</ul></li>
+<li><a href="#what-improved-what-remained-constant">What Improved, What Remained Constant</a></li>
+<li><a href="#composable-efficiencies-and-the-distance-that-remains">Composable Efficiencies and the Distance That Remains</a></li>
+<li><a href="#references">References</a></li>
+</ul>
+<hr />
+<h2 id="source-material">Source Material</h2>
+<p>This analysis draws primarily from NVIDIA's technical report on Nemotron 3 Super<sup><a href="#fn-1">[1]</a></sup>, published April 3, 2026, and the accompanying developer blog introduction<sup><a href="#fn-2">[2]</a></sup> that contextualizes the model within the broader Nemotron 3 family. Two companion papers provide foundational detail on innovations referenced throughout: the LatentMoE architecture report by Elango et al.<sup><a href="#fn-3">[3]</a></sup>, which formalizes the latent-space expert routing design central to the model's parameter efficiency claims, and the PivotRL method by Yi et al.<sup><a href="#fn-4">[4]</a></sup>, which addresses the efficiency-accuracy tension in agentic post-training. All four checkpoints (base, post-trained, FP8 quantized, NVFP4 quantized) and associated training datasets are released on HuggingFace under the open Nemotron license.</p>
+<h2 id="what-the-model-is">What the Model Is</h2>
+<p>Nemotron 3 Super is a 120 billion total / 12 billion active parameter language model combining three architectural strategies---sparse expert routing in compressed latent space, linear-time recurrent sequence modeling, and multi-token speculative decoding---into a single inference-optimized system. The technical report<sup><a href="#fn-1">[1]</a></sup> describes the full pre-training, post-training, and quantization pipeline; the developer blog<sup><a href="#fn-2">[2]</a></sup> positions the model as targeting agentic reasoning workloads where inference throughput constraints dominate deployment decisions.</p>
+<p>The significance lies not in any single technique but in their <em>composition under open release</em>. Each component addresses a different bottleneck; their joint deployment addresses the system-level constraint that inference throughput, accuracy, and deployment flexibility must improve simultaneously rather than trading against each other.</p>
+<h2 id="conceptual-architecture-three-interlocking-strategies">Conceptual Architecture: Three Interlocking Strategies</h2>
+<h3 id="expert-routing-in-compressed-space-latentmoe">Expert Routing in Compressed Space (LatentMoE)</h3>
+<p>Standard Mixture-of-Experts models route tokens to specialized sub-networks at full model dimension. LatentMoE<sup><a href="#fn-3">[3]</a></sup> compresses tokens into a smaller latent space before routing, performs all expert computation in that compressed space, then projects results back to full dimension.</p>
+<p>The compression ratio is 4x (model dimension 4096, latent dimension 1024). The savings are not pocketed as efficiency gains---they are reinvested into <em>more experts and more simultaneous activations</em>: 512 total experts with 22 active per token, versus what would otherwise be ~128 experts with ~5--6 active at equivalent cost.</p>
+<p>The functional consequence: the model's representational power derives from the <em>combinatorial space</em> of expert selections rather than from per-expert capacity. With 512 experts choosing 22, the number of possible expert combinations per token is astronomically larger than in conventional MoE. Quality recovery depends on this combinatorial expansion, not on preserving individual expert size.</p>
+<p>Elango et al.<sup><a href="#fn-3">[3]</a></sup> formalize five design principles underlying LatentMoE, but the decisive insight concerns the relationship between two metrics: accuracy-per-FLOP (computational efficiency in isolation) and accuracy-per-parameter (which captures memory bandwidth, routing communication overhead, and GPU sharding costs). Standard MoE designs optimize the former; LatentMoE targets the latter. The distinction matters because accuracy-per-FLOP ignores how models actually serve on production hardware, while accuracy-per-parameter captures the constraints that dominate real deployment.</p>
+<p>For the customization question this analysis foregrounds, LatentMoE's architecture has a further implication: the model already contains conditionally-activated sub-networks selected per token by a routing gate operating in compressed space. This is not per-session corpus selection, but it is the architectural substrate on which such capability might eventually be built.</p>
+<h3 id="linear-time-sequence-modeling-with-sparse-attention-anchors">Linear-Time Sequence Modeling with Sparse Attention Anchors</h3>
+<p>The 88-layer stack is predominantly Mamba-2 blocks (linear-time recurrent processing) with a small number of full self-attention layers inserted as periodic "anchors." Mamba blocks operate with constant-sized state during generation---no KV cache growth---while the attention anchors provide full-token interaction for long-range information routing.</p>
+<p>The functional consequence: inference cost scales linearly with sequence length rather than quadratically, enabling the 1M-token context window without the memory overhead that makes long-context attention-only models impractical for deployment. The attention layers are sparse enough to preserve long-range dependency modeling while the Mamba blocks handle the bulk of computation efficiently.</p>
+<h3 id="speculative-decoding-without-external-models-shared-weight-mtp">Speculative Decoding Without External Models (Shared-Weight MTP)</h3>
+<p>Multi-Token Prediction trains the model to predict multiple future tokens at each position. Nemotron 3 Super shares parameters across MTP heads during training, producing a single unified prediction head that can be applied recursively at inference time to generate draft token sequences verified by the main model in one forward pass.</p>
+<p>The functional consequence: inference acceleration is <em>built into the model</em> rather than requiring a separate draft model. The operator adjusts draft depth at serving time as a continuous throughput-latency knob. The technical report<sup><a href="#fn-1">[1]</a></sup> documents an average acceptance length of 3.45 tokens per verification step on SPEED-Bench (compared to 2.70 for DeepSeek-R1), translating directly to serving efficiency on current hardware.</p>
+<h2 id="training-economics-what-actually-changed">Training Economics: What Actually Changed</h2>
+<h3 id="pre-training-in-4-bit-precision">Pre-Training in 4-Bit Precision</h3>
+<p>Nemotron 3 Super was pre-trained end-to-end in NVFP4 (4-bit floating point) across 25 trillion tokens. The technical report<sup><a href="#fn-1">[1]</a></sup> presents this as the first demonstration of stable FP4 pre-training at this scale and duration.</p>
+<p>The economic implication is direct: 4-bit arithmetic roughly halves the compute cost per training FLOP compared to BF16, and reduces memory requirements proportionally. The paper demonstrates this is viable without accuracy sacrifice---an MXFP8 "healing" phase before learning rate annealing was evaluated and showed no downstream accuracy gains, so the final model uses NVFP4 throughout. This eliminates a precision-transition step that would otherwise add engineering complexity and compute overhead.</p>
+<p>The finding that 7% of parameters develop zero-valued gradients under NVFP4 (versus the same phenomenon occurring more slowly under BF16) is characterized as benign---the BF16 model reaches the same zero-gradient count given enough tokens. NVFP4 accelerates an already-occurring sparsification, not a pathological degradation.</p>
+<h3 id="checkpoint-merging-as-evaluation-proxy">Checkpoint Merging as Evaluation Proxy</h3>
+<p>During the stable learning rate phase, offline checkpoint merging (weighted averaging over sliding windows of recent checkpoints) produces benchmark readouts 2--4 points above individual trained checkpoints. This eliminates the need for dedicated learning rate decay runs to assess quality mid-training, saving an estimated 16% of the total pre-training FLOP budget.</p>
+<p>This is a <em>training workflow</em> economy, not a model architecture economy. The savings accrue to anyone conducting large-scale pre-training by reducing the evaluation overhead that traditionally consumes substantial compute.</p>
+<h3 id="modular-post-training-pipeline">Modular Post-Training Pipeline</h3>
+<p>Post-training follows a four-stage pipeline: SFT (7M samples, 80B tokens) followed by three RL stages (multi-environment RLVR, SWE-RL, RLHF) and a final MTP healing phase. Each stage serves a distinct function:</p>
+<p><strong>SFT</strong> establishes baseline capability across domains with a two-stage loss that sequences reasoning induction against output-length balance. Stage 1 optimizes a token-level average loss to induce strong reasoning behavior; Stage 2 switches to per-conversation normalization to prevent long outputs from dominating gradient signal, restoring performance on long-input-short-output tasks.</p>
+<p><strong>Multi-environment RLVR</strong> optimizes across 21 environments simultaneously (math, code, STEM, safety, instruction following, long context, agentic tool use) with difficulty-based curriculum. The technical report<sup><a href="#fn-1">[1]</a></sup> notes that single-environment training causes severe regressions on other benchmarks, while simultaneous multi-environment training yields stable gains.</p>
+<p><strong>SWE-RL</strong> isolates long-horizon software engineering tasks that bottleneck throughput when co-trained with shorter-horizon environments.</p>
+<p><strong>RLHF</strong> applies human feedback for instruction-following refinement.</p>
+<p><strong>MTP Healing</strong> restores speculative decoding accuracy degraded during RL by retraining the MTP heads on generated responses while keeping all other weights frozen.</p>
+<p>The modularity matters for customization. Each stage can, in principle, be modified independently---different SFT data blends, different RL environments, different RLHF preference data---without rebuilding the entire pipeline. The technical report<sup><a href="#fn-1">[1]</a></sup> documents the data composition, synthetic generation methods, and training configurations for each stage with sufficient detail for reproduction.</p>
+<h3 id="pivotrl-efficient-agentic-post-training">PivotRL: Efficient Agentic Post-Training</h3>
+<p>The tension in agentic post-training is stark: SFT on expert trajectories is cheap but degrades out-of-distribution performance; end-to-end RL avoids degradation but requires expensive online interactive rollouts in complex environments for every update. PivotRL<sup><a href="#fn-4">[4]</a></sup> occupies the gap between these approaches.</p>
+<p>PivotRL reuses offline SFT expert trajectories during RL, but rather than training on entire trajectories, it identifies "pivot" turns---turns where the policy has genuine uncertainty about the next action---and applies domain-appropriate rewards to match the policy's action to the expert's. The reward structure gives credit for <em>similar</em> actions rather than requiring exact reproduction of the expert's specific choice.</p>
+<p>Yi et al.<sup><a href="#fn-4">[4]</a></sup> frame this as an assistant-turn-level RL method that reconciles efficiency with accuracy in long-horizon agentic tasks. The efficiency gain is operational: PivotRL avoids the engineering burden of full interactive environments for every agentic domain while avoiding the quality degradation of naive distillation. The technical report<sup><a href="#fn-1">[1]</a></sup> documents application across agentic programming, search, terminal use, and conversational tool use domains, noting that PivotRL substantially improves agentic RL efficiency without the out-of-distribution degradation characteristic of SFT approaches.</p>
+<h2 id="the-customization-question-industry-specific-and-company-specific-training">The Customization Question: Industry-Specific and Company-Specific Training</h2>
+<h3 id="what-the-paper-enables">What the Paper Enables</h3>
+<p>The open release includes base and post-trained checkpoints, the full SFT data blend, RL environment specifications, and the training recipe<sup><a href="#fn-1">[1]</a></sup><sup><a href="#fn-2">[2]</a></sup>. An organization with sufficient compute can:</p>
+<ol>
+<li><strong>Start from the base checkpoint</strong> and apply a custom post-training pipeline with domain-specific SFT data and RL environments</li>
+<li><strong>Start from the post-trained checkpoint</strong> and apply additional fine-tuning for targeted use cases</li>
+<li><strong>Use the released synthetic data pipelines</strong> (NeMo Data Designer, the six-stage conversational tool-use generation pipeline, the knowledge-graph-walk search pipeline) to generate domain-specific training data at scale</li>
+</ol>
+<p>The modular post-training pipeline provides natural intervention points. An organization focused on financial analysis could emphasize the financial reasoning SFT data and add domain-specific RL environments. An organization focused on terminal operations could weight the terminal-use pipeline. The technical report<sup><a href="#fn-1">[1]</a></sup> describes how each SFT dataset was constructed---including the synthetic generation methods---with sufficient detail for reproduction in new domains.</p>
+<h3 id="what-the-paper-does-not-enable">What the Paper Does Not Enable</h3>
+<p>Nemotron 3 Super does not fundamentally change the economics of <em>pre-training</em>. The model required 25 trillion tokens on large GPU clusters. NVFP4 pre-training reduces compute cost per FLOP, but the absolute compute requirement remains beyond the reach of most organizations. The checkpoint merging evaluation savings (16% of pre-training FLOPs) are meaningful at NVIDIA's scale but do not shift the accessibility calculus for smaller organizations.</p>
+<p>The customization avenue is <em>post-training</em>, not pre-training. The base model embeds broad capability from 25T tokens of diverse data; organizations customize by modifying the post-training stages. This is substantially more economical---the SFT stage processes 80B tokens (0.3% of pre-training volume), and RL stages consume less still---but it requires ML engineering expertise, appropriate compute infrastructure, and the ability to construct or curate domain-specific training data.</p>
+<p>The quantized checkpoints (FP8, NVFP4) democratize <em>deployment</em>, not training. Single-GPU inference on Blackwell hardware becomes feasible. An organization can serve the model efficiently without the infrastructure to have trained it.</p>
+<h3 id="pivotrl-as-partial-efficiency-answer">PivotRL as Partial Efficiency Answer</h3>
+<p>For organizations seeking domain-specific agentic capabilities, PivotRL<sup><a href="#fn-4">[4]</a></sup> offers a more economical path than end-to-end RL: collect expert trajectories (which can be generated from existing capable models), identify the informative turns, and apply focused reinforcement. The method works across diverse agentic domains without requiring dedicated interactive environments for each. The open release of the NeMo Gym framework and RL environments lowers the barrier to replicating this approach for custom domains.</p>
+<h2 id="the-per-session-corpus-selection-question">The Per-Session Corpus Selection Question</h2>
+<h3 id="the-aspiration">The Aspiration</h3>
+<p>The ideal: select training corpus sets on a per-session basis, directing the model's learning toward the specific domain or task at hand. This would make model customization a workflow operation rather than an infrastructure project---analogous to selecting a reference library for a research session rather than building an entire library from scratch.</p>
+<h3 id="what-the-paper-introduces-toward-this">What the Paper Introduces Toward This</h3>
+<p>Directly: nothing. Nemotron 3 Super is a conventionally trained model with fixed weights at inference time. The technical report<sup><a href="#fn-1">[1]</a></sup> does not describe mechanisms for per-session training corpus selection, dynamic expert specialization based on session context, or any form of test-time training.</p>
+<p>Indirectly, several architectural features create <em>preconditions</em> for movement in this direction:</p>
+<p><strong>LatentMoE's expert combinatorics.</strong> With 512 experts and top-22 routing, different tokens already activate different expert subsets. The routing gate performs a form of per-token "corpus selection"---each token's processing is handled by a dynamically selected subset of the model's total knowledge. The latent projection described by Elango et al.<sup><a href="#fn-3">[3]</a></sup> means this selection operates in a compressed space optimized for routing efficiency. This is the architectural substrate on which per-session control could eventually be built: the model contains specialized sub-networks that activate conditionally, and the routing decisions occur in a lower-dimensional space more tractable for external steering than full-dimension expert computation.</p>
+<p><strong>The modular post-training pipeline.</strong> The separation of SFT, RLVR, SWE-RL, and RLHF into distinct stages with documented data blends and environment specifications means the customization boundary is well-defined<sup><a href="#fn-1">[1]</a></sup>. An organization cannot change the model per session, but it can produce domain-specialized variants through post-training modification with substantially less compute than pre-training.</p>
+<p><strong>Open synthetic data generation pipelines.</strong> The technical report<sup><a href="#fn-1">[1]</a></sup> describes reproducible methods for generating domain-specific training data: knowledge-graph walks for search tasks, taxonomy-driven code problem generation, template-based financial QA expansion, six-stage conversational tool-use synthesis. These pipelines lower the barrier to creating domain-specific post-training data, which is the current bottleneck for variant production.</p>
+<h3 id="the-remaining-gap">The Remaining Gap</h3>
+<p>The gap between "domain-specialized post-training variant" and "per-session corpus navigation" remains fundamental. Current model training produces fixed-weight artifacts; the compute, data, and engineering required to produce each variant---even through efficient post-training---preclude treating model customization as a session-level operation.</p>
+<p>Bridging this gap would require advances neither the technical report<sup><a href="#fn-1">[1]</a></sup> nor the companion papers<sup><a href="#fn-3">[3]</a></sup><sup><a href="#fn-4">[4]</a></sup> claim:</p>
+<ul>
+<li><strong>Test-time training or adaptation</strong> methods that modify model behavior based on session-provided data without full gradient updates</li>
+<li><strong>Retrieval-augmented approaches</strong> that condition generation on dynamically selected corpora (these exist but operate differently from corpus-informed training)</li>
+<li><strong>Expert activation steering</strong> that allows session-level control over which expert subsets are invoked, effectively making the MoE routing gate a user-configurable parameter</li>
+<li><strong>Efficient fine-tuning</strong> methods (LoRA, adapter layers) fast enough to execute within session timescales on available hardware</li>
+</ul>
+<p>LatentMoE's compressed routing space<sup><a href="#fn-3">[3]</a></sup> is arguably more amenable to some of these interventions than standard MoE---the lower-dimensional latent space where routing decisions occur is a more tractable target for steering or adaptation than full-dimension expert computation. But this is architectural <em>potential</em>, not demonstrated capability. The steering surfaces exist; the steering mechanisms do not.</p>
+<h2 id="what-improved-what-remained-constant">What Improved, What Remained Constant</h2>
+<h3 id="improved">Improved</h3>
+<ul>
+<li><strong>Pre-training compute efficiency</strong>: NVFP4 roughly halves per-FLOP cost at demonstrated 25T-token stability<sup><a href="#fn-1">[1]</a></sup></li>
+<li><strong>Evaluation overhead</strong>: checkpoint merging saves ~16% of pre-training FLOP budget<sup><a href="#fn-1">[1]</a></sup></li>
+<li><strong>Inference cost</strong>: 2.2x throughput versus GPT-OSS-120B at comparable accuracy; speculative decoding via built-in MTP heads; quantized checkpoints for smaller deployment footprints<sup><a href="#fn-1">[1]</a></sup><sup><a href="#fn-2">[2]</a></sup></li>
+<li><strong>Post-training modularity</strong>: documented, reproducible pipeline with clear intervention points for domain customization<sup><a href="#fn-1">[1]</a></sup></li>
+<li><strong>Agentic RL efficiency</strong>: PivotRL<sup><a href="#fn-4">[4]</a></sup> reduces compute for adding agentic capabilities by reusing expert trajectories rather than requiring full online rollouts</li>
+<li><strong>Open access</strong>: full recipe, checkpoints, and data released, lowering the barrier from "reproduce from scratch" to "customize from checkpoint"<sup><a href="#fn-1">[1]</a></sup><sup><a href="#fn-2">[2]</a></sup></li>
+</ul>
+<h3 id="remained-constant">Remained Constant</h3>
+<ul>
+<li><strong>Pre-training scale requirement</strong>: 25T tokens on large GPU clusters remains beyond most organizations</li>
+<li><strong>Training-inference boundary</strong>: model weights are fixed at inference time; no per-session adaptation mechanism</li>
+<li><strong>Customization granularity</strong>: domain specialization operates at the variant level (produce a new checkpoint), not the session level (configure the model per interaction)</li>
+<li><strong>Data engineering burden</strong>: constructing domain-specific post-training data still requires ML engineering expertise, even with the released synthetic data pipelines as templates</li>
+</ul>
+<h2 id="composable-efficiencies-and-the-distance-that-remains">Composable Efficiencies and the Distance That Remains</h2>
+<p>The technical report's<sup><a href="#fn-1">[1]</a></sup> deepest contribution is demonstrating that architectural strategies addressing different bottlenecks---LatentMoE<sup><a href="#fn-3">[3]</a></sup> for parameter efficiency, Mamba for sequence-length scaling, MTP for decoding acceleration, NVFP4 for compute reduction---compose without mutual interference across a full training pipeline. Each component could have introduced instabilities, training artifacts, or deployment complications that prevented the others from functioning; instead, the paper shows stable 25T-token training through post-training through quantization through deployment.</p>
+<p>For the training economics question, this composability is the genuine advance. Not because it makes training cheap---it does not---but because it demonstrates that <em>multiple efficiency strategies can be stacked</em>. The path from prohibitively expensive monolithic training toward economically accessible customized training is not a single breakthrough but an accumulation of composable efficiencies: lower-precision arithmetic, sparser computation, more efficient sequence processing, cheaper evaluation, modular post-training. Nemotron 3 Super stacks more of these than any prior open model, and the open release means the accumulated efficiency is available as a starting point rather than a capability to be independently reproduced.</p>
+<p>Per-session corpus navigation remains beyond the horizon this paper addresses. The preconditions are forming---expert sub-networks that activate conditionally through compressed routing spaces<sup><a href="#fn-3">[3]</a></sup>, post-training pipelines with documented intervention points and reproducible data generation<sup><a href="#fn-1">[1]</a></sup>, efficient agentic adaptation via trajectory reuse<sup><a href="#fn-4">[4]</a></sup>. Each precondition is a steering surface: a place where the architecture already makes conditional decisions that an external mechanism could, in principle, influence. The distance that remains is between surfaces and mechanisms---between a model that <em>internally</em> routes different inputs to different experts and a model that <em>externally</em> accepts direction about which knowledge to foreground. That distance is architectural, and this paper does not claim to close it. But the surfaces it exposes are more tractable targets for future steering work than anything available in conventional dense architectures, and their open release means the exploration is not gated by access.</p>
+<hr />
+<h2 id="references">References</h2>
+
+
+
+
+<section id="footnotes">
+<hr />
+<ol>
+<li id="fn-1"><p>NVIDIA, "Nemotron 3 Super: Open, Efficient Mixture-of-Experts Hybrid Mamba-Transformer Model for Agentic Reasoning," Technical Report, April 3, 2026. <a href="https://research.nvidia.com/labs/nemotron/files/NVIDIA-Nemotron-3-Super-Technical-Report.pdf">Technical Report (PDF)</a> | <a href="https://developer.nvidia.com/blog/introducing-nemotron-3-super-an-open-hybrid-mamba-transformer-moe-for-agentic-reasoning/">Developer Blog Introduction</a></p></li>
+<li id="fn-2"><p>NVIDIA Developer Blog, "Introducing Nemotron 3 Super: An Open Hybrid Mamba-Transformer MoE for Agentic Reasoning," April 2026. <a href="https://developer.nvidia.com/blog/introducing-nemotron-3-super-an-open-hybrid-mamba-transformer-moe-for-agentic-reasoning/">https://developer.nvidia.com/blog/introducing-nemotron-3-super-an-open-hybrid-mamba-transformer-moe-for-agentic-reasoning/</a></p></li>
+<li id="fn-3"><p>Elango, V., Bhatia, N., Waleffe, R., Shafipour, R., Asida, T., Khattar, A., Assaf, N., Golub, M., Guman, J., Mitra, T., Zhao, R., Borkar, R., Zilberstein, R., Patwary, M., Shoeybi, M., and Rouhani, B., "LatentMoE: Toward Optimal Accuracy per FLOP and Parameter in Mixture of Experts," 2026. <a href="https://arxiv.org/abs/2601.18089">arXiv:2601.18089</a></p></li>
+<li id="fn-4"><p>Yi, J., Mosk-Aoyama, D., Huang, B., Gala, R., Wang, C., Devare, S.D., Bhardwaj, K., Gupta, A., Kuchaiev, O., Jiao, J., Zhang, J., and Srinivasan, V., "PivotRL: High Accuracy Agentic Post-Training at Low Compute Cost," 2026. <a href="https://arxiv.org/abs/2603.21383">arXiv:2603.21383</a></p></li>
+</ol>
+</section>
+</body>
+</html>
