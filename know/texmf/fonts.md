@@ -57,17 +57,24 @@ confirmation.
 ## Discovery Usage
 
 ```
-texlive-font-discovery.sh [-t sample.tex] [-e conservative|broader|probe] [-u]
+texlive-font-discovery.sh [-t sample.tex] [-d inventory.tsv]
+                           [-e conservative|broader|probe] [-u]
   -t FILE  generate sample tex rendering each discovered family
+  -d FILE  write discovery tsv to file (default: stdout only)
   -e MODE  encoding filter for sample (default: conservative)
            conservative: T1,OT1,LY1  broader: +TS1,IL2,QX,L7x,LGR,T2A-C,T5,CS
            probe: all encodings (math, symbol, CJK, scripts)
   -u       scan user texmf only (default: system + user)
 ```
 
-The TSV inventory (phases 1 and 2) is always unfiltered. The `-e` flag
-controls only the sample `.tex` output. Within each encoding scope,
-the sample applies three filters and a deduplication pass:
+The TSV inventory always streams to stdout; `-d` additionally
+writes it to a file for manual review alongside the sample.
+
+The TSV inventory always streams to stdout; `-d` additionally
+writes it to a file for manual review alongside the sample.
+The `-e` flag controls only the sample `.tex` output. Within each
+encoding scope, the sample applies four filters and a deduplication
+pass:
 
 **Encoding whitelist.** Conservative (default) restricts to T1, OT1,
 LY1---encodings renderable as Latin text under the document's
@@ -80,6 +87,14 @@ coverage. Probe passes all encodings unfiltered.
 Washington, KC, and their clones) are dropped from both showcase and
 reference. Latin Modern (`lm*`), TeX Gyre (`q*`), PostScript base
 (`p*`), and TX/PX families are Type1 and retained.
+
+**Package-dependency exclusion.** Some `.fd` files reference
+`@`-prefixed internal macros (e.g., `\auri@slant` from the `aurical`
+package) in their font specifications. These families require their
+parent `.sty` package loaded via `\usepackage` and crash under bare
+`\fontfamily{}\selectfont`. The discovery scan detects `\\[a-zA-Z]*@`
+patterns in the 5th argument of `\DeclareFontShape` and flags them
+with `dep` in the TSV output; the sample excludes these automatically.
 
 **Figure-style deduplication.** Families differing only by figure-style
 suffix (`-TLF`, `-LF`, `-OsF`, `-TOsF`) are collapsed to a single
@@ -103,7 +118,10 @@ Phase 1 (font packages) produces tab-separated fields:
 package name, class (`rm`, `sf`, `tt`, or comma-joined), version string, file path.
 
 Phase 2 (font families) produces tab-separated fields:
-encoding, family name, comma-joined weight codes, comma-joined shape codes, file path.
+encoding, family name, comma-joined weight codes, comma-joined shape codes,
+file path, dep flag. The `dep` column is non-empty (`dep`) when the `.fd`
+file contains `@`-macro references in its font specifications, indicating
+a package dependency that prevents standalone `\fontfamily` usage.
 
 Both phases are prefixed with `#` comment headers suitable for
 downstream parsing with `grep -v '^#'` or `awk` column extraction.
