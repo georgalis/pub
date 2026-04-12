@@ -3,6 +3,7 @@
 
 (c) 2026 George Georgalis <george@galis.org> unlimited use with this notice
 <!--
+69db4c41 20260412 003945 PDT Sun 12:39 AM 12 Apr 2026 integrate stochastic rounding with 4-bit precision, per Two Minute Papers
 69d65753 20260408 062539 PDT Wed 06:25 AM 8 Apr 2026 open-training-economics-architecture-.md
 -->
 
@@ -93,6 +94,8 @@ The functional consequence: inference acceleration is *built into the model* rat
 Nemotron 3 Super was pre-trained end-to-end in NVFP4 (4-bit floating point) across 25 trillion tokens. The technical report[^1] presents this as the first demonstration of stable FP4 pre-training at this scale and duration.
 
 The economic implication is direct: 4-bit arithmetic roughly halves the compute cost per training FLOP compared to BF16, and reduces memory requirements proportionally. The paper demonstrates this is viable without accuracy sacrifice---an MXFP8 "healing" phase before learning rate annealing was evaluated and showed no downstream accuracy gains, so the final model uses NVFP4 throughout. This eliminates a precision-transition step that would otherwise add engineering complexity and compute overhead.
+
+The viability of this result depends on stochastic rounding---the technique that prevents reduced-precision arithmetic from accumulating directional error across sequential computation steps[^1][^5]. Without it, 4-bit rounding errors compound systematically and the training trajectory diverges; with it, rounding errors cancel over many operations and the trajectory converges correctly despite per-step imprecision. Stochastic rounding is the engineering intervention that makes NVFP4 a training-time precision rather than merely a post-training compression format---and with it, the roughly halved compute cost per FLOP applies to the entire 25-trillion-token pre-training run, not just to inference deployment afterward.
 
 The finding that 7% of parameters develop zero-valued gradients under NVFP4 (versus the same phenomenon occurring more slowly under BF16) is characterized as benign---the BF16 model reaches the same zero-gradient count given enough tokens. NVFP4 accelerates an already-occurring sparsification, not a pathological degradation.
 
@@ -187,7 +190,7 @@ LatentMoE's compressed routing space[^3] is arguably more amenable to some of th
 
 - **Pre-training compute efficiency**: NVFP4 roughly halves per-FLOP cost at demonstrated 25T-token stability[^1]
 - **Evaluation overhead**: checkpoint merging saves ~16% of pre-training FLOP budget[^1]
-- **Inference cost**: 2.2x throughput versus GPT-OSS-120B at comparable accuracy; speculative decoding via built-in MTP heads; quantized checkpoints for smaller deployment footprints[^1][^2]
+- **Inference cost**: 2.2x throughput versus GPT-OSS-120B at comparable accuracy; approximately 3.5x over the model's own BF16 variant and up to 7x over comparably capable open models[^1][^5]; speculative decoding via built-in MTP heads; quantized checkpoints for smaller deployment footprints[^1][^2]
 - **Post-training modularity**: documented, reproducible pipeline with clear intervention points for domain customization[^1]
 - **Agentic RL efficiency**: PivotRL[^4] reduces compute for adding agentic capabilities by reusing expert trajectories rather than requiring full online rollouts
 - **Open access**: full recipe, checkpoints, and data released, lowering the barrier from "reproduce from scratch" to "customize from checkpoint"[^1][^2]
@@ -218,3 +221,5 @@ Per-session corpus navigation remains beyond the horizon this paper addresses. T
 [^3]: Elango, V., Bhatia, N., Waleffe, R., Shafipour, R., Asida, T., Khattar, A., Assaf, N., Golub, M., Guman, J., Mitra, T., Zhao, R., Borkar, R., Zilberstein, R., Patwary, M., Shoeybi, M., and Rouhani, B., "LatentMoE: Toward Optimal Accuracy per FLOP and Parameter in Mixture of Experts," 2026. [arXiv:2601.18089](https://arxiv.org/abs/2601.18089)
 
 [^4]: Yi, J., Mosk-Aoyama, D., Huang, B., Gala, R., Wang, C., Devare, S.D., Bhardwaj, K., Gupta, A., Kuchaiev, O., Jiao, J., Zhang, J., and Srinivasan, V., "PivotRL: High Accuracy Agentic Post-Training at Low Compute Cost," 2026. [arXiv:2603.21383](https://arxiv.org/abs/2603.21383)
+
+[^5]: Zsolnai-Feh&eacute;r, K., "NVIDIA's New AI Just Changed Everything," Two Minute Papers, April 7, 2026. [https://youtu.be/ZQAz_HrUq68](https://youtu.be/ZQAz_HrUq68)

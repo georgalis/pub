@@ -14,6 +14,7 @@ th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
 <h1 id="open-training-constraints-economics-architecture-and-nemotron-3-super">Open Training Constraints: Economics, Architecture, and Nemotron 3 Super</h1>
 <!-- # Nemotron 3 Super: Conceptual Architecture and the Economics of Open Training -->
 <p>(c) 2026 George Georgalis &lt;george@galis.org&gt; unlimited use with this notice <!--
+69db4c41 20260412 003945 PDT Sun 12:39 AM 12 Apr 2026 integrate stochastic rounding with 4-bit precision, per Two Minute Papers
 69d65753 20260408 062539 PDT Wed 06:25 AM 8 Apr 2026 open-training-economics-architecture-.md
 --></p>
 <h2 id="preface">Preface</h2>
@@ -80,6 +81,7 @@ th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
 <h3 id="pre-training-in-4-bit-precision">Pre-Training in 4-Bit Precision</h3>
 <p>Nemotron 3 Super was pre-trained end-to-end in NVFP4 (4-bit floating point) across 25 trillion tokens. The technical report<sup><a href="#fn-1">[1]</a></sup> presents this as the first demonstration of stable FP4 pre-training at this scale and duration.</p>
 <p>The economic implication is direct: 4-bit arithmetic roughly halves the compute cost per training FLOP compared to BF16, and reduces memory requirements proportionally. The paper demonstrates this is viable without accuracy sacrifice---an MXFP8 "healing" phase before learning rate annealing was evaluated and showed no downstream accuracy gains, so the final model uses NVFP4 throughout. This eliminates a precision-transition step that would otherwise add engineering complexity and compute overhead.</p>
+<p>The viability of this result depends on stochastic rounding---the technique that prevents reduced-precision arithmetic from accumulating directional error across sequential computation steps<sup><a href="#fn-1">[1]</a></sup><sup><a href="#fn-5">[5]</a></sup>. Without it, 4-bit rounding errors compound systematically and the training trajectory diverges; with it, rounding errors cancel over many operations and the trajectory converges correctly despite per-step imprecision. Stochastic rounding is the engineering intervention that makes NVFP4 a training-time precision rather than merely a post-training compression format---and with it, the roughly halved compute cost per FLOP applies to the entire 25-trillion-token pre-training run, not just to inference deployment afterward.</p>
 <p>The finding that 7% of parameters develop zero-valued gradients under NVFP4 (versus the same phenomenon occurring more slowly under BF16) is characterized as benign---the BF16 model reaches the same zero-gradient count given enough tokens. NVFP4 accelerates an already-occurring sparsification, not a pathological degradation.</p>
 <h3 id="checkpoint-merging-as-evaluation-proxy">Checkpoint Merging as Evaluation Proxy</h3>
 <p>During the stable learning rate phase, offline checkpoint merging (weighted averaging over sliding windows of recent checkpoints) produces benchmark readouts 2--4 points above individual trained checkpoints. This eliminates the need for dedicated learning rate decay runs to assess quality mid-training, saving an estimated 16% of the total pre-training FLOP budget.</p>
@@ -135,7 +137,7 @@ th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
 <ul>
 <li><strong>Pre-training compute efficiency</strong>: NVFP4 roughly halves per-FLOP cost at demonstrated 25T-token stability<sup><a href="#fn-1">[1]</a></sup></li>
 <li><strong>Evaluation overhead</strong>: checkpoint merging saves ~16% of pre-training FLOP budget<sup><a href="#fn-1">[1]</a></sup></li>
-<li><strong>Inference cost</strong>: 2.2x throughput versus GPT-OSS-120B at comparable accuracy; speculative decoding via built-in MTP heads; quantized checkpoints for smaller deployment footprints<sup><a href="#fn-1">[1]</a></sup><sup><a href="#fn-2">[2]</a></sup></li>
+<li><strong>Inference cost</strong>: 2.2x throughput versus GPT-OSS-120B at comparable accuracy; approximately 3.5x over the model's own BF16 variant and up to 7x over comparably capable open models<sup><a href="#fn-1">[1]</a></sup><sup><a href="#fn-5">[5]</a></sup>; speculative decoding via built-in MTP heads; quantized checkpoints for smaller deployment footprints<sup><a href="#fn-1">[1]</a></sup><sup><a href="#fn-2">[2]</a></sup></li>
 <li><strong>Post-training modularity</strong>: documented, reproducible pipeline with clear intervention points for domain customization<sup><a href="#fn-1">[1]</a></sup></li>
 <li><strong>Agentic RL efficiency</strong>: PivotRL<sup><a href="#fn-4">[4]</a></sup> reduces compute for adding agentic capabilities by reusing expert trajectories rather than requiring full online rollouts</li>
 <li><strong>Open access</strong>: full recipe, checkpoints, and data released, lowering the barrier from "reproduce from scratch" to "customize from checkpoint"<sup><a href="#fn-1">[1]</a></sup><sup><a href="#fn-2">[2]</a></sup></li>
@@ -157,6 +159,7 @@ th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
 
 
 
+
 <section id="footnotes">
 <hr />
 <ol>
@@ -164,6 +167,7 @@ th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
 <li id="fn-2"><p>NVIDIA Developer Blog, "Introducing Nemotron 3 Super: An Open Hybrid Mamba-Transformer MoE for Agentic Reasoning," April 2026. <a href="https://developer.nvidia.com/blog/introducing-nemotron-3-super-an-open-hybrid-mamba-transformer-moe-for-agentic-reasoning/">https://developer.nvidia.com/blog/introducing-nemotron-3-super-an-open-hybrid-mamba-transformer-moe-for-agentic-reasoning/</a></p></li>
 <li id="fn-3"><p>Elango, V., Bhatia, N., Waleffe, R., Shafipour, R., Asida, T., Khattar, A., Assaf, N., Golub, M., Guman, J., Mitra, T., Zhao, R., Borkar, R., Zilberstein, R., Patwary, M., Shoeybi, M., and Rouhani, B., "LatentMoE: Toward Optimal Accuracy per FLOP and Parameter in Mixture of Experts," 2026. <a href="https://arxiv.org/abs/2601.18089">arXiv:2601.18089</a></p></li>
 <li id="fn-4"><p>Yi, J., Mosk-Aoyama, D., Huang, B., Gala, R., Wang, C., Devare, S.D., Bhardwaj, K., Gupta, A., Kuchaiev, O., Jiao, J., Zhang, J., and Srinivasan, V., "PivotRL: High Accuracy Agentic Post-Training at Low Compute Cost," 2026. <a href="https://arxiv.org/abs/2603.21383">arXiv:2603.21383</a></p></li>
+<li id="fn-5"><p>Zsolnai-Feh&eacute;r, K., "NVIDIA's New AI Just Changed Everything," Two Minute Papers, April 7, 2026. <a href="https://youtu.be/ZQAz_HrUq68">https://youtu.be/ZQAz_HrUq68</a></p></li>
 </ol>
 </section>
 </body>
