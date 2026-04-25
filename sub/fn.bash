@@ -479,11 +479,39 @@ ts () { # timestamp, low resolution, human (tai vs unix seconds err)
     } || { read -r sec < <(date +%s); read -r xs < <(printf '%08x' "$sec") ;} ;}
   xargs < <($dfmt "$sec" +"$xs %Y%m%d %H%M%S %Z %a %I:%M %p %e %b %Y") ;}
 
+ts () { # timestamp, low resolution, human (tai vs unix seconds err)
+  # gnu/bsd date+stat, accepts 8-char hex, integer, or -f path arg
+  # rev: 69df04f4 20260414 202436 PDT Tue 08:24 PM 14 Apr 2026 --- -f path arg, @date linux fix
+  # rev: 698925da 20260208 161002 PST Sun 04:10 PM 8 Feb 2026
+  # org: 695c0404 20260105 103340 PST Mon 10:33 AM 5 Jan 2026
+  local ts xs sec dfmt at stfmt
+  date --version &>/dev/null && { dfmt='date -d'; at='@' ;} || { dfmt='date -r'; at='' ;} # gnu or bsd/darwin
+  stat --version &>/dev/null && stfmt='stat -L -c %Y' || stfmt='stat -L -f %m' # gnu or bsd/darwin
+  [[ -z "${1:-}" ]] && { # no args, use tai64n or date for seconds
+    command -v tai64n &>/dev/null && {
+      read -r ts < <(tai64n <<<'')
+      read -r xs < <(awk '{gsub(/^@4[0]*/,""); print substr($0,1,8)}' <<<"$ts")
+      read -r sec < <(printf '%d\n' "0x${xs}")
+      } || { read -r sec < <(date +%s); read -r xs < <(printf '%08x\n' "$sec") ;}
+    } || { [[ "$1" == "-f" ]] && {
+        [[ -n "${2:-}" ]] || { chkerr "$FUNCNAME: -f requires a path argument (69df04c1)"; return 1 ;}
+        [[ -L "$2" ]] && ! [[ -e "$2" ]] && { chkerr "$FUNCNAME: dangling symlink: $2 (69df04d6)"; return 1 ;}
+        [[ -f "$2" || -d "$2" ]] || { chkerr "$FUNCNAME: not a file or directory $2 (69df04e4)"; return 1 ;}
+        read -r sec < <($stfmt "$2")
+        read -r xs < <(printf '%08x\n' "$sec")
+        } || { [[ "$1" =~ ^[0-9a-fA-F]{8}$ ]] && {
+          read xs < <(tr 'A-F' 'a-f' <<<"$1")
+          read -r sec < <(printf '%d\n' "0x${xs}")
+          } || { [[ "$1" =~ ^[0-9]+$ ]] && { # sloppy test for int or hex arg1 seconds
+            sec="$1"; read -r xs < <(printf '%08x\n' "$sec")
+            } || { chkerr "$FUNCNAME: expected 8-char hex, integer, or -f path"; return 1 ;}
+            } ;} ;}
+  xargs < <($dfmt "${at}${sec}" +"$xs %Y%m%d %H%M%S %Z %a %I:%M %p %e %b %Y") ;}
+
 tj () { # journal timestamp, [tai sec]-yyyymmdd_hhmmss {args}
     local a ; read a < <(tai64n <<<"$*")
     sed -e 's/[-:]//g' -e 's/\.[^ ]*//' -e 's/ /_/' -e "s/^/${a:9:8}-/" < <(tai64nlocal <<<"$a")
     } # 6625d27f-20240421_195901
-
 
 which tmux >/dev/null 2>&1 && \
 tmu () { # tmux intuitive wrapper
