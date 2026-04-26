@@ -35,7 +35,11 @@ body {
     font-family: "B612", Varidian, sans-serif;
     line-height: 1.6;
     color: #1a1a00;
+    color: #3b3f2a;
+    color: #333721;
     background-color: #fdfded;
+    background-color: #fafaf3;
+    background-color: #f9f9f1;
     padding-bottom: 50vh;
 }
 
@@ -45,6 +49,7 @@ h1, h2, h3, h4, h5, h6 {
     line-height: 1.25;
     margin-block: 1.5em 0.5em;
     color: #330;
+    color: #3a200a; 
 }
 
 h1 { font-size: 2.4em;  margin-top: 0; border-bottom: 1px solid #ddd; padding-bottom: 0.3em; }
@@ -90,12 +95,14 @@ em {
 strong {
     font-weight: 700;
     color: #443c44;
+    color: #44443a;
 }
 
 /* --- Small / caption text --- */
 small {
     font-size: 0.85em;
     color: #555;
+    color: #5a5a4f;
 }
 
 /* --- Blockquotes --- */
@@ -104,7 +111,13 @@ blockquote {
     padding: 0.5em 1.25em;
     border-left: 4px solid #bbb;
     color: #444;
+    color: #44443a;
     background-color: #f7f7f7;
+    background-color: #f3f3ee;
+    background-color: #e8e8de;
+    background-color: #e9e7e2;
+    background-color: #e8e6e1;
+    background-color: #eae6e0;
     border-radius: 0.6em;
 }
 
@@ -115,6 +128,7 @@ pre {
     font-family: "Intel One Mono", Menlo, Consolas, "Liberation Mono", monospace;
     font-size: 0.875em;
     background-color: #f5f5f5;
+    background-color: #eaeaea;
     border: 1px solid #ccc;
     border-radius: 0.6em;
     margin: 1em 0;
