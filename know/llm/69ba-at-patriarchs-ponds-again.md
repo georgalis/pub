@@ -2,7 +2,7 @@
 
 *A continuation, after Bulgakov*
 
-(c) 2026 George Georgalis <george@galis.org> unlimited use with this notice
+(c) 2026 George Georgalis <george@iuxta.com> unlimited use with this copyright
 <!--
 <br>original 69ba7d18 20260318 032320 PDT Wed 03:23 AM 18 Mar 2026
 -->

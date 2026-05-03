@@ -1,7 +1,7 @@
-# Open Training Constraints: Economics, Architecture, and Nemotron 3 Super
+ Open Training Constraints: Economics, Architecture, and Nemotron 3 Super
 <!-- # Nemotron 3 Super: Conceptual Architecture and the Economics of Open Training -->
 
-(c) 2026 George Georgalis <george@galis.org> unlimited use with this notice
+(c) 2026 George Georgalis <george@iuxta.com> unlimited use with this copyright
 <!--
 69db4c41 20260412 003945 PDT Sun 12:39 AM 12 Apr 2026 integrate stochastic rounding with 4-bit precision, per Two Minute Papers
 69d65753 20260408 062539 PDT Wed 06:25 AM 8 Apr 2026 open-training-economics-architecture-.md

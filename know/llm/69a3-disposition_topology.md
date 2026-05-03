@@ -3,7 +3,7 @@
 ## A Guidance and Standard for LLM Prompt Strategy
 
 
-(c) 2026 George Georgalis <george@galis.org> unlimited use with this notice
+(c) 2026 George Georgalis <george@iuxta.com> unlimited use with this copyright
 <!--
 <br>original 69a4ef1a 20260301 175954 PST Sun 05:59 PM 1 Mar 2026
 -->

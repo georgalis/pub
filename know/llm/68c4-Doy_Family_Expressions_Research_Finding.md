@@ -2,7 +2,7 @@
 
 **No academic documentation exists for "doy," "doy-ya," "doy-iee," or "no doy-iee" expressions** across developmental psychology, child language acquisition, linguistic literature, or American slang research. This finding emerged from an extensive search across multiple academic disciplines, representing a significant absence in scholarly literature that otherwise thoroughly documents similar interjections and obviousness markers.</p>
 
-(c) 2024 George Georgalis <george@galis.org> unlimited use with this notice
+(c) 2024 George Georgalis <george@iuxta.com> unlimited use with this copyright
 <!--
 <br>revision 6993eda1 20260216 202505 PST Mon 08:25 PM 16 Feb 2026  manual html inspected 2 simplified w/footnotes
 <br>revision 69898a93 20260208 231947 PST Sun 11:19 PM 8 Feb 2026 ~

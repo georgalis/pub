@@ -1,6 +1,6 @@
 # Analysis of συμπροσκυνούμενον καὶ συνδοξαζόμενον: Worship and Glorification of the Holy Spirit in Eastern Orthodox Theology
 
-(c) 2025 George Georgalis <george@galis.org> unlimited use with this notice
+(c) 2025 George Georgalis <george@iuxta.com> unlimited use with this copyright
 <!--
 <br>revision 6839390e 20250529 215022 PDT Thu 09:50 PM 29 May 2025
 <br>original 68390148 20250529 175224 PDT Thu 05:52 PM 29 May 2025

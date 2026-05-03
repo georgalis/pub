@@ -4,6 +4,7 @@ Meta:
   Revision: "3.0"
   Format: "Section headings as keys, paragraph content as values"
   Footnote Convention: "Parenthetical circumflex numerals (^N)"
+  notice: (c) 2026 George Georgalis <george@iuxta.com> unlimited use with this copyright
 
 Main:
 

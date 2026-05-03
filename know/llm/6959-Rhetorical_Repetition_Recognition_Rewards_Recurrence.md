@@ -2,7 +2,7 @@
 
 Patterned recurrence creates meaning beyond the sum of its instances. This reference examines alliteration and repetition as rhetorical instruments operating across multiple scales---from syllable to corpus---tracing their function in concept solidification, structural coherence, mnemonic reinforcement, and the preparation of material for reader adoption. The phrase repeated becomes the phrase retained; the concept consolidated becomes the concept available for engagement.
 
-(c) 2026 George Georgalis <george@galis.org> unlimited use with this notice
+(c) 2026 George Georgalis <george@iuxta.com> unlimited use with this copyright
 <!--
 <br>original 695947d4 20260103 084612 PST Sat 08:46 AM 3 Jan 2026
 <br>revision 69937668 20260216 115624 PST Mon 11:56 AM 16 Feb 2026

@@ -14,7 +14,7 @@ capacity to reshape, re-voice, combine, and distill, challenging the
 boundaries of modern synthesis.
 
 
-(c) 2026 George Georgalis <george@galis.org> unlimited use with this notice
+(c) 2026 George Georgalis <george@iuxta.com> unlimited use with this copyright
 
 ---
 

@@ -2,7 +2,7 @@
 #
 # Operational identity selection for LLM response disposition
 #
-# (c) 2026 George Georgalis <george@galis.org> unlimited use with this notice
+# (c) 2026 George Georgalis <george@iuxta.com> unlimited use with this copyright
 # revision 69be2e28 20260320 223536 PDT Fri 10:35 PM 20 Mar 2026 1.4.x
 # revision 69bcfb61 20260320 004631 PDT Fri 12:46 AM 20 Mar 2026 1.3.x
 # revision 69ba370b 20260317 222427 PDT Tue 10:24 PM 17 Mar 2026 1.2.x
@@ -19,6 +19,7 @@
 # taxonomy and assembly protocol from which these characters are built.
 
 ---
+notice: (c) 2026 George Georgalis <george@iuxta.com> unlimited use with this copyright
 selection_logic:
   purpose: |
     Before generating a response, evaluate the incoming request against

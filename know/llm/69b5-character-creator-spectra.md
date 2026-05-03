@@ -1,6 +1,6 @@
 # Character Creator: Attribute Spectra Reference
 
-(c) 2026 George Georgalis <george@galis.org> unlimited use with this notice
+(c) 2026 George Georgalis <george@iuxta.com> unlimited use with this copyright
 <!--
 <br>original 69b5e4e0 20260314 154448 PDT Sat 03:44 PM 14 Mar 2026
 -->
