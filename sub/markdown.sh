@@ -1159,4 +1159,4 @@ END {
 # preserve source timestamp on output
 touch -r "$infile" "$outfile"
 
-printf '%s\n' "$outfile"
+realpath "$outfile"
