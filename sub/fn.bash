@@ -453,6 +453,9 @@ _rcs () { # local rcs function
 # find -E /mnt \( -regex '/mnt(/local|/%|/bak)' -prune         \) -o -type d
 # find -E /mnt \( -regex '/mnt(/local|/%|/bak)' -prune -type f \) -o -type f
 
+# realpath "$outfile"
+# printf '%s\n' "$(cd -- "$(dirname -- "$outfile")" && pwd -P)/$(basename -- "$outfile")"
+
 tss () { # timestamp high resolution
   # revn: 69891681 117f2234 PST 2026-02-08 15:04:23.293544500
   # orig: 695c05da 04fa19ec 2026-01-05 10:41:20.083499500
@@ -507,6 +510,102 @@ ts () { # timestamp, low resolution, human (tai vs unix seconds err)
             } || { chkerr "$FUNCNAME: expected 8-char hex, integer, or -f path"; return 1 ;}
             } ;} ;}
   xargs < <($dfmt "${at}${sec}" +"$xs %Y%m%d %H%M%S %Z %a %I:%M %p %e %b %Y") ;}
+
+# ----- timestamp primitives ----------------------------------------------
+
+ts () { # timestamp, low resolution, human (tai vs unix seconds err)
+  # ts: emit one-line timestamp summary anchored on xs (8-char hex epoch)
+  # usage: ts [-t <hex> | -f <path> | <hex>]
+  #   -t <hex>    explicit xs; -t prefix optional with bare hex
+  #   -f <path>   xs from file mtime via stat
+  # output: xs YYYYMMDD HHMMSS TZ DOW HH:MM AM/PM D MMM YYYY
+  # rev: 69ffc38e 20260509 163022 PDT Sat 04:30 PM 9 May 2026
+  # rev: 69df04f4 20260414 202436 PDT Tue 08:24 PM 14 Apr 2026 --- -f path arg, @date linux fix
+  # rev: 698925da 20260208 161002 PST Sun 04:10 PM 8 Feb 2026
+  # org: 695c0404 20260105 103340 PST Mon 10:33 AM 5 Jan 2026
+  local sec xs dfmt at stfmt
+  date --version &> /dev/null && { dfmt='date -d' ;at='@' ;} \
+                              || { dfmt='date -r' ;at='' ;} # gnu or bsd/darwin
+  stat --version &> /dev/null && stfmt='stat -L -c %Y' \
+                              || stfmt='stat -L -f %m'      # gnu or bsd/darwin
+  [ "${1:-}" = -t ] && shift  # optional explicit prefix
+  [ -z "${1:-}" ] && { command -v tai64n &> /dev/null && { # use tai64n
+      local txr
+      read -r txr < <(tai64n <<< '')
+      read -r xs < <(awk '{gsub(/^@4[0]*/,"") ;print substr($0,1,8)}' <<< "$txr")
+      read -r sec < <(printf '%d\n' "0x${xs}")
+      } || { # no tai64n
+      read -r sec < <(date +%s)
+      printf -v xs '%08x' "$sec" ;}
+    } || { [ "$1" = -f ] && { # get the mtime of a file
+      [ -n "${2:-}" ] || { chkerr "$FUNCNAME: -f requires path argument"   ;return 1 ;}
+      [ -L "$2" ] && [ ! -e "$2" ] && { chkerr "$FUNCNAME: dangling symlink: $2" ;return 1 ;}
+      [ -f "$2" ] || [ -d "$2" ] || { chkerr "$FUNCNAME: not file or directory: $2" ;return 1 ;}
+      read -r sec < <($stfmt "$2")
+      printf -v xs '%08x' "$sec"
+      } || { [[ "$1" =~ ^[0-9a-fA-F]{1,8}$ ]] || { chkerr "$FUNCNAME: expected -t <hex>, -f <path>, or 1-8 char hex" ; return 1 ;}
+        read -r xs < <(tr 'A-F' 'a-f' <<< "$1")
+        while [ "${#xs}" -lt 8 ] ;do xs="${xs}0" ;done
+        read -r sec < <(printf '%d\n' "0x${xs}") ;} ;}
+  xargs < <($dfmt "${at}${sec}" +"$xs %Y%m%d %H%M%S %Z %a %I:%M %p %e %b %Y")
+  } # ts 69ffc38e
+
+tss () { # timestamp high resolution
+  # emit two-field timestamp with sub-second precision
+  # usage: tss [-t <hex>] [-s <hex>] [-f <path>]
+  #   -t <hex>    explicit xs (1-8 char hex, right-padded)
+  #   -s <hex>    explicit ss (1-8 char hex, right-padded)
+  #   -f <path>   xs from file mtime; ss = 00000000 unless -s also given
+  # Options compose in any order. No args: current time via tai64n or
+  # date (+%s, +%N). The canonical xs/ss source.
+  # output: xs ss YYYY-MM-DD HH:MM:SS.NS DOW TZ
+  # rev: 69ffc38e 12176a94 2026-05-09 16:30:12.303524500 Sat PDT
+  # rev: 69891681 117f2234 PST 2026-02-08 15:04:23.293544500
+  # org: 695c05da 04fa19ec 2026-01-05 10:41:20.083499500
+  local xs ss sec dfmt at stfmt
+  date --version &> /dev/null && { dfmt='date -d' ;at='@' ;} \
+                              || { dfmt='date -r' ;at='' ;} # gnu or bsd/darwin
+  stat --version &> /dev/null && stfmt='stat -L -c %Y' \
+                              || stfmt='stat -L -f %m'      # gnu or bsd/darwin
+  while [ $# -gt 0 ] ;do
+    [ "$1" = -t ] && { [[ "${2:-}" =~ ^[0-9a-fA-F]{1,8}$ ]] || { chkerr "$FUNCNAME: -t expects 1-8 char hex" ;return 1 ;}
+        read -r xs < <(tr 'A-F' 'a-f' <<< "$2")
+        shift 2 ;continue ;}
+    [ "$1" = -s ] && { [[ "${2:-}" =~ ^[0-9a-fA-F]{1,8}$ ]] || { chkerr "$FUNCNAME: -s expects 1-8 char hex" ;return 1 ;}
+        read -r ss < <(tr 'A-F' 'a-f' <<< "$2")
+        shift 2 ;continue ;}
+    [ "$1" = -f ] && {
+        [ -n "${2:-}" ] || { chkerr "$FUNCNAME: -f requires path argument"   ;return 1 ;}
+        [ -L "$2" ] && [ ! -e "$2" ] && { chkerr "$FUNCNAME: dangling symlink: $2" ;return 1 ;}
+        [ -f "$2" ] || [ -d "$2" ] || { chkerr "$FUNCNAME: not file or directory: $2" ;return 1 ;}
+        read -r sec < <($stfmt "$2")
+        printf -v xs '%08x' "$sec"
+        shift 2 ;continue ;}
+    chkerr "$FUNCNAME: unknown option: $1" ;return 1
+    done
+    # current-time fallback when neither -t nor -f set xs; preserve any -s
+    [ -z "$xs" ] && { command -v tai64n &> /dev/null && { # use tai64n
+        local txr xs_now ss_now
+        read -r txr < <(tai64n <<< '')
+        read -r xs_now ss_now < <(awk '{gsub(/^@4[0]*/,"") ;print substr($0,1,8), substr($0,9,8)}' <<< "$txr")
+        xs="$xs_now"
+        [ -z "$ss" ] && ss="$ss_now"
+      } || { # no tai64n
+        local nsec
+        read -r sec nsec < <(date "+%s %N")
+        printf -v xs '%08x' "$sec"
+        [ -z "$ss" ] && printf -v ss '%08x' "$nsec" ;} ;}
+    # right-pad xs and ss to 8 chars (eph promotion, ss resolution, mtime)
+    while [ "${#xs}" -lt 8 ] ;do xs="${xs}0" ;done
+    : "${ss:=00000000}"
+    while [ "${#ss}" -lt 8 ] ;do ss="${ss}0" ;done
+    # compose date suffix; date receives integer seconds only
+    local datepart dow tz nsdec
+    printf -v nsdec '%09d' "$((0x$ss))"
+    read -r datepart < <($dfmt "${at}$((0x$xs))" "+%Y-%m-%d %H:%M:%S")
+    read -r dow tz   < <($dfmt "${at}$((0x$xs))" "+%a %Z")
+    echo "$xs $ss $datepart.$nsdec $dow $tz"
+  } # tss 69ffc38e
 
 tj () { # journal timestamp, [tai sec]-yyyymmdd_hhmmss {args}
     local a ; read a < <(tai64n <<<"$*")
