@@ -1,0 +1,772 @@
+# Independent YouTube Recommendation Service
+
+## Planning Document v0.3 --- Final POC Planning Revision
+
+_(c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution._
+<!-- rev 6a15416c 20260525 234500 PDT Mon 11:45 PM 25 May 2026 v0.3 Final POC Planning Revision -->
+<!-- rev 6a1510d9 20260525 201745 PDT Mon 08:17 PM 25 May 2026 v0.2 Mature Feature & Implementation Guide -->
+<!-- org 6a14d9e5 20260525 162317 PDT Mon 04:23 PM 25 May 2026 v0.1 Feature & Implementation Guide -->
+
+---
+
+## Vision
+
+The user becomes the algorithm. Every recommendation is traceable to a decision the user made---a tag assigned, a gravity weight adjusted, a secondary user profile imported and biased. The familiar presentation persists: thumbnails, titles, durations, view counts, links that open YouTube in the browser. What changes is the sovereignty: the recommendation logic is local, inspectable, adjustable moment by moment, and exportable as a first-class artifact of the user's media curation practice.
+
+The application gamifies the media consuming experience. Rating, tagging, reviewing, adjusting gravity parameters across videos, channels, tags, and secondary user profiles---these become activities performed alongside viewing, transforming passive consumption into active curation. The gravity matrix the user develops is itself a valuable artifact: a portable, signable, shareable document of media preference that other users can import and bias to enhance their own discovery. When an influencer publishes their gravity matrix, their audience gains not just recommendations but a weighted map of how the influencer evaluates content across every dimension the system tracks.
+
+YouTube provides the content catalog. This application provides the curation logic, the preference memory, and the social exchange of recommendation intelligence---all without requiring any user to share their YouTube credentials or OAuth tokens with anyone else, ever. The app interacts with user preferences moment by moment, adapting gravity to dynamic needs while presenting a familiar discovery interface: the user's primary content discovery surface, one that improves with every interaction, and whose intelligence is portable, transparent, and owned entirely by the person who built it.
+
+---
+
+## Nomenclature
+
+**Primary user**: the authenticated local operator of the application instance. Owns the OAuth credentials, maintains the gravity matrix, controls all recommendation parameters.
+
+**Secondary user**: any imported gravity profile from another user. Structurally identical to what the primary user exports. Multiple secondary user profiles may be ingested, each maintained as a distinct entity internally. The primary user controls the influence weight of each secondary user profile in its entirety or at any aspect level. Secondary user profiles are refreshed by re-importing updated exports; persistent overlay filters survive re-ingestion.
+
+**Gravity**: the weighted preference model governing recommendation scoring. A tree of parameters spanning all metadata dimensions---tags, channels, individual videos, secondary user profiles---with multidimensional quality metrics at each node.
+
+**Gravity view**: a named configuration of gravity weights. The primary user maintains an arbitrary number of views, selecting among them according to mood or context. One view might bias long-form engineering content; another might bias short entertainment. Views parameterize an elastic set of weights over the same underlying gravity matrix. The user selects or experiments with different views as their interests shift: sometimes engineering, at other times romcom. Categorical regression trees will evolve as the gravity matrix matures. Gravity views are private by default---exportable on user initiative but not included in standard profile exports.
+
+---
+
+## Constraint Landscape
+
+### YouTube Data API v3
+
+The API provides subscription lists, channel metadata, upload playlists, video metadata (title, description, tags, duration, statistics, thumbnails, publish date, category), liked videos, and playlists. It does not provide watch history, received recommendations, or engagement analytics beyond public counts.
+
+**Quota**: 10,000 units/day default. Reading operations (`subscriptions.list`, `playlistItems.list`, `videos.list`, `channels.list`) cost 1 unit each and return up to 50 items. A primary user with 100 subscriptions requires approximately 112 units for a full daily content collection poll.
+
+**The 100-unit cost applies exclusively to `search.list`**, used for keyword-based content discovery. Basic recommendation presentation makes zero API calls---it queries the local database of previously collected metadata. Content collection is periodic background work; presentation is a local operation. When the primary user opens the app and recommendations are presented, no API quota is consumed.
+
+**Watch history**: deprecated since September 2016. The `relatedPlaylists.watchHistory` property returns a placeholder; `playlistItems.list` against it returns empty. No API access to watch history or to YouTube's recommendations to the user. Google Takeout provides manual periodic export only.
+
+**Liked videos**: accessible via the `relatedPlaylists.likes` playlist ID. Can be polled incrementally.
+
+**OAuth scope**: `youtube.readonly` provides read access to subscriptions, playlists, liked videos, and channel metadata. Subscription management (adding/removing YouTube subscriptions from within the app) is handled through the YouTube web interface via presented links, not through API write operations.
+
+### Watch History and Recommendation Capture
+
+YouTube does not expose its recommendation engine or the user's watch history through any API endpoint. The `activities.list` method's `home` parameter (which previously returned the YouTube homepage activity feed) was deprecated in September 2016 and returns empty lists. There is no programmatic access to what YouTube recommends to the user.
+
+Capturing YouTube's recommendations would require browser extension DOM reading, which introduces security and trust concerns incompatible with the application's minimal-threat-surface design goal. For POC, YouTube recommendation capture is deferred; the app's own recommendation engine, fed by subscription metadata and gravity parameters, is the sole discovery mechanism. The app should be designed as the primary content discovery interface---the more the user discovers content through the app rather than YouTube's homepage, the more complete the app's tracking data becomes.
+
+### Terms of Service
+
+The application does not scrape YouTube, does not cache media, does not host content. All media consumption occurs on YouTube's domain via standard browser link navigation. Thumbnails are served from YouTube's CDN (`img.youtube.com/vi/{id}/`). The application is a metadata management and recommendation tool that links to YouTube content.
+
+---
+
+## Content Discovery Methods Assessment
+
+YouTube's opaque recommendation engine is inaccessible via API. The application must construct its discovery capability from available metadata sources. The following assessment evaluates each method's discovery potential, API cost, and role in the recommendation engine.
+
+### Subscription Publication Polling
+
+**Method**: For each subscribed channel, poll the uploads playlist via `playlistItems.list` (1 unit, 50 items per call). Capture new video metadata via `videos.list` (1 unit, 50 IDs per call).
+
+**Discovery potential**: High for content from known channels. This is the primary content source---the user's curated subscription set represents intentional interest. Gravity-weighted staleness prioritization ensures channels not recently surfaced receive collection priority, producing a more aggressive rotation of subscriptions and unwatched media than YouTube's native interface provides.
+
+**API cost**: Approximately 1-2 units per channel per poll cycle. Manageable within quota for hundreds of subscriptions.
+
+### Liked Videos, Favorites, and Playlists
+
+**Method**: Poll the likes playlist and user-created playlists via `playlistItems.list`. Incremental maintenance: capture new items, de-duplicate, verify full list periodically.
+
+**Discovery potential**: Moderate as a direct source; high as a gravity signal. Liked videos and playlist curation indicate strong preference. These collections feed gravity calculation rather than directly generating recommendations---a channel whose videos appear frequently in the user's likes receives elevated gravity.
+
+**API cost**: Minimal. Incremental polling after initial bulk import.
+
+### Tag and Keyword Collection from Video Metadata
+
+**Method**: Aggregate tags from `videos.list` responses across subscribed content. Build a tag frequency profile revealing the user's subscription ecosystem's vocabulary.
+
+**Discovery potential**: High as input to tag-based search (F18) and gravity calculation. The aggregated tag vocabulary identifies content themes across the subscription set. Tags from high-gravity channels carry more weight as potential search terms for discovery beyond existing subscriptions.
+
+**API cost**: Zero incremental cost---tags arrive as part of standard video metadata collection.
+
+### Periodic Tag or Keyword Search
+
+**Method**: Use `search.list` (100 units/call) with keywords derived from the user's tag vocabulary, gravity-weighted toward high-interest areas.
+
+**Discovery potential**: High for discovering new channels and content outside the subscription set. This is the API-based active discovery mechanism---the equivalent of "explore based on what I like." The 100-unit cost per call constrains this to occasional, user-initiated sessions rather than continuous operation. A weekly discovery session of 5-10 searches (500-1,000 units) is viable within daily quota.
+
+**API cost**: 100 units per call. Budget-constrained. Episodic use.
+
+### Description and Metadata Text Analysis
+
+**Method**: Analyze video and channel descriptions from collected metadata to extract keywords, topics, and related channel references. No additional API cost---operates on locally cached data.
+
+**Discovery potential**: Moderate. Channel descriptions sometimes reference affiliated channels, collaboration partners, or content themes not captured in tags. This is a lightweight local analysis that enriches the tag vocabulary and identifies potential discovery targets for keyword search.
+
+**API cost**: Zero. Local text processing on cached data.
+
+### Channel Relationship Data
+
+**Method**: Use `channels.list` (1 unit/call) to retrieve channel metadata including featured channels and channel sections that reference other channels.
+
+**Discovery potential**: Moderate. YouTube channels sometimes feature related channels in their channel sections. This provides a low-cost, API-efficient discovery mechanism: traverse the subscription set's channel relationships to identify channels adjacent to known interests. Less broad than keyword search but far cheaper.
+
+**API cost**: 1 unit per call. Efficient.
+
+### Secondary User Gravity Profiles
+
+**Method**: Import secondary user profiles containing subscription lists, tag vocabularies, and gravity parameters. Channels appearing in secondary user subscriptions but not in the primary user's set are discovery candidates, weighted by the secondary user profile's influence weight and tag alignment.
+
+**Discovery potential**: High, and the mechanism most distinctive to this application. Secondary user profiles provide human-curated discovery signals. When the primary user imports a trusted secondary user's gravity profile, the secondary user's subscription set becomes a discovery vector---every channel the secondary user subscribes to that the primary user does not is a potential recommendation, weighted by the gravity alignment between the two profiles.
+
+**API cost**: Zero for the import. Minimal (1-2 units per new channel) to collect metadata for discovered channels.
+
+### YouTube Category Taxonomy
+
+**Method**: YouTube assigns a `categoryId` to every video. The fixed taxonomy (Music, Education, Science & Technology, Entertainment, etc.) provides coarse but universal content classification.
+
+**Discovery potential**: Low as a primary discovery mechanism; moderate as a supplementary gravity dimension. Category taxonomy is too coarse for fine-grained recommendation but useful as a gravity parameter---the user can bias entire categories up or down. Functionally, categories operate as higher-precision default tags automatically assigned by YouTube.
+
+**API cost**: Zero. Category data arrives in standard video metadata.
+
+### Assessment Summary
+
+The application's discovery capacity, absent YouTube recommendation access, is composed of: high-frequency subscription polling (primary), secondary user profile import (distinctive), liked video gravity signals (supplementary), tag-derived keyword search (occasional, quota-constrained), channel relationship traversal (low-cost supplementary), and description text analysis (local, no-cost). This composite provides adequate discovery breadth for a user who treats the app as their primary discovery interface, particularly as secondary user profile import matures and gravity-driven search targeting improves.
+
+The key insight: the inability to access YouTube's recommendations is compensated by the gravity system's transparency and the secondary user exchange mechanism. YouTube recommends opaquely; this application recommends explicitly and socially. The discovery quality depends on the primary user's gravity investment and the quality of imported secondary user profiles---both of which improve with use.
+
+---
+
+## Architecture & Deployment
+
+### Design Priorities
+
+Simplicity for users unfamiliar with web technology. Minimal security threat surface. Python with established dependencies only.
+
+### Deployment Model
+
+`python app.py` opens a localhost socket (e.g., `127.0.0.1:8077`), serves the compiled Svelte frontend as static files, handles OAuth token exchange, proxies YouTube API calls, manages the SQLite database, and runs background content collection tasks. The user's browser connects to the local endpoint. No external server, no cloud dependency.
+
+The Python process handles:
+
+- OAuth 2.0 flow (redirect URI to localhost callback)
+- YouTube Data API polling (scheduled background task)
+- REST API for frontend CRUD operations
+- Gravity calculation engine
+- Profile import/export with integrity verification and OpenSSL signing
+- Log rotation
+
+The browser handles:
+
+- Presentation rendering (compiled Svelte)
+- User interaction (tagging, rating, gravity adjustment)
+- Click-through tracking (outbound link interception)
+- Cookie/session management for localhost
+
+### Why Localhost Socket is Required
+
+The frontend needs to trigger Python operations (API polling, gravity recalculation, profile export, database queries). A pure static HTML file cannot communicate with the Python backend without a network endpoint. The localhost socket is the minimal viable communication channel. REST endpoints handle CRUD and gravity operations; optional WebSocket provides live update notification during background collection.
+
+### Svelte Frontend
+
+Svelte compiles to vanilla JavaScript with no runtime framework overhead. The build step produces static HTML/JS/CSS files served by Flask. Benefits for this use case:
+
+- Smaller bundle (no virtual DOM runtime)
+- Simpler component model (less boilerplate, faster development)
+- Reactive declarations without hooks ceremony
+- Compiled output is plain JS---debuggable, auditable
+
+The UI is fundamentally a scored list with filter controls, rating widgets, gravity parameter sliders, and scoring breakdown pages. Svelte's native reactivity handles this naturally. The talent pool consideration is irrelevant for a personal-use application; if contribution becomes relevant, Svelte's learning curve is lower than React's.
+
+### Python Backend
+
+Flask as the sole framework dependency (established, minimal, well-audited). Local modules for application logic. Dependency policy:
+
+- Flask (HTTP server, routing, static file serving)
+- google-auth, google-auth-oauthlib, google-api-python-client (YouTube API; Google-maintained)
+- No recursive dependencies beyond these established packages
+- Application logic in local modules: gravity engine, profile manager, collection scheduler, log manager
+- SQLite via Python's built-in `sqlite3` module (no ORM dependency for POC)
+
+DB-agnostic design: application code accesses the database through a repository abstraction layer. POC uses SQLite; users with large subscription sets, extensive ratings, or many secondary user imports can configure PostgreSQL by changing a connection string and running a migration script.
+
+---
+
+## Packaging & Security Strategy
+
+### Distributable Artifact
+
+The shipped artifact is the security boundary. The application bundles the Python code, runtime components, and compiled Svelte frontend assets into a single distributable. Users track updates for the bundle rather than for each upstream ecosystem separately.
+
+This is a "single release, many embedded components" model. For Python, the deliverable is a frozen application or installer that contains code and runtime dependencies. For JavaScript/Svelte, the compiled frontend and any npm-transitive code are included in the shipped bundle rather than fetched at runtime. Users do not need to separately monitor npm, PyPI, or the Python runtime if those components are no longer independently consumed at runtime---the deliverable is the artifact they monitor.
+
+### SBOM
+
+An SBOM (Software Bill of Materials) accompanies every release. The SBOM is the formal inventory of components, versions, and dependencies inside the artifact, used for vulnerability matching and management. When the bundle includes Python packages, runtime modules, and Svelte/npm-derived assets, the SBOM is the authoritative record that security tools and users scan for affected versions when a CVE appears.
+
+### What Users Monitor
+
+Users monitor the bundle itself, not the source ecosystems individually. This means watching for new releases of the application, reviewing its SBOM, and applying updates when the bundle changes or when a vulnerability is disclosed for one of the embedded components. This concentrates dependency risk into the bundle and its release process, which is why reproducible builds, pinned versions, and regular rebuilds are the maintainer's responsibility.
+
+### Build Process
+
+- Build the Python application and Svelte frontend together into one artifact
+- Pin all direct and transitive dependencies
+- Generate an SBOM during CI for every release
+- Publish the SBOM alongside the artifact
+- Rebuild and republish when any embedded dependency receives a security fix
+
+The SBOM ensures that bundling reduces what end users must watch without removing the need for the maintainer to keep the bundle fresh.
+
+### User-Facing Statement
+
+"This application is distributed as a single bundled artifact with an accompanying SBOM. Users only need to monitor updates to the bundle; embedded Python, npm, and Svelte components are tracked through the bundle's release and SBOM, not as separate runtime dependencies."
+
+---
+
+## Feature Taxonomy
+
+### Tier 1 --- Core (MVP / POC)
+
+**F01: Primary User Subscription Ingest**
+
+OAuth authentication with YouTube Data API. Import subscription list. Batched incremental maintenance: capture new items, de-duplicate against existing records if lists arrive in arbitrary order, verify the full list periodically but usually only capture deltas. Liked videos, comments, favorites, and playlists are similarly batched for incremental maintenance, edifying the local store. Imported secondary user profiles enter through separate channels---never through the primary user's OAuth scope.
+
+**F02: Content Collection**
+
+Background polling of subscribed channels for new video metadata. Prioritized by staleness and gravity: highest-gravity channels with most stale data collected first. Background calculation of the next recommendation presentation proceeds while the user interacts with the current set. On request, the app presents the discovered calculation unless it is stale (configurable threshold, e.g., over 8 hours), then recalculates before presenting.
+
+Additional YouTube data captured incrementally: liked videos, playlists, favorites. Each list type maintained independently with delta detection and de-duplication.
+
+**F03: Subscription Delta Sync**
+
+Present deltas between YouTube subscription list and app-managed subscription list. Facilitate bidirectional awareness:
+
+- **New YouTube subscriptions**: presented for addition to app-managed subscription set.
+- **App-added subscriptions not on YouTube**: presented as a diff with link to the channel's YouTube page, suggesting the user subscribe via YouTube's interface as desired.
+- **YouTube-removed subscriptions**: presented for local removal from app-managed subscription set.
+- **App-removed subscriptions still on YouTube**: presented as a diff with link to the channel's YouTube page, suggesting the user unsubscribe via YouTube's interface as desired.
+- **Non-sync memory**: when the user declines to sync a particular channel in either direction, the app records the decision and does not re-prompt on subsequent delta calculations.
+
+Subscription management is performed through the YouTube web interface via presented links. The app presents the information and the suggestion; the user acts on YouTube directly.
+
+**F04: Recommendation Engine**
+
+Score collected content for presentation. Initial scoring from deterministic parameters: recency, channel diversity, subscription staleness (channels not surfaced recently get priority), content freshness, configurable exploration factor. The scoring function interleaves two content streams at a configurable bias ratio:
+
+- **App-calculated recommendations**: content from app-managed subscriptions scored by the gravity engine
+- **Tag-searched discoveries**: content discovered via periodic YouTube `search.list` calls using gravity-weighted tags and keywords from the user's vocabulary
+
+The most significant scoring parameters for a given recommendation set are visible on the presentation surface. The total number of scoring parameters may be very large, but in most cases only a few parameters contribute meaningfully to any particular video's top-ranking position. Each video has a scoring breakdown page that lists all available parameters by ID-to-name/description mapping with values, accessible for inspection and fine-tuning.
+
+**F05: Presentation Layer**
+
+Local HTML served via localhost. Responsive layout. The presentation engine is the primary content discovery interface, designed for interactive use during viewing sessions.
+
+Each recommendation set presents a configurable number of thumbnails (default 9). Each recommendation displays: thumbnail (served from YouTube CDN), title, channel name, publish date, duration, view count, and the most significant scoring parameters that contributed to its ranking.
+
+**Interaction model**:
+
+- **Click-through**: opens YouTube in a new browser tab. Click-through is intercepted and recorded locally for gravity tracking.
+- **Click-through revert**: if the user returns to the app after clicking through (e.g., browser back), the video's pre-click state is available for dismissal or downgrade selection. The presentation does not change until the user takes an action (click, rate, dismiss, or defer), but persistent controls allow rating adjustment of the last video or the 3 most recently interacted videos.
+- **Defer**: option to defer rating of all currently presented thumbnails, advancing to the next recommendation set without recording positive or negative signals.
+- **Mark seen**: single-interaction "seen" tag for manually marking videos watched outside the app.
+- **Rate**: discrete rating buttons (see F11).
+- **Quick tag**: lightweight tag assignment during viewing.
+- **Review prompt**: optional prompt for local review, supplemental tagging, or YouTube comment URL capture on watch.
+
+**F06: Watch State Tracking**
+
+Automatic: videos clicked through from the app are recorded as viewed with timestamp. Manual: user can mark any presented video with "seen" tag. Optional: extended interaction to add review, additional tags, YouTube comment URL, or other local record.
+
+**F07: Application-Based Subscriptions**
+
+Subscribe to channels within the app independent of YouTube subscriptions. Enables curating a recommendation universe distinct from the YouTube subscription list. Same content collection pipeline applies.
+
+### Tier 2 --- Gravity Foundation
+
+**F08: Content and Channel Tagging**
+
+User-assigned tags on channels and individual videos. Tags are the primary vocabulary through which the user communicates preferences to the gravity engine. Channel-level tags propagate to content as defaults; video-level tags override. Flat taxonomy.
+
+YouTube's category taxonomy (returned in video metadata as `categoryId`) functions as higher-precision default tags---automatically assigned, supplementing user tags.
+
+**F09: Tag Synonym Management**
+
+Declare equivalence classes among tags. Synonym groups resolve to a canonical form for gravity calculation while preserving original tag text for display. Synonym mappings are exportable/importable as a component of the gravity profile---they function as a calculation factor in the gravity engine, and facilitate reconciliation of tag vocabularies across secondary user profile imports.
+
+**F10: Recommendation Parameter Selection**
+
+Expose the most significant scoring parameters as user-facing controls:
+
+- Tag filter (include/exclude)
+- Channel recency bias (prefer channels not surfaced recently)
+- Content freshness weight
+- Duration bias (configurable: bias toward long-form, shorts, full-length, or neutral)
+- Exploration factor (probability of surfacing content outside usual patterns)
+- Subset size (recommendations per presentation set)
+- Channel concentration limit: the maximum number of videos from any single channel that can appear in a single recommendation set. Prevents prolific channels from dominating the feed---if a channel published 50 new videos, without a concentration limit that channel could fill the entire presentation. The limit enforces source diversity (e.g., max 3 items from any single channel per set), ensuring the recommendation set reflects the breadth of the user's subscriptions rather than the output volume of any single publisher.
+- App-vs-search interleave ratio: controls the balance between app-calculated recommendations from subscription content (scored by gravity) and content discovered via YouTube tag/keyword search API. Higher app bias means the presentation favors known subscriptions; higher search bias increases exposure to new channels and content outside the subscription set.
+
+Preset parameter profiles as convenience shortcuts ("discovery," "deep dive," "catch up," "shorts," "movie night").
+
+### Tier 3 --- Gravity Engine
+
+**F11: Multidimensional Gravity Matrix**
+
+The gravity matrix is a tree of parameters spanning all metadata dimensions. Every identifiable entity in the system---tag, channel, video, secondary user profile---can carry gravity parameters across multiple quality dimensions.
+
+Quality dimensions (succinct, unambiguous when applied to any ID type):
+
+- **merit**: overall quality assessment relative to the entity
+- **trust**: reliability/consistency of the entity's merit signal
+- **depth**: complexity level (introductory through advanced)
+- **certainty**: confidence in the merit/trust/depth assessments (low certainty = insufficient data)
+
+Each dimension supports gravity parameters for each entity type. The gravity matrix is the Cartesian product: `{entity_id} x {quality_dimension} -> weight_value`.
+
+**Internal representation**: sequential integer IDs mapped to a lookup table of attribute assignments. Weight values stored as integers internally, proportional increment/decrement from user inputs. Relatively recalibrated if needed, but always exported as floating-point -1.0 to +1.0 for calibration on import. Low-byte schema: ID/value arrays with companion lookup table minimize storage and processing overhead.
+
+**Asymmetric rating scale**: the gravity metric quality biases heavily toward liked content---users do not frequent disliked content, and rate it at coarse degrees of bad (dislike, very bad, don't recommend again), while positive assessment admits high granularity. The internal scale reflects this asymmetry: a range such as +10 to -3 (or a mathematically optimal distribution), normalized to -1.0 to +1.0 on export. Rating interactions are presented as discrete adjustment buttons at proportional magnitudes: fine positive adjustment (most common use, fewest interactions required), moderate, significant, and maximal. Two negative buttons at coarser granularity. The UI optimizes for the most frequent interaction.
+
+**Cascading gravity calculation**: gravity parameters cascade through relationships. New media from a subscribed channel inherits the channel's gravity plus a recency bonus. A subscription whose description metadata matches high-gravity tags gets an associative boost. An old video in a subscribed channel with increasing view velocity receives a trend-detection bias. Subscriptions not viewed in a long time receive a staleness-recovery boost. These cascades are calculated by the gravity engine, parameterized by coefficients the user can inspect and adjust.
+
+**Individual video resolution**: the gravity matrix supports high-resolution ratings of individual videos. As a consequence, YouTube publishers importing a primary user's exported matrix can identify which specific videos the publisher produced that the primary user rated, along with the ratings assigned.
+
+**F12: Gravity Views**
+
+Arbitrary number of named gravity views per primary user. Each view parameterizes an elastic set of weights over the gravity matrix, biasing the recommendation engine differently. Some views bias long-form content or full-length movies; others bias shorts or short-form videos. The primary user selects a view according to current preference.
+
+Views are private by default (not exported). Export is optional and user-initiated.
+
+**F13: Gravity Adjustment Logging**
+
+Local log of all gravity adjustments, retained for review and debugging. Multiple log types for different gravity aspects (tag adjustments, channel adjustments, video ratings, secondary user influence changes). Log rotation by size (configurable threshold, default 10MB per log type). Logs are not exported and not used programmatically.
+
+### Tier 4 --- Social Exchange
+
+**F14: Profile Export**
+
+The primary user exports their complete gravity profile as a single JSON file for secondary user consumption. Export contents: subscriptions, likes, views, gravity parameters, tag vocabulary with synonyms, ID index. The export format is the same structure another user would ingest as a secondary user profile.
+
+**Integrity architecture**: each independently ingestible component (subscriptions, likes, gravity parameters, tag vocabulary, views, contact) carries its own integrity hash. A top-level hash-of-hashes validates the complete export. Per-component hashing enables selective ingestion with verification---a secondary user can import only the tag vocabulary from one export and only the subscriptions from another, each verified independently.
+
+**Data validation**: separate from integrity checking. Validation confirms structural correctness, value range compliance, ID referential integrity, and format version compatibility. Validation runs on export (producer-side) and on import (consumer-side).
+
+**OpenSSL signing**: export files are optionally signed with the primary user's OpenSSL key. The signature is computed over a jq-normalized representation of the signed components---components are listed in the signature metadata, and each component's data is normalized via a specified jq query before hashing, compensating for whitespace variation, transport compression, or JSON formatting differences. Signing provides identity assurance (self-attested, not linked to Google OAuth) and counterfeit prevention. When an influencer publishes their gravity matrix, the signature allows consumers to verify authenticity. Key distribution is out-of-band.
+
+**Export file naming**: `media_gravity.json` (or user-chosen name). Distinct, discoverable through search or request networks.
+
+**F15: Secondary User Profile Import**
+
+Import another user's exported gravity profile. Each imported profile is maintained as a distinct internal entity. The primary user applies influence weights:
+
+- **Whole-profile weight**: a gravity coefficient applied to the entire secondary user profile (e.g., 0.5 = half influence)
+- **Aspect-level weights**: override specific tags, channels, or quality dimensions within the secondary user profile. These are persistent parameters---not limited to squelching (multiply by zero). The primary user sets any persistent multiplier: always 30% on one aspect, 60% on another, zero on a third. These persistent overlay values are retained across re-import of updated exports.
+- **Re-ingestion filter preservation**: when the primary user has customized overlay weights on a secondary user profile, those customizations persist when the secondary user's export is re-imported. The overlay is the primary user's editorial layer over the secondary user's data, and it survives refresh. Per-ingestion edits are indicated during re-import for review.
+
+Gravity overlay methodology: the primary user's own gravity is the base layer. Secondary user profiles are overlays, each with its own influence weight, blended into the recommendation scoring function. The primary user can set any aspect of any overlay to any value without affecting the base layer or other overlays.
+
+**F16: Review and Rating Export**
+
+Ratings, reviews, and associated metadata are exportable in a format optimized for processing by a separate external application. This export is distinct from the gravity profile export---it targets downstream analysis tooling rather than secondary user ingestion. Deferred until sufficient data accumulates to make processing worthwhile.
+
+### Tier 5 --- Optional Discovery Enhancement
+
+**F17: API-Based Content Discovery**
+
+Occasional, user-initiated discovery via `channels.list` (channel relationships, 1 unit/call) and `search.list` (keyword search, 100 units/call). Episodic exploration sessions to seed content diversity beyond existing subscriptions and secondary user imports.
+
+The primary discovery methods that avoid API pressure are: subscription publication polling, secondary user profile gravity, and gravity-driven re-surfacing of older unwatched content. API-based discovery supplements these when the user's exploration needs exceed what subscription and secondary user data provide.
+
+---
+
+## Gravity Engine --- Detailed Architecture
+
+### Scoring Function
+
+```
+score(video, profile, view) =
+    view.recency_w    * recency(video.published_at)
+  + view.tag_w        * tag_gravity(video.tags, profile.gravity, view)
+  + view.channel_w    * channel_gravity(video.channel, profile.gravity, view)
+  + view.diversity_w  * channel_diversity_penalty(video.channel, session)
+  + view.explore_w    * exploration_factor()
+  + view.stale_w      * staleness_recovery(video.channel, profile.last_surfaced)
+  + view.duration_w   * duration_match(video.duration, view.duration_bias)
+  + view.trend_w      * trend_detection(video.view_velocity)
+  + sum(sec_user in profile.imports:
+        sec_user.weight * sec_user_gravity(video, sec_user, profile.overlay))
+```
+
+All weights are gravity-view-specific. The function is deterministic given the same inputs and parameters. Each video's scoring breakdown page displays all contributing parameters with their ID-to-name mapping, description, and value.
+
+### Gravity Update Signals
+
+The gravity engine updates from explicit user actions within the app:
+
+- **Tag assignment**: tags applied to a video or channel adjust gravity for those tags
+- **Rating**: discrete rating buttons adjust merit gravity for the rated entity
+- **Click-through**: following a recommendation adjusts merit gravity upward for associated tags and channel. If the user reverts (returns to the app without completing viewing) and dismisses or downgrades, the upward adjustment is reverted and replaced with the dismissal/downgrade signal.
+- **Dismissal**: explicitly passing on a recommendation adjusts merit gravity downward (smaller magnitude than positive adjustment---asymmetric scale)
+- **Manual gravity adjustment**: direct manipulation of any gravity parameter via the settings interface or scoring breakdown page
+- **Gravity view selection**: switching views does not alter the gravity matrix itself, only the weights applied during scoring
+
+### Cascade Calculation
+
+Gravity cascades through the entity relationship tree:
+
+```
+video.effective_gravity =
+    video.own_gravity
+  + video.channel.gravity * channel_cascade_coefficient
+  + sum(tag in video.tags: tag.gravity * tag_cascade_coefficient)
+  + recency_bonus(video.published_at)
+  + trend_bonus(video.view_velocity)
+  + staleness_recovery(video.channel.last_surfaced)
+```
+
+Cascade coefficients are themselves gravity-view-parameterized, enabling different views to weight channel influence vs. tag influence vs. recency differently.
+
+---
+
+## Data Model
+
+### Core Entities
+
+**Profile**
+```
+profile_id          TEXT PRIMARY KEY
+name                TEXT NOT NULL
+created_at          INTEGER (unix epoch)
+updated_at          INTEGER
+active_view_id      INTEGER REFERENCES GravityView
+```
+
+**Channel**
+```
+channel_id          TEXT PRIMARY KEY (YouTube channel ID)
+title               TEXT NOT NULL
+description         TEXT
+thumbnail_url       TEXT
+upload_playlist_id  TEXT
+subscriber_count    INTEGER
+video_count         INTEGER
+category_ids        TEXT (JSON array)
+fetched_at          INTEGER (unix epoch)
+```
+
+**Subscription**
+```
+profile_id          TEXT REFERENCES Profile
+channel_id          TEXT REFERENCES Channel
+source              TEXT ('youtube' | 'application')
+sync_status         TEXT ('synced' | 'declined_add' | 'declined_remove')
+subscribed_at       INTEGER (unix epoch)
+PRIMARY KEY (profile_id, channel_id)
+```
+
+**Video**
+```
+video_id            TEXT PRIMARY KEY (YouTube video ID)
+channel_id          TEXT REFERENCES Channel
+title               TEXT NOT NULL
+description         TEXT
+duration            TEXT (ISO 8601)
+published_at        INTEGER (unix epoch)
+view_count          INTEGER
+like_count          INTEGER
+thumbnail_url       TEXT
+category_id         TEXT
+fetched_at          INTEGER (unix epoch)
+```
+
+**Tag**
+```
+tag_id              INTEGER PRIMARY KEY AUTOINCREMENT
+profile_id          TEXT REFERENCES Profile
+label               TEXT NOT NULL
+canonical_id        INTEGER REFERENCES Tag (NULL if self-canonical)
+UNIQUE (profile_id, label)
+```
+
+**TagAssignment**
+```
+tag_id              INTEGER REFERENCES Tag
+target_type         TEXT ('channel' | 'video')
+target_id           TEXT
+assigned_at         INTEGER (unix epoch)
+PRIMARY KEY (tag_id, target_type, target_id)
+```
+
+### Gravity Entities
+
+**GravityEntry**
+```
+entry_id            INTEGER PRIMARY KEY AUTOINCREMENT
+profile_id          TEXT REFERENCES Profile
+target_type         TEXT ('tag' | 'channel' | 'video' | 'sec_user')
+target_id           TEXT
+dimension           TEXT ('merit' | 'trust' | 'depth' | 'certainty')
+value               INTEGER (internal scale, eg -3 to +10)
+updated_at          INTEGER (unix epoch)
+```
+
+**GravityView**
+```
+view_id             INTEGER PRIMARY KEY AUTOINCREMENT
+profile_id          TEXT REFERENCES Profile
+name                TEXT NOT NULL
+parameters          TEXT (JSON --- weight coefficients for scoring function)
+created_at          INTEGER (unix epoch)
+updated_at          INTEGER
+```
+
+**SecUserProfile**
+```
+sec_user_id         INTEGER PRIMARY KEY AUTOINCREMENT
+profile_id          TEXT REFERENCES Profile
+source_label        TEXT (user-assigned name)
+influence_weight    REAL (0.0 to 1.0)
+gravity_data        TEXT (JSON --- imported gravity matrix)
+tag_vocabulary      TEXT (JSON --- imported tag set with synonyms)
+subscriptions       TEXT (JSON --- imported subscription list)
+signature_data      TEXT (JSON --- OpenSSL signature metadata)
+imported_at         INTEGER (unix epoch)
+refreshed_at        INTEGER
+```
+
+**SecUserOverlay**
+```
+overlay_id          INTEGER PRIMARY KEY AUTOINCREMENT
+sec_user_id         INTEGER REFERENCES SecUserProfile
+target_type         TEXT ('tag' | 'channel' | 'dimension')
+target_key          TEXT
+multiplier          REAL (any value: 0.0 = squelch, 0.3, 0.6, 1.0, etc)
+persistent          INTEGER (1 = survives re-import)
+created_at          INTEGER (unix epoch)
+```
+
+### Tracking Entities
+
+**ViewEvent**
+```
+event_id            INTEGER PRIMARY KEY AUTOINCREMENT
+profile_id          TEXT REFERENCES Profile
+video_id            TEXT REFERENCES Video
+event_type          TEXT ('click_through' | 'click_reverted' |
+                         'marked_seen' | 'rated' | 'dismissed' | 'deferred')
+gravity_view_id     INTEGER REFERENCES GravityView
+timestamp           INTEGER (unix epoch)
+```
+
+**VideoRating**
+```
+rating_id           INTEGER PRIMARY KEY AUTOINCREMENT
+profile_id          TEXT REFERENCES Profile
+video_id            TEXT REFERENCES Video
+merit               INTEGER
+review_text         TEXT
+youtube_comment_url TEXT
+rated_at            INTEGER (unix epoch)
+```
+
+### ID Index Table
+
+**AttributeIndex**
+```
+attr_id             INTEGER PRIMARY KEY AUTOINCREMENT
+attr_type           TEXT ('quality_dimension' | 'entity_type' |
+                         'cascade_param' | 'scoring_param' | ...)
+attr_key            TEXT NOT NULL
+short_name          TEXT NOT NULL
+description         TEXT NOT NULL
+UNIQUE (attr_type, attr_key)
+```
+
+This lookup table maps sequential integer IDs to attribute definitions with longer-form descriptions for reference and disambiguation. Descriptions provide sufficient context for reconciling imports and resolving synonym conflicts across secondary user profiles. The companion gravity calculator references this index for all parameter resolution. The scoring breakdown page renders `short_name` as the display label and `description` as the tooltip or detail view.
+
+---
+
+## Storage Architecture
+
+### POC: SQLite
+
+Single-file database via Python's built-in `sqlite3` module. Zero configuration, embedded in the application process. The entire dataset for a user with 500 subscriptions, 50,000 cataloged videos, and extensive gravity parameters fits under 200MB.
+
+### Scale: PostgreSQL
+
+DB-agnostic repository abstraction layer in the Python backend. Connection string configuration switches between SQLite and PostgreSQL. Migration script generates the PostgreSQL schema from the same entity definitions. Users with large secondary user profile collections, extensive ratings, or high video catalog counts can opt into PostgreSQL without application code changes.
+
+### Gravity Profile Exchange Format
+
+```json
+{
+  "format_version": 1,
+  "exported_at": 1748188800,
+  "signature": {
+    "algorithm": "RSA-SHA256",
+    "public_key_fingerprint": "a1b2c3d4...",
+    "signed_components": ["contact", "subscriptions", "tags",
+                          "gravity", "ratings", "views"],
+    "normalization_query": ".components | to_entries | sort_by(.key) | from_entries | tojson",
+    "value": "base64-encoded-signature-of-jq-normalized-components"
+  },
+  "components": {
+    "contact": {
+      "hash": "sha256:aabbcc...",
+      "data": {
+        "label": "optional display name",
+        "url": "optional export update URL",
+        "public_key": "optional PEM or fingerprint reference"
+      }
+    },
+    "subscriptions": {
+      "hash": "sha256:abcdef...",
+      "data": [
+        {"channel_id": "UC...", "title": "Channel Name"}
+      ]
+    },
+    "tags": {
+      "hash": "sha256:123456...",
+      "data": {
+        "vocabulary": [
+          {"label": "electronics", "tag_id": 1,
+           "description": "Consumer and hobbyist electronics, circuits, components"}
+        ],
+        "synonyms": [{"canonical": "diy", "aliases": ["maker", "build"]}]
+      }
+    },
+    "gravity": {
+      "hash": "sha256:789abc...",
+      "data": {
+        "entries": [
+          {"target_type": "tag", "target_id": 1,
+           "dimension": "merit", "value": 0.85},
+          {"target_type": "channel", "target_id": "UC...",
+           "dimension": "trust", "value": 0.72}
+        ]
+      }
+    },
+    "ratings": {
+      "hash": "sha256:def012...",
+      "data": [
+        {"video_id": "dQw4...", "merit": 0.90,
+         "review": "optional text"}
+      ]
+    },
+    "views": {
+      "hash": "sha256:345678...",
+      "data": [
+        {"video_id": "dQw4...", "viewed_at": 1748100000}
+      ]
+    }
+  },
+  "integrity": {
+    "hash_of_hashes": "sha256:fedcba...",
+    "component_list": ["contact", "subscriptions", "tags",
+                       "gravity", "ratings", "views"]
+  },
+  "metadata": {
+    "videos_cataloged": 12847,
+    "rating_events": 3420,
+    "gravity_training_period_days": 180,
+    "active_subscriptions": 142
+  }
+}
+```
+
+Components are independently ingestible with per-component integrity verification. The hash-of-hashes validates the complete export. Contact data is a hashed component like all other components, not metadata. The signature is computed over all listed components after normalization via the specified jq query, compensating for whitespace, formatting, or transport compression differences. All gravity values are exported as floating-point -1.0 to +1.0 regardless of internal integer representation, enabling calibrated import across different installations.
+
+---
+
+## Logging Architecture
+
+**Gravity adjustment log**: records every gravity parameter change with timestamp, source (user action, cascade recalculation, secondary user import), previous value, new value.
+
+**Collection log**: records API polling activity, quota consumption, errors, delta counts.
+
+**Recommendation log**: records scoring function outputs for each presentation session, enabling retrospective analysis of why specific content was surfaced.
+
+**Event log**: records user interactions (click-throughs, reverts, ratings, tag assignments, view switches, deferrals).
+
+All logs are local, not exported, not used programmatically. Multiple log types maintained in separate files. Log rotation by size (configurable threshold, default 10MB per log type).
+
+---
+
+## POC Feature Scope
+
+The POC delivers Tier 1 (F01-F07) plus essential elements of Tier 2 (F08-F10). This constitutes a functional, usable application: the primary user authenticates, imports subscriptions, collects content metadata, receives scored recommendations biased by configurable parameters and manual tagging, tracks watch state through click-throughs and manual marking, and manages app-specific subscriptions independent of YouTube. Subscription deltas are presented for bidirectional sync management.
+
+Tier 2 completion (F09) and Tier 3 (F11-F13) follow as the second development phase, introducing the full gravity engine. Tier 4 (F14-F16) follows as the third phase, enabling social exchange. Tier 5 (F17) is available at any point as a lightweight addition.
+
+### POC Technology Stack
+
+- **Frontend**: Svelte (compiled to static HTML/JS/CSS)
+- **Backend**: Python 3 + Flask
+- **Database**: SQLite via built-in `sqlite3`
+- **YouTube API**: `google-api-python-client`, `google-auth`, `google-auth-oauthlib`
+- **Signing** (Phase 3): `pyOpenSSL` or subprocess to system `openssl`
+- **No other dependencies**
+
+### POC Deployment
+
+```
+$ python app.py
+Serving on http://127.0.0.1:8077
+Opening browser...
+```
+
+First run triggers OAuth consent flow in the user's default browser. Subsequent runs use stored refresh token.
+
+### POC Evaluation Guide
+
+The POC evaluation period is the primary user's opportunity to generate useful feedback for the application's development trajectory. The evaluation should surface which gravity parameters feel intuitive to adjust, which scoring parameters produce meaningful differentiation in recommendation quality, and where the interaction design creates friction or fails to capture preference signals.
+
+**Getting started**: after initial subscription ingest and content collection, the app presents a first recommendation set based on recency and channel diversity alone---no gravity data exists yet. The initial recommendations are baseline YouTube subscription content, unfiltered by preference. This is the starting comparison point.
+
+**Building gravity**: begin assigning tags to channels and rating individual videos. Gravity parameters should be intuitive and self-explanatory when using the app---the UI presents adjustment controls with clear labels, and each adjustment's effect on subsequent recommendations is visible through the scoring breakdown page. Entry of gravity data creates a threshold: the tipping point at which the app's recommendations begin to diverge meaningfully from what YouTube would surface. The evaluation should note when this tipping point occurs---how many ratings, how many tags, how many sessions before the recommendations feel personalized.
+
+**Comparative evaluation**: go back and forth between the app's recommendations and YouTube's native recommendation interface. Describe the recommendation quality of each: where does the app surface content YouTube missed? Where does YouTube's recommendation engine outperform? Which discovery method produces more satisfying viewing sessions? The comparison data is the most valuable feedback for calibrating the gravity engine's parameters and the scoring function's relative weights.
+
+**Interaction feedback**: note where rating, tagging, and gravity adjustment feel natural, and where they create friction. Is the asymmetric rating scale (more positive gradations, fewer negative) intuitive? Do the adjustment magnitudes match the user's intent? Is the scoring breakdown page informative or overwhelming? Does the defer option prevent rating fatigue when the user wants to browse without committing opinions?
+
+---
+
+## Implementation Trajectory
+
+### Phase 1: Foundation (POC)
+
+F01-F07, F08-F10. Single-user, local-only, SQLite. Functional recommendation engine with deterministic scoring, tagging, watch state tracking, subscription sync. User can discover content, track viewing, and manage subscriptions entirely through the app interface.
+
+Deliverable: runnable application (`python app.py`), usable as primary content discovery interface, with evaluation guide for structured feedback.
+
+### Phase 2: Gravity Engine
+
+F11-F13. Full multidimensional gravity matrix with cascading calculation, multiple gravity views, tag synonym management, gravity adjustment logging, asymmetric rating scale, individual video resolution. The recommendation engine transitions from parameterized scoring to gravity-driven scoring with user-adaptive feedback.
+
+Deliverable: gravity-aware recommendation engine that improves with use.
+
+### Phase 3: Social Exchange
+
+F14-F16. Profile export/import with integrity hashing, jq-normalized OpenSSL signing, secondary user profile management with persistent overlay methodology, rating/review export. The application becomes a platform for gravity profile exchange.
+
+Deliverable: exportable/importable gravity profiles, secondary user influence in recommendation scoring.
+
+### Phase 4: Polish & Optional
+
+F17. API-based content discovery. DB migration tooling for PostgreSQL. SBOM generation and bundled distribution. UI refinement based on usage patterns established in Phases 1-3.
+
+---
+
+## Remaining Decisions
+
+**D1: Gravity decay function shape.** Exponential with configurable half-life is the working proposal. Deferred to Phase 2 when usage data informs calibration.
+
+**D2: Rating button magnitudes.** Proposed: four positive buttons at proportional increments (e.g., +1, +3, +6, +10) and two negative (-1, -3). Exact magnitudes tuned during Phase 2 based on usage distribution.
+
+**D3: OAuth comfort.** Proposed: document the OAuth process with screenshots and offer a "demo mode" that loads sample data for interface evaluation before authentication.
+
+**D4: Background collection scheduling.** Proposed: simple `threading.Timer` loop in a daemon thread rather than a dependency on `schedule` or `APScheduler`. Sufficient for single-user operation, zero additional dependency cost.
+
+---
+
+The gravity matrix that emerges from this design is a new kind of media artifact. When export, import, and the asymmetric granularity of the rating scale converge, they produce something YouTube's architecture cannot: a transferable, composable, transparent preference document whose value compounds as the user's curation practice deepens---and whose exchange between users creates a recommendation network that requires no network infrastructure at all, only the willingness to share what you value and the sovereignty to decide how much of someone else's judgment to trust.

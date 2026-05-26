@@ -173,11 +173,15 @@ domain_tags:
       placement. Never place || : or ;} after a here-document
       delimiter---the delimiter must end the line.
 
-      Safety: always use static data within rm arguments; never use
-      env exclusively as rm arguments (e.g., include static "task_dir"
-      within: rm -rf "$tmp_dir/task_dir/$task_tmp"). Test inputs for
-      safe file path characters (e.g., ^[A-Za-z0-9._/-]+$) and prevent
-      input evaluation that would result in command or glob expansion.
+      As a safety layer and to simplify code review, create a layer
+      of protection, expand the constant or static, composite parts
+      of remove arguments; verify "rm" commands hard code the class
+      of their action in path arguments, insuring only the intended
+      class of data is removed if env varables become corrupt or unset
+      (eg use static "task_dir" within the command: rm -rf
+      "$tmp_dir/task_dir/$task_tmp"). Test inputs for safe file path
+      characters (e.g., ^[A-Za-z0-9._/-]+$) and prevent input evaluation
+      that would result in command or glob expansion.
 
       POSIX compatibility: default to POSIX command variants (sed, awk,
       find, etc.) for cross-platform compatibility across BSD, Darwin,

@@ -30,7 +30,10 @@ html {
 body {
     padding: 0 1.5em;
     padding-bottom: 50vh;
+    /*
     margin: 2em auto 2em calc(1vw + 2em);
+    */
+    margin: 2em auto 2em calc(3.4vw); /* top right bottom left */ 
     max-width: 42em;
     line-height: 1.6;
     font-family: "B612", Varidian, sans-serif;
@@ -57,11 +60,13 @@ blockquote p:last-child { margin-bottom: 0; }
 /* --- Code: block --- */
 pre {
     padding: 1em;
-    margin: 1em 0;
+    margin: 1em 0; /* top and bottom, left and right; two value shorthand*/
     border: 0.08em solid hsl(34 30% 74%);
     border-radius: 0.6em;
     width: max-content;
+    /*
     max-width: calc(100vw - 1vw - 2em - 2em );
+    */
     box-sizing: border-box;
     white-space: pre;
     overflow: auto;
@@ -76,7 +81,7 @@ pre code { font-family: inherit; white-space: inherit; }
 /* --- Headings --- */
 h1, h2, h3, h4, h5, h6 {
     line-height: 1.25;
-    margin-block: 1.5em 0.5em;
+    margin-block: 1.5em 0.5em; /* margin-top, margin-bottom */
     font-family: "EB Garamond", "Hoefler Text", "Iowan Old Style", Palatino, Georgia, serif;
 }
 h1 { font-size: 2.4em;  margin-top: 0; border-bottom: 0.08em solid hsl(34 35% 83%); padding-bottom: 0.3em; }
@@ -87,9 +92,9 @@ h5 { font-size: 1em;    font-weight: 600; }
 h6 { font-size: 0.9em;  font-weight: 600; color: #550; }
 
 /* --- Paragraphs --- */
-p { margin: 0 0 1em;
-    orphans: 3;
-    widows: 3;
+p { margin: 0 0 1em; /* top, left/right, bottom */
+    orphans: 3; /* min lines at page bottom */
+    widows: 3; /* min lines at page top */
 }
 
 /* --- Links --- */
@@ -127,10 +132,11 @@ small {
 }
 
 /* --- Lists --- */
-ul, ol { margin: 0 0 1em; padding-left: 2em; }
+ul, ol { margin: 0 0 1em; /* top, left/right, bottom */
+    padding-left: 2em; }  /* indents the list items */
 li { margin-bottom: 0.3em; }
 li > ul,
-li > ol { margin-block: 0.3em 0; }
+li > ol { margin-block: 0.3em 0; } /* margin-top, margin-bottom */
 
 /* --- Images --- */
 img {
@@ -151,7 +157,10 @@ hr {
 table {
   display: inline-block;
   box-sizing: border-box;
+  /*
   margin: 1em calc(1vw + 2em) 1em 0;
+  */
+  margin: 1em 0em 1em 0; /* top right bottom left ; table margin within body */ 
   padding-left: 0.6em;
   padding-right: 0.6em;
   background-color: hsl(34 21% 90%);
