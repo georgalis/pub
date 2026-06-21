@@ -523,24 +523,24 @@ ts () { # timestamp, low resolution, human (tai vs unix seconds err)
   # rev: 69df04f4 20260414 202436 PDT Tue 08:24 PM 14 Apr 2026 --- -f path arg, @date linux fix
   # rev: 698925da 20260208 161002 PST Sun 04:10 PM 8 Feb 2026
   # org: 695c0404 20260105 103340 PST Mon 10:33 AM 5 Jan 2026
-  local sec xs dfmt at stfmt
+  local sec= xs= dfmt= at= stfmt=
   date --version &> /dev/null && { dfmt='date -d' ;at='@' ;} \
                               || { dfmt='date -r' ;at='' ;} # gnu or bsd/darwin
   stat --version &> /dev/null && stfmt='stat -L -c %Y' \
                               || stfmt='stat -L -f %m'      # gnu or bsd/darwin
   [ "${1:-}" = -t ] && shift  # optional explicit prefix
   [ -z "${1:-}" ] && { command -v tai64n &> /dev/null && { # use tai64n
-      local txr
+      local txr=
       read -r txr < <(tai64n <<< '')
-      read -r xs < <(awk '{gsub(/^@4[0]*/,"") ;print substr($0,1,8)}' <<< "$txr")
+      read -r xs  < <(awk '{gsub(/^@4[0]*/,"") ;print substr($0,1,8)}' <<< "$txr")
       read -r sec < <(printf '%d\n' "0x${xs}")
       } || { # no tai64n
       read -r sec < <(date +%s)
       printf -v xs '%08x' "$sec" ;}
     } || { [ "$1" = -f ] && { # get the mtime of a file
-      [ -n "${2:-}" ] || { chkerr "$FUNCNAME: -f requires path argument"   ;return 1 ;}
-      [ -L "$2" ] && [ ! -e "$2" ] && { chkerr "$FUNCNAME: dangling symlink: $2" ;return 1 ;}
-      [ -f "$2" ] || [ -d "$2" ] || { chkerr "$FUNCNAME: not file or directory: $2" ;return 1 ;}
+      [ -n "${2:-}" ] || { chkerr              "$FUNCNAME: -f requires path argument" ;return 1 ;}
+      [ -L "$2" ] && [ ! -e "$2" ] && { chkerr "$FUNCNAME: dangling symlink: $2"      ;return 1 ;}
+      [ -f "$2" ] || [ -d "$2" ] || { chkerr   "$FUNCNAME: not file or directory: $2" ;return 1 ;}
       read -r sec < <($stfmt "$2")
       printf -v xs '%08x' "$sec"
       } || { [[ "$1" =~ ^[0-9a-fA-F]{1,8}$ ]] || { chkerr "$FUNCNAME: expected -t <hex>, -f <path>, or 1-8 char hex" ; return 1 ;}
@@ -562,7 +562,7 @@ tss () { # timestamp high resolution
   # rev: 69ffc38e 12176a94 2026-05-09 16:30:12.303524500 Sat PDT
   # rev: 69891681 117f2234 PST 2026-02-08 15:04:23.293544500
   # org: 695c05da 04fa19ec 2026-01-05 10:41:20.083499500
-  local xs ss sec dfmt at stfmt
+  local xs= ss= sec= dfmt= at= stfmt=
   date --version &> /dev/null && { dfmt='date -d' ;at='@' ;} \
                               || { dfmt='date -r' ;at='' ;} # gnu or bsd/darwin
   stat --version &> /dev/null && stfmt='stat -L -c %Y' \
@@ -585,13 +585,13 @@ tss () { # timestamp high resolution
     done
     # current-time fallback when neither -t nor -f set xs; preserve any -s
     [ -z "$xs" ] && { command -v tai64n &> /dev/null && { # use tai64n
-        local txr xs_now ss_now
+        local txr= xs_now= ss_now=
         read -r txr < <(tai64n <<< '')
         read -r xs_now ss_now < <(awk '{gsub(/^@4[0]*/,"") ;print substr($0,1,8), substr($0,9,8)}' <<< "$txr")
         xs="$xs_now"
         [ -z "$ss" ] && ss="$ss_now"
       } || { # no tai64n
-        local nsec
+        local nsec=
         read -r sec nsec < <(date "+%s %N")
         printf -v xs '%08x' "$sec"
         [ -z "$ss" ] && printf -v ss '%08x' "$nsec" ;} ;}
@@ -600,17 +600,12 @@ tss () { # timestamp high resolution
     : "${ss:=00000000}"
     while [ "${#ss}" -lt 8 ] ;do ss="${ss}0" ;done
     # compose date suffix; date receives integer seconds only
-    local datepart dow tz nsdec
+    local datepart= dow= tz= nsdec=
     printf -v nsdec '%09d' "$((0x$ss))"
     read -r datepart < <($dfmt "${at}$((0x$xs))" "+%Y-%m-%d %H:%M:%S")
     read -r dow tz   < <($dfmt "${at}$((0x$xs))" "+%a %Z")
     echo "$xs $ss $datepart.$nsdec $dow $tz"
   } # tss 69ffc38e
-
-tj () { # journal timestamp, [tai sec]-yyyymmdd_hhmmss {args}
-    local a ; read a < <(tai64n <<<"$*")
-    sed -e 's/[-:]//g' -e 's/\.[^ ]*//' -e 's/ /_/' -e "s/^/${a:9:8}-/" < <(tai64nlocal <<<"$a")
-    } # 6625d27f-20240421_195901
 
 which tmux >/dev/null 2>&1 && \
 tmu () { # tmux intuitive wrapper
@@ -661,23 +656,15 @@ kwds () { # convert stdin to unique words (at least arg1 chars) sorted on length
   echo
  } # kwds
 
-cf () { #:> on terminal output, fold long lines on words
-    [ -t 1 ] && {
-        local cols="$(tput cols)"
-        fold -s -w $cols
-        } || cat
-    } # cf formally catfold
-ct () { #:> on terminal output, truncate lines to width
-    [ -t 1 ] && {
-        local cols
-        read cols < <(tput cols);
-        awk -v cols="$((cols))" 'length > cols{$0=substr($0,0,cols)""}1'
-        } || cat
-    } # ct formally cattrunc
+cf () { #:> "cat fold" on terminal output, fold long lines on words
+    [ -t 1 ] && { local c=; read c < <(tput cols); fold -s -w $c ;} || cat ;}
+ct () { #:> "cat truncate" on terminal output, truncate lines to width
+    [ -t 1 ] && { local c=; read c < <(tput cols);
+        awk -v c="$c" 'length > c{$0=substr($0,0,c)""}1'
+        } || cat;}
 ctt () { #:> always truncate lines to width
-        local cols
-        read cols < <(tput cols);
-        awk -v cols="$((cols))" 'length > cols{$0=substr($0,0,cols)""}1'
+        local c=; read c < <(tput cols);
+        awk -v c="$c" 'length > c{$0=substr($0,0,c)""}1'
     } # ct formally cattrunc
 
 _mksymdir () { # symlink directories named _* into {arg1}/_
