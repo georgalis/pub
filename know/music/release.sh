@@ -30,7 +30,7 @@ spin2          28662d7740b68992e46be02bd4e8820f78e2963889b8658a32f87cbd78f457421
 formfile       64e9bbfdcfb593a9f36b2a7bc9c94cd78c98fb52ef8b4850020f9c4196466e4d3b053ab9a0cc86d8701332f3c9323c28
 formfilestats  52ca5d599803115ca6570d3e668ce76e56fdba2c7b9f6ede921e739b4475f42915f4fdd5a6523b10f1bb28395af4400c
 cksh           41b8f3f40c3f54424276e8611c6b4fce634d3a064c0e9dbb4b96d48eccb8f976fb3c5b4ec38faecfb0856cbfb0e011e4
-vfn            3f41bca80c09a17a3f2ee414d56d9ed5306ea525e74e619f0dc000c4adda61cf6abd9118f3c316baf568e35e69aa0a69
+vfn            1fb48802cdc5f8b8965a549bc7b893bcbeb36e609f4807aa444a94494b281b46
 EOF
 
 [ -e $HOME/sub/markdown.awk ] || { echo "$0 : markdown.awk not found" 1>&2 ; dep_help_sub ; exit 1 ;}
@@ -129,11 +129,12 @@ kind_curate_rsync () { # rsync $links/0/kind/$name/
     # Fixup OSX Ventura rsync problem (sets timestamp to transfer time vs orig file time, to ms-dos filesystems)
     # https://discussions.apple.com/thread/254383328
     # https://github.com/WayneD/rsync/issues/412
+    cd $links/0/kind/ && find . -type f -path "./${name}*" -exec touch -r \{\} "/Volumes/CURATE/kind/"\{\} \;
     # --bwlimit="5.2m" seems to stop micro sd overheating...
     # --bwlimit="7.8m" to micro sd overheating...
     rsync -aP --delete --modify-window=1 --bwlimit="6.8m" $links/0/kind/${name}* "/Volumes/CURATE/kind/" \
         | grep -vE '((^sending|^sent|^total) |^$|^\./$)' || true
-#       cd $links/0/kind/ && find . -type f -path "./${name}*" -exec touch -r \{\} "/Volumes/CURATE/kind/"\{\} \;
+    cd $links/0/kind/ && find . -type f -path "./${name}*" -exec touch -r \{\} "/Volumes/CURATE/kind/"\{\} \;
     } # kind_curate_rsync
 
 doc2html2kind () { # include a doc file with volume (and make html if it is md)
