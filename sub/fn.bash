@@ -1652,6 +1652,42 @@ mp3range () { # mp3 listing limiter
     # or current dir if no remaining args.
     #
     # file fullpath of two directories, sorted by filepath...
+    # mp3range 2 3  ../ . | ckstat | sort -k6 | awk '{print $6}'
+    #
+    local start="$1" stop="$2" dirs= a= opwd="$PWD" prefix=
+    local verb="${verb:=devnul}"
+    $verb for expr "${stop}" : "${start}"
+    [ "$stop" ] && { expr "${stop}" : "${start}" >/dev/null \
+            && chkwrn "$FUNCNAME : unintended consequences : $start $stop"
+        stop="/^${stop}/" ;} \
+        || stop="0"
+    start="/^${start}/"
+    #chkwrn for awk \"${start},${stop}\"
+    shift 2 || shift || true # shift 2 fails if $# = 1, so "shift 2 without err signal" in all cases...
+    #chkwrn "#$# @=$@"
+    [ $# -gt 0 ] && { dirs="$1" ; shift || true ;}
+    while [ $# -gt 0 ] ; do dirs="$(printf "%s\n%s\n" "$dirs" "$1")" ; shift ; done
+    [ "$dirs" ] || dirs="$PWD"
+    #$verb pwd=$PWD dirs=$dirs
+    #echo "$dirs"     | sed '/^$/d' | while IFS= read a; do ${verb} "ead $a" ; done
+    echo "$dirs" | sed -e '/^$/d' | while IFS= read a; do
+        # subshell to preserve $OLDPWD on break
+        ( [ -d "$a" ] && {
+            cd "$a"
+            [ "$a" = "$opwd" ] && prefix="" || prefix="$PWD/"
+            # drop and warn about filenames with '%' in them??
+            ls | awk ${start},${stop} | sed -e '/.mp3$/!d' -e "s%^%$prefix%"
+            } || chkwrn "not a dir with mp3 files : '$a'" ) # subshell for $OLDPWD
+        done
+    } # mp3range 20220803
+
+mp3range () { # mp3 listing limiter
+    # of regex arg1 start pass through,
+    # to regex arg2 stop (or null) end
+    # from within each remaining args
+    # or current dir if no remaining args.
+    #
+    # file fullpath of two directories, sorted by filepath...
     # mp3range 2 3 ../ . | cksh -x | sort -k6 | awk '{print $6}'
     #
     local start="$1" stop="$2" dirs= a= opwd="$PWD" prefix= mp3range_file="$HOME/0/v/mp3range"
