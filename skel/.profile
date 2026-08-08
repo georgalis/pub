@@ -108,6 +108,7 @@ alias   cp='cp -ip'  # always
 alias   mv='mv -i'   # why not
 alias   rm='rm -i'   # sure
 alias    d='diff -U 0'
+alias   rp='realpath' # unambigious efficent
 b() { cd "$OLDPWD" ;} # previous directory
 back() { cd "$OLDPWD" ;} # previous directory
 #cal() { cal -h $@ ;}
