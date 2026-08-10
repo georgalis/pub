@@ -41,6 +41,12 @@ _(c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution._
 * [At Patriarch's Ponds, Again](./69ba-at-patriarchs-ponds-again.md) <!-- 69ba7d18 -->
 * [Open Training Constraints: Economics, Architecture, and Nemotron 3 Super](./69d6-open-training-economics-architecture.md) <!-- 69d65753 -->
 * [Reading "At Patriarch's Ponds, Again": A Companion for One New to Bulgakov](./69f7-reading-at-patriarchs-ponds-again.md) <!-- 69f828ff -->
+* [The Transmission Layer: For the Reader Already Paying Attention](./6a77/cf23/transmission-layer-essay.md)
+  <br>[Transmission Configurations](./6a77/cf23/transmission-configurations-roster.md)
+  <br>Transmition Skills:
+  [Landing](./6a77/cf23/Transmission_Landing-SKILL.md),
+  [Load](./6a77/cf23/Transmission_Load-SKILL.md),
+  [Vantage](./6a77/cf23/Transmission_Vantage-SKILL.md)
 
 [^*]: Revision forthcoming
 
@@ -95,5 +101,6 @@ while preserving the original index at the start of the filename; eg
 `68c4-Doy_Family_Expressions-68d0286b.md` The scheme memorializes the
 inception as index. and captures any revision id, in a chronologically
 sortable form, while mapping associated supporting material.-->
+
 
 
