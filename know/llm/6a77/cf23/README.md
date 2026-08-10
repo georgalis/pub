@@ -5,9 +5,9 @@ _(c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution._
 
 ## [Curated Presentation](https://pub.iuxta.com/know/llm/)
 
-* [The Transmission Layer: For the Reader Already Paying Attention](./6a77/cf23/transmission-layer-essay.md)
-  <br>[Transmission Configurations](./6a77/cf23/transmission-configurations-roster.md)
+* [The Transmission Layer: For the Reader Already Paying Attention](./transmission-layer-essay.md)
+  <br>[Transmission Configurations](./transmission-configurations-roster.md)
   <br>Transmition Skills:
-  [Landing](./6a77/cf23/Transmission_Landing-SKILL.md),
-  [Load](./6a77/cf23/Transmission_Load-SKILL.md),
-  [Vantage](./6a77/cf23/Transmission_Vantage-SKILL.md)
+  [Landing](./Transmission_Landing-SKILL.md),
+  [Load](./Transmission_Load-SKILL.md),
+  [Vantage](./Transmission_Vantage-SKILL.md)
