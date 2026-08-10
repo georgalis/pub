@@ -7,7 +7,7 @@ _(c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution._
 
 * [The Transmission Layer: For the Reader Already Paying Attention](./transmission-layer-essay.md)
   <br>[Transmission Configurations](./transmission-configurations-roster.md)
-  <br>Transmition Skills:
+  <br>Transmission Skills:
   [Landing](./Transmission_Landing-SKILL.md),
   [Load](./Transmission_Load-SKILL.md),
   [Vantage](./Transmission_Vantage-SKILL.md)
