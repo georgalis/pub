@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<p>--- name: transmission-load description: Semantic pressure and cognitive pacing. Governs peak compression, concept onset rate, consolidation enforcement, and prosodic cadence. Apply to position instantaneous cognitive load---low for smooth development under fatigue or resistance, high for compact expert reference, specification, and prompt artifacts where compression is the deliverable. ---</p>
+<h1 id="transmission-load">Transmission Load</h1>
+<p>Positions the <em>instantaneous</em> cognitive load of prose against its total content. Reception-class controls set total energy---how much complexity a document carries. This sets power---how much arrives per instant. The same content delivered through a short heavy conductor or a long light one.</p>
+<p>Relaxed precision is precision relocated, never precision removed. Concentrated precision is the identical operation run the other direction, and the dial does not distinguish them.</p>
+<p><em>(c) 2026 George Georgalis &lt;george@iuxta.com&gt; Unlimited use with attribution.</em></p>
+<h2 id="dial-semantics">Dial Semantics</h2>
+<p>Dials define a target band, not a ceiling. A low peak setting calls for compression; it does not merely tolerate it.</p>
+<p>Direction is uniform across the transmission skills: <strong>0.0 is the compact, mobile, forceful pole; 1.0 is the steady, gradual, low-pressure pole.</strong></p>
+<p>Values are read by position, not by scale. <code>20</code>, <code>2.0</code>, <code>0.2</code>, and <code>1/5</code> all set the same dial to the same place. Percent or decimal, as convenient.</p>
+<h2 id="invocation">Invocation</h2>
+<p><code>/transmission-load 0.2</code> sets all scalar dials to that band. <code>/transmission-load peak=0.2 onset=0.5 cadence=misura</code> overrides individually. Bare invocation defaults to 0.6.</p>
+<h2 id="qualities">Qualities</h2>
+<h3 id="peak-peak-compression">peak --- peak compression</h3>
+<p>Density of high-wattage figures per unit of prose. The inventory: antithesis and negated contrast, chiasmus, aphorism, dense phrase-as-lemma coinage, triple constructions---any formulation whose entire force lands in a single clause. Such figures are maximally precise per token and maximally expensive per instant.</p>
+<ul>
+<li><strong>0.0</strong> Compression sought. Aphoristic construction is the register. Expert reference cards, LLM prompt artifacts, specifications written where no prior detail existed, research abstracts. The reader has pre-paid; charge them.</li>
+<li><strong>0.5</strong> One high-wattage figure per paragraph, positioned at paragraph close where accumulated context has covered its cost.</li>
+<li><strong>1.0</strong> No peaks. Every contrast unpacked across a sentence span; the contrast develops rather than detonates.</li>
+</ul>
+<p><strong>Relocation, both directions.</strong> Downward: identify the figure's two poles, give each its own predication, let contrast emerge from adjacency, and spend the recovered emphasis on ordering so the decisive pole lands last. Upward: collapse a developed contrast into a single predication, elide the connective, let juxtaposition carry the logic.</p>
+<p>Failure at 0.0 outside its context: serial detonation. Each formulation is admirable; the sequence is exhausting. Comprehension survives; the settled attentive state does not. Failure at 1.0: prose without profile---nothing quotable, nothing carried forward.</p>
+<h3 id="onset-concept-onset-rate">onset --- concept onset rate</h3>
+<p>New load-bearing concepts introduced per paragraph. Each opens a comprehension account the reader services until consolidation closes it; parallel open accounts compound.</p>
+<ul>
+<li><strong>0.0</strong> Parallel introduction. Concepts arrive together and are disambiguated by their relations. Taxonomies, enumerations, reference matter, abstracts.</li>
+<li><strong>0.5</strong> One new load-bearing concept per paragraph; supporting detail unrestricted.</li>
+<li><strong>1.0</strong> One per section. Intervening paragraphs develop, apply, and consolidate.</li>
+</ul>
+<p>Throttled onset above failed consolidation only slows the leak.</p>
+<h3 id="consolidation-establishment-enforcement">consolidation --- establishment enforcement</h3>
+<p>Whether compressed formulations earn their compression before invoking it.</p>
+<p>The <code>repetition-methodology</code> skill governs the mechanism; this dial governs how strictly it applies. The primitive pattern it enforces: first occurrence carries scaffolding sufficient for meaning; a proximate second occurrence, in the same or adjacent sentence, signals retention warrant rather than passing notice; subsequent occurrences rotate syntactic position and modal frame. Only then does back- reference retrieve the full apparatus at compressed cost. Interval calibration follows---distant enough to refresh, near enough to sustain recall.</p>
+<ul>
+<li><strong>0.0</strong> Advisory. Coinage travels on first mention. Expert readers, dense reference artifacts, prompt material where the consuming model holds the definition already.</li>
+<li><strong>0.5</strong> Enforced for terms invoked more than twice.</li>
+<li><strong>1.0</strong> Full enforcement plus interval calibration. No compressed invocation without completed establishment.</li>
+</ul>
+<p>Failure at 0.0 with a general reader: compression collapses to opaque shorthand, and the back-reference points at a foundation never laid.</p>
+<h3 id="cadence-prosodic-cadence-discrete">cadence --- prosodic cadence (discrete)</h3>
+<p>Sentence-rhythm profile. Cadence is the carrier wave across which relocated precision spreads.</p>
+<ul>
+<li><code>staccato</code> --- short declaratives dominant, suspension free, high onset tolerance. Recruitment, roster and catalog prose, alert register, reference cards. Re-concentrates load by shortening the span available to distribute it.</li>
+<li><code>misura</code> --- alternating measure. Medium sentences with periodic short declaratives as punctuation; balanced resolution and suspension. General-purpose.</li>
+<li><code>legato</code> --- long-breath sentences, subordination-rich, each resolving fully before the next begins. The span-providing mode; pairs with high peak settings.</li>
+</ul>
+<p>Configuration check: <code>staccato</code> with <code>peak=1.0</code> is contradictory--- short sentences cannot host distributed precision. Resolve toward <code>misura</code>, or raise peak. Zone-splitting resolves it properly: frame prose in <code>misura</code>, catalog sections in <code>staccato</code>.</p>
+<h2 id="composition-order">Composition Order</h2>
+<p>Distribution is architecture, not polish. Set cadence, position onset in the outline, run consolidation for every planned compression, then audit drafted paragraphs against the peak band---relocating in whichever direction the band requires.</p>
+<h2 id="reverse-diagnosis">Reverse Diagnosis</h2>
+<ul>
+<li>Reader re-reads for meaning rather than for agreement ---&gt; peak below the audience's band.</li>
+<li>Prose reads flat, correct, unmemorable ---&gt; peak above band; nothing concentrated enough to retain.</li>
+<li>Reader loses the thread mid-section though sentences are simple ---&gt; onset too low for the audience.</li>
+<li>A term recurs and lands with less weight than its first appearance ---&gt; consolidation incomplete, or interval too long.</li>
+<li>Rhythm feels mechanical ---&gt; cadence mode fighting the peak band.</li>
+</ul>
+<h2 id="cross-skill">Cross-Skill</h2>
+<ul>
+<li><strong>transmission-vantage</strong> --- independent. A perspectivally flat aphorism detonates exactly as hard as a nested one.</li>
+<li><strong>transmission-landing</strong> --- landing places the pressure events that this skill's band otherwise excludes. Where peak runs high, landing must work through placement and recurrence instead of contrast.</li>
+<li><strong>max-density</strong> --- an adjacent, self-standing skill. Low peak with low consolidation approximates its delivery profile but not its generative inventory; the parameters position prose, they do not stock a lexicon. Invoke it directly when that inventory is wanted.</li>
+<li><strong>reception</strong> --- complementary. Reception sets the complexity ceiling; this shapes delivery beneath it.</li>
+</ul>
+</body>
+</html>

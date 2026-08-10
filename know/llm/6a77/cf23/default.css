@@ -1,0 +1,181 @@
+/* default.css --- typographic presentation for markdown as HTML
+ *
+ * Targets standard HTML element selectors only; no custom classes or
+ * divisions. Every selector corresponds to markup emitted by the parser:
+ * html, body, h1-h6, p, a, em, strong, small, blockquote, pre, code,
+ * ul, ol, li, img, hr.
+ *
+ * Font loading: self-hosted via @font-face declarations;
+ * fallback stacks cover offline or missing-font cases.
+ * B612 (body), EB Garamond (headings, emphasis), Intel One Mono (code).
+ *
+ * Targets modern CSS only; no legacy-browser accommodation.
+ *
+ * (see /know/texmf/fonts.yml for TTF in Latex guide)
+ *
+ * _(c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution._
+ *
+ */
+
+/* --- Web fonts --- */
+@import url('./font/faces.css');
+
+/* --- Document root --- */
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+/* --- Body --- */
+body {
+    padding: 0 1.5em;
+    padding-bottom: 50vh;
+    /*
+    margin: 2em auto 2em calc(1vw + 2em);
+    */
+    margin: 2em auto 2em calc(3.4vw); /* top right bottom left */ 
+    max-width: 42em;
+    line-height: 1.6;
+    font-family: "B612", Varidian, sans-serif;
+/*
+CTO is a warm orange tint, in CSS HSL terms it sits around the orange hue range, roughly 30' to 40',
+with moderate-to-high saturation and medium lightness: hsl(35 80% 55%);
+For a subtler CTO look, try: hsl(35 65% 60%);
+For a warmer, more "gel-like" version, move the hue a bit lower toward red-orange and keep saturation up: hsl(25 85% 55%)
+*/
+    background-color: hsl(34 80% 92%);
+    color: hsl(73 20% 18%);
+}
+
+/* --- Blockquotes --- */
+blockquote {
+    padding: 0.5em 1.25em;
+    margin: 1em 0;
+    border-left: 4px solid hsl(34 30% 74%);
+    border-radius: 0.6em;
+    background-color: hsl(34 23% 88%);
+}
+blockquote p:last-child { margin-bottom: 0; }
+
+/* --- Code: block --- */
+pre {
+    padding: 1em;
+    margin: 1em 0; /* top and bottom, left and right; two value shorthand*/
+    border: 0.08em solid hsl(34 30% 74%);
+    border-radius: 0.6em;
+    width: max-content;
+    /*
+    max-width: calc(100vw - 1vw - 2em - 2em );
+    */
+    box-sizing: border-box;
+    white-space: pre;
+    overflow: auto;
+    font-family: "Intel One Mono", Menlo, Consolas, monospace;
+    font-size: 0.8em;
+    background-color: hsl(34 21% 90%);
+}
+/* --- Code: inline inherits pre's family when nested, resets otherwise --- */
+code { background-color: hsl(34 21% 90%); padding: 0.3em 0.1em; border-radius: 0.25em;}
+pre code { font-family: inherit; white-space: inherit; }
+
+/* --- Headings --- */
+h1, h2, h3, h4, h5, h6 {
+    line-height: 1.25;
+    margin-block: 1.5em 0.5em; /* margin-top, margin-bottom */
+    font-family: "EB Garamond", "Hoefler Text", "Iowan Old Style", Palatino, Georgia, serif;
+}
+h1 { font-size: 2.4em;  margin-top: 0; border-bottom: 0.08em solid hsl(34 35% 83%); padding-bottom: 0.3em; }
+h2 { font-size: 1.57em;                border-bottom: 0.08em solid hsl(34 35% 83%); padding-bottom: 0.25em; }
+h3 { font-size: 1.28em; }
+h4 { font-size: 1.0em;  }
+h5 { font-size: 1em;    font-weight: 600; }
+h6 { font-size: 0.9em;  font-weight: 600; color: #550; }
+
+/* --- Paragraphs --- */
+p { margin: 0 0 1em; /* top, left/right, bottom */
+    orphans: 3; /* min lines at page bottom */
+    widows: 3; /* min lines at page top */
+}
+
+/* --- Links --- */
+a { color: #4662a8;
+  text-decoration-line: underline;
+  text-decoration-style: solid;
+  text-decoration-thickness: 0.1em;
+  text-underline-offset: 0.03em;
+  text-decoration-skip-ink: none; }
+a:visited { color: #69508f; }
+a:is(:active, :hover, :focus) { color: #a24a3a; }
+
+/* --- Inline emphasis --- */
+em {
+    line-height: 1;
+    font-style: italic;
+    font-family: "EB Garamond", "Hoefler Text", Palatino, Georgia, serif;
+    font-size: 1.20em;
+    font-weight: 500;
+}
+
+strong {
+    font-weight: 700;
+ /* color: #44443a; strong: hsl(73 20% 24%) or slightly cooler with a tiny hue move like hsl(70 20% 24%)
+    color: hsl(70 20% 24%);
+ */
+}
+
+/* --- Small / caption text --- */
+small {
+    font-size: 0.8em;
+ /* color: #5a5a4f; small: hsl(73 16% 32%) or slightly warmer with a tiny hue move like hsl(76 16% 32%)
+    color: hsl(73 16% 32%);
+ */
+}
+
+/* --- Lists --- */
+ul, ol { margin: 0 0 1em; /* top, left/right, bottom */
+    padding-left: 2em; }  /* indents the list items */
+li { margin-bottom: 0.3em; }
+li > ul,
+li > ol { margin-block: 0.3em 0; } /* margin-top, margin-bottom */
+
+/* --- Images --- */
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 1em 0;
+}
+
+/* --- Horizontal rules --- */
+hr {
+    border: none;
+    border-top: 0.33em solid hsl(34 30% 74%);
+    margin: 2em 0;
+}
+
+/* --- table --- */
+table {
+  display: inline-block;
+  box-sizing: border-box;
+  /*
+  margin: 1em calc(1vw + 2em) 1em 0;
+  */
+  margin: 1em 0em 1em 0; /* top right bottom left ; table margin within body */ 
+  padding-left: 0.6em;
+  padding-right: 0.6em;
+  background-color: hsl(34 21% 90%);
+  overflow: auto;
+  border-collapse: collapse;
+  font-size: 0.8em;
+}
+th, td {
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  padding-left: 0.6em;
+  padding-right: 0.6em;
+}
+td { border-bottom: 0.08em solid hsl(34 35% 83%); padding-top: 0.15em; padding-bottom: 0.15em; }
+th { border-bottom: 0.12em solid hsl(34 35% 75%); padding-top: 0.45em; padding-bottom: 0.45em;}
+tbody tr:last-child > * { border-bottom: none; }
+
