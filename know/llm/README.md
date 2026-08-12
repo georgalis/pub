@@ -41,12 +41,12 @@ _(c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution._
 * [At Patriarch's Ponds, Again](./69ba-at-patriarchs-ponds-again.md) <!-- 69ba7d18 -->
 * [Open Training Constraints: Economics, Architecture, and Nemotron 3 Super](./69d6-open-training-economics-architecture.md) <!-- 69d65753 -->
 * [Reading "At Patriarch's Ponds, Again": A Companion for One New to Bulgakov](./69f7-reading-at-patriarchs-ponds-again.md) <!-- 69f828ff -->
-* [The Transmission Layer: For the Reader Already Paying Attention](./6a77/cf23/transmission-layer-essay.md)
-  <br>[Transmission Configurations](./6a77/cf23/transmission-configurations-roster.md)
-  <br>Transmition Skills:
+* [The Transmission Layer](./6a77/cf23/transmission-layer-essay.md) ([Catalog](6a77/cf23/),
+  [Configurations](./6a77/cf23/transmission-configurations-roster.md),
+  Skills:
   [Landing](./6a77/cf23/Transmission_Landing-SKILL.md),
   [Load](./6a77/cf23/Transmission_Load-SKILL.md),
-  [Vantage](./6a77/cf23/Transmission_Vantage-SKILL.md)
+  [Vantage](./6a77/cf23/Transmission_Vantage-SKILL.md))
 
 [^*]: Revision forthcoming
 
