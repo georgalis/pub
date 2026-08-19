@@ -13,23 +13,8 @@ differently, and the setting of it is the subject of this paper.
 
 _(c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution._
 
----
-
 ## Contents
-
-- What This Paper Offers
-- Delivery as an Adjustable Property
-- The Distribution Correction Principle
-- Reading the Reader
-- Spectrum of Application
-- Implementation
-  - The Repetition Budget
-  - Reverse Diagnosis
-- Demonstration by Category
-- Where Responsibility Remains With the Writer
-- What the Difficulty Was Made Of
-
----
+<!--contents-->
 
 ## What This Paper Offers
 
@@ -676,7 +661,6 @@ Which leaves the writer, before the first sentence, holding a question
 that has an answer available in advance: where should this prose sit,
 for the reader who will actually arrive.
 
----
 
 [^1]: `transmission-vantage`, `transmission-load`, and
     `transmission-landing`. Each is a skill a language model can apply
