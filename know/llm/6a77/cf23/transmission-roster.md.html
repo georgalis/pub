@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+section[role="doc-endnotes"] ol { list-style: none; padding-left: 0; }
+li[role="doc-endnote"] p { display: inline; margin: 0; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h1 id="transmission-configurations-a-reference-roster">Transmission Configurations: A Reference Roster</h1>
+<h3 id="thirty-six-postures-over-the-professional-range-with-gradients">Thirty-six postures over the professional range, with gradients</h3>
+<p>Every entry here is computed from the transform rather than composed by hand. That is the point of the roster: a grid whose cells were set individually would record taste, and a grid whose cells are derived tests whether the transform is complete. It was not, and the corrections appear below before the grid that produced them.</p>
+<p>Use the roster two ways. Where the reader matches an entry, take the configuration. Where the reader falls between entries, take the two nearest and read the direction of difference---which is what the grid exists to supply and a genre list cannot.</p>
+<p><em>(c) 2026 George Georgalis &lt;george@iuxta.com&gt; Unlimited use with attribution.</em></p>
+<pre><code>version 1.2 --- 2026-08-22
+companion to: the transmission model ontology; transmission,
+transmission-vantage, transmission-load, transmission-land
+
+1.1 --- adds the office declaration and its two settings, iuxta and
+sequent, to every entry; adds the office overlay; renames the landing
+instrument to land.
+
+1.2 --- credit becomes headroom and the transactional vocabulary
+resolves into the rated-systems register; cron becomes office; adds
+the configuration templates at the head; entries print in the order
+posture, document, load, land, vantage, with categorical settings
+last within each instrument.
+</code></pre>
+<h2 id="configuration-templates">Configuration Templates</h2>
+<p>Two forms, given here rather than after the discussion because this is what the roster is opened for. The first is what a writer states; the second is the full calibration, for overriding a setting during revision.</p>
+<pre><code>/transmission
+  fluency=0.60  stamina=0.50  appetite=0.40  scrutiny=0.15
+  triage=full   obligation=0.90
+  office=constructive  cadence=misura  priority=content  span=</code></pre>
+<pre><code>posture     fluency=0.60  stamina=0.50  appetite=0.40  scrutiny=0.15
+            triage=full   obligation=0.90
+document    office=constructive  cadence=misura  priority=content  span=
+load        spread=0.53   sparse=0.50   plain=0.42   grounded=0.65
+land        steady=0.85   deference=0.35  single=0.50  placement=deferred
+vantage     settled=0.50  linked=0.50   flat=0.85    bare=0.90
+            iuxta=0.20    sequent=0.30  attribution=artifact</code></pre>
+<p>The values shown are the settled-professional default, which is roster entry C2-S1-T1 computed rather than chosen. Any key left unstated resolves to the value above and widens its tolerance, so an under-specified request looks under-specified rather than average. Overwrite what should move.</p>
+<p>The categorical options:</p>
+<pre><code>triage       full         reads it through
+             scan         reads headings, descends selectively
+             decide       reads the opening and decides
+             sentence     meets one sentence in passing
+office       constructive facts are inventory for what to build next
+             judicial     facts are evidence about decisions already taken
+cadence      staccato     short declaratives dominant
+             misura       medium sentences, short ones as punctuation
+             legato       long-breath sentences, each resolving in turn
+priority     content      length floats, detail is preserved
+             balanced     the shortfall is distributed
+             extent       the span holds, content is cut
+placement    early        stated in the opening, developed after
+             deferred     arrives once the development has earned it
+             coda         deferred, and the message restates the development
+             frame        early, with a coda return
+             sentence     the whole document is the message
+attribution  agent        claims anchored to persons
+             artifact     claims anchored to documents
+             impersonal   claims anchored to conditions</code></pre>
+<p>Entries print in this order throughout: posture, then the document-side declarations, then load, land, and vantage. Load comes first among the instruments because its settings are what a reader's complaint most often points at, land second because its settings are decided before drafting, and vantage last because its costs are the silent ones and it is the instrument that remains when the other two do not explain the reception.</p>
+<h2 id="what-construction-corrected">What Construction Corrected</h2>
+<p>Generating thirty-six configurations from five posture components required the transform to be executable, and four settings turned out to have no governing component. They had been defined without being derivable, which is invisible while configurations are set by hand and fatal the moment they are computed.</p>
+<p><strong><code>grounded</code> takes stamina as well as fluency</strong>, and the pairing is not decorative. Fluency decides whether the reader holds a compressed form; stamina decides whether a reader who lacks it can infer it from context. The two disagree routinely in the population the roster serves most---a specialist at the end of a hard week holds every term and can assemble no new one---and the disagreement rule resolves the setting high.</p>
+<p><strong><code>linked</code> takes stamina</strong>, alongside <code>settled</code>. Both reduce re-anchoring cost, and a reader who cannot carry a reorientation cannot carry a cold sentence opening either.</p>
+<p><strong><code>single</code> takes triage</strong>, directly: the less of a document a reader consumes, the more the recurring vocabulary must reduce to the message. A coupling rides on top---where <code>linked</code> sits at 0.70 or above, <code>single</code> rises a further 0.15, since contiguous prose has surrendered its cuts and recurrence is the only emphasis left.</p>
+<p><strong><code>cadence</code> is not posture-governed at all</strong>, which took a wrong turn to establish. Deriving it from <code>spread</code> generates the grid cleanly and forbids a register that exists: long-breath sentences carrying concentrated figures, which is dense argumentative prose and is correct for the same specialist a reference card serves in <code>staccato</code>. Cadence is a fact about what kind of document this is. The one enforced constraint is the exclusion the load instrument already stated---<code>spread</code> at 0.70 and above cannot be carried in short declaratives---and below that, cadence is declared rather than derived.</p>
+<p><strong><code>steady</code> derives from headroom and scrutiny.</strong> A depleted reader is destabilized by valence movement, and an adversarial one reads calm about serious matters as command of the situation. Both push high, and the grid holds <code>steady</code> above 0.80 throughout---which is correct for every reader who is obliged to be reading, and wrong for every reader who is not.</p>
+<p>The cadence correction generalizes past cadence. Four inputs come from the writer rather than the reader: <code>cadence</code> from document kind, <code>steady</code> from genuine emergency, <code>priority</code> wherever extent is fixed by a form or a limit outside the reading, and <code>office</code> from the document's office. The transform is reader-driven with exactly those four exceptions, and each is a question about what the writer is making rather than about who will receive it.</p>
+<p>Two settings also needed conflict rules rather than single derivations. <strong><code>flat</code></strong> takes the higher of its headroom-derived and scrutiny-derived values, conceding 0.15 toward the scrutiny pull where they disagree, which is the yield law applied to a known conflict rather than to uncertainty. <strong><code>bare</code></strong> takes a headroom ceiling as well as its scrutiny value, since pre-emptive defense is itself load and a depleted reader cannot carry it however adversarial the setting.</p>
+<h3 id="a-sixth-posture-component">A sixth posture component</h3>
+<p>The grid holds <code>steady</code> high everywhere, and that exposed a fact the five components could not express. Two readers may share fluency, stamina, appetite, scrutiny, and triage and still want opposite affective weather, because one is obliged to read and the other is not. A professional who opens a memo and decides whether to descend, and a casual reader who meets an explainer and decides whether to continue, perform the same triage from entirely different positions: the first owes the writer the reading, and the second owes nothing and departs without complaint.</p>
+<p><strong>obligation</strong> --- how far the reader is obliged to read at all. 1.0 is a reader whose attention is secured by role or relationship. 0.0 is a reader present by choice, who will leave the moment the prose asks for effort.</p>
+<p>Obligation is a posture component and carries full standing in the ontology. The grid nonetheless holds it high, which covers professional correspondence entirely, and handles low obligation as an overlay rather than as a fourth axis---voluntary readers cluster tightly at two triage behaviors, and a full cross would double the roster to populate cells that do not occur. The overlay is a presentation economy and should not be read as ontological status. The overlay follows the grid.</p>
+<h3 id="the-office-declaration">The office declaration</h3>
+<p>Version 1.1 adds a fourth writer-supplied input and the two settings it floors. <strong>office</strong> declares what the document does with its facts: <code>constructive</code>, where the facts are inventory for what to build next and sequence is largely arbitrary; <code>judicial</code>, where the facts are evidence about decisions already taken and the question is not what is reasonable altogether but what was reasonable at each point in time. <strong>iuxta</strong> sets how far each claim arrives carrying the knowledge state it belonged to. <strong>sequent</strong> sets how closely composition sequence tracks chronology.</p>
+<p>Both are reader-derived within floors the declaration sets, and the floors do not yield. <code>sequent</code> takes stamina through capacity, less a declared discount of 0.20, since re-timing cost is real but smaller than reorientation cost and topical order supplies its own economy. <code>iuxta</code> takes scrutiny directly, an adversarial reader re-timing the material whether or not invited.</p>
+<p>The pair is generated together. Where <code>sequent</code> runs more than 0.35 above <code>iuxta</code>, the transform raises <code>iuxta</code> to close the gap; the excluded region is the bare chronology---perfect order carrying no epoch---which is the configuration that manufactures a false verdict most efficiently, precisely because its ordering discipline is visible and its epoch silence is not. Both constants are declared rather than measured, and they are the framework's live tuning surface.</p>
+<p>Like obligation, the judicial case is handled as an overlay. It follows the grid.</p>
+<h2 id="reading-an-entry">Reading an Entry</h2>
+<p>The identifier is headroom band, scrutiny level, triage behavior. Headroom bands run C1 low, C2 mid, C3 high; scrutiny runs S1 settled, S2 guarded, S3 adversarial; triage runs T1 full, T2 scan, T3 decide, T4 sentence.</p>
+<p>Entries print in the order given in the templates above: posture, then the document-side declarations, then load, land, and vantage, with the categorical setting last within each instrument.</p>
+<p>Each entry is declared <code>constructive</code> on the <code>office</code> line, which is the default and the case the grid spans. The judicial declaration is an overlay following the grid, and it replaces rather than adjusts the fields it touches.</p>
+<p>Every scalar carries a tolerance of plus or minus 0.10, widening to 0.20 wherever the components governing it disagree by more than 0.30. The tolerance is the experimental range, not a margin of error: a first attempt takes the center, a second takes the edge the first attempt's reception implicates, and a third is synthesized from the difference.</p>
+<p>The bullets beneath each entry are its <strong>gradients</strong>---the single-setting moves that adjust it for the nearest posture deviations. An entry with gradients is a local map; an entry without them is a lookup, and lookups fail exactly when the reader is not on the list.</p>
+<p>Headroom bands are composites. Where fluency, stamina, and appetite pull apart, the grid gives the band and the gradients give the decomposition.</p>
+<h2 id="the-grid">The Grid</h2>
+<h3 id="triage-full">Triage: full</h3>
+<p><strong>C1-S1-T1</strong>  ---  The learner</p>
+<pre><code>posture     fluency 0.20  stamina 0.15  appetite 0.25  scrutiny 0.15
+            triage full      obligation 0.90
+document    office constructive  cadence declared, staccato excluded
+            priority content
+load        spread 0.92  sparse 0.85  plain 0.85  grounded 1.00
+land        steady 0.95  deference 0.35  single 0.65  placement deferred
+vantage     settled 0.85  linked 0.85  flat 0.90  bare 0.90
+            iuxta 0.30  sequent 0.65  attribution artifact</code></pre>
+<ul>
+<li>reader in distress -&gt; deference 0.85, steady 1.00</li>
+<li>consent to work absent -&gt; see the obligation overlay</li>
+</ul>
+<p><strong>C1-S2-T1</strong></p>
+<pre><code>posture     fluency 0.20  stamina 0.15  appetite 0.25  scrutiny 0.50
+            triage full      obligation 0.90
+document    office constructive  cadence declared, staccato excluded
+            priority content
+load        spread 0.92  sparse 0.85  plain 0.85  grounded 1.00
+land        steady 0.95  deference 0.65  single 0.65  placement deferred
+vantage     settled 0.85  linked 0.85  flat 0.75  bare 0.70
+            iuxta 0.50  sequent 0.65  attribution artifact</code></pre>
+<ul>
+<li>fluency higher than stamina -&gt; plain falls, grounded and spread hold on stamina</li>
+<li>consent to work present -&gt; grounded to 1.00</li>
+<li>standing genuinely held -&gt; deference toward 0.45</li>
+</ul>
+<p><strong>C1-S3-T1</strong>  ---  The depleted auditor</p>
+<pre><code>posture     fluency 0.20  stamina 0.15  appetite 0.25  scrutiny 0.85
+            triage full      obligation 0.90
+document    office constructive  cadence declared, staccato excluded
+            priority content
+load        spread 0.92  sparse 0.85  plain 0.85  grounded 1.00
+land        steady 1.00  deference 0.30  single 0.65  placement deferred
+vantage     settled 0.85  linked 0.85  flat 0.75  bare 0.35
+            iuxta 0.85  sequent 0.65  attribution agent</code></pre>
+<ul>
+<li>provenance still required -&gt; attribution agent carries it structurally, flat stays high</li>
+<li>counsel may read -&gt; single 0.90</li>
+<li>the finding judges past action -&gt; declare office judicial</li>
+</ul>
+<p><strong>C2-S1-T1</strong>  ---  The settled executive</p>
+<pre><code>posture     fluency 0.60  stamina 0.50  appetite 0.40  scrutiny 0.15
+            triage full      obligation 0.90
+document    office constructive  cadence declared
+            priority content
+load        spread 0.53  sparse 0.50  plain 0.42  grounded 0.65
+land        steady 0.85  deference 0.35  single 0.50  placement deferred
+vantage     settled 0.50  linked 0.50  flat 0.85  bare 0.90
+            iuxta 0.20  sequent 0.30  attribution artifact</code></pre>
+<ul>
+<li>reader scans -&gt; placement frame, single 0.80</li>
+<li>standing below the register -&gt; deference 0.60</li>
+<li>fatigue on the day -&gt; settled and spread +0.20</li>
+<li>the memo reviews a decision already taken -&gt; declare office judicial</li>
+</ul>
+<p><strong>C2-S2-T1</strong>  ---  The guarded evaluator</p>
+<pre><code>posture     fluency 0.60  stamina 0.50  appetite 0.40  scrutiny 0.50
+            triage full      obligation 0.90
+document    office constructive  cadence declared
+            priority content
+load        spread 0.53  sparse 0.50  plain 0.42  grounded 0.65
+land        steady 0.85  deference 0.65  single 0.50  placement deferred
+vantage     settled 0.50  linked 0.50  flat 0.75  bare 0.60
+            iuxta 0.50  sequent 0.30  attribution artifact</code></pre>
+<ul>
+<li>standing genuinely held -&gt; deference 0.45</li>
+<li>compression reads as a claim -&gt; spread +0.15</li>
+</ul>
+<p><strong>C2-S3-T1</strong>  ---  The auditor</p>
+<pre><code>posture     fluency 0.60  stamina 0.50  appetite 0.40  scrutiny 0.85
+            triage full      obligation 0.90
+document    office constructive  cadence declared
+            priority content
+load        spread 0.53  sparse 0.50  plain 0.42  grounded 0.65
+land        steady 0.90  deference 0.30  single 0.50  placement deferred
+vantage     settled 0.50  linked 0.50  flat 0.70  bare 0.20
+            iuxta 0.85  sequent 0.30  attribution agent</code></pre>
+<ul>
+<li>litigation-adjacent -&gt; flat -0.15, bare -0.10</li>
+<li>finding is uncontested -&gt; bare 0.70</li>
+<li>the finding judges past action -&gt; declare office judicial</li>
+</ul>
+<p><strong>C3-S1-T1</strong>  ---  The peer specialist</p>
+<pre><code>posture     fluency 0.90  stamina 0.85  appetite 0.85  scrutiny 0.15
+            triage full      obligation 0.90
+document    office constructive  cadence declared
+            priority content
+load        spread 0.04  sparse 0.15  plain 0.03  grounded 0.30
+land        steady 0.80  deference 0.35  single 0.50  placement deferred
+vantage     settled 0.15  linked 0.15  flat 0.60  bare 0.90
+            iuxta 0.20  sequent 0.20  attribution artifact</code></pre>
+<ul>
+<li>consuming model -&gt; grounded, sparse, plain to 0.00; cadence staccato</li>
+<li>outside the specialty -&gt; treat as C2</li>
+<li>end of a hard week -&gt; stamina falls, treat spread and settled as C2</li>
+</ul>
+<p><strong>C3-S2-T1</strong></p>
+<pre><code>posture     fluency 0.90  stamina 0.85  appetite 0.85  scrutiny 0.50
+            triage full      obligation 0.90
+document    office constructive  cadence declared
+            priority content
+load        spread 0.04  sparse 0.15  plain 0.03  grounded 0.30
+land        steady 0.80  deference 0.65  single 0.50  placement deferred
+vantage     settled 0.15  linked 0.15  flat 0.60  bare 0.55
+            iuxta 0.50  sequent 0.20  attribution artifact</code></pre>
+<ul>
+<li>reading outside the specialty -&gt; treat as C2 throughout</li>
+<li>newcomer in the audience -&gt; plain +0.30, grounded +0.30</li>
+<li>standing genuinely held -&gt; deference toward 0.45</li>
+</ul>
+<p><strong>C3-S3-T1</strong>  ---  The peer reviewer</p>
+<pre><code>posture     fluency 0.90  stamina 0.85  appetite 0.85  scrutiny 0.85
+            triage full      obligation 0.90
+document    office constructive  cadence declared
+            priority content
+load        spread 0.04  sparse 0.15  plain 0.03  grounded 0.30
+land        steady 0.85  deference 0.30  single 0.50  placement deferred
+vantage     settled 0.15  linked 0.15  flat 0.45  bare 0.10
+            iuxta 0.85  sequent 0.20  attribution agent</code></pre>
+<ul>
+<li>reviewing rather than reviewed -&gt; deference 0.50</li>
+<li>provenance is the content -&gt; flat 0.10</li>
+</ul>
+<h3 id="triage-scan">Triage: scan</h3>
+<p><strong>C1-S1-T2</strong>  ---  The fatigued reviewer</p>
+<pre><code>posture     fluency 0.20  stamina 0.15  appetite 0.25  scrutiny 0.15
+            triage scan      obligation 0.90
+document    office constructive  cadence declared, staccato excluded
+            priority balanced
+load        spread 0.92  sparse 0.85  plain 0.85  grounded 1.00
+land        steady 0.95  deference 0.35  single 0.95  placement frame
+vantage     settled 0.85  linked 0.85  flat 0.90  bare 0.90
+            iuxta 0.30  sequent 0.65  attribution artifact</code></pre>
+<ul>
+<li>descent may never come -&gt; placement early</li>
+<li>capacity intact, willingness spent -&gt; spread holds, sparse to 0.90</li>
+</ul>
+<p><strong>C1-S2-T2</strong></p>
+<pre><code>posture     fluency 0.20  stamina 0.15  appetite 0.25  scrutiny 0.50
+            triage scan      obligation 0.90
+document    office constructive  cadence declared, staccato excluded
+            priority balanced
+load        spread 0.92  sparse 0.85  plain 0.85  grounded 1.00
+land        steady 0.95  deference 0.65  single 0.95  placement frame
+vantage     settled 0.85  linked 0.85  flat 0.75  bare 0.70
+            iuxta 0.50  sequent 0.65  attribution artifact</code></pre>
+<ul>
+<li>fluency higher than stamina -&gt; plain falls, grounded and spread hold on stamina</li>
+<li>consent to work present -&gt; grounded to 1.00</li>
+<li>standing genuinely held -&gt; deference toward 0.45</li>
+</ul>
+<p><strong>C1-S3-T2</strong></p>
+<pre><code>posture     fluency 0.20  stamina 0.15  appetite 0.25  scrutiny 0.85
+            triage scan      obligation 0.90
+document    office constructive  cadence declared, staccato excluded
+            priority balanced
+load        spread 0.92  sparse 0.85  plain 0.85  grounded 1.00
+land        steady 1.00  deference 0.30  single 0.95  placement frame
+vantage     settled 0.85  linked 0.85  flat 0.75  bare 0.35
+            iuxta 0.85  sequent 0.65  attribution agent</code></pre>
+<ul>
+<li>fluency higher than stamina -&gt; plain falls, grounded and spread hold on stamina</li>
+<li>consent to work present -&gt; grounded to 1.00</li>
+<li>the challenge is real -&gt; bare is the setting that earns its cost</li>
+</ul>
+<p><strong>C2-S1-T2</strong></p>
+<pre><code>posture     fluency 0.60  stamina 0.50  appetite 0.40  scrutiny 0.15
+            triage scan      obligation 0.90
+document    office constructive  cadence declared
+            priority balanced
+load        spread 0.53  sparse 0.50  plain 0.42  grounded 0.65
+land        steady 0.85  deference 0.35  single 0.80  placement frame
+vantage     settled 0.50  linked 0.50  flat 0.85  bare 0.90
+            iuxta 0.20  sequent 0.30  attribution artifact</code></pre>
+<ul>
+<li>stamina spent on the day -&gt; spread, sparse, settled toward C1</li>
+<li>appetite higher than assessed -&gt; spread and plain toward C3</li>
+<li>pre-emptive defense reads as trouble -&gt; keep bare above 0.80</li>
+</ul>
+<p><strong>C2-S2-T2</strong></p>
+<pre><code>posture     fluency 0.60  stamina 0.50  appetite 0.40  scrutiny 0.50
+            triage scan      obligation 0.90
+document    office constructive  cadence declared
+            priority balanced
+load        spread 0.53  sparse 0.50  plain 0.42  grounded 0.65
+land        steady 0.85  deference 0.65  single 0.80  placement frame
+vantage     settled 0.50  linked 0.50  flat 0.75  bare 0.60
+            iuxta 0.50  sequent 0.30  attribution artifact</code></pre>
+<ul>
+<li>stamina spent on the day -&gt; spread, sparse, settled toward C1</li>
+<li>appetite higher than assessed -&gt; spread and plain toward C3</li>
+<li>standing genuinely held -&gt; deference toward 0.45</li>
+</ul>
+<p><strong>C2-S3-T2</strong></p>
+<pre><code>posture     fluency 0.60  stamina 0.50  appetite 0.40  scrutiny 0.85
+            triage scan      obligation 0.90
+document    office constructive  cadence declared
+            priority balanced
+load        spread 0.53  sparse 0.50  plain 0.42  grounded 0.65
+land        steady 0.90  deference 0.30  single 0.80  placement frame
+vantage     settled 0.50  linked 0.50  flat 0.70  bare 0.20
+            iuxta 0.85  sequent 0.30  attribution agent</code></pre>
+<ul>
+<li>stamina spent on the day -&gt; spread, sparse, settled toward C1</li>
+<li>appetite higher than assessed -&gt; spread and plain toward C3</li>
+<li>the challenge is real -&gt; bare is the setting that earns its cost</li>
+</ul>
+<p><strong>C3-S1-T2</strong>  ---  The reference user</p>
+<pre><code>posture     fluency 0.90  stamina 0.85  appetite 0.85  scrutiny 0.15
+            triage scan      obligation 0.90
+document    office constructive  cadence declared
+            priority balanced
+load        spread 0.04  sparse 0.15  plain 0.03  grounded 0.30
+land        steady 0.80  deference 0.35  single 0.80  placement frame
+vantage     settled 0.15  linked 0.15  flat 0.60  bare 0.90
+            iuxta 0.20  sequent 0.20  attribution artifact</code></pre>
+<ul>
+<li>structure is rotation, not development -&gt; settled 0.05</li>
+<li>newcomer may enter the audience -&gt; plain +0.30</li>
+</ul>
+<p><strong>C3-S2-T2</strong>  ---  The standards body</p>
+<pre><code>posture     fluency 0.90  stamina 0.85  appetite 0.85  scrutiny 0.50
+            triage scan      obligation 0.90
+document    office constructive  cadence declared
+            priority balanced
+load        spread 0.04  sparse 0.15  plain 0.03  grounded 0.30
+land        steady 0.80  deference 0.65  single 0.80  placement frame
+vantage     settled 0.15  linked 0.15  flat 0.60  bare 0.55
+            iuxta 0.50  sequent 0.20  attribution artifact</code></pre>
+<ul>
+<li>reading outside the specialty -&gt; treat as C2 throughout</li>
+<li>newcomer in the audience -&gt; plain +0.30, grounded +0.30</li>
+<li>standing genuinely held -&gt; deference toward 0.45</li>
+</ul>
+<p><strong>C3-S3-T2</strong></p>
+<pre><code>posture     fluency 0.90  stamina 0.85  appetite 0.85  scrutiny 0.85
+            triage scan      obligation 0.90
+document    office constructive  cadence declared
+            priority balanced
+load        spread 0.04  sparse 0.15  plain 0.03  grounded 0.30
+land        steady 0.85  deference 0.30  single 0.80  placement frame
+vantage     settled 0.15  linked 0.15  flat 0.45  bare 0.10
+            iuxta 0.85  sequent 0.20  attribution agent</code></pre>
+<ul>
+<li>reading outside the specialty -&gt; treat as C2 throughout</li>
+<li>newcomer in the audience -&gt; plain +0.30, grounded +0.30</li>
+<li>the challenge is real -&gt; bare is the setting that earns its cost</li>
+</ul>
+<h3 id="triage-decide">Triage: decide</h3>
+<p><strong>C1-S1-T3</strong></p>
+<pre><code>posture     fluency 0.20  stamina 0.15  appetite 0.25  scrutiny 0.15
+            triage decide    obligation 0.90
+document    office constructive  cadence declared, staccato excluded
+            priority extent
+load        spread 0.92  sparse 0.85  plain 0.85  grounded 1.00
+land        steady 0.95  deference 0.35  single 0.95  placement early
+vantage     settled 0.85  linked 0.85  flat 0.90  bare 0.90
+            iuxta 0.30  sequent 0.65  attribution artifact</code></pre>
+<ul>
+<li>fluency higher than stamina -&gt; plain falls, grounded and spread hold on stamina</li>
+<li>consent to work present -&gt; grounded to 1.00</li>
+<li>pre-emptive defense reads as trouble -&gt; keep bare above 0.80</li>
+</ul>
+<p><strong>C1-S2-T3</strong></p>
+<pre><code>posture     fluency 0.20  stamina 0.15  appetite 0.25  scrutiny 0.50
+            triage decide    obligation 0.90
+document    office constructive  cadence declared, staccato excluded
+            priority extent
+load        spread 0.92  sparse 0.85  plain 0.85  grounded 1.00
+land        steady 0.95  deference 0.65  single 0.95  placement early
+vantage     settled 0.85  linked 0.85  flat 0.75  bare 0.70
+            iuxta 0.50  sequent 0.65  attribution artifact</code></pre>
+<ul>
+<li>fluency higher than stamina -&gt; plain falls, grounded and spread hold on stamina</li>
+<li>consent to work present -&gt; grounded to 1.00</li>
+<li>standing genuinely held -&gt; deference toward 0.45</li>
+</ul>
+<p><strong>C1-S3-T3</strong></p>
+<pre><code>posture     fluency 0.20  stamina 0.15  appetite 0.25  scrutiny 0.85
+            triage decide    obligation 0.90
+document    office constructive  cadence declared, staccato excluded
+            priority extent
+load        spread 0.92  sparse 0.85  plain 0.85  grounded 1.00
+land        steady 1.00  deference 0.30  single 0.95  placement early
+vantage     settled 0.85  linked 0.85  flat 0.75  bare 0.35
+            iuxta 0.85  sequent 0.65  attribution agent</code></pre>
+<ul>
+<li>fluency higher than stamina -&gt; plain falls, grounded and spread hold on stamina</li>
+<li>consent to work present -&gt; grounded to 1.00</li>
+<li>the challenge is real -&gt; bare is the setting that earns its cost</li>
+</ul>
+<p><strong>C2-S1-T3</strong>  ---  The delegating chief</p>
+<pre><code>posture     fluency 0.60  stamina 0.50  appetite 0.40  scrutiny 0.15
+            triage decide    obligation 0.90
+document    office constructive  cadence declared
+            priority extent
+load        spread 0.53  sparse 0.50  plain 0.42  grounded 0.65
+land        steady 0.85  deference 0.35  single 0.80  placement early
+vantage     settled 0.50  linked 0.50  flat 0.85  bare 0.90
+            iuxta 0.20  sequent 0.30  attribution artifact</code></pre>
+<ul>
+<li>stamina spent on the day -&gt; spread, sparse, settled toward C1</li>
+<li>appetite higher than assessed -&gt; spread and plain toward C3</li>
+<li>pre-emptive defense reads as trouble -&gt; keep bare above 0.80</li>
+</ul>
+<p><strong>C2-S2-T3</strong>  ---  The selection panel</p>
+<pre><code>posture     fluency 0.60  stamina 0.50  appetite 0.40  scrutiny 0.50
+            triage decide    obligation 0.90
+document    office constructive  cadence declared
+            priority extent
+load        spread 0.53  sparse 0.50  plain 0.42  grounded 0.65
+land        steady 0.85  deference 0.65  single 0.80  placement early
+vantage     settled 0.50  linked 0.50  flat 0.75  bare 0.60
+            iuxta 0.50  sequent 0.30  attribution artifact</code></pre>
+<ul>
+<li>stamina spent on the day -&gt; spread, sparse, settled toward C1</li>
+<li>appetite higher than assessed -&gt; spread and plain toward C3</li>
+<li>standing genuinely held -&gt; deference toward 0.45</li>
+</ul>
+<p><strong>C2-S3-T3</strong></p>
+<pre><code>posture     fluency 0.60  stamina 0.50  appetite 0.40  scrutiny 0.85
+            triage decide    obligation 0.90
+document    office constructive  cadence declared
+            priority extent
+load        spread 0.53  sparse 0.50  plain 0.42  grounded 0.65
+land        steady 0.90  deference 0.30  single 0.80  placement early
+vantage     settled 0.50  linked 0.50  flat 0.70  bare 0.20
+            iuxta 0.85  sequent 0.30  attribution agent</code></pre>
+<ul>
+<li>stamina spent on the day -&gt; spread, sparse, settled toward C1</li>
+<li>appetite higher than assessed -&gt; spread and plain toward C3</li>
+<li>the challenge is real -&gt; bare is the setting that earns its cost</li>
+</ul>
+<p><strong>C3-S1-T3</strong></p>
+<pre><code>posture     fluency 0.90  stamina 0.85  appetite 0.85  scrutiny 0.15
+            triage decide    obligation 0.90
+document    office constructive  cadence declared
+            priority extent
+load        spread 0.04  sparse 0.15  plain 0.03  grounded 0.30
+land        steady 0.80  deference 0.35  single 0.80  placement early
+vantage     settled 0.15  linked 0.15  flat 0.60  bare 0.90
+            iuxta 0.20  sequent 0.20  attribution artifact</code></pre>
+<ul>
+<li>reading outside the specialty -&gt; treat as C2 throughout</li>
+<li>newcomer in the audience -&gt; plain +0.30, grounded +0.30</li>
+<li>pre-emptive defense reads as trouble -&gt; keep bare above 0.80</li>
+</ul>
+<p><strong>C3-S2-T3</strong></p>
+<pre><code>posture     fluency 0.90  stamina 0.85  appetite 0.85  scrutiny 0.50
+            triage decide    obligation 0.90
+document    office constructive  cadence declared
+            priority extent
+load        spread 0.04  sparse 0.15  plain 0.03  grounded 0.30
+land        steady 0.80  deference 0.65  single 0.80  placement early
+vantage     settled 0.15  linked 0.15  flat 0.60  bare 0.55
+            iuxta 0.50  sequent 0.20  attribution artifact</code></pre>
+<ul>
+<li>reading outside the specialty -&gt; treat as C2 throughout</li>
+<li>newcomer in the audience -&gt; plain +0.30, grounded +0.30</li>
+<li>standing genuinely held -&gt; deference toward 0.45</li>
+</ul>
+<p><strong>C3-S3-T3</strong></p>
+<pre><code>posture     fluency 0.90  stamina 0.85  appetite 0.85  scrutiny 0.85
+            triage decide    obligation 0.90
+document    office constructive  cadence declared
+            priority extent
+load        spread 0.04  sparse 0.15  plain 0.03  grounded 0.30
+land        steady 0.85  deference 0.30  single 0.80  placement early
+vantage     settled 0.15  linked 0.15  flat 0.45  bare 0.10
+            iuxta 0.85  sequent 0.20  attribution agent</code></pre>
+<ul>
+<li>reading outside the specialty -&gt; treat as C2 throughout</li>
+<li>newcomer in the audience -&gt; plain +0.30, grounded +0.30</li>
+<li>the challenge is real -&gt; bare is the setting that earns its cost</li>
+</ul>
+<h3 id="triage-sentence">Triage: sentence</h3>
+<p><strong>C1-S1-T4</strong></p>
+<pre><code>posture     fluency 0.20  stamina 0.15  appetite 0.25  scrutiny 0.15
+            triage sentence  obligation 0.90
+document    office constructive  cadence declared, staccato excluded
+            priority extent
+load        spread 0.92  sparse 0.00  plain 0.85  grounded 0.50
+land        steady 0.95  deference 0.35  single 1.00  placement sentence
+vantage     settled 0.85  linked 0.85  flat 0.90  bare 0.90
+            iuxta 0.30  sequent 0.65  attribution artifact</code></pre>
+<ul>
+<li>fluency higher than stamina -&gt; plain falls, grounded and spread hold on stamina</li>
+<li>consent to work present -&gt; grounded to 1.00</li>
+<li>pre-emptive defense reads as trouble -&gt; keep bare above 0.80</li>
+</ul>
+<p><strong>C1-S2-T4</strong></p>
+<pre><code>posture     fluency 0.20  stamina 0.15  appetite 0.25  scrutiny 0.50
+            triage sentence  obligation 0.90
+document    office constructive  cadence declared, staccato excluded
+            priority extent
+load        spread 0.92  sparse 0.00  plain 0.85  grounded 0.50
+land        steady 0.95  deference 0.65  single 1.00  placement sentence
+vantage     settled 0.85  linked 0.85  flat 0.75  bare 0.70
+            iuxta 0.50  sequent 0.65  attribution artifact</code></pre>
+<ul>
+<li>fluency higher than stamina -&gt; plain falls, grounded and spread hold on stamina</li>
+<li>consent to work present -&gt; grounded to 1.00</li>
+<li>standing genuinely held -&gt; deference toward 0.45</li>
+</ul>
+<p><strong>C1-S3-T4</strong></p>
+<pre><code>posture     fluency 0.20  stamina 0.15  appetite 0.25  scrutiny 0.85
+            triage sentence  obligation 0.90
+document    office constructive  cadence declared, staccato excluded
+            priority extent
+load        spread 0.92  sparse 0.00  plain 0.85  grounded 0.50
+land        steady 1.00  deference 0.30  single 1.00  placement sentence
+vantage     settled 0.85  linked 0.85  flat 0.75  bare 0.35
+            iuxta 0.85  sequent 0.65  attribution agent</code></pre>
+<ul>
+<li>fluency higher than stamina -&gt; plain falls, grounded and spread hold on stamina</li>
+<li>consent to work present -&gt; grounded to 1.00</li>
+<li>the challenge is real -&gt; bare is the setting that earns its cost</li>
+</ul>
+<p><strong>C2-S1-T4</strong></p>
+<pre><code>posture     fluency 0.60  stamina 0.50  appetite 0.40  scrutiny 0.15
+            triage sentence  obligation 0.90
+document    office constructive  cadence declared
+            priority extent
+load        spread 0.53  sparse 0.00  plain 0.42  grounded 0.50
+land        steady 0.85  deference 0.35  single 1.00  placement sentence
+vantage     settled 0.50  linked 0.50  flat 0.85  bare 0.90
+            iuxta 0.20  sequent 0.30  attribution artifact</code></pre>
+<ul>
+<li>stamina spent on the day -&gt; spread, sparse, settled toward C1</li>
+<li>appetite higher than assessed -&gt; spread and plain toward C3</li>
+<li>pre-emptive defense reads as trouble -&gt; keep bare above 0.80</li>
+</ul>
+<p><strong>C2-S2-T4</strong></p>
+<pre><code>posture     fluency 0.60  stamina 0.50  appetite 0.40  scrutiny 0.50
+            triage sentence  obligation 0.90
+document    office constructive  cadence declared
+            priority extent
+load        spread 0.53  sparse 0.00  plain 0.42  grounded 0.50
+land        steady 0.85  deference 0.65  single 1.00  placement sentence
+vantage     settled 0.50  linked 0.50  flat 0.75  bare 0.60
+            iuxta 0.50  sequent 0.30  attribution artifact</code></pre>
+<ul>
+<li>stamina spent on the day -&gt; spread, sparse, settled toward C1</li>
+<li>appetite higher than assessed -&gt; spread and plain toward C3</li>
+<li>standing genuinely held -&gt; deference toward 0.45</li>
+</ul>
+<p><strong>C2-S3-T4</strong></p>
+<pre><code>posture     fluency 0.60  stamina 0.50  appetite 0.40  scrutiny 0.85
+            triage sentence  obligation 0.90
+document    office constructive  cadence declared
+            priority extent
+load        spread 0.53  sparse 0.00  plain 0.42  grounded 0.50
+land        steady 0.90  deference 0.30  single 1.00  placement sentence
+vantage     settled 0.50  linked 0.50  flat 0.70  bare 0.20
+            iuxta 0.85  sequent 0.30  attribution agent</code></pre>
+<ul>
+<li>stamina spent on the day -&gt; spread, sparse, settled toward C1</li>
+<li>appetite higher than assessed -&gt; spread and plain toward C3</li>
+<li>the challenge is real -&gt; bare is the setting that earns its cost</li>
+</ul>
+<p><strong>C3-S1-T4</strong></p>
+<pre><code>posture     fluency 0.90  stamina 0.85  appetite 0.85  scrutiny 0.15
+            triage sentence  obligation 0.90
+document    office constructive  cadence declared
+            priority extent
+load        spread 0.04  sparse 0.00  plain 0.03  grounded 0.30
+land        steady 0.80  deference 0.35  single 1.00  placement sentence
+vantage     settled 0.15  linked 0.15  flat 0.60  bare 0.90
+            iuxta 0.20  sequent 0.20  attribution artifact</code></pre>
+<ul>
+<li>reading outside the specialty -&gt; treat as C2 throughout</li>
+<li>newcomer in the audience -&gt; plain +0.30, grounded +0.30</li>
+<li>pre-emptive defense reads as trouble -&gt; keep bare above 0.80</li>
+</ul>
+<p><strong>C3-S2-T4</strong></p>
+<pre><code>posture     fluency 0.90  stamina 0.85  appetite 0.85  scrutiny 0.50
+            triage sentence  obligation 0.90
+document    office constructive  cadence declared
+            priority extent
+load        spread 0.04  sparse 0.00  plain 0.03  grounded 0.30
+land        steady 0.80  deference 0.65  single 1.00  placement sentence
+vantage     settled 0.15  linked 0.15  flat 0.60  bare 0.55
+            iuxta 0.50  sequent 0.20  attribution artifact</code></pre>
+<ul>
+<li>reading outside the specialty -&gt; treat as C2 throughout</li>
+<li>newcomer in the audience -&gt; plain +0.30, grounded +0.30</li>
+<li>standing genuinely held -&gt; deference toward 0.45</li>
+</ul>
+<p><strong>C3-S3-T4</strong></p>
+<pre><code>posture     fluency 0.90  stamina 0.85  appetite 0.85  scrutiny 0.85
+            triage sentence  obligation 0.90
+document    office constructive  cadence declared
+            priority extent
+load        spread 0.04  sparse 0.00  plain 0.03  grounded 0.30
+land        steady 0.85  deference 0.30  single 1.00  placement sentence
+vantage     settled 0.15  linked 0.15  flat 0.45  bare 0.10
+            iuxta 0.85  sequent 0.20  attribution agent</code></pre>
+<ul>
+<li>reading outside the specialty -&gt; treat as C2 throughout</li>
+<li>newcomer in the audience -&gt; plain +0.30, grounded +0.30</li>
+<li>the challenge is real -&gt; bare is the setting that earns its cost</li>
+</ul>
+<h2 id="the-office-overlay">The Office Overlay</h2>
+<p>Every entry above is declared <code>constructive</code>: its facts are inventory for what to build next, and sequence is largely arbitrary. Declaring <code>judicial</code>---the facts are evidence about decisions already taken, and the question is not what is reasonable altogether but what was reasonable at each point in time---moves at most four fields. Everything else holds, which is why the judicial case is an overlay rather than a fourth axis.</p>
+<p>Read the deltas as replacements rather than adjustments. <code>iuxta</code> and <code>sequent</code> take floors from the declaration and do not yield to the reader; where a cell already sits at or above a floor the floor is silent and the field does not appear below. <code>placement</code> and <code>single</code> move only in consequence: composition sequence has been handed to the chronology, so arrangement is no longer available to carry emphasis and recurrence takes the load it drops.</p>
+<h3 id="triage-full">Triage: full</h3>
+<pre><code>    C1-S1-T1  iuxta 0.30 -&gt; 0.85   sequent 0.65 -&gt; 0.70   placement deferred -&gt; coda   single 0.65 -&gt; 0.80
+    C1-S2-T1  iuxta 0.50 -&gt; 0.85   sequent 0.65 -&gt; 0.70   placement deferred -&gt; coda   single 0.65 -&gt; 0.80
+    C1-S3-T1  sequent 0.65 -&gt; 0.70   placement deferred -&gt; coda   single 0.65 -&gt; 0.80
+    C2-S1-T1  iuxta 0.20 -&gt; 0.85   sequent 0.30 -&gt; 0.70   placement deferred -&gt; coda   single 0.50 -&gt; 0.65
+    C2-S2-T1  iuxta 0.50 -&gt; 0.85   sequent 0.30 -&gt; 0.70   placement deferred -&gt; coda   single 0.50 -&gt; 0.65
+    C2-S3-T1  sequent 0.30 -&gt; 0.70   placement deferred -&gt; coda   single 0.50 -&gt; 0.65
+    C3-S1-T1  iuxta 0.20 -&gt; 0.85   sequent 0.20 -&gt; 0.70   placement deferred -&gt; coda   single 0.50 -&gt; 0.65
+    C3-S2-T1  iuxta 0.50 -&gt; 0.85   sequent 0.20 -&gt; 0.70   placement deferred -&gt; coda   single 0.50 -&gt; 0.65
+    C3-S3-T1  sequent 0.20 -&gt; 0.70   placement deferred -&gt; coda   single 0.50 -&gt; 0.65</code></pre>
+<h3 id="triage-scan">Triage: scan</h3>
+<pre><code>    C1-S1-T2  iuxta 0.30 -&gt; 0.85   sequent 0.65 -&gt; 0.70   single 0.95 -&gt; 1.00
+    C1-S2-T2  iuxta 0.50 -&gt; 0.85   sequent 0.65 -&gt; 0.70   single 0.95 -&gt; 1.00
+    C1-S3-T2  sequent 0.65 -&gt; 0.70   single 0.95 -&gt; 1.00
+    C2-S1-T2  iuxta 0.20 -&gt; 0.85   sequent 0.30 -&gt; 0.70   single 0.80 -&gt; 0.95
+    C2-S2-T2  iuxta 0.50 -&gt; 0.85   sequent 0.30 -&gt; 0.70   single 0.80 -&gt; 0.95
+    C2-S3-T2  sequent 0.30 -&gt; 0.70   single 0.80 -&gt; 0.95
+    C3-S1-T2  iuxta 0.20 -&gt; 0.85   sequent 0.20 -&gt; 0.70   single 0.80 -&gt; 0.95
+    C3-S2-T2  iuxta 0.50 -&gt; 0.85   sequent 0.20 -&gt; 0.70   single 0.80 -&gt; 0.95
+    C3-S3-T2  sequent 0.20 -&gt; 0.70   single 0.80 -&gt; 0.95</code></pre>
+<h3 id="triage-decide">Triage: decide</h3>
+<pre><code>    C1-S1-T3  iuxta 0.30 -&gt; 0.85   sequent 0.65 -&gt; 0.70   single 0.95 -&gt; 1.00
+    C1-S2-T3  iuxta 0.50 -&gt; 0.85   sequent 0.65 -&gt; 0.70   single 0.95 -&gt; 1.00
+    C1-S3-T3  sequent 0.65 -&gt; 0.70   single 0.95 -&gt; 1.00
+    C2-S1-T3  iuxta 0.20 -&gt; 0.85   sequent 0.30 -&gt; 0.70   single 0.80 -&gt; 0.95
+    C2-S2-T3  iuxta 0.50 -&gt; 0.85   sequent 0.30 -&gt; 0.70   single 0.80 -&gt; 0.95
+    C2-S3-T3  sequent 0.30 -&gt; 0.70   single 0.80 -&gt; 0.95
+    C3-S1-T3  iuxta 0.20 -&gt; 0.85   sequent 0.20 -&gt; 0.70   single 0.80 -&gt; 0.95
+    C3-S2-T3  iuxta 0.50 -&gt; 0.85   sequent 0.20 -&gt; 0.70   single 0.80 -&gt; 0.95
+    C3-S3-T3  sequent 0.20 -&gt; 0.70   single 0.80 -&gt; 0.95</code></pre>
+<h3 id="triage-sentence">Triage: sentence</h3>
+<pre><code>    C1-S1-T4  iuxta 0.30 -&gt; 0.85   sequent 0.65 -&gt; 0.70
+    C1-S2-T4  iuxta 0.50 -&gt; 0.85   sequent 0.65 -&gt; 0.70
+    C1-S3-T4  sequent 0.65 -&gt; 0.70
+    C2-S1-T4  iuxta 0.20 -&gt; 0.85   sequent 0.30 -&gt; 0.70
+    C2-S2-T4  iuxta 0.50 -&gt; 0.85   sequent 0.30 -&gt; 0.70
+    C2-S3-T4  sequent 0.30 -&gt; 0.70
+    C3-S1-T4  iuxta 0.20 -&gt; 0.85   sequent 0.20 -&gt; 0.70
+    C3-S2-T4  iuxta 0.50 -&gt; 0.85   sequent 0.20 -&gt; 0.70
+    C3-S3-T4  sequent 0.20 -&gt; 0.70</code></pre>
+<p>Two things the overlay makes visible. <strong>The adversarial cells barely move</strong>, because scrutiny had already carried <code>iuxta</code> to 0.85 on its own---an adversarial reader re-times the material whether or not invited, which is the same fact about time that the declaration asserts about the document, arriving from the reader's side instead of the writer's. <strong><code>placement</code> loses <code>deferred</code> in every full-reading cell</strong>, which is the one place office narrows a choice triage had already made: <code>full</code> takes <code>deferred</code> or <code>coda</code>, and the judicial declaration removes the first because the build now belongs to the chronology rather than to the argument.</p>
+<p>One cell engages the coupling refusal. At <strong>C1-S1-T1</strong> constructive, <code>sequent</code> at 0.65 stands more than 0.35 above the <code>iuxta</code> its scrutiny would produce, so the transform raises <code>iuxta</code> from 0.20 to 0.30. The depleted settled reader in a constructive document is the single posture that drifts toward bare chronology unaided, and it is the cell to watch if the gap constant is ever retuned.</p>
+<h2 id="the-obligation-overlay">The Obligation Overlay</h2>
+<p>For a reader present by choice. Apply to any grid cell; the deviations are few because low obligation changes the reader's terms rather than the reader's capacity.</p>
+<p>The deltas below are the full-scale case, at obligation 0.0 against the 0.90 the grid holds. Intermediate readers scale them: take <code>(0.90 - obligation)</code> over 0.90, clamped to the unit range, and apply that fraction. A reader at 0.70 takes a little over a fifth of each delta, which moves <code>steady</code> from 0.92 to 0.78 and <code>settled</code> from 0.75 to 0.64 --- not the voluntary case, and not the obliged one either.</p>
+<pre><code>steady      -0.60   valence is the recruitment instrument; movement
+                    that puts a settled reader on alert is what
+                    brings a voluntary one in
+settled     -0.35   motion supplies interest to a reader who came to
+                    be interested
+deference   +0.30   a volunteer cannot be mandated, and the attempt
+                    ends the reading
+spread      hold high   the reader consented to attend, not to work
+placement   early or sentence
+</code></pre>
+<p>Note what does not move. <code>plain</code>, <code>grounded</code>, and <code>sparse</code> stay where headroom put them, because a casual reader's capacity is whatever it is and voluntariness does not change it. The overlay reverses the professional default on exactly two settings, and the two it reverses are the two that govern whether a reader arrives at all.</p>
+<p><strong>The scroller</strong> is this overlay applied to any T4 cell: attention available for one sentence, won or lost inside it. <strong>The casual reader</strong> is the overlay applied to C2-S1-T3. Both were catalogued as distinct postures before the grid existed, and both turn out to be one modifier away from cells the grid already holds.</p>
+<h2 id="worked-derivations">Worked Derivations</h2>
+<p>The roster and the derivations are one artifact seen from two sides. A derivation is the transform applied to one posture with its reasoning shown; the grid is the set of derivations whose results were worth caching. Three are worked here---the canonical case, a conflict, and an off-grid posture---and the procedure they demonstrate generates the rest.</p>
+<h3 id="c2-s1-t1-the-settled-executive">C2-S1-T1, the settled executive</h3>
+<p><em>Posture.</em> Fluency 0.60: the reader knows the domain without living in it. Stamina 0.50: attention secured, time scarce. Appetite 0.40: wants the finding and holds the craftsmanship that produced it as someone else's concern. Scrutiny 0.15: not evaluating the writer. Triage full: reads it through or delegates it entirely.</p>
+<p><em>Capacity</em> is the lower of fluency and stamina, so 0.50, and the base for the capacity-governed settings is 0.50. <code>settled</code>, <code>linked</code>, and <code>sparse</code> take it directly.</p>
+<p><em>Appetite</em> at 0.40 sits marginally below neutral, nudging <code>spread</code> up to 0.53---the reader will not thank you for compression but is not injured by its absence either. <code>plain</code> derives from fluency at 0.42, and <code>grounded</code> from capacity plus the asymmetry allowance at 0.65, since a term left unfounded degrades everything downstream while a term founded unnecessarily costs one sentence.</p>
+<p><em>Scrutiny</em> at 0.15 puts <code>bare</code> at 0.90 and <code>attribution</code> at <code>artifact</code>. The pre-emptive defense that an auditor requires reads to this reader as a signal of trouble.</p>
+<p><em>Triage</em> full takes <code>placement</code> <code>deferred</code> and <code>priority</code> <code>content</code>.</p>
+<p><em>The result is unremarkable</em>, which is the finding. The canonical professional document sits near the middle of nearly every setting, and the roster's value is not here but at the cells where something pulls.</p>
+<h3 id="c1-s3-t1-the-depleted-auditor">C1-S3-T1, the depleted auditor</h3>
+<p><em>Posture.</em> An adversarial reader by role, at the end of a long engagement. Fluency 0.20 in this particular subject matter, stamina 0.15, appetite 0.25, scrutiny 0.85, triage full.</p>
+<p><em>The conflict is explicit.</em> Scrutiny at 0.85 wants <code>flat</code> at 0.30---three perspectival strata per sentence, the provenance of every assertion carried in its syntax. Capacity at 0.15 wants <code>flat</code> at 0.90, because a reader in this state cannot hold three anchors open to the end of a sentence.</p>
+<p><em>Yield resolves it.</em> The conflict rule takes the higher value, conceding 0.15 toward the scrutiny pull, and <code>flat</code> lands at 0.75. The consequence is not that provenance is abandoned but that it moves: out of syntax and into structure. <code>attribution</code> at <code>agent</code> names the source in the sentence rather than nesting a stance about it, and an explicit provenance apparatus---a source line, a citation, a table---carries what layered framing would have carried.</p>
+<p><em><code>bare</code> resolves the same way.</em> Scrutiny wants 0.15, the headroom ceiling lifts it to 0.35. Every claim is still defended; the defense is short and adjacent rather than woven through the assertion.</p>
+<p><em>This is the entry that justifies the grid.</em> Neither instinct alone produces it. Configuring for the auditor produces prose the reader cannot process; configuring for the depletion produces prose the reader will not accept.</p>
+<h3 id="an-off-grid-posture-the-specialist-reading-outside-the-specialty">An off-grid posture: the specialist reading outside the specialty</h3>
+<p><em>Posture.</em> Fluency 0.25---this is not their field. Stamina 0.80, rested and willing. Appetite 0.90, a reader who wants compression and resents its absence. Scrutiny 0.20. Triage scan.</p>
+<p><em>No cell holds this.</em> Credit is bounded by the weaker of fluency and stamina, so capacity is 0.25 and the composite lands near C1. But appetite at 0.90 is a C3 value, and appetite overrides fluency wherever they disagree.</p>
+<p><em>Take the two nearest cells and read the difference.</em> C1-S1-T2 supplies <code>settled</code> 0.85, <code>linked</code> 0.85, <code>sparse</code> 0.85---all stamina-governed, and stamina here is high, so all three are wrong. C3-S1-T2 supplies them at 0.15, which stamina supports. The capacity-governed settings therefore resolve from C3 and the fluency-governed settings from C1.</p>
+<p><em>The synthesis.</em> <code>settled</code> 0.20, <code>linked</code> 0.20, <code>sparse</code> 0.25, taken from stamina. <code>plain</code> 0.80, taken from fluency, and <code>grounded</code> 0.90, taken from capacity, which fluency binds here: this reader wants terms defined even though he is rested enough to infer them, because inference costs him attention he would rather spend on the argument. <code>spread</code> 0.20, taken from appetite over fluency: compress the contrasts, gloss the vocabulary. <code>placement</code> <code>frame</code> from triage.</p>
+<p><em>The configuration is internally strange and correct.</em> Dense, mobile, compressed prose in plain glossed vocabulary---which is exactly what a good popular science article for a scientist looks like, and exactly what neither a C1 nor a C3 archetype would have produced.</p>
+<h2 id="using-the-grid-for-trial">Using the Grid for Trial</h2>
+<p>The stated practice is to try one configuration, try a second, and synthesize a third from what the two revealed. The grid supports it directly, and the support is structural rather than incidental.</p>
+<p><em>The first attempt takes an entry's centers.</em> If the reception is unsatisfactory, the reader's complaint identifies a setting through the instruments' reverse diagnosis, and that setting's tolerance edge is where the second attempt goes---not a fresh guess, but the same configuration displaced 0.10 or 0.20 in the direction the complaint indicates.</p>
+<p><em>The second attempt is often better because the first was correct for the assessed posture and the assessment was slightly wrong.</em> The difference between the two attempts measures the assessment error, and the third configuration corrects the posture rather than the prose. This is why the correction should be recorded against the posture component and not against the document: a posture corrected fixes every subsequent document for that reader.</p>
+<p><em>Where the two attempts bracket, interpolate.</em> Grid neighbors differ by one band on one axis, so a target between them is a linear interpolation with widened tolerance. Where they do not bracket---where both attempts fail in the same direction---the posture was misassessed on a component neither attempt varied, and the diagnosis returns to the transform.</p>
+<h2 id="what-the-grid-cannot-settle">What the Grid Cannot Settle</h2>
+<p>Thirty-six cells span the professional range and do not exhaust it. The grid holds obligation high and <code>office</code> constructive, treats headroom as a composite, and samples each axis at three or four points. A reader whose components pull in three directions at once is served by the derivation procedure and not by any entry.</p>
+<p>The grid also cannot validate itself. Its cells are computed from a transform whose governance assignments are reasoned rather than measured, and the four corrections recorded at the head of this document were found by generating configurations, not by inspecting the rules. Further corrections will arrive the same way: from a cell whose output a practitioner recognizes as wrong, traced back to the assignment that produced it.</p>
+<h2 id="what-thirty-six-cells-made-visible">What Thirty-Six Cells Made Visible</h2>
+<p>The roster was commissioned to seed trial and error, and it did something else first. Four settings had been defined precisely and left underived, which no amount of hand-configuration would have exposed, since a writer setting a value by judgment never notices that no rule was available to set it. Computing the grid was the audit.</p>
+<p>It also produced one wrong answer, and the wrong answer was worth more than three of the right ones. Forced to derive <code>cadence</code> from something, the transform derived it from <code>spread</code>, and the result forbade a register that exists---which is how a model announces that it has been asked for a determination the world does not supply. Three settings turn out to take a document-side input, and the demand that everything derive from the reader was itself the error.</p>
+<p>The sixth posture component surfaced the same way, from a uniformity rather than an error: <code>steady</code> held above 0.80 in all thirty-six cells, and a setting that never varies across a spanning grid is either constant in the world or governed by something the grid does not contain. It was the second, and what the grid did not contain was the difference between a reader who must read and a reader who may leave. The instrument had been built by people writing to readers who had to read them, and the assumption was so thoroughly satisfied that it had never needed stating---which is the ordinary way a framework acquires a blind spot, and the ordinary way a spanning grid finds one.</p>
+<p>Both discoveries have the same shape, arriving from opposite directions. A setting that would not vary had a cause outside the model; a setting that had no cause was being forced to take one. Neither is visible in a configuration set by hand, because judgment supplies the missing rule silently and never reports having done so.</p>
+</body>
+</html>

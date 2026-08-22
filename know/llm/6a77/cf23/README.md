@@ -1,77 +1,119 @@
-
 # [LLM-Synthesized Essay](https://pub.iuxta.com/know/llm/)
+## [Curated Presentation](../../)
+## [The Transmission Layer Catalog](./)
 
-## Curated Presentation
+*(c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution.*
 
-### [The Transmission Layer Catalog](./)
+Two documents can say the exact same thing and land differently on the same
+reader---because content is one thing to shape, and how it reaches the reader
+is another: the vocabulary it draws on, the weight it carries at the close,
+and the viewpoint it holds through the middle.
 
-_(c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution._
+The Transmission Layer is a set of skills for making delivery deliberate.
+Describe the reader, name the configuration, hand it to a language model with
+a draft, and synthesis delivers the same content with different reception.
 
-<!-- What gets said and how it arrives are two separate decisions.
+---
 
-* [The Transmission Layer: For the Reader Already Paying Attention](./transmission-layer-essay.md)
-* [Transmission Configurations](./transmission-configurations-roster.md)
-* Transmission Skills:
-  [Landing](./Transmission_Landing-SKILL.md),
-  [Load](./Transmission_Load-SKILL.md),
-  [Vantage](./Transmission_Vantage-SKILL.md)
+The [Transmission Layer essay](./transmission-layer-essay.md.html) is a good
+place to start. A quick read is enough to begin experimenting with the skills
+and configurations, and to try re-voicing an existing composition.
 
--->
+- [Transmission](./transmission-SKILL.md.html) --- when delivery should be set
+  deliberately rather than by instinct, or when the same content needs to reach
+  a different audience than it was written for
+  - [Load](./transmission-load-SKILL.md.html) --- for smooth development under
+    fatigue or unfamiliarity, or for compact expert reference, specification,
+    and prompt artifacts where compression is the deliverable
+  - [Land](./transmission-land-SKILL.md.html) --- when a message must land at
+    a chosen weight on a chosen reader
+  - [Vantage](./transmission-vantage-SKILL.md.html) --- viewpoint persistence,
+    sentence contiguity, perspectival layering, unrequested justification, and
+    attribution mode
 
-Two documents can say the exact same thing, at the exact same difficulty,
-and still land completely differently on the same reader---because
-what gets said and how it arrives turn out to be two separate decisions.
+- [Transmission Model Ontology](./transmission-model-ontology.md.html) ---
+  fixes what a transmission instrument is; nothing here composes prose, it
+  says what the things that compose prose are
+  - [Transmission Roster Generator](./transmission-roster-gen.py) --- Python
+    source; generates the roster grid from the transform
+  - [Transmission Roster](./transmission-roster.md.html) --- thirty-six sample
+    audience configurations across the professional range, from six reader
+    posture components through three instruments; a foundation for precision
+    audience calibration and a reference for finding the configuration nearest
+    your reader
 
-The [Transmission Layer essay](./transmission-layer-essay.md)
-lays out the idea, the guide for the
-skills and configurations
-that follow it.
-A document's delivery broken into three levers for a writer's purpose---does
-vantage complexity and precision help, how much lands in a single breath,
-where does the point sit and how hard is it pushed? A quick read of the essay
-is enough to begin experimenting with the skills and example configurations,
-try revoicing an existing composition.
-
-<!--
-[Vantage](./Transmission_Vantage-SKILL.md),
-[Load](./Transmission_Load-SKILL.md), and
-[Landing](./Transmission_Landing-SKILL.md)
--->
-_Load_, _Landing_, and _Vantage_
-are the levers, one skill each. 
-Name a setting, with a draft, provided to a language model and 
-the audience of the prose is renewed---same content, different arrival.
-- [Load](./Transmission_Load-SKILL.md) --- position instantaneous cognitive load
-- [Landing](./Transmission_Landing-SKILL.md) --- when a message must land at a chosen weight on a chosen reader
-- [Vantage](./Transmission_Vantage-SKILL.md) --- when the reader's cost of tracking who speaks, from what vantage, at what remove should be deliberately set
-
-[Transmission Configurations](./transmission-configurations-roster.md)
-is a selection of examples, settings for various audiences.
-A reference card, where the settings are already chosen, 
-find the reader nearest yours, and use the configuration beside it,
-or reframe your draft for a completely new audience.
-
-
+[Transmission Configurations](./transmission-configurations-roster.md.html) is
+a selection of worked examples, settings already resolved for various
+audiences. Find the reader nearest yours, use the configuration beside it, or
+re-frame your draft for a completely new one.
 
 <!--
-Their edit raises the register on its own: the triple-question is a compression figure, so peak has to come down from 0.85 to make room for it, and consolidation follows --- "vantage," "levers," and "lands in a single breath" all travel on first mention now, which is correct for a browser who will either click or leave. Bridging drops slightly because the paragraphs are meant to be entered independently, one per artifact.
-
-/transmission-vantage 0.4 dwell=0.45 attribution=agent bridging=0.45
-/transmission-load peak=0.7 onset=0.5 consolidation=0.35 cadence=misura
-/transmission-landing placement=deferred sanction=0.9 recurrence=0.55 affect=0.2
+use the roster as a guide to tune a setting to a specific individual or
+demographic for subsequent transmission quality of base communications
 -->
 
 ---
 
+**Quick reference** --- the components and what they govern.
 
+- **posture** --- six things that are true of the reader right now
+  - **fluency** --- vocabulary and conceptual holdings in this domain
+  - **stamina** --- assembly rate available now: fatigue, time pressure,
+    position in the day
+  - **appetite** --- desire for compression, as against capacity for it
+  - **scrutiny** --- how far the reader is evaluating the writer alongside the
+    content
+  - **triage** --- `full`, `scan`, `decide`, `sentence` --- what the reader
+    physically does with the document
+  - **obligation** --- how far the reader is obliged to read at all
 
-<!--
-Peak was the actual fault, not the framing: <br>
-negated contrast ("does not just," "instead of," "rather than") is a compression figure by definition, and an affirmative-only rule removes that figure from the inventory entirely, so peak needs to sit high enough that nothing in the antithesis family survives a pass.
-Dwell holds a beat longer so each artifact gets settled treatment rather than blurring into a chain, and 
-attribution stays agent but anchors to the reader arriving, not an unspecified narrator doing the chasing.
-/transmission-vantage 0.4 dwell=0.4 attribution=agent bridging=0.55
-/transmission-load peak=0.85 onset=0.5 consolidation=0.45 cadence=misura
-/transmission-landing placement=deferred sanction=0.9 recurrence=0.55 affect=0.2
--->
+- **load** --- cost of the reader's understanding; the pace and weight of what
+  arrives
+  - **spread** --- contrasts distributed across a span rather than packed into
+    a clause
+  - **sparse** --- one new load-bearing concept per section; subsequent
+    material develops it before another opens
+  - **plain** --- plain equivalents substituted wherever one exists at the same
+    register
+  - **grounded** --- foundation laid before the document depends on a
+    compressed form
+  - **cadence** --- sentence rhythm: `staccato`, `misura`, `legato`
 
+- **land** --- what the reader carries out; where emphasis falls and how hard
+  the ask arrives
+  - **steady** --- flat; gravity carried by content and placement, not tonal
+    signaling
+  - **deference** --- invitation; ideas offered to mature as the reader's own
+  - **single** --- only the message recurs; one memorable phrase, chosen
+    beforehand
+  - **placement** --- where the message sits: `sentence`, `frame`, `coda`,
+    `deferred`, `early`
+
+- **vantage** --- cost of knowing where a statement stands; who speaks, from
+  what position, as of when
+  - **settled** --- one viewpoint per section; shifts only at announced
+    structural boundaries
+  - **linked** --- every sentence opens on ground the previous one prepared
+  - **flat** --- one perspectival layer; framing collapsed into direct
+    predication
+  - **bare** --- no unrequested justification; sources identified by function,
+    never defended
+  - **iuxta** --- every claim carries the knowledge state it belonged to; an
+    unestablished moment is declared rather than supplied
+  - **sequent** --- composition tracks chronology throughout; departures
+    announced
+  - **attribution** --- where claims anchor: `agent`, `artifact`, `impersonal`
+
+---
+
+The default below is the settled-professional starting point: a capable
+reader, moderate stamina, settled scrutiny, reading it through.
+
+```
+/transmission
+  fluency=0.60  stamina=0.50  appetite=0.40  scrutiny=0.15
+  triage=full   obligation=0.90
+  office=constructive  cadence=misura  priority=content  span=
+```
+
+---
