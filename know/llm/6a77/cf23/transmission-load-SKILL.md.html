@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+section[role="doc-endnotes"] ol { list-style: none; padding-left: 0; }
+li[role="doc-endnote"] p { display: inline; margin: 0; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h1 id="transmission-load">Transmission Load</h1>
+<p>The same content delivered through a short heavy conductor or a long light one. This instrument sets power, not energy: how much arrives per instant rather than how much arrives.</p>
+<p>A reader's difficulty with prose frequently reflects the timing of complexity rather than its quantity. Identical content, differently distributed, arrives comfortably. Distribution is a position the prose occupies, and a position moves in either direction---the operation that unpacks a compressed contrast runs equally well in reverse, and reference cards are built by running it backward on purpose.</p>
+<p><em>(c) 2026 George Georgalis &lt;george@iuxta.com&gt; Unlimited use with attribution.</em></p>
+<pre><code>version 1.4 --- 2026-08-23
+</code></pre>
+<h2 id="reading-the-settings">Reading the Settings</h2>
+<p><strong>0.0 is the compact, forceful pole; 1.0 is the gradual, low-pressure pole.</strong> Each setting is named for the quality maximal at 1.0. At 1.0 the prose is spread, sparse, plain, and ground.</p>
+<p>A setting names a region to occupy, not a limit not to exceed. A low <code>spread</code> calls for compression; it does not merely tolerate it.</p>
+<p>Values read by position, not by scale: <code>20</code>, <code>2.0</code>, <code>0.2</code>, and <code>1/5</code> place a setting identically.</p>
+<p>Where a conflict forces a setting off center it yields high, toward the light pole. The one exception: where appetite is confidently high, <code>spread</code> yields low, since distribution offered to a reader who wanted compression registers as time spent without consent.</p>
+<h2 id="template">Template</h2>
+<pre><code>load        spread=0.53  sparse=0.50  plain=0.42  ground=0.65</code></pre>
+<pre><code>cadence      staccato     short declaratives dominant
+             misura       medium sentences, short ones as punctuation
+             legato       long-breath sentences, each resolving in turn</code></pre>
+<p>Values are the settled-professional default. <code>cadence</code> is declared from document kind rather than derived, and the full calibration is in the <code>transmission</code> skill and in the roster.</p>
+<h2 id="invocation">Invocation</h2>
+<p><code>/transmission-load 0.2</code> sets all scalars to that band. <code>/transmission-load spread=0.2 sparse=0.5 cadence=misura</code> overrides individually. Bare invocation defaults to 0.6.</p>
+<p>Ordinarily the configuration arrives from the <code>transmission</code> transform rather than by direct setting.</p>
+<h2 id="settings">Settings</h2>
+<h3 id="spread-contrast-distribution">spread --- contrast distribution</h3>
+<p>How far a contrast is distributed across the prose. The compact end is the inventory of high-wattage figures: antithesis, negated contrast, chiasmus, aphorism, dense coinage, triple construction---any formulation whose entire force lands in a single clause, maximally precise per token and maximally demanding per instant.</p>
+<ul>
+<li><strong>1.0</strong> No peaks. Every contrast develops across a span of predications rather than detonating in one.</li>
+<li><strong>0.5</strong> One high-wattage figure per paragraph, positioned at the close where accumulated context has covered its cost.</li>
+<li><strong>0.0</strong> Compression is the register. Aphoristic construction throughout: expert reference cards, prompt artifacts, specifications written where no prior detail existed, research abstracts. The reader headroom is already there; use it.</li>
+</ul>
+<p><strong>Relocation runs both ways.</strong> Downward: identify the figure's two poles, give each its own predication, let the contrast emerge from adjacency, and spend the recovered emphasis on ordering so the decisive pole lands last. Upward: collapse a developed contrast into a single predication, drop the connective, let juxtaposition carry the logic. Every term survives in both directions, and the precision is undiminished.</p>
+<p>Failure low, outside its context: serial detonation. Each formulation is admirable and the sequence is exhausting. Comprehension survives; the settled attentive state does not. Failure high: prose without profile, nothing quotable, nothing carried forward.</p>
+<h3 id="sparse-concept-arrival">sparse --- concept arrival</h3>
+<p>How thinly new load-bearing concepts arrive. Each opens an account the reader services until something closes it, and parallel open accounts compound rather than queue.</p>
+<ul>
+<li><strong>1.0</strong> One new concept per section. Intervening material develops, applies, and discharges it.</li>
+<li><strong>0.5</strong> One per paragraph; supporting detail unrestricted.</li>
+<li><strong>0.0</strong> Parallel arrival. Concepts land together and are disambiguated by their relations. Taxonomies, enumerations, reference matter, abstracts.</li>
+</ul>
+<p>Failure low: the reader loses the thread mid-section though every sentence is simple. Failure high: a reader who already holds the material is walked through it, and gradualism offered to such a reader lands as an imposition.</p>
+<h3 id="plain-lexical-register">plain --- lexical register</h3>
+<p>Word-level difficulty, which moves independently of how the content is distributed.</p>
+<ul>
+<li><strong>1.0</strong> Plain equivalents substituted wherever one exists at the same register. Any term retained is glossed at first use. Nominalizations converted where the actor is nameable.</li>
+<li><strong>0.5</strong> Extended vocabulary where no same-register plain equivalent exists, glossed on first appearance.</li>
+<li><strong>0.0</strong> Extended vocabulary preferred and travelling unglossed. Specialist register assumed rather than introduced.</li>
+</ul>
+<p>Judge a word by its properties rather than by a list: syllable count, length, whether the root is common in general use, and whether it carries an abstracting suffix. A three-syllable term with a specialist sense and a plain same-register synonym is the case this setting exists to catch.</p>
+<p>Failure low: the reader parses every sentence and understands none. Failure high: a term of art replaced by a paraphrase that loses its edge, which insults a fluent reader and misinforms a novice. Where no same-register equivalent exists, this setting has nothing to offer and <code>ground</code> takes the work instead.</p>
+<h3 id="ground-foundation-before-compression">ground --- foundation before compression</h3>
+<p>Whether a compressed form has its foundation laid before the document leans on it.</p>
+<p><strong>What counts as a compressed form is decided by the reader, not by the form.</strong> A phrase-as-lemma the document coins, a named concept it introduces, an acronym, a standard abbreviation, an established term of art---all belong here whenever this reader does not already hold them. Inherited jargon a reader lacks is functionally a coinage, and an in-house abbreviation is not one to the house.</p>
+<p><strong>This setting and <code>plain</code> are two answers to one problem.</strong> The reader lacks a term. <code>plain</code> substitutes: replace it with a same-register equivalent and the difficulty goes away with the word. <code>ground</code> retains: keep the precise term and build the foundation that makes it usable. The two trade against each other, and the case that matters is the one where no equivalent exists at the same register---there <code>plain</code> can do nothing without losing the distinction, and <code>ground</code> carries the whole burden. Low <code>plain</code> with high <code>ground</code> is the configuration for vital detail delivered to a reader who does not yet hold the vocabulary: precise terms, fully taught.</p>
+<p>The operation at high settings is consolidation. First occurrence carries scaffolding sufficient for the meaning to arrive whole. A proximate second occurrence, in the same passage or the next, signals that the phrase repays retention. Subsequent occurrences rotate grammatical position and modal frame, demonstrating range without mechanical repetition. Only then does a back-reference retrieve the full apparatus at compressed cost, and interval calibration follows---distant enough to refresh, near enough to sustain recall.</p>
+<ul>
+<li><strong>1.0</strong> Full consolidation with interval calibration. No compressed form invoked before its foundation is laid.</li>
+<li><strong>0.5</strong> Enforced for forms invoked more than twice.</li>
+<li><strong>0.0</strong> Coinage travels on first mention. Expert readers, dense reference artifacts, prompt material where the consuming model holds the definition already.</li>
+</ul>
+<p>Fluency and stamina govern this jointly, and the pairing is the point. Fluency decides whether the reader holds the form; stamina decides whether a reader who lacks it can infer it from context. A rested reader assembles a coinage from its first use and resents being taught it. A depleted reader cannot, however fluent, and the two components routinely disagree in exactly the population that matters---specialists at the end of a hard week. Resolve high.</p>
+<p>Failure low with a reader who lacks the vocabulary: compression collapses into opaque shorthand, the back-reference points at a foundation never laid, and everything downstream degrades quietly, the reader having no way to identify where the trouble began. Failure high: a reader who already holds the term is walked through its construction, which costs a paragraph and a small insult.</p>
+<p>Distinguish from <code>bare</code>, which is adjacent and separate. <code>bare</code> governs whether a <em>claim</em> arrives defended. This governs whether a <em>term</em> arrives usable.</p>
+<h3 id="cadence-sentence-rhythm-mode">cadence --- sentence rhythm <em>(mode)</em></h3>
+<p>The carrier wave across which distributed precision spreads.</p>
+<ul>
+<li><code>staccato</code> --- short declaratives dominant, suspension free, high tolerance for parallel concept arrival. Recruitment, rosters, catalogs, alert register, reference cards. Re-concentrates load by shortening the span available to distribute it.</li>
+<li><code>misura</code> --- alternating measure. Medium sentences with periodic short declaratives as punctuation. General-purpose.</li>
+<li><code>legato</code> --- long-breath sentences, subordination-rich, each resolving fully before the next begins. The span-providing mode; pairs with high <code>spread</code>.</li>
+</ul>
+<p>Cadence is declared from document kind, not derived from the reader. The same reader takes different rhythms for a catalog and for an argument, and long-breath sentences carrying concentrated figures are a real register that no derivation should forbid.</p>
+<p>One constraint is enforced regardless of document kind. <code>staccato</code> with high <code>spread</code> cannot be satisfied: short sentences have no span to distribute across, so <code>spread</code> at 0.70 and above excludes it. Resolve toward <code>misura</code>, lower <code>spread</code>, or declare a local override so that discursive sections and catalog sections run different rhythms.</p>
+<h2 id="composition-order">Composition Order</h2>
+<p>Distribution is architecture, not polish. Set cadence, position concept arrival in the outline, ground every planned compression, then audit drafted paragraphs against <code>spread</code>---relocating in whichever direction the band requires.</p>
+<p>Throttling concept arrival above a failed foundation only slows the leak.</p>
+<h2 id="reverse-diagnosis">Reverse Diagnosis</h2>
+<ul>
+<li>"I had to read that twice" ---&gt; <code>spread</code> too low. Understanding arrived faster than the reader could assemble it. Unpack the dense clause into successive predications, keeping every term.</li>
+<li>Prose reads flat, correct, unmemorable ---&gt; <code>spread</code> too high, nothing concentrated enough to retain.</li>
+<li>"I lost the thread," said of individually simple sentences ---&gt; <code>sparse</code> too low, obligations accumulating faster than they discharge.</li>
+<li>Every sentence parses and nothing is understood ---&gt; <code>plain</code> too low.</li>
+<li>"You used that word earlier---remind me?" ---&gt; <code>ground</code> incomplete, or the interval longer than retention supports.</li>
+<li>Rhythm feels mechanical ---&gt; <code>cadence</code> fighting the <code>spread</code> band.</li>
+</ul>
+<p>Each corrects one document. The posture component behind it corrects every document for that reader, and that mapping belongs to the <code>transmission</code> skill.</p>
+<h2 id="interactions">Interactions</h2>
+<p>Where <code>spread</code> runs low throughout, density becomes the baseline rather than the departure, and emphasis is no longer available through contrast---<code>transmission-land</code> must work through placement and recurrence instead. <code>sparse</code> and <code>ground</code> are one operation: slowing the arrival of concepts repays only where the concepts that arrive are properly founded.</p>
+<p><code>iuxta</code> and <code>sequent</code> in <code>transmission-vantage</code> arrive on this instrument's budget rather than on their own. Epoch marking and announced ordering are content, not framing, so raising either adds tokens at fixed compression, and under a fixed <code>priority</code> the difference is paid out of <code>spread</code> and <code>plain</code>. Where that payment drops compression below the reader's band, report the conflict instead of resolving it: extent and distribution are both the writer's to trade, and neither is the transform's to settle. A judicial document written to a low-headroom reader is the case that produces it.</p>
+<p>A maximum-density style is an adjacent, self-standing instrument. Low <code>spread</code> with low <code>ground</code> approximates its delivery profile but not its generative inventory; these settings position prose, they do not stock a lexicon. Invoke it directly when that inventory is wanted.</p>
+</body>
+</html>

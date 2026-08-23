@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+section[role="doc-endnotes"] ol { list-style: none; padding-left: 0; }
+li[role="doc-endnote"] p { display: inline; margin: 0; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h1 id="llm-synthesized-essayhttpspubiuxtacomknowllm"><a href="https://pub.iuxta.com/know/llm/">LLM-Synthesized Essay</a></h1>
+<h2 id="curated-presentation"><a href="../../">Curated Presentation</a></h2>
+<h2 id="the-transmission-layer-catalog"><a href="./">The Transmission Layer Catalog</a></h2>
+<p><em>(c) 2026 George Georgalis &lt;george@iuxta.com&gt; Unlimited use with attribution.</em></p>
+<p>Two documents can say the exact same thing and land differently on the same reader---because content is one thing to shape, and how it reaches the reader is another: the vocabulary it draws on, the weight it carries at the close, and the viewpoint it holds through the middle.</p>
+<p>The Transmission Layer is a set of skills for making delivery deliberate. Describe the reader, name the configuration, hand it to a language model with a draft, and synthesis delivers the same content with different reception.</p>
+<hr />
+<p>The <a href="./transmission_layer-essay.md.html">Transmission Layer essay</a> is a good place to start. A quick read is enough to begin experimenting with the skills and configurations, and to try re-voicing an existing composition.</p>
+<ul>
+<li><a href="./transmission-SKILL.md.html">Transmission</a> --- when delivery should be set deliberately rather than by instinct, or when the same content needs to reach a different audience than it was written for
+<ul>
+<li><a href="./transmission-load-SKILL.md.html">Load</a> --- for smooth development under fatigue or unfamiliarity, or for compact expert reference, specification, and prompt artifacts where compression is the deliverable</li>
+<li><a href="./transmission-land-SKILL.md.html">Land</a> --- when a message must land at a chosen weight on a chosen reader</li>
+<li><a href="./transmission-vantage-SKILL.md.html">Vantage</a> --- viewpoint persistence, sentence contiguity, perspectival layering, unrequested justification, and attribution mode</li>
+</ul></li>
+</ul>
+<ul>
+<li><a href="./transmission_layer-ontology.md.html">Transmission Model Ontology</a> --- fixes what a transmission instrument is; nothing here composes prose, it says what the things that compose prose are
+<ul>
+<li><a href="./transmission_layer-roster-gen.py">Transmission Roster Generator</a> --- Python source; generates the roster grid from the transform</li>
+<li><a href="./transmission_layer-roster.md.html">Transmission Roster</a> --- thirty-six sample audience configurations across the professional range, from six reader posture components through three instruments; a foundation for precision audience calibration</li>
+</ul></li>
+</ul>
+<p>The roster is also a selection of worked examples, settings already resolved for various audiences, and a reference for finding the configuration nearest your reader. Use the configuration beside it, or re-frame your draft for a completely new one.</p>
+<!--
+use the roster as a guide to tune a setting to a specific individual or
+demographic for subsequent transmission quality of base communications
+-->
+<hr />
+<p><strong>Quick reference</strong> --- the components and what they govern.</p>
+<ul>
+<li><strong>posture</strong> --- six things that are true of the reader right now
+<ul>
+<li><strong>fluency</strong> --- vocabulary and conceptual holdings in this domain</li>
+<li><strong>stamina</strong> --- assembly rate available now: fatigue, time pressure, position in the day</li>
+<li><strong>appetite</strong> --- desire for compression, as against capacity for it</li>
+<li><strong>scrutiny</strong> --- how far the reader is evaluating the writer alongside the content</li>
+<li><strong>oblige</strong> --- how far the reader is obliged to read at all</li>
+<li><strong>triage</strong> --- <code>full</code>, <code>scan</code>, <code>decide</code>, <code>sentence</code> --- what the reader physically does with the document</li>
+</ul></li>
+</ul>
+<ul>
+<li><strong>load</strong> --- cost of the reader's understanding; the pace and weight of what arrives
+<ul>
+<li><strong>spread</strong> --- contrasts distributed across a span rather than packed into a clause</li>
+<li><strong>sparse</strong> --- one new load-bearing concept per section; subsequent material develops it before another opens</li>
+<li><strong>plain</strong> --- plain equivalents substituted wherever one exists at the same register</li>
+<li><strong>ground</strong> --- foundation laid before the document depends on a compressed form</li>
+<li><strong>cadence</strong> --- sentence rhythm: <code>staccato</code>, <code>misura</code>, <code>legato</code></li>
+</ul></li>
+</ul>
+<ul>
+<li><strong>land</strong> --- what the reader carries out; where emphasis falls and how hard the ask arrives
+<ul>
+<li><strong>steady</strong> --- flat; gravity carried by content and placement, not tonal signaling</li>
+<li><strong>invite</strong> --- invitation; ideas offered to mature as the reader's own</li>
+<li><strong>single</strong> --- only the message recurs; one memorable phrase, chosen beforehand</li>
+<li><strong>place</strong> --- where the message sits: <code>sentence</code>, <code>frame</code>, <code>coda</code>, <code>defer</code>, <code>early</code></li>
+</ul></li>
+</ul>
+<ul>
+<li><strong>vantage</strong> --- cost of knowing where a statement stands; who speaks, from what position, as of when
+<ul>
+<li><strong>settled</strong> --- one viewpoint per section; shifts only at announced structural boundaries</li>
+<li><strong>linked</strong> --- every sentence opens on ground the previous one prepared</li>
+<li><strong>flat</strong> --- one perspectival layer; framing collapsed into direct predication</li>
+<li><strong>bare</strong> --- no unrequested justification; sources identified by function, never defended</li>
+<li><strong>iuxta</strong> --- every claim carries the knowledge state it belonged to; an unestablished moment is declared rather than supplied</li>
+<li><strong>sequent</strong> --- composition tracks chronology throughout; departures announced</li>
+<li><strong>attribute</strong> --- where claims anchor: <code>agent</code>, <code>artifact</code>, <code>impersonal</code></li>
+</ul></li>
+</ul>
+<hr />
+<p>The default below is the settled-professional starting point: a capable reader, moderate stamina, settled scrutiny, reading it through.</p>
+<pre><code>/transmission
+  office=construct  cadence=misura  priority=content  span=
+  fluency=0.60  stamina=0.50  appetite=0.40  scrutiny=0.15
+  oblige=0.90   triage=full</code></pre>
+<hr />
+</body>
+</html>

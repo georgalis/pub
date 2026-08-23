@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+section[role="doc-endnotes"] ol { list-style: none; padding-left: 0; }
+li[role="doc-endnote"] p { display: inline; margin: 0; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h1 id="transmission-vantage">Transmission Vantage</h1>
+<p>Every perspectival shift asks the reader to locate the speaker again. Every nested frame holds another anchor open until the sentence resolves. The cost is neither good nor bad. It is a demand, and this instrument sets whether the document makes it.</p>
+<p>Vantage costs are the silent ones. A reader who has lost track of who is speaking does not report perspectival difficulty; the reader reports that the writing was hard to follow, or simply stops. Set vantage on purpose, because it will not be diagnosed for you.</p>
+<p><em>(c) 2026 George Georgalis &lt;george@iuxta.com&gt; Unlimited use with attribution.</em></p>
+<pre><code>version 1.4 --- 2026-08-23
+</code></pre>
+<h2 id="reading-the-settings">Reading the Settings</h2>
+<p><strong>0.0 is the compact, mobile pole; 1.0 is the steady, low-cost pole.</strong> Each setting is named for the quality maximal at 1.0. At 1.0 the prose is settled, linked, flat, and bare; every claim stands iuxta its moment, and the composition runs sequent with the chronology.</p>
+<p>A setting names a region to occupy, not a limit not to exceed. Low settings do not merely permit a mobile vantage; they call for it.</p>
+<p>Values read by position, not by scale: <code>75</code>, <code>7.5</code>, <code>0.75</code>, and <code>3/4</code> place a setting identically.</p>
+<p>Where a conflict forces a setting off center it yields high, toward the light pole, because asking too much of a vantage fails silently while asking too little fails visibly and is corrected by a second document.</p>
+<h2 id="template">Template</h2>
+<pre><code>vantage     settled=0.50  linked=0.50  flat=0.85  bare=0.90
+            iuxta=0.20    sequent=0.30  attribute=artifact</code></pre>
+<pre><code>attribute    agent        claims anchored to persons
+             artifact     claims anchored to documents
+             impersonal   claims anchored to conditions</code></pre>
+<p>Values are the settled-professional default. The full calibration, with the other two instruments and the document-side declarations, is in the <code>transmission</code> skill and in the roster.</p>
+<h2 id="invocation">Invocation</h2>
+<p><code>/transmission-vantage 0.75</code> sets all scalars to that band. <code>/transmission-vantage 0.75 settled=0.4 attribution=agent</code> overrides individually; stated values win and the master governs the rest. Bare invocation defaults to 0.6.</p>
+<p>Ordinarily the configuration arrives from the <code>transmission</code> transform rather than by direct setting.</p>
+<h2 id="settings">Settings</h2>
+<h3 id="settled-viewpoint-persistence">settled --- viewpoint persistence</h3>
+<p>How long one vantage holds before shifting. Point-of-view changes are scene cuts: rapid cutting reads as energy to a scanning reader and as whiplash to a settled one, and the reader's arrival state decides which.</p>
+<p>Stamina sets this setting and obligation modulates it. A reader who may leave at any sentence is recruited by motion, and holds still for nothing that was not the reason for arriving, so a voluntary reader takes a lower value than capacity alone would indicate.</p>
+<ul>
+<li><strong>1.0</strong> One vantage per section. Shifts occur only at announced structural boundaries, never mid-development.</li>
+<li><strong>0.5</strong> Vantage persists across a sentence group; shifts prefer paragraph seams.</li>
+<li><strong>0.0</strong> Free cutting, vantage shifting per clause. Correct where the document's structure is rotation among items rather than development of one: comparative material, rosters, catalogs.</li>
+</ul>
+<p>Failure low: the reader reports the piece as jumpy though every sentence is clear. Failure high: material whose structure is rotation is forced into false development, and the catalog reads as an argument.</p>
+<h3 id="linked-sentence-contiguity">linked --- sentence contiguity</h3>
+<p>How far each sentence opens on ground the previous sentence prepared. The mechanism is theme before rheme: open on given material, place the new in predicate position.</p>
+<ul>
+<li><strong>1.0</strong> Fully contiguous. Every sentence opens on given material and every section inherits its predecessor's closing concept.</li>
+<li><strong>0.5</strong> Contiguity dominant, cuts reserved for deliberate emphasis.</li>
+<li><strong>0.0</strong> Cut-dominant. Sentences open cold. Staccato, energetic; the scroller and the reference card both live here.</li>
+</ul>
+<p>Failure high: monotone glide. Without cuts the salience system loses its contrast medium, and the whole burden of emphasis transfers to which vocabulary recurs. Failure low: the reader assembles the connective logic that the prose declined to supply.</p>
+<h3 id="flat-perspectival-layering">flat --- perspectival layering</h3>
+<p>Layers per sentence. Each layer---a speaker stance, a framing verb, an embedded self-reference---is an anchor held open until the sentence closes.</p>
+<ul>
+<li><strong>1.0</strong> One layer. Framing collapses into direct predication. "The report gives the preliminary account," not "I offer this as the account's own account of itself."</li>
+<li><strong>0.5</strong> Two layers. A framing verb may carry one embedded stance.</li>
+<li><strong>0.0</strong> Three or more strata where precision warrants: a stance about a claim about a source. Legal hedging, epistemically fraught findings, expert reference where the provenance of every assertion is itself information.</li>
+</ul>
+<p>Failure low: readers re-read to resolve who claims what about whom. Failure high: contested attribution flattened into false directness, and provenance lost where provenance mattered.</p>
+<p><strong>When layering and capacity conflict, provenance moves rather than departs.</strong> An adversarial reader wants the provenance of every claim carried in its syntax; a depleted one cannot hold three anchors open to the end of a sentence. Both conditions occur together more often than either occurs alone, since adversarial reading is exhausting work. Resolve high---flat sentences---and relocate what the layers would have carried: <code>attribute</code> at <code>agent</code> names the source inside the sentence instead of nesting a stance about it, and an explicit apparatus beside the prose carries the rest. A source line, a citation, a column in a table. Provenance delivered structurally is lighter to read and no less complete, and the depleted auditor is the reader who proves it.</p>
+<h3 id="bare-unrequested-justification">bare --- unrequested justification</h3>
+<p>How much epistemic performance the prose carries that the reader did not ask for: justification, disclaimer, credibility signaling.</p>
+<ul>
+<li><strong>1.0</strong> None. Sources are identified by function and never defended, ranked, or apologized for. The document stands on its own footing.</li>
+<li><strong>0.5</strong> Justification only where a reasonable reader would actually pause.</li>
+<li><strong>0.0</strong> Every claim anticipates challenge and arrives pre-defended. Audit response, litigation-adjacent finding, adversarial review.</li>
+</ul>
+<p>The trap at low settings outside an adversarial context is exact and worth stating plainly: defending an uncontested claim raises the doubt it forestalls. The reader had accepted the point, and the defense attaches a question to settled material.</p>
+<p>Failure high: a genuine challenge arrives against a claim that made no case for itself.</p>
+<h2 id="time-and-the-office-declaration">Time and the Office Declaration</h2>
+<p><code>iuxta</code> and <code>sequent</code> take floors from <code>office</code>, a declaration of the document's office made by the writer and never derived from the reader. <code>construct</code>: the facts are inventory for what to build next, and sequence is largely arbitrary. <code>judicial</code>: the facts are evidence about decisions already taken, and the question is not what is reasonable altogether but what was reasonable at each point in time.</p>
+<p>Three orders run through any document that reports events. <strong>Chronology</strong> is what happened, and it is usually not given. <strong>Knowledge sequence</strong> is the order in which things became known, which diverges from chronology as a matter of course---a flaw introduced in March, exploited in June, and discovered in August has one chronology and a different knowledge sequence, and a judgment of conduct in July turns entirely on the second. <strong>Composition sequence</strong> is what the document delivers, and it is the only one the writer controls outright, which makes it the instrument through which the other two are honored or overwritten.</p>
+<p><code>sequent</code> aligns composition to chronology. <code>iuxta</code> aligns composition to knowledge sequence. They vary independently, which is why they are two settings: a bare incident timeline runs in perfect occurrence order while attaching no knowledge state to anything, and a finding grouped by control family may date every observation while following no order at all.</p>
+<h3 id="iuxta-epoch-attachment">iuxta --- epoch attachment</h3>
+<p>How far each claim arrives carrying the knowledge state it belonged to. The setting does not govern dates. It governs the moment at which a claim's accuracy is asserted to hold.</p>
+<ul>
+<li><strong>1.0</strong> Every claim stands according to its own moment, and where the moment cannot be established the document says so. A claim whose epoch is declared unknown is compliant; a claim supplied with a plausible one is not.</li>
+<li><strong>0.5</strong> Epoch carried on any claim bearing on a decision, present-anchored elsewhere.</li>
+<li><strong>0.0</strong> Present-anchored throughout. Every claim states what is now known and the moment it became known is not carried. Synthesis, specification, reference matter, design---anything whose facts are inventory for construction. Cheapest for the reader and correct wherever nothing is being judged.</li>
+</ul>
+<p>Scrutiny raises this setting, alone among the five it governs. An adversarial reader re-times the material whether or not invited, so epoch marking costs less than the challenge it forestalls.</p>
+<p>Failure high in a settled document: qualification attached to uncontested material reads as hedging, which is the trap <code>bare</code> names at its own low pole. Failure low in a judging document: the reader supplies the present as the epoch of every claim, having been offered no other, and reaches a verdict on knowledge the actor did not hold. Adding evidence deepens the fault rather than correcting it, since each new fact arrives equally timeless.</p>
+<h3 id="sequent-chronological-alignment">sequent --- chronological alignment</h3>
+<p>How closely composition sequence tracks chronology.</p>
+<ul>
+<li><strong>1.0</strong> Composition runs in occurrence order and every departure is announced. Where chronology is not established, the document reports the order as unestablished rather than imposing one.</li>
+<li><strong>0.5</strong> Chronological within sections, thematic across them.</li>
+<li><strong>0.0</strong> Composition free. Order is the argument's to choose and the reader re-times continuously. Maximum arrangement latitude, which is also the latitude within which sequence alone can change what true facts appear to mean.</li>
+</ul>
+<p>Stamina governs this setting, at the capacity base less a declared 0.20. Chronological order reduces re-timing work, which is a real call on the same fact the other capacity-governed settings answer, and a weaker one, since topical order supplies an economy of its own.</p>
+<p>Failure high without <code>iuxta</code>: the bare chronology, whose ordering discipline is visible and whose epoch silence is not. Failure low in a judicial document: the reader concedes every fact and reports the account as slanted, which is the correct reading, arrangement having done the work.</p>
+<h3 id="what-the-high-pole-asks">What the high pole asks</h3>
+<p>This pair is the only one whose settings can be satisfied by an admission. Every other setting is satisfied by doing something to the prose. These two, at their high poles, are satisfied by declaring a gap the writer cannot close: an epoch that cannot be established is declared unestablished, an order that cannot be established is reported as unestablished. Neither licenses imputation, and an imputed order presented as fact is the costliest error available here, because it arrives wearing the appearance of rigor.</p>
+<p>Expect the opposite instinct. A writer holding the other four settings reads a high pole as an instruction to add and will supply the missing epoch from inference.</p>
+<h3 id="attribute-where-claims-anchor-mode">attribute --- where claims anchor <em>(mode)</em></h3>
+<ul>
+<li><code>agent</code> --- anchored to persons. Maximum accountability and maximum stance-tracking cost, since the reader must model who claims, with what interest, against whom. Use where responsibility is the message.</li>
+<li><code>artifact</code> --- anchored to documents and presentations. The container is inert and requires no interest-modeling. Default for executive delivery.</li>
+<li><code>impersonal</code> --- anchored to conditions and states. Zero attribution surface, suited to settled fact and consensus finding. Reads as evasive wherever accountability is expected.</li>
+</ul>
+<p>Descend <code>agent</code> to <code>artifact</code> to <code>impersonal</code> as the reader's need to evaluate the source falls. Mixed modes are permitted, and each mode change is itself a vantage shift that spends from <code>settled</code>.</p>
+<p><code>attribute</code> answers who claims a thing and <code>iuxta</code>, above, answers as of when. The two are one question asked along different axes, and an <code>impersonal</code> attribution carrying no epoch is the pair of silences that produces most hindsight error.</p>
+<h2 id="composition-order">Composition Order</h2>
+<p>A perspectival pass after synthesis, not during it. Set layering to band, consolidate or fragment vantage spans to <code>settled</code>, position or remove justification, normalize attribution, then set the ratio of linked openings to cuts.</p>
+<p><code>sequent</code> is the exception and belongs in the outline rather than the pass, since composition sequence is settled before any sentence exists. <code>iuxta</code> runs with the perspectival pass: epoch marking attaches to claims already written.</p>
+<h2 id="reverse-diagnosis">Reverse Diagnosis</h2>
+<p>Read the defect back to the setting.</p>
+<ul>
+<li>"Hard to follow," said of a document whose sentences are each perfectly clear ---&gt; <code>settled</code> too low. The reader is paying to reorient rather than to understand, and the cost is felt without being available to name, which is why the symptom gets described instead of the cause.</li>
+<li>"Who is actually saying this?" ---&gt; <code>flat</code> too low, several perspectival layers open at once inside one sentence.</li>
+<li>"Why are you defending that?" ---&gt; <code>bare</code> too low for a non-adversarial reader.</li>
+<li>Clear but inert, nothing stands out ---&gt; <code>linked</code> too high. No cuts remain to carry emphasis.</li>
+<li>The reader tracks personalities instead of findings ---&gt; <code>attribute</code> should descend toward <code>artifact</code>.</li>
+<li>The reader assigns blame the record does not support ---&gt; <code>iuxta</code> too low. The epoch went unmarked, so the reader supplied the only one on offer, which is the reader's own present. The repair is epoch marking and not more evidence.</li>
+<li>The reader accepts the chronology and still misjudges the actor ---&gt; <code>sequent</code> high with <code>iuxta</code> low. The visibly rigorous failure, and the hardest to report, because the ordering discipline is exactly what persuaded the reader that the judgment was earned.</li>
+<li>"I lost the thread," said of a document in which every claim is dated ---&gt; <code>sequent</code> too low for the reader's stamina. Epoch marking without order transfers the re-timing work to the reader, and a depleted reader declines it. Presents as a <code>settled</code> defect and is not one.</li>
+<li>The reader treats a superseded finding as current ---&gt; <code>iuxta</code> high with <code>sequent</code> low, and no precedence cue survived the rearrangement. Dating each claim does not by itself say which claim won.</li>
+<li>"Why are you hedging about that?" ---&gt; <code>iuxta</code> too high for settled material, qualification raising the doubt it forestalls.</li>
+<li>The reader concedes every fact and calls the account slanted ---&gt; <code>office</code> and the reader's expectation disagree. Either the document is judicial and <code>sequent</code> is too low, or it is constructive and has not said so in its opening.</li>
+</ul>
+<p>Each of these corrects one document. The posture component behind it corrects every document for that reader, and that mapping belongs to the <code>transmission</code> skill. The last two are the exception: no posture component stands behind them, because <code>office</code> is an assessment of the document rather than of the reader.</p>
+<h2 id="interactions">Interactions</h2>
+<p><code>linked</code> at its high pole transfers the entire burden of emphasis to recurring vocabulary, which makes the <code>single</code> setting in <code>transmission-land</code> load-bearing rather than optional. Flattening layers reduces syntactic cost and leaves semantic pressure untouched: a flat sentence still detonates, so <code>spread</code> in <code>transmission-load</code> must move with it or neither effect lands.</p>
+<p><code>sequent</code> at 0.70 and above reaches <code>transmission-land</code> the same way. Composition sequence now belongs to the chronology and can no longer be arranged to carry the message, so <code>place</code> loses <code>defer</code> and <code>single</code> rises 0.15. Both settings also arrive on the <code>transmission-load</code> budget: epoch marking and announced ordering are content, not framing, so under a fixed <code>priority</code> they are paid for out of <code>spread</code> and <code>plain</code>.</p>
+<p>Temporal validation is a separate matter and stays separate. Building the epoch record---named states, labeled transitions, deltas distinguished from persistent properties---belongs to temporal reasoning outside these instruments, at present a cross-cutting standard within <code>character-selector</code> and intended for separation into a skill of its own. <code>office</code> decides how much of that record reaches the page and in what order. It registers nothing about whether the record is right.</p>
+</body>
+</html>
