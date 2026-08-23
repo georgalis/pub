@@ -875,7 +875,7 @@ the reader's capacity.
 
 The deltas below are the full-scale case, at obligation 0.0 against the
 0.90 the grid holds. Intermediate readers scale them: take
-`(0.90 - obligation)` over 0.90, clamped to the unit range, and apply
+`(0.90 - oblige)` over 0.90, clamped to the unit range, and apply
 that fraction. A reader at 0.70 takes a little over a fifth of each
 delta, which moves `steady` from 0.92 to 0.78 and `settled` from 0.75 to
 0.64 --- not the voluntary case, and not the obliged one either.

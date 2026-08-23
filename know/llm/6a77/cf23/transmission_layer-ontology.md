@@ -562,7 +562,7 @@ sixteen settings.
 - **oblige** governs `steady` directly---alone among the six, it
   rises and falls with its setting---and modulates `settled` and
   `invite`. The magnitudes are continuous: the shortfall against the
-  obliged professional case, `(0.90 - obligation)` over 0.90 clamped to
+  obliged professional case, `(0.90 - oblige)` over 0.90 clamped to
   the unit range, scales the full-scale deltas of `steady` less 0.60,
   `settled` less 0.35, and `invite` plus 0.30, with `place`
   moving to `early` once the shortfall reaches 0.60. A reader who may leave is recruited by valence
