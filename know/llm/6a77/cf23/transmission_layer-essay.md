@@ -512,8 +512,7 @@ that it was somehow hard to read.
     section xviii. The passages drawn on here are the account of
     rhetoric's office in paragraph 4, the remark on contraries in
     paragraph 5, and the criticism of Aristotle's colours in paragraph
-    6. Text at
-    <http://socrates.acadiau.ca/courses/engl/rcunningham/1103/Bacon.htm>
+    6. Text at <[http://socrates.acadiau.ca/courses/engl/rcunningham/1103/Bacon.htm](http://socrates.acadiau.ca/courses/engl/rcunningham/1103/Bacon.htm)>
 
 [^2]: The full set, with each setting's range and failure modes, is held
     by four companion skills a language model can apply to composition
@@ -528,12 +527,12 @@ that it was somehow hard to read.
 [^4]: Baruch Fischhoff, "Hindsight is not equal to foresight: The effect
     of outcome knowledge on judgment under uncertainty," *Journal of
     Experimental Psychology: Human Perception and Performance* 1, no. 3
-    (1975). Reprinted at
-    <https://pmc.ncbi.nlm.nih.gov/articles/PMC1743746>. On the
+    (1975). Reprinted at <[https://pmc.ncbi.nlm.nih.gov/articles/PMC1743746](https://pmc.ncbi.nlm.nih.gov/articles/PMC1743746)>.
+    On the
     consequences for investigations, see K. Henriksen and H. Kaplan,
     "Hindsight bias, outcome knowledge and adaptive learning," *Quality
     and Safety in Health Care* 12, suppl. 2 (2003),
-    <https://pmc.ncbi.nlm.nih.gov/articles/PMC1765779>
+    <[https://pmc.ncbi.nlm.nih.gov/articles/PMC1765779](https://pmc.ncbi.nlm.nih.gov/articles/PMC1765779)>
 
 [^5]: *Transmission Configurations: A Reference Roster*, companion
     appendix, holding thirty-six worked postures with the gradients
