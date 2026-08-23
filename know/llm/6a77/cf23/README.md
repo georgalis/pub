@@ -31,29 +31,32 @@ and configurations, and to try re-voicing an existing composition.
     sentence contiguity, perspectival layering, unrequested justification, and
     attribution mode
 
-- [Transmission Model Ontology](./transmission_layer-ontology.md.html) ---
+- [Model Ontology](./transmission_layer-ontology.md.html) ---
   fixes what a transmission instrument is; nothing here composes prose, it
   says what the things that compose prose are
-  - [Transmission Roster Generator](./transmission_layer-roster-gen.py) --- Python
-    source; generates the roster grid from the transform
-  - [Transmission Roster](./transmission_layer-roster.md.html) --- thirty-six sample
+  - [Roster Generator](./transmission_layer-roster-gen.py) --- Python
+    source; generates the roster grid from the transform, an ontology validation matrix
+  - [Roster](./transmission_layer-roster.md.html) --- thirty-six sample
     audience configurations across the professional range, from six reader
     posture components through three instruments; a foundation for precision
     audience calibration
 
-The roster is also a selection of worked examples, settings already resolved
-for various audiences, and a reference for finding the configuration nearest
-your reader. Use the configuration beside it, or re-frame your draft for a
-completely new one.
-
-<!--
-use the roster as a guide to tune a setting to a specific individual or
-demographic for subsequent transmission quality of base communications
--->
+The roster is a selection of worked examples, settings resolved
+for various audiences, and validating the ontology range accessibility.
+Also, a guide for finding a configuration nearest your reader.
+Use the settings beside a profile, or craft settings to match
+a specific individual or demographic.
 
 ---
 
 **Quick reference** --- the components and what they govern.
+
+- **document** --- purpose, situational context
+  - **office** --- reader disposition
+  <br>`construct` facts are inventory for what to build next, <br>`judicial` evidence about decisions already taken
+  - **priority** --- document length scheme
+  <br>`content` length floats, detail is preserved, <br>`balance` shortfall is distributed, <br>`extent` word span holds, content is cut
+  - **span** --- target word count, if known
 
 - **posture** --- six things that are true of the reader right now
   - **fluency** --- vocabulary and conceptual holdings in this domain
@@ -114,5 +117,8 @@ reader, moderate stamina, settled scrutiny, reading it through.
   fluency=0.60  stamina=0.50  appetite=0.40  scrutiny=0.15
   oblige=0.90   triage=full
 ```
+
+The `=` are optional, and null values broaden acceptable range, vs (unset) default.
+
 
 ---

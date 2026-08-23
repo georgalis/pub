@@ -30,19 +30,23 @@ li[role="doc-endnote"] p { display: inline; margin: 0; }
 </ul></li>
 </ul>
 <ul>
-<li><a href="./transmission_layer-ontology.md.html">Transmission Model Ontology</a> --- fixes what a transmission instrument is; nothing here composes prose, it says what the things that compose prose are
+<li><a href="./transmission_layer-ontology.md.html">Model Ontology</a> --- fixes what a transmission instrument is; nothing here composes prose, it says what the things that compose prose are
 <ul>
-<li><a href="./transmission_layer-roster-gen.py">Transmission Roster Generator</a> --- Python source; generates the roster grid from the transform</li>
-<li><a href="./transmission_layer-roster.md.html">Transmission Roster</a> --- thirty-six sample audience configurations across the professional range, from six reader posture components through three instruments; a foundation for precision audience calibration</li>
+<li><a href="./transmission_layer-roster-gen.py">Roster Generator</a> --- Python source; generates the roster grid from the transform, an ontology validation matrix</li>
+<li><a href="./transmission_layer-roster.md.html">Roster</a> --- thirty-six sample audience configurations across the professional range, from six reader posture components through three instruments; a foundation for precision audience calibration</li>
 </ul></li>
 </ul>
-<p>The roster is also a selection of worked examples, settings already resolved for various audiences, and a reference for finding the configuration nearest your reader. Use the configuration beside it, or re-frame your draft for a completely new one.</p>
-<!--
-use the roster as a guide to tune a setting to a specific individual or
-demographic for subsequent transmission quality of base communications
--->
+<p>The roster is a selection of worked examples, settings resolved for various audiences, and validating the ontology range accessibility. Also, a guide for finding a configuration nearest your reader. Use the settings beside a profile, or craft settings to match a specific individual or demographic.</p>
 <hr />
 <p><strong>Quick reference</strong> --- the components and what they govern.</p>
+<ul>
+<li><strong>document</strong> --- purpose, situational context
+<ul>
+<li><strong>office</strong> --- reader disposition <br><code>construct</code> facts are inventory for what to build next, <br><code>judicial</code> evidence about decisions already taken</li>
+<li><strong>priority</strong> --- document length scheme <br><code>content</code> length floats, detail is preserved, <br><code>balance</code> shortfall is distributed, <br><code>extent</code> word span holds, content is cut</li>
+<li><strong>span</strong> --- target word count, if known</li>
+</ul></li>
+</ul>
 <ul>
 <li><strong>posture</strong> --- six things that are true of the reader right now
 <ul>
@@ -91,6 +95,7 @@ demographic for subsequent transmission quality of base communications
   office=construct  cadence=misura  priority=content  span=
   fluency=0.60  stamina=0.50  appetite=0.40  scrutiny=0.15
   oblige=0.90   triage=full</code></pre>
+<p>The <code>=</code> are optional, and null values broaden acceptable range, vs (unset) default.</p>
 <hr />
 </body>
 </html>
