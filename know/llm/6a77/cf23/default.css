@@ -188,6 +188,7 @@ a[role="doc-noteref"] { /* base copied from em because cannot inherit */
     font-family: "EB Garamond", "Hoefler Text", Palatino, Georgia, serif;
   /* font-size: 1.20em; font-size: 0.75em; */
     font-weight: 500;
+    text-decoration: none;
 }
 
 /* opt into superscript-numeral display; brackets no longer display */
