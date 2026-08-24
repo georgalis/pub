@@ -1,5 +1,5 @@
-# [LLM-Synthesized Essay](https://pub.iuxta.com/know/llm/)
-## [Curated Presentation](../../)
+# LLM-Synthesized Essay
+### [Curated Presentation](../../)
 ## [The Transmission Layer Catalog](./)
 
 Two documents can say the exact same thing and land differently on the same

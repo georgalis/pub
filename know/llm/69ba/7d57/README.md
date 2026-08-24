@@ -1,5 +1,5 @@
-# [LLM-Synthesized Essay](https://pub.iuxta.com/know/llm/)
-## [Curated Presentation](../../)
+# LLM-Synthesized Essay
+### [Curated Presentation](../../)
 ## [At Patriarch's Ponds, Again Catalog](./)
 
 A continuation chapter and a companion---two documents standing in the
