@@ -38,15 +38,17 @@ _(c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution._
 * [Disposition Topology and Prompt Identity](./69a3-disposition_topology.md) [^*] <!--69a4ef1a-->
 * [Character Creator: Attribute Spectra Reference](./69b5-character-creator-spectra.md) <!-- 69b5e4e0 -->
 * [Character Selector](69b5-character-selector.yml) <!-- 69b5e4e0 -->
-* [At Patriarch's Ponds, Again](./69ba-at-patriarchs-ponds-again.md) <!-- 69ba7d18 -->
+* At Patriarch's Ponds, Again [Catalog](./69ba/7d57/), [Chapter](./69ba/7d57/at-patriarchs-ponds-again.md) and
+  a [Companion for One New to Bulgakov](./69ba/7d57/reading-at-patriarchs-ponds-again.md)
 * [Open Training Constraints: Economics, Architecture, and Nemotron 3 Super](./69d6-open-training-economics-architecture.md) <!-- 69d65753 -->
-* [Reading "At Patriarch's Ponds, Again": A Companion for One New to Bulgakov](./69f7-reading-at-patriarchs-ponds-again.md) <!-- 69f828ff -->
-* [The Transmission Layer](./6a77/cf23/transmission-layer-essay.md) ([Catalog](6a77/cf23/),
-  [Configurations](./6a77/cf23/transmission-configurations-roster.md),
-  Skills:
-  [Landing](./6a77/cf23/Transmission_Landing-SKILL.md),
-  [Load](./6a77/cf23/Transmission_Load-SKILL.md),
-  [Vantage](./6a77/cf23/Transmission_Vantage-SKILL.md))
+* The Transmission Layer [Catalog](./6a77/cf23/),
+  [Essay](./6a77/cf23/transmission_layer-essay.md),
+  [Ontology](./6a77/cf23/transmission_layer-ontology.md),
+  [Roster](./6a77/cf23/transmission_layer-roster.md)
+  * Skills: [Transmission](./6a77/cf23/transmission-SKILL.md),
+    [Load](./6a77/cf23/transmission-load-SKILL.md),
+    [Land](./6a77/cf23/transmission-land-SKILL.md),
+    [Vantage](./6a77/cf23/transmission-vantage-SKILL.md)
 
 [^*]: Revision forthcoming
 
