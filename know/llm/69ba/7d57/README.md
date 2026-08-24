@@ -1,7 +1,6 @@
-# [At Patriarch's Ponds, Again](./at-patriarchs-ponds-again.md)
-## [Reading "At Patriarch's Ponds, Again"](./reading-at-patriarchs-ponds-again.md)
-
-*(c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution.*
+# [LLM-Synthesized Essay](https://pub.iuxta.com/know/llm/)
+## [Curated Presentation](../../)
+## [At Patriarch's Ponds, Again Catalog](./)
 
 A continuation chapter and a companion---two documents standing in the
 relation the chapter itself is about. Bulgakov's Woland cleared a space at
@@ -14,6 +13,8 @@ as one movement rather than assembled from footnotes.
 
 Read the chapter alone if Bulgakov is already familiar. Read the companion
 first, or alongside, if he is not. Either order finds the same bench.
+
+*(c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution.*
 
 ---
 

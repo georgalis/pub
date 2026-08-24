@@ -2,8 +2,6 @@
 ## [Curated Presentation](../../)
 ## [The Transmission Layer Catalog](./)
 
-*(c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution.*
-
 Two documents can say the exact same thing and land differently on the same
 reader---because content is one thing to shape, and how it reaches the reader
 is another: the vocabulary it draws on, the weight it carries at the close,
@@ -12,6 +10,8 @@ and the viewpoint it holds through the middle.
 The Transmission Layer is a set of skills for making delivery deliberate.
 Describe the reader, name the configuration, hand it to a language model with
 a draft, and synthesis delivers the same content with different reception.
+
+*(c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution.*
 
 ---
 
