@@ -1,6 +1,6 @@
 
 # LLM-Synthesized Essay
-## Procession and Evolution
+## [Procession and Evolution](https://github.com/georgalis/pub/tree/main/know/llm#readme)
 
 These compositions capture evolving snapshots of style and capability
 demonstrated by LLM-synthesized discourse. The presentations may
