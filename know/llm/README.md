@@ -30,9 +30,9 @@ _(c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution._
 * [Coinage](./6959/67e6/README.md),
   [ontology](./6959/67e6/coinage-ontology.md),
   [skill](./6959/67e6/coinage-SKILL.md),
-  [repetition](./6959/67e6/rhetorical-recognition-rewards-recurrence.md),
-  [compression](./6959/67e6/compression-imperative-of-atomic-linguistic-forms.md),
-  and [doy family research](./6959/67e6/doy-family-expressions-research-finding.md)
+  [repetition](./6959/67e6/rhetorical_repetition-essay.md),
+  [compression](./6959/67e6/compression_imperative-essay.md),
+  and [doy family research](./6959/67e6/doy_family_expressions-research.md)
   <br>when a document's vocabulary must be built and carried, not merely sent
     * Examples: [GibberLink](./6959/67e6/gibberlink.md) <!-- * [The Compression Imperative: Why Communication Creates Atomic Forms](./68c4-Compression_Imperative_of_Atomic_Linguistic_Forms.md) * [Academic Documentation of "Doy" Family Expressions: A Comprehensive Research Finding](./68c4-Doy_Family_Expressions_Research_Finding.md) * [Rhetorical Repetition: Recognition Rewards Recurrence](./6959-Rhetorical_Repetition_Recognition_Rewards_Recurrence.md) -->
 
