@@ -85,12 +85,13 @@ calibration, for overriding a setting during revision.
 ```
 
 ```
-document      purpose=essay      span=
+document      purpose=essay      span=                   grave=0.45
 mint          ambient=0.35       expanded=0.30
-circulate     interval=0.50      varied=0.75
+circulate     interval=0.50      varied=0.75             muted=0.40
 denote        register=somatic   scale=phonetic:corpus   reach=reader
-nominate      strike=[...]       anchor=[...]            damp=[...]
-budget        install=4          forms=2                 (derived)
+nominate      strike=[...]       recoin=[...]            anchor=[...]
+              damp=[...]
+budget        install=4/form     events=8                forms=2   (derived)
 ```
 
 Ordinary invocation is a roster name and a nomination list. Perturb
@@ -111,6 +112,24 @@ rest at the entry's setting.
 extent floats and the budget reports what the admitted forms required.
 The Installation Budget names this quantity *extent* when it stands as a
 term in the triple; the key that carries it is `span`.
+
+**`grave`** licenses or withholds the sub-lexical devices. At the low
+pole the document is playing --- satire, light verse, comic exposition ---
+and saturated patterning reads as intended rather than as frivolity. At
+the high pole the subject's weight makes any audible patterning a
+misjudgment, and the phonetic band is withheld regardless of what
+`scale` admits.
+
+- **1.0** Grave throughout. Sound play would misread the subject.
+- **0.5** Earnest. Patterning at junctures only.
+- **0.0** Play is the register. Saturation is the point.
+
+Regions: `comic` 0.00-0.25, `light` 0.25-0.50, `earnest` 0.50-0.80,
+`grave` 0.80-1.00.
+
+Failure low: patterning where the subject cannot carry it. Failure high:
+a comic document composed as though it were solemn, its devices
+withdrawn by a setting that was never examined.
 
 ### Denoted Values
 
@@ -149,6 +168,13 @@ carrying the subsidiary phrase.
   Each entry is a candidate, not a commitment: entries pass through
   preparation before installation begins. State the concept, the
   proposed form, or both.
+- **`recoin`** --- the author's own established forms, carried forward from
+  prior work into this one. A recoined form is not a new strike and is not
+  ambient stock: it is an asset the author already paid to install, and
+  carrying it compounds rather than duplicates. Install cost is **one
+  occurrence** --- a single re-anchoring touch that reminds without
+  re-teaching. Recoined forms are exempt from disqualifier three by
+  definition.
 - **`anchor`** --- established material the struck forms attach to. The
   anchor is what the reader already holds, spent to install what the
   reader does not.
@@ -230,6 +256,9 @@ Failure high: the vocabulary gap goes unfilled. The concept has no
 handle and is reconstructed at every mention, costing more in aggregate
 than the coinage would have cost once.
 
+Regions: `minting` 0.00-0.25, `mixed` 0.25-0.70, `inherited`
+0.70-1.00. The boundary at 0.25 is an install threshold.
+
 **Measured against the reader, before the document.** Circulation means
 the reader's holdings as they stand on arrival --- vocabulary current in
 the subject matter, the discipline, the surrounding literature --- not
@@ -270,6 +299,9 @@ never filled.
 Failure high: expansion destroys function. The expanded form cannot
 perform the rapid calibration the compressed form performs in
 milliseconds, and precision is lost rather than gained[^1].
+
+Regions: `omitting` 0.00-0.25, `carrying` 0.25-0.60, `stating`
+0.60-1.00. The boundary at 0.25 is an install threshold.
 
 **Measured at delivery, in the installed steady state.** The value names
 the compression a form carries once installed --- not at introduction,
@@ -395,6 +427,15 @@ instrument honestly claims.
    register. *Failing: decline the strike and use the ambient term. The
    struck form must fill a gap, not duplicate an occupant.*
 
+   **This check disqualifies duplication, not continuity.** An author's
+   own coinage, installed in earlier work and nominated again here, is
+   not an occupant of the gap --- it *is* the gap's occupant, and the
+   author is its issuer. Move it to `recoin`, where it installs in one
+   occurrence and circulates at full strength. Declining a form because
+   the author established it previously inverts the instrument: it
+   penalizes the successful coinage and spends the budget on replacing
+   what already works.
+
 4. **Budgeted.** Installation fits the extent available, by the
    accounting below. *Failing: cut the count. Which forms are dropped is
    an editorial decision returned to the author, never absorbed silently
@@ -423,6 +464,9 @@ return, at what unit, how far it travels.
 - **0.0** Immediate return. The sentence-scale figures live here:
   epizeuxis, diacope, anaphora, epistrophe.
 
+Regions: `adjacent` 0.00-0.20 where the sentence figures live, `close`
+0.20-0.45, `sectional` 0.45-0.75, `distant` 0.75-1.00.
+
 Failure low: mannerism. Reinforcement converts into reiteration and the
 reader begins attending to the pattern instead of the content.
 
@@ -439,6 +483,13 @@ How far each return differs from the last.
   the form's accumulated penumbra rather than repeating its content.
 - **0.5** Rotation enforced past the third appearance.
 - **0.0** Verbatim. Identity of the form is the point.
+
+Regions: `verbatim` 0.00-0.15, `stable` 0.15-0.50, `rotating`
+0.50-0.85, `dissolving` 0.85-1.00. **A recurrence meant to be
+recognized --- a running joke, a refrain, a catchphrase --- belongs in
+`stable`.** Rotation is what makes a concept accumulate; it is also what
+stops a gag from landing, because the reader must recognize the return
+before it can be funny.
 
 Failure low outside its context: flat reiteration. Recurrence that
 merely duplicates produces tedium, and the reader's investment falls
@@ -465,10 +516,43 @@ establishing foundations and later ones introducing qualification.
 across unrelated domains, where family resemblance appears without
 lexical repetition[^2].
 
-### scale --- active unit of recurrence *(band)*
+### muted --- sub-lexical saturation
+
+How heavily the phonetic and sentential devices work the prose. `scale`
+names which units are available; `muted` names how hard the low end of
+that band is driven. The two are independent: a band reaching `corpus`
+with `muted` at 0.90 has document-scale recurrence and almost no audible
+patterning.
+
+- **1.0** Silent. No consonant binding, no figures; recurrence operates
+  at paragraph and above only.
+- **0.5** Patterned at junctures --- openings, closings, transitions ---
+  and plain between them.
+- **0.0** Saturated. Syllable play is continuous and is itself the
+  document's surface.
+
+Regions: `saturated` 0.00-0.25, `patterned` 0.25-0.55, `occasional`
+0.55-0.85, `silent` 0.85-1.00.
+
+Failure low: the device becomes the ambient texture and loses its force.
+
+Failure high: a document whose effect depends on sound arrives flat, its
+forms correct and inert.
+
+**`grave` caps this setting.** Where `grave` runs above 0.80, a `muted`
+below 0.40 is refused and reported rather than composed.
+
+### scale --- active unit of recurrence *(band, denoted)*
 
 Five options, tabled above under Denoted Values. The band names the range in play; lower
 scales within it remain available.
+
+**A band names which units are available, not how hard they are worked.**
+Narrowing the top of the band removes recurrence at that scale: a band of
+`phonetic:paragraph` has no document-level leitmotif and no running
+return, whatever the phonetic end is doing. To increase audible play
+without losing document-scale recurrence, lower `muted` and leave the
+band wide.
 
 Two boundary conditions. `phonetic` is withheld where the gravity of
 the subject would make patterning read as frivolity, and sustained
@@ -525,6 +609,19 @@ Four conditions each add an occurrence.
     expanded   <= 0.25          the form omits more than context supplies
     reach      corpus | reader  the form must survive separation
     register   credential       the boundary must itself be legible
+
+A recoined form bypasses the whole accounting at one occurrence. The
+thresholds are coarse on purpose: a form at 0.26 does not install
+appreciably faster than one at 0.24, and the step is an accounting
+convenience rather than a claim about language. They are global, not
+roster-derived --- a roster entry sets where a document starts relative to
+them, never where they fall.
+
+**`install` is per form. `events` is the document total** --- the sum of
+each admitted form's cost, recoined forms counted at one. A budget line
+reading `install=6/form events=31 forms=5` describes five new forms at
+six occurrences each plus one recoined form at one, and it is `events`
+that is measured against extent.
 
 **Forms, installation, and extent form a triple of which any two may be
 chosen. The third follows.** A document required to carry many forms,
@@ -590,18 +687,19 @@ this instrument exists to prevent.
 
 Named application profiles. Invoke by name and perturb from there.
 
-| entry | ambient | expanded | register | interval | varied | scale | reach | install |
-|---|---|---|---|---|---|---|---|---|
-| `essay` | 0.35 | 0.30 | somatic | 0.50 | 0.75 | phonetic:corpus | reader | 4 |
-| `spec` | 0.55 | 0.35 | operational | 0.35 | 0.05 | paragraph:document | document | 3 |
-| `instrument` | 0.25 | 0.20 | operational | 0.40 | 0.35 | paragraph:corpus | reader | 6 |
-| `prompt` | 0.70 | 0.45 | operational | 0.15 | 0.05 | sentential:document | passage | 3 |
-| `treatise` | 0.45 | 0.35 | somatic | 0.55 | 0.70 | phonetic:corpus | corpus | 4 |
-| `brief` | 0.80 | 0.60 | operational | 0.60 | 0.40 | paragraph:document | document | 3 |
-| `primer` | 0.75 | 0.75 | somatic | 0.30 | 0.65 | paragraph:document | reader | 4 |
-| `recruit` | 0.35 | 0.10 | somatic | 0.25 | 0.15 | phonetic:sentential | reader | 5 |
-| `corpus` | 0.40 | 0.30 | operational | 0.75 | 0.85 | document:corpus | corpus | 4 |
-| `record` | 0.95 | 0.70 | operational | 0.85 | 0.10 | paragraph | passage | 3 |
+| entry | grave | ambient | expanded | register | interval | varied | muted | scale | reach | install |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `essay` | 0.45 | 0.35 | 0.30 | somatic | 0.50 | 0.75 | 0.40 | phonetic:corpus | reader | 4 |
+| `satire` | 0.10 | 0.15 | 0.15 | somatic | 0.20 | 0.40 | 0.10 | phonetic:corpus | reader | 6 |
+| `spec` | 0.90 | 0.55 | 0.35 | operational | 0.35 | 0.05 | 0.95 | paragraph:document | document | 3 |
+| `instrument` | 0.85 | 0.25 | 0.20 | operational | 0.40 | 0.35 | 0.90 | paragraph:corpus | reader | 6 |
+| `prompt` | 0.80 | 0.70 | 0.45 | operational | 0.15 | 0.05 | 0.95 | sentential:document | passage | 3 |
+| `treatise` | 0.65 | 0.45 | 0.35 | somatic | 0.55 | 0.70 | 0.50 | phonetic:corpus | corpus | 4 |
+| `brief` | 0.85 | 0.80 | 0.60 | operational | 0.60 | 0.40 | 0.95 | paragraph:document | document | 3 |
+| `primer` | 0.55 | 0.75 | 0.75 | somatic | 0.30 | 0.65 | 0.55 | paragraph:document | reader | 4 |
+| `recruit` | 0.25 | 0.35 | 0.10 | somatic | 0.25 | 0.15 | 0.20 | phonetic:sentential | reader | 5 |
+| `corpus` | 0.70 | 0.40 | 0.30 | operational | 0.75 | 0.85 | 0.70 | document:corpus | corpus | 4 |
+| `record` | 0.95 | 0.95 | 0.70 | operational | 0.85 | 0.10 | 1.00 | paragraph | passage | 3 |
 
 **`essay`** --- the primary entry, and the profile this instrument was
 built to serve. Literary communication across prose fiction, prose
@@ -628,6 +726,19 @@ Three perturbations serve the sub-genres.
   `operational` where it must be usable, with `anchor` carrying the
   established material each new technical form attaches to and graduated
   anchoring supplying the ascent.
+
+**`satire`** --- comic and satirical prose on any subject, technical
+included. Everything that `essay` holds in reserve is spent here:
+coinage runs near the floor because inventing the vocabulary *is* the
+joke, `muted` and `grave` sit at the bottom so syllable play saturates
+the surface, `interval` runs close so a form returns while the reader
+still has the last one, and the band stays open to `corpus` so a running
+gag can run. `varied` is the counter-intuitive one --- it sits at 0.40,
+in `stable`, not high. A gag has to be recognized before it can land,
+and rotation past `stable` dissolves the recognition the joke depends
+on. Recoin freely: an established comic form is the strongest asset a
+satire has, and a second appearance in a later work is the payoff the
+first one bought.
 
 **`spec`** --- standards, schemas, compliance artifacts, skill
 definitions. Governing terms return verbatim; `varied` at 0.05 is the
@@ -673,6 +784,39 @@ dimensions is the governing technique.
 
 **`record`** --- logs, indexes, reference matter. Coin nothing, rotate
 nothing, retrieve reliably.
+
+---
+
+## Sound Index
+
+Compression and recurrence are separate machinery with separate keys.
+**Mint is compression** --- `ambient`, `expanded`, `register` --- and
+governs what a form *is*. **Circulate is repetition** --- `interval`,
+`varied`, `muted`, `scale`, `reach` --- and governs how it *returns*.
+`grave` sits above both and licenses the audible devices at all.
+
+Where only the wanted effect is known, move from the effect to the key.
+
+| wanted effect | move |
+|---|---|
+| More syllable play, alliteration, sound in the mouth | `muted` down; `grave` down to license it; keep `phonetic` in the band |
+| A running gag that recurs and lands | `varied` into `stable` 0.15-0.50; `interval` into `close`; band open to `document` or `corpus` |
+| More invented words | `ambient` down; `expanded` down for punch |
+| Punchier forms, less explaining | `expanded` down |
+| Sentence figures --- anaphora, epizeuxis, chained returns | `interval` into `adjacent`; `sentential` in the band; `muted` down |
+| The reader quoting it back afterward | `reach=reader`; `varied` no higher than `stable`; `interval` close |
+| A concept deepening across returns | `varied` into `rotating`; `interval` sectional; band to `document` |
+| Vocabulary carried between works | `reach=corpus`; established forms into `recoin`, not `strike` |
+| Gravity, no audible patterning | `grave` up; `muted` up; band from `paragraph` |
+| Terms that must not drift | `varied` into `verbatim`; `register=operational` |
+
+Two couplings decide more than any single key. **`grave` gates `muted`:**
+play cannot be added to a document whose subject refuses it, and the
+instrument refuses the combination rather than composing it. **`varied`
+opposes recognition:** rotation is how a concept accumulates and is also
+how a joke stops being funny, so a document wanting both must split them
+by region --- the gag in `stable`, the concept in `rotating` --- rather
+than averaging.
 
 ---
 

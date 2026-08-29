@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+section[role="doc-endnotes"] ol { list-style: none; padding-left: 0; }
+li[role="doc-endnote"] p { display: inline; margin: 0; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h1 id="coinage">Coinage</h1>
+<p>Compression strikes an atomic form. Recurrence puts it into circulation. A reader redeems it, or fails to. <strong>Mint, circulate, redeem</strong> --- the author governs the first two and the third is settled elsewhere, which is why this instrument prepares rather than proves.</p>
+<p>Neither operation pays alone. A form struck and never circulated is opaque shorthand; circulation without striking is reiteration of material never worth compressing. Coinage sets the exchange rate between them and names which forms are struck.</p>
+<p>(c) 2026 George Georgalis &lt;george@iuxta.com&gt; Unlimited use with attribution.</p>
+<pre><code>org 6a8ee578 20260826 060912 PDT Wed 06:09 AM 26 Aug 2026
+</code></pre>
+<hr />
+<h2 id="activation">Activation</h2>
+<p>Three conditions, any one sufficient.</p>
+<ul>
+<li>A document's vocabulary is part of its deliverable --- new terms are needed, or existing terms must carry more than they carry now.</li>
+<li>Recurrence is a device rather than a side effect: leitmotif, refrain, defined term, thematic return, alliterative binding.</li>
+<li>An existing composition is to be examined for what it repeats and what that reveals.</li>
+</ul>
+<p>The instrument is self-contained. It assumes no prior session and no companion instrument. The only vocabulary it presumes is what is current in rhetoric and composition --- the named figures, the scale terms --- which is <code>ambient</code> stock by its own accounting and correctly left unstruck.</p>
+<hr />
+<h2 id="disposition-and-direction">Disposition and Direction</h2>
+<p><strong>Disposition is derived, never declared.</strong> A request to develop a document runs the composing disposition: forms are struck, installed, circulated. A request to examine an existing composition runs the analysing disposition: forms already present are detected, mapped, distilled into the document's intent. The request always carries which applies, so no parameter records it.</p>
+<p><strong>0.0 is the compact, minted, tightly spaced pole; 1.0 is the ambient, expanded, widely spaced pole.</strong> Every scalar is named for the quality maximal at 1.0, so a configuration reads without consultation. Values read by position, not by scale: <code>35</code>, <code>3.5</code>, <code>0.35</code>, and <code>7/20</code> place a setting identically.</p>
+<p><strong>Settings come in two kinds.</strong> <em>Scalars</em> run 0.0 to 1.0 on the poles above and are tuned. <em>Denoted</em> settings --- <code>purpose</code>, <code>register</code>, <code>scale</code>, <code>reach</code> --- take a value from a fixed named set and are chosen. The distinction is what the template groups on: scalars sit with the operation they govern, denoted settings sit together under <code>denote</code>, and <code>nominate</code> follows them as the one component revised on every round.</p>
+<p>A setting names a region to occupy, not a limit not to exceed. Default tolerance is plus or minus 0.10. Any key left unstated resolves to its roster value and widens its tolerance, so an under-specified request looks under-specified rather than average.</p>
+<p><strong>Yield runs high.</strong> Where conflict forces a setting off center, move it toward the ambient pole: a form the reader cannot redeem fails silently, while a form the reader did not need fails visibly and is corrected in the next draft. One exception is stated under <code>expanded</code>.</p>
+<hr />
+<h2 id="template">Template</h2>
+<p>Two forms. The first is what an author states; the second is the full calibration, for overriding a setting during revision.</p>
+<pre><code>/coinage essay
+  strike=[phrase-as-lemma, dimensional rotation]
+  anchor=[compression]</code></pre>
+<pre><code>document      purpose=essay      span=                   grave=0.45
+mint          ambient=0.35       expanded=0.30
+circulate     interval=0.50      varied=0.75             muted=0.40
+denote        register=somatic   scale=phonetic:corpus   reach=reader
+nominate      strike=[...]       recoin=[...]            anchor=[...]
+              damp=[...]
+budget        install=4/form     events=8                forms=2   (derived)</code></pre>
+<p>Ordinary invocation is a roster name and a nomination list. Perturb where a setting should move.</p>
+<pre><code>/coinage essay strike=[luminosity] varied=0.55
+/coinage spec strike=[control inheritance, residual risk]
+/coinage prompt
+</code></pre>
+<h3 id="document-purpose-and-span">Document --- purpose and span</h3>
+<p><strong><code>purpose</code></strong> names a roster entry and resolves every other key. Ten entries, tabled under Roster with their values. A purpose alone is a complete invocation; a perturbation overrides one key and leaves the rest at the entry's setting.</p>
+<p><strong><code>span</code></strong> is target extent in words, where one is known. Left unset, extent floats and the budget reports what the admitted forms required. The Installation Budget names this quantity <em>extent</em> when it stands as a term in the triple; the key that carries it is <code>span</code>.</p>
+<p><strong><code>grave</code></strong> licenses or withholds the sub-lexical devices. At the low pole the document is playing --- satire, light verse, comic exposition --- and saturated patterning reads as intended rather than as frivolity. At the high pole the subject's weight makes any audible patterning a misjudgment, and the phonetic band is withheld regardless of what <code>scale</code> admits.</p>
+<ul>
+<li><strong>1.0</strong> Grave throughout. Sound play would misread the subject.</li>
+<li><strong>0.5</strong> Earnest. Patterning at junctures only.</li>
+<li><strong>0.0</strong> Play is the register. Saturation is the point.</li>
+</ul>
+<p>Regions: <code>comic</code> 0.00-0.25, <code>light</code> 0.25-0.50, <code>earnest</code> 0.50-0.80, <code>grave</code> 0.80-1.00.</p>
+<p>Failure low: patterning where the subject cannot carry it. Failure high: a comic document composed as though it were solemn, its devices withdrawn by a setting that was never examined.</p>
+<h3 id="denoted-values">Denoted Values</h3>
+<table>
+<thead>
+<tr><th>key</th><th>option</th><th>what it does</th></tr>
+</thead>
+<tbody>
+<tr><td><code>register</code></td><td><code>somatic</code></td><td>The form delivers by embodied simulation. The reader feels the postural shift, the timing, the muscular strain, before any analysis occurs.</td></tr>
+<tr><td><code>register</code></td><td><code>operational</code></td><td>The form bundles a specification. A phrase-key naming a behavior, constraint, or procedure.</td></tr>
+<tr><td><code>register</code></td><td><code>credential</code></td><td>The form marks community membership, and capacity to decompress it is the boundary. Carries exclusion cost by design.</td></tr>
+<tr><td><code>scale</code></td><td><code>phonetic</code></td><td>Alliterative binding. Consonant correspondence creating acoustic grouping, strongest at structural junctures.</td></tr>
+<tr><td><code>scale</code></td><td><code>sentential</code></td><td>Epizeuxis, diacope, anaphora, epistrophe, symploce, anadiplosis, epanalepsis, polyptoton.</td></tr>
+<tr><td><code>scale</code></td><td><code>paragraph</code></td><td>The consolidation phase. The paragraph is the chamber in which a load-bearing form reaches persisting density.</td></tr>
+<tr><td><code>scale</code></td><td><code>document</code></td><td>Leitmotif, back-reference, architectural rhyme. Recurrence coordinates distributed material.</td></tr>
+<tr><td><code>scale</code></td><td><code>corpus</code></td><td>Dimensional rotation and composite multiperspectivity. The form travels between documents.</td></tr>
+<tr><td><code>reach</code></td><td><code>passage</code></td><td>The form serves one passage and expires.</td></tr>
+<tr><td><code>reach</code></td><td><code>document</code></td><td>The form coordinates this document and stops at its boundary.</td></tr>
+<tr><td><code>reach</code></td><td><code>corpus</code></td><td>The form travels between documents under rotation.</td></tr>
+<tr><td><code>reach</code></td><td><code>reader</code></td><td>The form is prepared for the reader's own downstream use, in material the author will not see.</td></tr>
+</tbody>
+</table>
+<p><code>scale</code> is stated as a band. Lower scales within it remain available; the band names the range in play. <code>paragraph:document</code> is the general case, <code>phonetic:corpus</code> the full literary stack.</p>
+<hr />
+<h2 id="nomination">Nomination</h2>
+<p><strong>The author names the forms.</strong> This is the instrument's primary input and what separates deliberate recurrence from the accidental leitmotif a document produces when nothing was nominated. Recurrence is a highlighting system operating on whatever happens to recur; unnominated, a subsidiary phrase that fits well gets used four times while the governing concept is stated once with great care, and the reader leaves carrying the subsidiary phrase.</p>
+<ul>
+<li><strong><code>strike</code></strong> --- concepts nominated for compression and circulation. Each entry is a candidate, not a commitment: entries pass through preparation before installation begins. State the concept, the proposed form, or both.</li>
+<li><strong><code>recoin</code></strong> --- the author's own established forms, carried forward from prior work into this one. A recoined form is not a new strike and is not ambient stock: it is an asset the author already paid to install, and carrying it compounds rather than duplicates. Install cost is <strong>one occurrence</strong> --- a single re-anchoring touch that reminds without re-teaching. Recoined forms are exempt from disqualifier three by definition.</li>
+<li><strong><code>anchor</code></strong> --- established material the struck forms attach to. The anchor is what the reader already holds, spent to install what the reader does not.</li>
+<li><strong><code>damp</code></strong> --- terms whose natural recurrence is actively varied away. Optional, and the remedy for a document that keeps quoting itself back in the wrong words. Damping is a rotation obligation, not a prohibition: the term appears as often as the content requires, in varied wording, so the recurring position stays with the nominated forms.</li>
+</ul>
+<p>An empty <code>strike</code> list is legitimate and means the document circulates only ambient vocabulary. It is correct wherever no vocabulary gap is real.</p>
+<h3 id="graduated-anchoring">Graduated Anchoring</h3>
+<p>One prepared pattern, and the one to reach for first. A familiar, less complex, required pattern is carried across contexts of rising complexity, restated differently at each appearance, so the whole becomes legible through the part. What the reader already holds is strengthened twice over: by the <strong>need</strong>, demonstrated wherever the pattern proves required, and by the <strong>range</strong>, demonstrated wherever it holds in harder material.</p>
+<p>Three things move independently. The anchor holds constant in substance and varies in representation. The struck form holds constant in wording and varies in position. The surrounding concepts ascend. A reader who has watched a known pattern hold across rising difficulty has learned its range, not merely its wording.</p>
+<p>Other patterns exist and preparation surfaces them. This one is named because it is reliable, not because it is exclusive.</p>
+<h3 id="proactive-and-review-use">Proactive and Review Use</h3>
+<p>Nomination runs in both directions, and its value is as much retrospective as anticipatory.</p>
+<p>Before synthesis, state the coinage anticipated to succeed and, with equal effect, the failures anticipated --- a concept not yet developed enough to carry a form, a handle known to fit poorly, a subsidiary phrase likely to capture the recurring position. Both are corrections made before the cost is incurred.</p>
+<p>After synthesis, the same three lists are the review instrument. Read the draft for what actually recurs, set it beside <code>strike</code>, and re-nominate: keep what earned the recurring position, <code>damp</code> what took a position it did not earn, defer what circulated before it was developed, restrike what fits poorly. Misaligned recurrence in synthesized drafts is the condition this instrument exists to correct, and the correction is a second nomination rather than a rewrite.</p>
+<hr />
+<h2 id="mint">Mint</h2>
+<p>Three settings. What the form is, how much it omits, what recognition it trades on.</p>
+<h3 id="ambient-coinage-rate">ambient --- coinage rate</h3>
+<p>Whether a term is struck new or drawn from vocabulary already circulating for this reader.</p>
+<ul>
+<li><strong>1.0</strong> Nothing struck. Every term already circulates in the reader's community.</li>
+<li><strong>0.5</strong> Coinage only where the vocabulary gap is real; the ambient term wherever one exists.</li>
+<li><strong>0.0</strong> Mintage is the register. Phrase-as-lemma construction throughout<a href="#fn-3" role="doc-noteref"><span>[^</span>3<span>]</span></a>: essays developing new conceptual apparatus, specifications written where no prior vocabulary existed, frameworks, reference artifacts.</li>
+</ul>
+<p>Failure low: the credentialing effect turns exclusionary. Inability to decompress the form marks the reader outside, and the document acquires a membership boundary it did not intend.</p>
+<p>Failure high: the vocabulary gap goes unfilled. The concept has no handle and is reconstructed at every mention, costing more in aggregate than the coinage would have cost once.</p>
+<p>Regions: <code>minting</code> 0.00-0.25, <code>mixed</code> 0.25-0.70, <code>inherited</code> 0.70-1.00. The boundary at 0.25 is an install threshold.</p>
+<p><strong>Measured against the reader, before the document.</strong> Circulation means the reader's holdings as they stand on arrival --- vocabulary current in the subject matter, the discipline, the surrounding literature --- not vocabulary current in the draft. A term the document itself introduces is circulating in the draft by its third occurrence and is still struck, not ambient. Installation buys compressed cost inside this document; it does not convert the form into ambient stock. That conversion happens for the <em>next</em> document addressed to the same reader, which is why a second work in a program runs <code>ambient</code> higher than the first, and why <code>reach</code> at <code>corpus</code> or <code>reader</code> is an investment rather than an expense.</p>
+<p><strong>Provenance does not move the setting.</strong> Whether a term stood in the author's draft or arrived during synthesis makes no difference to what the reader holds, and the setting reads the same either way. It makes every difference in review: a term synthesis introduced and then circulated is the characteristic misalignment, and it is caught by setting what recurs beside <code>strike</code>, not by reading this value.</p>
+<p>This setting decides whether a term is added to the stock. It says nothing about the difficulty of terms already in stock, which is a separate concern and outside this instrument.</p>
+<h3 id="expanded-compression-depth">expanded --- compression depth</h3>
+<p>How much the form omits and leaves the reader to supply.</p>
+<ul>
+<li><strong>1.0</strong> Full predication. The content is stated and nothing is left to the reader's own holdings.</li>
+<li><strong>0.5</strong> The form carries the concept; roughly one clause of supply is expected of the reader.</li>
+<li><strong>0.0</strong> Maximal omission. The form triggers recognition rather than delivering explanation, and the reader's own experience completes it.</li>
+</ul>
+<p>Failure low: the reader does not hold what the form assumes and receives nothing at all, having been given a handle to a container never filled.</p>
+<p>Failure high: expansion destroys function. The expanded form cannot perform the rapid calibration the compressed form performs in milliseconds, and precision is lost rather than gained<a href="#fn-1" role="doc-noteref"><span>[^</span>1<span>]</span></a>.</p>
+<p>Regions: <code>omitting</code> 0.00-0.25, <code>carrying</code> 0.25-0.60, <code>stating</code> 0.60-1.00. The boundary at 0.25 is an install threshold.</p>
+<p><strong>Measured at delivery, in the installed steady state.</strong> The value names the compression a form carries once installed --- not at introduction, where scaffolding necessarily runs the form expanded whatever this setting says. A value of 0.20 and a fully scaffolded first occurrence are not in conflict; occurrence one is the price of occurrence four onward, and the setting describes the state the installation buys.</p>
+<p><strong>Measured against the reader's stock, not the author's.</strong> What the form leaves to be supplied is supplied from what the reader brought. A form the author finds obvious is expanded or compressed by the reader's holdings alone, and the two estimates diverge most where the author knows the material best.</p>
+<p><strong>Nomination does not fix delivery.</strong> An author may nominate a compressed form and receive an expanded one from synthesis, or the reverse. This setting governs delivered text; the gap between what was nominated and what was delivered is a review finding, not a setting error.</p>
+<p><strong>This setting resists later revision.</strong> Compressed forms crystallize: once a reader thinks in the compressed unit, expansion reads as archaic or pedantic, the compression having replaced the concept rather than abbreviated it. Set <code>expanded</code> before circulation begins. After installation it is no longer freely movable, and this is the one setting whose yield direction reverses --- where the reader is known to hold the form, <code>expanded</code> yields low, since expansion offered to a reader who already thinks in the compressed unit registers as pedantry.</p>
+<h3 id="register-what-the-form-trades-on-denoted">register --- what the form trades on <em>(denoted)</em></h3>
+<p>Three options, tabled above under Denoted Values. The three may mix, and a technical concept developed inside a literary work is the common mixture: <code>somatic</code> for the passage that makes the concept felt, <code>operational</code> for the passage that makes it usable. Each mixture is itself a shift the reader pays for. Mix at structural seams rather than within a passage.</p>
+<hr />
+<h2 id="warrant">Warrant</h2>
+<p>A well-struck form does more than compress. It stands as evidence about its author.</p>
+<p>The reader who meets an apt coinage infers, correctly and without deliberation, that the author holds the material --- because striking a form that fits requires knowing which part of the content is load-bearing and which is incidental, and that discrimination cannot be faked at length. Capacity is strongly indicated by successful coinage. The credible source expresses well, and expressing well is how the source becomes credible. Compression is therefore a bonding instrument and an authority instrument in one operation: the reader is drawn into a vocabulary held in common, and the author is admitted as one who knows.</p>
+<p>The inverse holds with equal force. A form that does not fit withdraws exactly the warrant a fitting form confers. The reader who cannot redeem a coinage, or who redeems it and finds less inside than the form promised, revises the estimate downward and applies the revision retroactively to everything already read. Nothing else here carries that penalty.</p>
+<p>The warrant is therefore never the author's to award. It is settled at redemption, by a reader the author cannot consult --- which is why what follows is preparation rather than proof.</p>
+<hr />
+<h2 id="preparation">Preparation</h2>
+<p><strong>No test determines whether a coinage will succeed.</strong> Quality is settled at redemption, when a reader unpacks the form and finds the concept whole or finds it thin, and nothing available before that moment substitutes for the finding. What is available is preparation, and preparation is the best instrument there is --- staged work that identifies the approach before commitment, not a gate that certifies one after selection.</p>
+<p>Preparation has a positive half and a negative half. They do different work.</p>
+<h3 id="staging-identifying-the-approach">Staging --- identifying the approach</h3>
+<p>Surface candidates before choosing a form, in the order that lets each step inform the next.</p>
+<ol>
+<li>Synthesize the context the form must serve.</li>
+<li>Elicit the range of formulations available, rather than the first that fits.</li>
+<li>Surface the criteria the form has to satisfy, stated as criteria rather than assumed.</li>
+<li>Hypothesize what the form must carry and what it may leave to the reader.</li>
+<li>Bring the surviving candidates into focus against each other.</li>
+<li>Commit, the nomination list recording the commitment.</li>
+</ol>
+<p>This is the whole of the positive instrument. Its yield is a wider candidate set and explicit criteria --- neither certifying the choice, both improving it. Staging costs a preparatory pass and returns the only advantage available on a question that admits no proof.</p>
+<h3 id="disqualifiers-what-preparation-can-remove">Disqualifiers --- what preparation can remove</h3>
+<p>Four checks. <strong>Each can disqualify a form and none can qualify one.</strong> A form failing any check is known unfit; a form passing all four is only not known unfit, and that distinction is the whole of what this instrument honestly claims.</p>
+<ol>
+<li><strong>Developed.</strong> The concept is established --- in this document, or already in the reader's holdings --- to a depth that bears the weight the form will carry. <em>Failing: defer the strike. Develop first, circulate later. A form minted over an undeveloped concept circulates an empty handle, and recurrence makes the emptiness conspicuous rather than concealing it.</em></li>
+</ol>
+<ol>
+<li><strong>Fitted.</strong> The form compresses the actual content rather than gesturing at it. The check is recoverable expansion: unpacking the form returns the concept without residue and without addition. <em>Failing: restrike. A poorly chosen reference is worse than none, because it is the form the reader will remember.</em></li>
+</ol>
+<ol>
+<li><strong>Distinct.</strong> No term already in circulation serves at the same register. <em>Failing: decline the strike and use the ambient term. The struck form must fill a gap, not duplicate an occupant.</em></li>
+</ol>
+<p>   <strong>This check disqualifies duplication, not continuity.</strong> An author's</p>
+<p>   own coinage, installed in earlier work and nominated again here, is</p>
+<p>   not an occupant of the gap --- it <em>is</em> the gap's occupant, and the</p>
+<p>   author is its issuer. Move it to <code>recoin</code>, where it installs in one</p>
+<p>   occurrence and circulates at full strength. Declining a form because</p>
+<p>   the author established it previously inverts the instrument: it</p>
+<p>   penalizes the successful coinage and spends the budget on replacing</p>
+<p>   what already works.</p>
+<ol>
+<li><strong>Budgeted.</strong> Installation fits the extent available, by the accounting below. <em>Failing: cut the count. Which forms are dropped is an editorial decision returned to the author, never absorbed silently by shortening the installation.</em></li>
+</ol>
+<p>Checks one and two catch the characteristic failure. A document that circulates a melodic theme through a concept it never developed, or through a handle poorly chosen for the concept it did develop, produces recurrence the reader registers as insistence rather than architecture. Neither check would have predicted a good form. Both would have caught these.</p>
+<hr />
+<h2 id="circulate">Circulate</h2>
+<p>Four settings. How often the form returns, how far it changes on return, at what unit, how far it travels.</p>
+<h3 id="interval-recurrence-spacing">interval --- recurrence spacing</h3>
+<ul>
+<li><strong>1.0</strong> One return per major division. The form is expected to hold in the reader without reinforcement.</li>
+<li><strong>0.5</strong> Return per section. Distant enough to refresh, near enough to sustain active recall.</li>
+<li><strong>0.0</strong> Immediate return. The sentence-scale figures live here: epizeuxis, diacope, anaphora, epistrophe.</li>
+</ul>
+<p>Regions: <code>adjacent</code> 0.00-0.20 where the sentence figures live, <code>close</code> 0.20-0.45, <code>sectional</code> 0.45-0.75, <code>distant</code> 0.75-1.00.</p>
+<p>Failure low: mannerism. Reinforcement converts into reiteration and the reader begins attending to the pattern instead of the content.</p>
+<p>Failure high: decay. The back-reference points at a foundation whose recall has lapsed, and everything downstream degrades quietly, the reader having no way to identify where the trouble began.</p>
+<h3 id="varied-rotation-discipline">varied --- rotation discipline</h3>
+<p>How far each return differs from the last.</p>
+<ul>
+<li><strong>1.0</strong> Every return rotates: syntactic position, modal frame, conceptual neighborhood, perspectival angle. Each recurrence adds to the form's accumulated penumbra rather than repeating its content.</li>
+<li><strong>0.5</strong> Rotation enforced past the third appearance.</li>
+<li><strong>0.0</strong> Verbatim. Identity of the form is the point.</li>
+</ul>
+<p>Regions: <code>verbatim</code> 0.00-0.15, <code>stable</code> 0.15-0.50, <code>rotating</code> 0.50-0.85, <code>dissolving</code> 0.85-1.00. <strong>A recurrence meant to be recognized --- a running joke, a refrain, a catchphrase --- belongs in <code>stable</code>.</strong> Rotation is what makes a concept accumulate; it is also what stops a gag from landing, because the reader must recognize the return before it can be funny.</p>
+<p>Failure low outside its context: flat reiteration. Recurrence that merely duplicates produces tedium, and the reader's investment falls with each identical return.</p>
+<p>Failure high: the identity thread is lost. Rotation so complete that no lexical anchor survives, and the reader perceives variety where a through-line was intended.</p>
+<p><strong>Specification and compliance drafting require the low pole.</strong> A defined term that rotates is a defect and not a variation. Where a document mixes governing terms with exposition, declare a local override: verbatim for the terms, rotating for the prose around them.</p>
+<p>Five rotation dimensions serve the high pole and corpus-scale work. <em>Perspectival variation</em> examines the concept from historical, practical, theoretical, and comparative viewpoints. <em>Register modulation</em> shifts formality or audience address, the translation itself generating insight. <em>Contrastive framing</em> defines the concept against a different foil each time, sharpening by triangulation. <em>Progressive disclosure</em> layers complexity, early presentations establishing foundations and later ones introducing qualification. <em>Structural isomorphism detection</em> recurs the concept through analogy across unrelated domains, where family resemblance appears without lexical repetition<a href="#fn-2" role="doc-noteref"><span>[^</span>2<span>]</span></a>.</p>
+<h3 id="muted-sub-lexical-saturation">muted --- sub-lexical saturation</h3>
+<p>How heavily the phonetic and sentential devices work the prose. <code>scale</code> names which units are available; <code>muted</code> names how hard the low end of that band is driven. The two are independent: a band reaching <code>corpus</code> with <code>muted</code> at 0.90 has document-scale recurrence and almost no audible patterning.</p>
+<ul>
+<li><strong>1.0</strong> Silent. No consonant binding, no figures; recurrence operates at paragraph and above only.</li>
+<li><strong>0.5</strong> Patterned at junctures --- openings, closings, transitions --- and plain between them.</li>
+<li><strong>0.0</strong> Saturated. Syllable play is continuous and is itself the document's surface.</li>
+</ul>
+<p>Regions: <code>saturated</code> 0.00-0.25, <code>patterned</code> 0.25-0.55, <code>occasional</code> 0.55-0.85, <code>silent</code> 0.85-1.00.</p>
+<p>Failure low: the device becomes the ambient texture and loses its force.</p>
+<p>Failure high: a document whose effect depends on sound arrives flat, its forms correct and inert.</p>
+<p><strong><code>grave</code> caps this setting.</strong> Where <code>grave</code> runs above 0.80, a <code>muted</code> below 0.40 is refused and reported rather than composed.</p>
+<h3 id="scale-active-unit-of-recurrence-band-denoted">scale --- active unit of recurrence <em>(band, denoted)</em></h3>
+<p>Five options, tabled above under Denoted Values. The band names the range in play; lower scales within it remain available.</p>
+<p><strong>A band names which units are available, not how hard they are worked.</strong> Narrowing the top of the band removes recurrence at that scale: a band of <code>phonetic:paragraph</code> has no document-level leitmotif and no running return, whatever the phonetic end is doing. To increase audible play without losing document-scale recurrence, lower <code>muted</code> and leave the band wide.</p>
+<p>Two boundary conditions. <code>phonetic</code> is withheld where the gravity of the subject would make patterning read as frivolity, and sustained alliteration drifts toward the comic --- the device marks territory at openings, closings, and transitions, and loses force when it becomes the ambient texture. <code>sentential</code> figures each accomplish distinct work --- intensification through temporal extension, parallel force, progressive chain, grammatical counterpoint --- and are selected by the emphasis required rather than deployed as a set.</p>
+<h3 id="reach-destination-denoted">reach --- destination <em>(denoted)</em></h3>
+<p>Four options, tabled above under Denoted Values. <code>reach</code> is scope: how far the form is intended to travel.</p>
+<p>The trajectory runs expression, consolidation, luminosity, effervescence, creativity<a href="#fn-2" role="doc-noteref"><span>[^</span>2<span>]</span></a>. What the author externalizes, the reader anchors; what is anchored acquires clarity enough to illuminate material that follows; what illuminates becomes ready to surface when the reader meets related material elsewhere; what surfaces may be recombined in the reader's own work. <code>reach</code> names how far along this trajectory the author intends to carry the form. Each step past <code>document</code> raises installation cost, because a form that must survive separation from its originating context has to arrive carrying that context.</p>
+<hr />
+<h2 id="the-installation-budget">The Installation Budget</h2>
+<p><strong>A struck form is unavailable at compressed cost until it is installed.</strong> Installation is measured in occurrences, not tokens. Three occurrences is the floor.</p>
+<ol>
+<li><strong>Introduce</strong> with scaffolding sufficient for the meaning to arrive whole, attached to an <code>anchor</code> entry where one is nominated.</li>
+<li><strong>Recur proximately</strong> --- same or adjacent sentence --- signalling that the form repays retention rather than passing notice. The anchor returns in a second representation, against material a step more complex than the first.</li>
+<li><strong>Rotate</strong> grammatical position and modal frame, demonstrating range without mechanical repetition. The anchor returns in a third representation and a third degree of complexity, and the form now travels forward unburdened by re-exposition.</li>
+</ol>
+<p>Graduated anchoring is what these three occurrences enact: the form holds constant and its position varies, the anchor holds constant and its representation varies, the material ascends. That third movement makes the last occurrence informative rather than insistent.</p>
+<p>Four conditions each add an occurrence.</p>
+<pre><code>ambient    &lt;= 0.25          nothing familiar to lean on
+expanded   &lt;= 0.25          the form omits more than context supplies
+reach      corpus | reader  the form must survive separation
+register   credential       the boundary must itself be legible
+</code></pre>
+<p>A recoined form bypasses the whole accounting at one occurrence. The thresholds are coarse on purpose: a form at 0.26 does not install appreciably faster than one at 0.24, and the step is an accounting convenience rather than a claim about language. They are global, not roster-derived --- a roster entry sets where a document starts relative to them, never where they fall.</p>
+<p><strong><code>install</code> is per form. <code>events</code> is the document total</strong> --- the sum of each admitted form's cost, recoined forms counted at one. A budget line reading <code>install=6/form events=31 forms=5</code> describes five new forms at six occurrences each plus one recoined form at one, and it is <code>events</code> that is measured against extent.</p>
+<p><strong>Forms, installation, and extent form a triple of which any two may be chosen. The third follows.</strong> A document required to carry many forms, install them properly, and stay short is over-specified, and saying so is the correct response.</p>
+<ul>
+<li>Hold forms and installation: extent floats. Correct wherever the vocabulary is the deliverable.</li>
+<li>Hold installation and extent: the form count is cut, and the cut is an editorial decision returned to the author rather than absorbed silently.</li>
+<li>Hold forms and extent: installation is cut, and the forms arrive uninstalled. This is not a trade. It is the failure below.</li>
+</ul>
+<p><strong>An uninstalled form costs more than no form at all.</strong> It forfeits the compression, because the reader cannot redeem it, and it forfeits the ordinary prose that would have carried the content anyway. Both sources of this instrument reach the finding independently and by different routes: the back-reference falls flat against a foundation never laid<a href="#fn-2" role="doc-noteref"><span>[^</span>2<span>]</span></a>, and the form the reader cannot decompress marks the reader outside<a href="#fn-1" role="doc-noteref"><span>[^</span>1<span>]</span></a>. Convergence from two directions is why this governs as a law rather than sitting among the settings.</p>
+<hr />
+<h2 id="analysis-disposition">Analysis Disposition</h2>
+<p>Where the request examines an existing composition rather than developing one, the settings above read as measurements rather than targets, and the work is detection and distillation.</p>
+<p>Four passes, layered.</p>
+<ol>
+<li><strong>Explicit recurrence.</strong> Repeated terms, phrases, formulations.</li>
+<li><strong>Structural parallel.</strong> Different content occupying isomorphic positions.</li>
+<li><strong>Synonymic variation.</strong> Distinct vocabulary serving identical conceptual function.</li>
+<li><strong>Conceptual kinship.</strong> Related terms clustered, their distributed presence traced.</li>
+</ol>
+<p>Present findings by function, location, or technique --- never serially. Serial cataloguing reports that recurrence occurs; organized presentation reports why it matters, which is what distils a document's intent from its surface.</p>
+<p><strong>Self-examination is the distinct case.</strong> Deliberate recurrence submits readily to inventory. Unplanned recurrence is more revealing and more elusive: the images, clause structures, and gravitational concepts to which the hand returns when the deliberating mind is occupied elsewhere. These may constitute a work's deepest coherence or its most instructive redundancy, and mapping them yields access to compositional instinct otherwise invisible.</p>
+<p>One verification is available before any reader sees the draft. Name the phrase the reader will repeat afterward, then compare it against the concept nominated. Divergence is a finding, and it is the finding this instrument exists to prevent.</p>
+<hr />
+<h2 id="roster">Roster</h2>
+<p>Named application profiles. Invoke by name and perturb from there.</p>
+<table>
+<thead>
+<tr><th>entry</th><th>grave</th><th>ambient</th><th>expanded</th><th>register</th><th>interval</th><th>varied</th><th>muted</th><th>scale</th><th>reach</th><th>install</th></tr>
+</thead>
+<tbody>
+<tr><td><code>essay</code></td><td>0.45</td><td>0.35</td><td>0.30</td><td>somatic</td><td>0.50</td><td>0.75</td><td>0.40</td><td>phonetic:corpus</td><td>reader</td><td>4</td></tr>
+<tr><td><code>satire</code></td><td>0.10</td><td>0.15</td><td>0.15</td><td>somatic</td><td>0.20</td><td>0.40</td><td>0.10</td><td>phonetic:corpus</td><td>reader</td><td>6</td></tr>
+<tr><td><code>spec</code></td><td>0.90</td><td>0.55</td><td>0.35</td><td>operational</td><td>0.35</td><td>0.05</td><td>0.95</td><td>paragraph:document</td><td>document</td><td>3</td></tr>
+<tr><td><code>instrument</code></td><td>0.85</td><td>0.25</td><td>0.20</td><td>operational</td><td>0.40</td><td>0.35</td><td>0.90</td><td>paragraph:corpus</td><td>reader</td><td>6</td></tr>
+<tr><td><code>prompt</code></td><td>0.80</td><td>0.70</td><td>0.45</td><td>operational</td><td>0.15</td><td>0.05</td><td>0.95</td><td>sentential:document</td><td>passage</td><td>3</td></tr>
+<tr><td><code>treatise</code></td><td>0.65</td><td>0.45</td><td>0.35</td><td>somatic</td><td>0.55</td><td>0.70</td><td>0.50</td><td>phonetic:corpus</td><td>corpus</td><td>4</td></tr>
+<tr><td><code>brief</code></td><td>0.85</td><td>0.80</td><td>0.60</td><td>operational</td><td>0.60</td><td>0.40</td><td>0.95</td><td>paragraph:document</td><td>document</td><td>3</td></tr>
+<tr><td><code>primer</code></td><td>0.55</td><td>0.75</td><td>0.75</td><td>somatic</td><td>0.30</td><td>0.65</td><td>0.55</td><td>paragraph:document</td><td>reader</td><td>4</td></tr>
+<tr><td><code>recruit</code></td><td>0.25</td><td>0.35</td><td>0.10</td><td>somatic</td><td>0.25</td><td>0.15</td><td>0.20</td><td>phonetic:sentential</td><td>reader</td><td>5</td></tr>
+<tr><td><code>corpus</code></td><td>0.70</td><td>0.40</td><td>0.30</td><td>operational</td><td>0.75</td><td>0.85</td><td>0.70</td><td>document:corpus</td><td>corpus</td><td>4</td></tr>
+<tr><td><code>record</code></td><td>0.95</td><td>0.95</td><td>0.70</td><td>operational</td><td>0.85</td><td>0.10</td><td>1.00</td><td>paragraph</td><td>passage</td><td>3</td></tr>
+</tbody>
+</table>
+<p><strong><code>essay</code></strong> --- the primary entry, and the profile this instrument was built to serve. Literary communication across prose fiction, prose non-fiction, and poetry, where the compressed form and the patterned return are the devices themselves rather than aids to something else. The full scale band is live: consonant binding at the junctures, sentence figures for intensification, the paragraph as consolidation chamber, leitmotif across the document, rotation across a body of work. Coinage runs freely because the essay is the natural home of the struck phrase, and <code>reach</code> extends to the reader because the essay's aim is that a concept become available in the reader's own thinking rather than merely understood in the author's.</p>
+<p>Three perturbations serve the sub-genres.</p>
+<ul>
+<li><strong>Poetry:</strong> <code>scale=phonetic:document expanded=0.10 interval=0.25</code>. The acoustic unit does work prose distributes across paragraphs.</li>
+<li><strong>Literary fiction:</strong> <code>varied=0.85 reach=reader</code>, with <code>strike</code> nominating character-defining formulations and thematic phrases rather than concepts, and the leitmotif carrying theme through surface variation.</li>
+<li><strong>Technical development in a literary frame:</strong> <code>register</code> mixed at structural seams, <code>somatic</code> where the concept must be felt and <code>operational</code> where it must be usable, with <code>anchor</code> carrying the established material each new technical form attaches to and graduated anchoring supplying the ascent.</li>
+</ul>
+<p><strong><code>satire</code></strong> --- comic and satirical prose on any subject, technical included. Everything that <code>essay</code> holds in reserve is spent here: coinage runs near the floor because inventing the vocabulary <em>is</em> the joke, <code>muted</code> and <code>grave</code> sit at the bottom so syllable play saturates the surface, <code>interval</code> runs close so a form returns while the reader still has the last one, and the band stays open to <code>corpus</code> so a running gag can run. <code>varied</code> is the counter-intuitive one --- it sits at 0.40, in <code>stable</code>, not high. A gag has to be recognized before it can land, and rotation past <code>stable</code> dissolves the recognition the joke depends on. Recoin freely: an established comic form is the strongest asset a satire has, and a second appearance in a later work is the payoff the first one bought.</p>
+<p><strong><code>spec</code></strong> --- standards, schemas, compliance artifacts, skill definitions. Governing terms return verbatim; <code>varied</code> at 0.05 is the entry's defining constraint and not a preference.</p>
+<p><strong><code>instrument</code></strong> --- frameworks and methodologies the reader will operate downstream. The vocabulary is the deliverable, so mintage runs heavy and reach extends to the reader's own work. Local override expected: setting names verbatim at <code>varied=0.05</code>, surrounding exposition at the entry value.</p>
+<p><strong><code>prompt</code></strong> --- prompt artifacts and staged model inputs. Context arrives before purpose and folds into representations formed without knowing what would matter; the end does not inform the beginning. The remedy is duplication --- the request restated after the corpus, processing with full awareness of what the first presentation contained, a technique whose empirical warrant is unusually clean<a href="#fn-4" role="doc-noteref"><span>[^</span>4<span>]</span></a>. Verbatim restatement is the method, so <code>varied</code> runs at the floor. Richer staging runs the same principle further: synthesize context, elicit the technique spectrum, surface criteria, hypothesize requirements, focus solution opportunities, then present the well-developed question and repeat it.</p>
+<p><strong><code>treatise</code></strong> --- extended argument. Full scale stack in play, consolidation at paragraph, leitmotif at document, rotation across the corpus.</p>
+<p><strong><code>brief</code></strong> --- decision documents for readers who will not learn vocabulary for the occasion. One leitmotif carries the message and nothing else recurs.</p>
+<p><strong><code>primer</code></strong> --- teaching material. Both poles high: plain stock, full predication, tight interval, heavy consolidation. The reader leaves holding the vocabulary.</p>
+<p><strong><code>recruit</code></strong> --- material whose audience is reached only by being passed along. Novel forms are the memetic payload, compression is maximal, the somatic register does the delivery, and the form returns verbatim because portability depends on identity.</p>
+<p><strong><code>corpus</code></strong> --- multi-document programs, where rotation across the five dimensions is the governing technique.</p>
+<p><strong><code>record</code></strong> --- logs, indexes, reference matter. Coin nothing, rotate nothing, retrieve reliably.</p>
+<hr />
+<h2 id="sound-index">Sound Index</h2>
+<p>Compression and recurrence are separate machinery with separate keys. <strong>Mint is compression</strong> --- <code>ambient</code>, <code>expanded</code>, <code>register</code> --- and governs what a form <em>is</em>. <strong>Circulate is repetition</strong> --- <code>interval</code>, <code>varied</code>, <code>muted</code>, <code>scale</code>, <code>reach</code> --- and governs how it <em>returns</em>. <code>grave</code> sits above both and licenses the audible devices at all.</p>
+<p>Where only the wanted effect is known, move from the effect to the key.</p>
+<table>
+<thead>
+<tr><th>wanted effect</th><th>move</th></tr>
+</thead>
+<tbody>
+<tr><td>More syllable play, alliteration, sound in the mouth</td><td><code>muted</code> down; <code>grave</code> down to license it; keep <code>phonetic</code> in the band</td></tr>
+<tr><td>A running gag that recurs and lands</td><td><code>varied</code> into <code>stable</code> 0.15-0.50; <code>interval</code> into <code>close</code>; band open to <code>document</code> or <code>corpus</code></td></tr>
+<tr><td>More invented words</td><td><code>ambient</code> down; <code>expanded</code> down for punch</td></tr>
+<tr><td>Punchier forms, less explaining</td><td><code>expanded</code> down</td></tr>
+<tr><td>Sentence figures --- anaphora, epizeuxis, chained returns</td><td><code>interval</code> into <code>adjacent</code>; <code>sentential</code> in the band; <code>muted</code> down</td></tr>
+<tr><td>The reader quoting it back afterward</td><td><code>reach=reader</code>; <code>varied</code> no higher than <code>stable</code>; <code>interval</code> close</td></tr>
+<tr><td>A concept deepening across returns</td><td><code>varied</code> into <code>rotating</code>; <code>interval</code> sectional; band to <code>document</code></td></tr>
+<tr><td>Vocabulary carried between works</td><td><code>reach=corpus</code>; established forms into <code>recoin</code>, not <code>strike</code></td></tr>
+<tr><td>Gravity, no audible patterning</td><td><code>grave</code> up; <code>muted</code> up; band from <code>paragraph</code></td></tr>
+<tr><td>Terms that must not drift</td><td><code>varied</code> into <code>verbatim</code>; <code>register=operational</code></td></tr>
+</tbody>
+</table>
+<p>Two couplings decide more than any single key. <strong><code>grave</code> gates <code>muted</code>:</strong> play cannot be added to a document whose subject refuses it, and the instrument refuses the combination rather than composing it. <strong><code>varied</code> opposes recognition:</strong> rotation is how a concept accumulates and is also how a joke stops being funny, so a document wanting both must split them by region --- the gag in <code>stable</code>, the concept in <code>rotating</code> --- rather than averaging.</p>
+<hr />
+<h2 id="local-override">Local Override</h2>
+<p>Any setting may be overridden for a declared region --- governing terms at one configuration, surrounding exposition at another. The override is an exception to the document's configuration and is declared as such. It is not a property of the document, since what makes a region exceptional is that the rest of the document is not like it. A setting wanting override everywhere is a document setting stated wrongly.</p>
+<hr />
+<h2 id="composition-order">Composition Order</h2>
+<p>Mintage is architecture, not polish.</p>
+<ol>
+<li>Resolve the disposition from the request. Composing or analysing.</li>
+<li>Take the nomination lists. <code>strike</code>, <code>anchor</code>, <code>damp</code>.</li>
+<li>Stage the preparation. Context, candidate range, criteria, requirements, focus. This step identifies the approach and no later step recovers what it skips.</li>
+<li>Run the disqualifiers over each candidate. Defer, restrike, decline, or admit.</li>
+<li>Compute install cost per admitted form and test the total against extent. Resolve the triple before drafting, not after.</li>
+<li>Site each installation in the outline, and plan the ascent each anchor climbs. Consolidation is a location, not an intention.</li>
+<li>Draft.</li>
+<li>Review the draft for what actually recurs, set it beside the nomination, and re-nominate. Neither optional nor terminal: this is where anticipated failures that survived preparation are finally caught, and it may run more than once.</li>
+</ol>
+<p>Installing a form above a budget that cannot carry it defers the failure to the first back-reference. Skipping step eight defers it to the reader.</p>
+<hr />
+<h2 id="reverse-diagnosis">Reverse Diagnosis</h2>
+<ul>
+<li>"You used that term earlier --- remind me?" ---&gt; installation incomplete, or <code>interval</code> longer than retention supports.</li>
+<li>The reader repeats the wrong phrase back ---&gt; an unnominated form was better installed than the nominated one. Add it to <code>damp</code> and re-nominate.</li>
+<li>The recurrence reads as insistence rather than architecture ---&gt; disqualifier one. The concept circulated before it was developed. Defer the strike; develop, then circulate.</li>
+<li>The form is remembered and the concept is not ---&gt; disqualifier two. The handle does not fit what it opens. Restrike.</li>
+<li>The right term recurs at the wrong weight in a synthesized draft ---&gt; nomination was correct and installation was not. The review pass is the repair, not a new nomination.</li>
+<li>Nothing in the draft is wrong and nothing coheres ---&gt; preparation was skipped. The disqualifiers cannot supply an approach they were only ever able to reject.</li>
+<li>"That felt like jargon" ---&gt; <code>ambient</code> too low for this reader, or <code>register</code> at <code>credential</code> where the boundary was not intended.</li>
+<li>"Why is this spelled out? I know this" ---&gt; <code>expanded</code> too high for a reader who already thinks in the compressed unit.</li>
+<li>The form is understood and not retained ---&gt; <code>interval</code> too high, or the form failed disqualifier three and should never have been struck.</li>
+<li>The document reads as variations on a theme with no theme ---&gt; <code>varied</code> too high; no lexical anchor survived rotation.</li>
+<li>Compliance ambiguity around a defined term ---&gt; <code>varied</code> above the floor in a <code>spec</code> context. The term rotated where identity was required.</li>
+<li>The reader's estimate of the author falls partway through ---&gt; warrant withdrawn. A form failed on redemption, and the revision applies retroactively.</li>
+<li>Serial admiration and no retention ---&gt; forms struck faster than the budget installs them. The count is the defect, not the craft.</li>
+</ul>
+<hr />
+<h2 id="notes">Notes</h2>
+
+
+
+
+<section id="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn-1" role="doc-endnote"><span>[^1]: </span><p>Georgalis, George. <em>The Compression Imperative: Why Communication Creates Atomic Forms.</em> Revision 69898a93, 8 Feb 2026. Source of the mint group, the crystallization finding under <code>expanded</code>, the <code>register</code> modes, the exclusion cost under <code>credential</code>, and the warrant effect.</p></li>
+<li id="fn-2" role="doc-endnote"><span>[^2]: </span><p>Georgalis, George. <em>Rhetorical Repetition: Recognition Rewards Recurrence.</em> Revision 69937668, 16 Feb 2026. Source of the circulate group, the <code>scale</code> band, the five rotation dimensions, the <code>reach</code> trajectory, the analysis disposition, and the three-occurrence installation floor.</p></li>
+<li id="fn-3" role="doc-endnote"><span>[^3]: </span><p>Goldberg, Adele E., and Shahar Shirtz. "The English phrase-as-lemma construction: When a phrase masquerades as a word, people play along." <em>Language</em> 101, no. 2 (2025): 291-320. &lt;https://dx.doi.org/10.1353/lan.2025.a962899&gt;</p></li>
+<li id="fn-4" role="doc-endnote"><span>[^4]: </span><p>Leviathan, Y., Kalman, M., and Matias, Y. "Prompt Repetition Improves Non-Reasoning LLMs." <em>arXiv</em> 2512.14982v1 (2025). &lt;https://arxiv.org/abs/2512.14982&gt; Across seventy experimental configurations, repetition improved performance forty-seven times and degraded it in no configuration.</p></li>
+</ol>
+</section>
+</body>
+</html>

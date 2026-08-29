@@ -32,7 +32,7 @@ chose.
   compose prose are
 
 - Sources, for the reasoning the skill formalizes
-  - [The Compression Imperative](./compression_imperative-essay.md) --- why
+  - [Compression Imperative](./compression_imperative-essay.md) --- why
     communication creates atomic forms, and what a compressed phrase does
     that its expansion cannot
   - [Doy Family Expressions](./doy_family_expressions-research.md) --- the
