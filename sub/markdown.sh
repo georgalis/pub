@@ -61,8 +61,18 @@ awk '
 #                      through within paragraph text.
 #
 #   Footnotes          GitHub-style [^label] references and [^label]: definitions.
-#                      Inline [^label] emits a superscript link to the definition:
-#                        <sup><a href="#fn-label">[label]</a></sup>
+#                      Inline [^label] emits a link carrying a document role:
+#                        <a href="#fn-label" role="doc-noteref">
+#                          <span>[^</span>label<span>]</span></a>
+#                      The [^ and ] brackets are literal text within a bare
+#                      <span>, not generated content -- ::before/::after
+#                      content is excluded from a copy selection in every
+#                      major browser, so a reader copying a reference gets
+#                      the bracket characters along with the label. Rendered
+#                      output reads as the markdown source reads by default.
+#                      A sourced stylesheet may hide the <span> elements to
+#                      trade that fidelity for a superscript-numeral look;
+#                      see the CSS defaults in BEGIN for the override rule.
 #                      No id attribute is emitted on the reference; the reader
 #                      returns via browser back navigation, which correctly
 #                      restores scroll position regardless of how many times a
@@ -70,15 +80,34 @@ awk '
 #                      the same footnote is referenced more than once.
 #                      Block-level definitions [^label]: text are collected and
 #                      suppressed from flow, then emitted before </body> as an
-#                      ordered list within a <section> landmark:
-#                        <section id="footnotes"><hr /><ol>
-#                          <li id="fn-label"><p>text</p></li>
+#                      ordered list within a <section> landmark, both marked
+#                      with their document roles:
+#                        <section id="footnotes" role="doc-endnotes"><hr /><ol>
+#                          <li id="fn-label" role="doc-endnote">
+#                            <span>[^label]: </span><p>text</p></li>
 #                        </ol></section>
+#                      The [^label]: prefix is likewise literal text in a bare
+#                      <span>, for the same copy-fidelity reason.
 #                      Definitions are single-line; label may be numeric or
 #                      alphanumeric (eg [^1], [^note], [^see-also]).
 #
 #   Metadata skip      A leading block of "key: value" lines (front matter) is
-#                      silently consumed rather than rendered.
+#                      silently consumed rather than rendered. A --- delimited
+#                      front matter block is also consumed, engaged only when
+#                      the line after the opening --- is a key: value pair, so
+#                      a document opening with a thematic break is unaffected.
+#
+#   Contents           <!--contents--> emits a table of contents at the
+#                      directive position, indexing the headings that follow it.
+#                      Arguments set the level window: none for levels 1 to 3,
+#                      one for the deepest level (<!--contents 3-->), two for
+#                      both bounds (<!--contents 2 3-->).
+#                      Forward scope leaves the title, subtitle, the contents
+#                      heading itself, and any foreword above the directive out
+#                      of the index without an exclusion rule. Output is nested
+#                      <ul> within a bare <nav> landmark; no id or class is
+#                      emitted, leaving a "## Contents" heading above the
+#                      directive in sole possession of the contents anchor.
 #
 #   Tables              GFM pipe-delimited tables with optional column alignment.
 #                      A table block is a contiguous run of | prefixed lines
@@ -93,7 +122,18 @@ awk '
 #                      markup. The align= attribute is emitted directly on
 #                      <th> and <td> elements with no CSS dependency.
 #
-# (c) 2026 George Georgalis <george@galis.org> unlimited use with this notice
+# (c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution.
+#
+# rev 6a856101 20260819 005337 PDT Wed --- footnote brackets and definition
+#                                      --- prefix to literal text in bare <span>;
+#                                      --- generated content is excluded from a
+#                                      --- copy selection, defeating source fidelity
+# rev 6a854ff6 20260818 234054 PDT Tue --- block interruption and termination in
+#                                      --- line_continues, shared is_hr predicate
+#                                      --- --- delimited front matter skip
+#                                      --- <!--contents lo hi--> table of contents
+#                                      --- footnote presentation to css, source
+#                                      --- form by default, no paragraph spacing
 # rev 69d38b8e 20260406 033132 PDT Mon --- HTML Entity Passthrough in parse_line
 # rev 69b76f75 20260315 194821 PDT Sun --- enumerated list rendering
 #                                      --- GFM table parsing with column alignment
@@ -127,6 +167,9 @@ BEGIN {
 	body = ""
 	first_paragraph = 1
 	fn_count = 0
+	toc_n = 0
+	toc_pending = 0
+	nout = 0
 	print "<!DOCTYPE html>"
 	print "<html lang=\"en\">"
 	print "<head>"
@@ -134,10 +177,26 @@ BEGIN {
 	print "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
 	# minimal table presentation defaults; element selectors (lowest specificity)
 	# placed before external stylesheets so /default.css and ./default.css
-	# override without !important or specificity escalation
+	# override without !important or specificity escalation. Footnote markup
+	# carries its brackets and its [^label]: prefix as literal text, not
+	# generated content, since ::before/::after content is excluded from a
+	# copy selection in every major browser; a reader copying an endnote gets
+	# exactly the markdown source syntax back. The two remaining rules are
+	# structural, not decorative: ol numbering is suppressed so the browser
+	# own "1." marker does not sit beside the literal "[^1]:" text, and the
+	# definition paragraph is inlined onto the same line as its prefix.
+	# Both the reference brackets and the definition prefix are wrapped in a
+	# bare <span>, which a sourced stylesheet may hide to trade source
+	# fidelity for a superscript-numeral or auto-numbered look, eg:
+	#   a[role="doc-noteref"] { vertical-align: super; font-size: 0.75em; }
+	#   a[role="doc-noteref"] span,
+	#   li[role="doc-endnote"] span { display: none; }
+	#   section[role="doc-endnotes"] ol { list-style: decimal; padding-left: 2em; }
 	print "<style>"
 	print "table { border-collapse: collapse; }"
 	print "th, td { border: 1px solid #999; padding: 0.3em 0.6em; }"
+	print "section[role=\"doc-endnotes\"] ol { list-style: none; padding-left: 0; }"
+	print "li[role=\"doc-endnote\"] p { display: inline; margin: 0; }"
 	print "</style>"
 	print "<link rel=\"stylesheet\" href=\"/default.css\">"
 	print "<link rel=\"stylesheet\" href=\"./default.css\">"
@@ -200,13 +259,117 @@ function parse_footnote_def(str,    id, content) {
 	fn_text[id] = content;
 }
 
+# --- Contents Generation ---
+# Headings are recorded as they are parsed (level, anchor, rendered text) and a
+# <!--contents--> directive indexes only the headings that follow it. Forward
+# scope is what makes the directive self-selecting: a title, subtitle, the
+# contents heading itself, and any foreword or preface standing above the
+# directive fall outside the index without any exclusion rule. Block output is
+# buffered through emit() and flushed in END, since the headings an index
+# covers are not known until input ends.
+#
+# Directive syntax:  <!--contents-->      levels 1 through 3, the default
+#                    <!--contents 3-->    levels 1 through 3
+#                    <!--contents 2 3-->  levels 2 through 3
+#
+# A level below the minimum is skipped entirely, so its subordinate headings
+# rise to the outer list level. Nesting is normalized to the shallowest level
+# actually present, so a section indexed from ## opens at the outer level.
+# Link text is the rendered heading content with anchor elements removed; a
+# link or footnote reference inside a heading would otherwise nest an <a>
+# inside the contents entry link.
+function record_heading(lvl, id, content) {
+	toc_n++;
+	toc_lvl[toc_n] = lvl;
+	toc_id[toc_n] = id;
+	toc_txt[toc_n] = strip_anchors(content);
+}
+
+function strip_anchors(str) {
+	gsub(/<a [^>]*>/, "", str);
+	gsub(/<\/a>/, "", str);
+	return str;
+}
+
+function make_toc(lo, hi, from,    i, base, lvl, cur, result) {
+	base = 0;
+	for (i = from + 1; i <= toc_n; i++)
+		if (toc_lvl[i] >= lo && toc_lvl[i] <= hi \
+			&& (base == 0 || toc_lvl[i] < base))
+			base = toc_lvl[i];
+	if (base == 0)
+		return "";   # no heading follows within the window; nothing emitted
+
+	result = "<nav>";
+	cur = 0;
+	for (i = from + 1; i <= toc_n; i++) {
+		if (toc_lvl[i] < lo || toc_lvl[i] > hi)
+			continue;
+		lvl = toc_lvl[i] - base + 1;
+		if (cur == 0) {
+			result = result "\n<ul>";
+			cur = 1;
+		}
+		else if (lvl > cur) {
+			while (lvl > cur) {           # deeper: sublist inside the open <li>
+				result = result "\n<ul>";
+				cur++;
+			}
+		}
+		else {
+			result = result "</li>";      # same level or shallower: close entry
+			while (lvl < cur) {
+				result = result "\n</ul></li>";
+				cur--;
+			}
+		}
+		result = result "\n<li><a href=\"#" toc_id[i] "\">" toc_txt[i] "</a>";
+	}
+	result = result "</li>";
+	while (cur > 1) {
+		result = result "\n</ul></li>";
+		cur--;
+	}
+	return result "\n</ul>\n</nav>";
+}
+
+# --- Output Buffer ---
+# Blocks accumulate in out[] rather than printing directly, deferring emission
+# until every heading is recorded. A pending contents directive claims the slot
+# of the empty block that produced it, carrying its level window and the
+# heading count standing at that point, which fixes where its forward scope
+# begins. END substitutes the generated contents for the slot.
+function emit(str) {
+	out[++nout] = str;
+	if (toc_pending) {
+		toc_slot[nout] = 1;
+		toc_lo[nout] = toc_pmin;
+		toc_hi[nout] = toc_pmax;
+		toc_from[nout] = toc_n;
+		toc_pending = 0;
+	}
+}
+
+# --- Thematic Break Predicate ---
+# Three or more uniform *, -, or _ markers with optional interior and trailing
+# whitespace. Shared by the block dispatcher and the continuation predicate so
+# both agree on what constitutes a rule.
+function is_hr(str) {
+	return match(str, /^([[:space:]]*\*){3,}[[:space:]]*$/) ||
+	       match(str, /^([[:space:]]*-){3,}[[:space:]]*$/) ||
+	       match(str, /^([[:space:]]*_){3,}[[:space:]]*$/);
+}
+
 # --- Heading Parser ---
 # Handles ATX (# prefix) and setext (underline) heading syntax.
 # Extracts an optional {#custom-id} suffix from the heading text; when absent,
 # generates an anchor via make_anchor_id(). The anchor is emitted as the id
 # attribute on the heading element.
 # ATX: strips trailing #-sequences and leading #-sequences to determine level.
-# Setext: = underline -> h1, - underline -> h2; detected via body pattern match.
+# Setext: = underline -> h1, - underline -> h2; detected against the block
+# argument rather than the global body, so headings inside a blockquote (parsed
+# by recursion through parse_body) are read from their own block text.
+# Every heading is recorded for the contents directive.
 function parse_header(str,    hnum, content, anchor) {
 	if (substr(str, 1, 1) == "#") {
 		gsub(/ *#* *$/, "", str);       # strip trailing # and whitespace
@@ -225,10 +388,11 @@ function parse_header(str,    hnum, content, anchor) {
 		content = parse_line(str);
 		if (anchor == "")
 			anchor = make_anchor_id(str);
+		record_heading(hnum, anchor, content);
 		return "<h" hnum " id=\"" anchor "\">" content "</h" hnum ">";
 	}
 	# setext h1: text followed by line of =s
-	if (match(body, /^[^\n]+\n=+$/)) {
+	if (match(str, /^[^\n]+\n=+$/)) {
 		gsub(/\n=+$/, "", str);
 		anchor = "";
 		if (match(str, /[[:space:]]*\{#[^}]+\}$/)) {
@@ -239,10 +403,12 @@ function parse_header(str,    hnum, content, anchor) {
 		}
 		if (anchor == "")
 			anchor = make_anchor_id(str);
-		return "<h1 id=\"" anchor "\">" parse_line(str) "</h1>"
+		content = parse_line(str);
+		record_heading(1, anchor, content);
+		return "<h1 id=\"" anchor "\">" content "</h1>"
 	}
 	# setext h2: text followed by line of -s
-	if (match(body, /^[^\n]+\n-+$/)) {
+	if (match(str, /^[^\n]+\n-+$/)) {
 		gsub(/\n-+$/, "", str);
 		anchor = "";
 		if (match(str, /[[:space:]]*\{#[^}]+\}$/)) {
@@ -253,7 +419,9 @@ function parse_header(str,    hnum, content, anchor) {
 		}
 		if (anchor == "")
 			anchor = make_anchor_id(str);
-		return "<h2 id=\"" anchor "\">" parse_line(str) "</h2>"
+		content = parse_line(str);
+		record_heading(2, anchor, content);
+		return "<h2 id=\"" anchor "\">" content "</h2>"
 	}
 	return "";
 }
@@ -746,7 +914,8 @@ function parse_line(str,    result, end, i, c) {
 		# [ delimiter; label may be alphanumeric with hyphens.
 		else if (c == "[" && match(substr(str, i), /^\[\^[^\]]+\]/)) {
 			fn_ref = substr(str, i + 2, RLENGTH - 3);
-			result = result "<sup><a href=\"#fn-" fn_ref "\">[" fn_ref "]</a></sup>";
+			result = result "<a href=\"#fn-" fn_ref "\" role=\"doc-noteref\">" \
+				"<span>[^</span>" fn_ref "<span>]</span></a>";
 			i = i + RLENGTH - 1;
 		}
 		# Markdown link [text](url "title")
@@ -986,6 +1155,24 @@ function parse_block(str) {
 	if (str == "")
 		return "";
 
+	# contents directive: claims a slot resolved in END against the headings
+	# that follow it. One argument sets the deepest level, two set a window.
+	if (match(str, /^<!--[[:space:]]*contents([[:space:]]+[0-9]+){0,2}[[:space:]]*-->$/)) {
+		spec = str;
+		gsub(/[^0-9]+/, " ", spec);       # reduce to the numeric arguments
+		nspec = split(spec, specs, " ");
+		toc_pmin = 1;
+		toc_pmax = 3;                     # default window
+		if (nspec == 1)
+			toc_pmax = specs[1] + 0;
+		else if (nspec == 2) {
+			toc_pmin = specs[1] + 0;
+			toc_pmax = specs[2] + 0;
+		}
+		toc_pending = 1;
+		return "";
+	}
+
 	# HTML comment: pass through verbatim to preserve in rendered output
 	if (match(str, /^<!--/) && match(str, /-->$/))
 		return str;
@@ -993,7 +1180,7 @@ function parse_block(str) {
 	if (match(str, /^```[^\n]*\n.*```$/) || match(str, /^    /)) {
 		return parse_code(str);
 	}
-	if (substr(str, 1, 1) == "#" || match(body, /^[^\n]+\n[-=]+$/)) {
+	if (substr(str, 1, 1) == "#" || match(str, /^[^\n]+\n[-=]+$/)) {
 		return parse_header(str);
 	}
 	else if (substr(str, 1, 1) == ">") {
@@ -1003,11 +1190,8 @@ function parse_block(str) {
 	else if (is_table(str)) {
 		return parse_table(str);
 	}
-	else if ( \
-		match(str, /^([[:space:]]*\*){3,}[[:space:]]*$/) ||
-		match(str, /^([[:space:]]*-){3,}[[:space:]]*$/) ||
-		match(str, /^([[:space:]]*_){3,}[[:space:]]*$/)) {
-			return "<hr />";
+	else if (is_hr(str)) {
+		return "<hr />";
 	}
 	else if (match(str, /^[-+*][[:space:]]/) || match(str, /^[[:digit:]]+\.[[:space:]]/)) {
 		return parse_list(str);
@@ -1052,12 +1236,14 @@ function parse_body(str,    body, line, lines, result, i) {
 }
 
 # --- Block Continuation Predicate ---
-# Determines whether line belongs to the same block as body.
-# Indented code and fenced code blocks absorb blank lines; headings and setext
-# underlines terminate immediately; a list marker following a non-list body
-# forces a block break (GitHub-compatible tight list attachment); all other
-# non-empty lines continue the current block. An empty line ends a paragraph
-# or list block.
+# Determines whether line belongs to the same block as body, in three stages.
+# Absorbing bodies come first: indented code, an open fence, an open comment,
+# and a table each swallow the line regardless of its content. Completed bodies
+# come next: a heading, setext pair, closed fence, closed comment, rule, or
+# table met by prose admits nothing further. Opener lines come last: heading,
+# fence, footnote definition, blockquote, rule, and list markers each begin a
+# block without a preceding blank line. All other non-empty lines continue the
+# current block; an empty line ends a paragraph or list block.
 function line_continues(body, line) {
 	# indented code: continues through blanks if body is indented
 	if (match(body, /^    /) && (match(line, /^    /) || line == ""))
@@ -1069,6 +1255,12 @@ function line_continues(body, line) {
 	if (match(body, /^```[^\n]*\n/) && !match(body, /\n```$/))
 		return 1;
 
+	# opening fence before its first newline: absorb so an opener marker on the
+	# first code line (a # comment, a - bullet) does not break the block. A
+	# complete inline span carries closing backticks and is excluded here.
+	if (match(body, /^```[^`]*$/) && line != "")
+		return 1;
+
 	# HTML comment: absorb everything until closing -->
 	if (match(body, /^<!--/) && !match(body, /-->$/))
 		return 1;
@@ -1077,13 +1269,76 @@ function line_continues(body, line) {
 	if (match(body, /^\|/) && match(line, /^\|/))
 		return 1;
 
-	# ATX heading: single-line block, does not continue
-	if (match(body, /^#* /))
+	# --- completed body: the accumulated block admits no further lines ---
+
+	# space-indented body: the block is complete. The former ATX test carried
+	# this case incidentally, its zero-or-more # count matching any line that
+	# opens on a space. Indented code has already absorbed its own indented and
+	# blank lines above, so what reaches here ends at the first line that leaves
+	# the indent; an indented run that is not code (a fence inside a list item)
+	# keeps its one-line-per-block rendering rather than folding into prose.
+	if (match(body, /^ /))
+		return 0;
+
+	# ATX heading: single-line block, does not continue. The # count is one or
+	# more, the indent case above having taken over what the zero-count form
+	# was doing.
+	if (match(body, /^#+([[:space:]]|$)/))
 		return 0;
 
 	# setext underline: terminates the two-line heading block
 	if (match(body, /^[^\n]+\n[-=]+$/))
 		return 0;
+
+	# closed fence and closed comment are complete blocks; absorbing the next
+	# line would carry following prose inside the code or comment, and the
+	# block would then fail its own dispatcher pattern and render as a paragraph
+	if (match(body, /^```[^\n]*\n/) && match(body, /\n```$/))
+		return 0;
+
+	if (match(body, /^<!--/) && match(body, /-->$/))
+		return 0;
+
+	# footnote definition met by a rule or setext underline: the definition is
+	# complete. Folded together the pair satisfies the setext pattern, and the
+	# definition renders as a heading carrying its own inline reference. A
+	# definition may still be continued by ordinary prose lines below.
+	if (match(body, /^\[\^[^\]]+\]: /) && match(line, /^[-=]+[[:space:]]*$/))
+		return 0;
+
+	# thematic break: a rule occupies its block alone
+	if (is_hr(body))
+		return 0;
+
+	# table met by a non-pipe line: the line would otherwise become a final row
+	if (match(body, /^\|/) && line != "")
+		return 0;
+
+	# --- block openers: a marker line interrupts the current body ---
+
+	# heading, fence, footnote definition, and blockquote markers open a block
+	# without a preceding blank line, as list markers already do below. The
+	# blockquote guard excepts a body already in a quote, whose > prefixed
+	# lines are one block. Consecutive footnote definitions separate here;
+	# folded together, the second reads as an inline reference within the first.
+	if (line != "" \
+		&& (match(line, /^#+([[:space:]]|$)/) \
+			|| match(line, /^```/) \
+			|| match(line, /^\[\^[^\]]+\]: /) \
+			|| (match(line, /^>/) && !match(body, /^>/))))
+		return 0;
+
+	# thematic break line: interrupts, except where a - rule underlines a
+	# single line of paragraph text, which setext heading syntax claims first
+	if (line != "" && is_hr(line)) {
+		if (match(line, /^[[:space:]]*-/) \
+			&& match(body, /^[^\n]+$/) \
+			&& !match(body, /^[[:space:]]*[-+*][[:space:]]/) \
+			&& !match(body, /^[[:space:]]*[[:digit:]]+\.[[:space:]]/) \
+			&& !match(body, /^[>|]/))
+			return 1;
+		return 0;
+	}
 
 	# list marker after non-list body: break to start a new list block
 	# (permits lists immediately following paragraphs without a blank line)
@@ -1101,11 +1356,30 @@ function line_continues(body, line) {
 	return 0;  # empty line: block boundary
 }
 
+# --- Front Matter Skip ---
+# A --- delimited block at the head of the document is consumed silently. The
+# line after the opening delimiter must read as key: value for the skip to
+# engage; otherwise both lines return to the normal path, leaving a document
+# that opens on a thematic break to render as one.
+NR == 1 && /^---[[:space:]]*$/ {
+	if ((getline peek) <= 0)
+		next;                            # --- was the whole document
+	if (peek ~ /^[^ ]+:([[:space:]]|$)/) {
+		while ((getline peek) > 0)
+			if (peek ~ /^---[[:space:]]*$/)
+				break;                   # closing delimiter, or end of input
+		next;
+	}
+	body = "---";                        # not front matter: replay both lines
+	$0 = peek;
+}
+
 # --- Main Input Loop ---
 # Accumulates input lines into body using line_continues() to detect block
 # boundaries. When a boundary is reached, flushes the completed block through
 # parse_block() and begins a new block. The first block is tested for metadata
-# and suppressed if it matches.
+# and suppressed if it matches. Blocks are buffered by emit() rather than
+# printed, so a contents directive can be resolved against every heading.
 // {
 	if (line_continues(body, $0)) {
 		if (body != "")
@@ -1117,7 +1391,7 @@ function line_continues(body, line) {
 
 	if (body != "") {
 		if (!(first_paragraph && is_metadata(body)))
-			print parse_block(body);
+			emit(parse_block(body));
 		first_paragraph = 0;
 	}
 
@@ -1128,7 +1402,9 @@ function line_continues(body, line) {
 
 # --- End-of-Input Flush ---
 # Emits the final accumulated block, applying the same metadata suppression
-# for the edge case of a single-block document. If footnote definitions were
+# for the edge case of a single-block document, then prints the buffered body,
+# substituting the generated table of contents for any slot claimed by a
+# contents directive. If footnote definitions were
 # collected during parsing, emits them as a terminal <section> with an <hr>
 # separator and an ordered list of definitions. Each definition carries an
 # id anchor (fn-label) for the inline reference to target. No backref links
@@ -1138,15 +1414,24 @@ function line_continues(body, line) {
 END {
 	if (body != "") {
 		if (!(first_paragraph && is_metadata(body)))
-			print parse_block(body);
+			emit(parse_block(body));
+	}
+	# flush the buffered body, substituting generated contents at any slot
+	# claimed by a <!--contents N--> directive
+	for (i = 1; i <= nout; i++) {
+		if (i in toc_slot)
+			print make_toc(toc_lo[i], toc_hi[i], toc_from[i]);
+		else
+			print out[i];
 	}
 	if (fn_count > 0) {
-		print "<section id=\"footnotes\">"
+		print "<section id=\"footnotes\" role=\"doc-endnotes\">"
 		print "<hr />"
 		print "<ol>"
 		for (i = 1; i <= fn_count; i++) {
 			id = fn_ids[i];
-			print "<li id=\"fn-" id "\"><p>" fn_text[id] "</p></li>"
+			print "<li id=\"fn-" id "\" role=\"doc-endnote\">" \
+				"<span>[^" id "]: </span><p>" fn_text[id] "</p></li>"
 		}
 		print "</ol>"
 		print "</section>"

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+section[role="doc-endnotes"] ol { list-style: none; padding-left: 0; }
+li[role="doc-endnote"] p { display: inline; margin: 0; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h1 id="llm-synthesized-essay">LLM-Synthesized Essay</h1>
+<h3 id="curated-presentation"><a href="../../">Curated Presentation</a></h3>
+<h2 id="the-coinage-catalog"><a href="./">The Coinage Catalog</a></h2>
+<p>A reader carries out a handful of phrases and forgets the rest---and which phrases those are is decided long before the draft: by which concepts get compressed into a form worth carrying, by how often that form returns, and by how far it changes each time it does.</p>
+<p>Coinage is a skill for making that decision deliberate. Name the concepts, set the compression and the spacing, hand it to a language model with a draft, and the vocabulary a reader leaves holding is the vocabulary you chose.</p>
+<p><em>(c) 2026 George Georgalis &lt;george@iuxta.com&gt; Unlimited use with attribution.</em></p>
+<pre><code>org 6a8ee578 20260826 060912 PDT Wed 06:09 AM 26 Aug 2026
+</code></pre>
+<hr />
+<ul>
+<li><a href="./coinage-SKILL.md.html">Coinage</a> --- the instrument. Apply it when a document's vocabulary is part of its deliverable, when recurrence is a device rather than a side effect, or when an existing composition is to be examined for what it repeats and what that reveals
+<ul>
+<li><strong>Roster</strong> --- ten application profiles, settings resolved, from the literary <code>essay</code> through <code>spec</code>, <code>prompt</code>, and <code>record</code>; carried inside the skill rather than as a separate artifact, since the profiles are what the invocation names</li>
+</ul></li>
+</ul>
+<ul>
+<li><a href="./coinage-ontology.md.html">Model Ontology</a> --- fixes what a coinage instrument is; nothing here composes prose, it says what the things that compose prose are</li>
+</ul>
+<ul>
+<li>Sources, for the reasoning the skill formalizes
+<ul>
+<li><a href="./compression_imperative-essay.md.html">The Compression Imperative</a> --- why communication creates atomic forms, and what a compressed phrase does that its expansion cannot</li>
+<li><a href="./doy_family_expressions-research.md.html">Doy Family Expressions</a> --- the research finding behind that essay's central example: a form fully functional in its community and absent from every corpus that should have caught it</li>
+<li><a href="./rhetorical_repetition-essay.md.html">Rhetorical Repetition</a> --- recurrence from the syllable to the corpus, and what accumulates across a form's returns</li>
+</ul></li>
+</ul>
+<p>A first invocation needs nothing but a roster name; the profile resolves every setting, and <code>strike</code> is the only component worth adding on round one. The roster doubles as a set of worked examples validating the ontology's range, and as a guide to the configuration nearest your document. Use the settings beside a profile, or perturb one to match a specific work.</p>
+<hr />
+<p><strong>Quick reference</strong> --- the components and what they govern.</p>
+<p>Settings come in two kinds. <strong>Scalars</strong> run <code>0.0</code> to <code>1.0</code> and are named for the quality maximal at <code>1.0</code>, so a configuration reads without consultation. <strong>Denoted</strong> settings take a value from a fixed named set. The distinction matters at the template: scalars are tuned, denoted settings are chosen.</p>
+<ul>
+<li><strong>document</strong> --- purpose, situational context
+<ul>
+<li><strong>purpose</strong> --- roster entry; sets every default below <br><code>essay</code> <code>spec</code> <code>instrument</code> <code>prompt</code> <code>treatise</code> <br><code>brief</code> <code>primer</code> <code>recruit</code> <code>corpus</code> <code>record</code></li>
+<li><strong>span</strong> --- target word count, if known</li>
+</ul></li>
+</ul>
+<ul>
+<li><strong>mint</strong> --- what the form is, and how much of the concept it omits
+<ul>
+<li><strong>ambient</strong> --- terms the reader already held on arrival; current in the subject matter, not merely current in the draft</li>
+<li><strong>expanded</strong> --- content stated in full predication once installed; nothing left for the reader's own stock to supply</li>
+</ul></li>
+</ul>
+<ul>
+<li><strong>circulate</strong> --- how the form returns, and how far it changes on return
+<ul>
+<li><strong>interval</strong> --- wide spacing; one return per major division, the form expected to hold without reinforcement</li>
+<li><strong>varied</strong> --- every return rotates: syntactic position, modal frame, conceptual neighborhood, perspectival angle</li>
+</ul></li>
+</ul>
+<ul>
+<li><strong>denote</strong> --- the settings whose values are named rather than scaled
+<ul>
+<li><strong>register</strong> --- what the form trades on <br><code>somatic</code> embodied trigger, the reader feels it before analysing it, <br><code>operational</code> bundled specification, a phrase-key naming a procedure, <br><code>credential</code> membership boundary, decompression capacity marks the line</li>
+<li><strong>scale</strong> --- active unit of recurrence, stated as a band; lower scales within the band remain available <br><code>phonetic</code> alliterative binding, <code>sentential</code> the figures, <br><code>paragraph</code> consolidation, <code>document</code> leitmotif, <code>corpus</code> rotation</li>
+<li><strong>reach</strong> --- how far the form is intended to travel <br><code>passage</code> expires with it, <code>document</code> coordinates it, <br><code>corpus</code> crosses documents, <code>reader</code> prepared for their own use</li>
+</ul></li>
+</ul>
+<ul>
+<li><strong>nominate</strong> --- the author's lists; the component extended and corrected each round, before synthesis and again in review of it
+<ul>
+<li><strong>strike</strong> --- concepts nominated for compression and circulation</li>
+<li><strong>anchor</strong> --- established material the struck forms attach to, carried across contexts of rising complexity</li>
+<li><strong>damp</strong> --- terms whose natural recurrence is varied away, so the recurring position stays with the nominated forms</li>
+</ul></li>
+</ul>
+<p>Two further values are computed rather than stated, and so are not components. <strong>install</strong> is the number of occurrences a struck form needs before it can be used at compressed cost --- three at the floor, one more for each of four conditions. <strong>forms</strong> is how many candidates survive preparation. Together they bound the vocabulary a document of a given length can carry: forms, installation, and extent are a triple of which any two may be chosen, and the third follows.</p>
+<hr />
+<p>The default below is <code>essay</code>, the primary application: literary communication across prose fiction, prose non-fiction, and poetry, where the compressed form and the patterned return are the devices themselves rather than aids to something else.</p>
+<pre><code>/coinage
+  purpose=essay     span=
+  ambient=0.35      expanded=0.30
+  interval=0.50     varied=0.75
+  register=somatic  scale=phonetic:corpus  reach=reader
+  strike=[]         anchor=[]              damp=[]</code></pre>
+<p>The <code>=</code> are optional, and null values broaden acceptable range, vs (unset) default. A roster name alone resolves the whole block, so <code>/coinage essay</code> and the above are the same invocation.</p>
+<p>An empty <code>strike</code> is legitimate and means the document circulates only ambient vocabulary---the correct configuration wherever no vocabulary gap is real. Everything else may be left to the roster; <code>strike</code> is the one component worth stating on the first round and revising on every one after.</p>
+<hr />
+</body>
+</html>
