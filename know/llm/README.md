@@ -27,7 +27,7 @@ _(c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution._
   <br>The inquiry leading to the _Transformative Journey_, and the first indexed composition
 * [Preventing the Technical Debt Avalanche: Essential Early-Stage Controls](6717-tech_debt_prevention_framework.yml.html) [^*] <!--672d453c-->
 * [Worship and Glorification of the Holy Spirit in Eastern Orthodox Theology](./6839-Nicene_Creed_Analysis.md) <!--6839390e-->
-* [Coinage](./6959/67e6/README.md),
+* [Coinage](./6959/67e6/),
   [ontology](./6959/67e6/coinage-ontology.md),
   [skill](./6959/67e6/coinage-SKILL.md),
   [repetition](./6959/67e6/rhetorical_repetition-essay.md),
@@ -46,6 +46,7 @@ _(c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution._
 * [Character Selector](69b5-character-selector.yml) <!-- 69b5e4e0 -->
 * At Patriarch's Ponds, Again [Catalog](./69ba/7d57/), [Chapter](./69ba/7d57/at-patriarchs-ponds-again.md) and
   a [Bulgakov Companion](./69ba/7d57/reading-at-patriarchs-ponds-again.md)
+* [Melopedia](./6a77/cf23/melopoeia/melopoeia-essay.md) The Music Beneath Prose
 * [Open Training Constraints: Economics, Architecture, and Nemotron 3 Super](./69d6-open-training-economics-architecture.md) <!-- 69d65753 -->
 * The Transmission Layer [Catalog](./6a77/cf23/),
   [Essay](./6a77/cf23/transmission_layer-essay.md),
@@ -55,6 +56,7 @@ _(c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution._
     [Load](./6a77/cf23/transmission-load-SKILL.md),
     [Land](./6a77/cf23/transmission-land-SKILL.md),
     [Vantage](./6a77/cf23/transmission-vantage-SKILL.md)
+  * [Melopoeia](./6a77/cf23/melopoeia/) --- the sonic channel of prose
 
 [^*]: Revision forthcoming
 

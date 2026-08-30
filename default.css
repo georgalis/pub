@@ -179,3 +179,130 @@ td { border-bottom: 0.08em solid hsl(34 35% 83%); padding-top: 0.15em; padding-b
 th { border-bottom: 0.12em solid hsl(34 35% 75%); padding-top: 0.45em; padding-bottom: 0.45em;}
 tbody tr:last-child > * { border-bottom: none; }
 
+
+/* --- footnotes --- */
+a[role="doc-noteref"] { /* base copied from em because cannot inherit */
+    line-height: 0;
+    vertical-align: super;
+    font-style: italic;
+    font-family: "EB Garamond", "Hoefler Text", Palatino, Georgia, serif;
+  /* font-size: 1.20em; font-size: 0.75em; */
+    font-weight: 500;
+}
+
+/* opt into superscript-numeral display; brackets no longer display */
+/* a[role="doc-noteref"] { vertical-align: super; line-height: 0; font-size: 0.75em; }
+/* a[role="doc-noteref"] span,
+/* li[role="doc-endnote"] span { display: none; }
+
+/* opt into browser auto-numbering instead of the literal [^label] prefix */
+/* section[role="doc-endnotes"] ol { list-style: decimal; padding-left: 2em; }
+/* li[role="doc-endnote"] span { display: none; }
+
+
+
+/* --- Contents --- */
+/* ============================================================
+   1. Reset --- markdown.sh's own default. No stylesheet needed
+      for this state; it's what plain <ul> gives you without any
+      of the rules below. Listed for contrast with what follows.
+      ------------------------------------------------------------
+      nav ul { list-style: disc; padding-left: 1.5em; }   <- browser default
+   ============================================================ */
+
+
+/* ============================================================
+   2. No bullets, indent by nesting only
+      Common choice for a compact sidebar or header contents block.
+   ============================================================ */
+nav ul {
+  list-style: none;
+  padding-left: 1.25em;
+  margin: 0;
+}
+nav > ul {
+  padding-left: 0;   /* outermost level flush left */
+}
+
+
+/* /* ============================================================
+/*    3. Explicit disc / circle / square by depth
+/*       Browsers already alternate disc -> circle -> square on deep
+/*       nesting; this makes it explicit and depth-stable regardless
+/*       of how many levels are actually present in a given document.
+/*    ============================================================ */
+/* nav ul            { list-style: disc; }
+/* nav ul ul         { list-style: circle; }
+/* nav ul ul ul      { list-style: square; }
+/* nav ul ul ul ul   { list-style: none; }  /* deeper than 4: bare */
+
+
+/* /* ============================================================
+/*    4. Numeric outline (1, 1.1, 1.1.1 ...) via CSS counters
+/*       No bullet glyph at all; the number itself is generated
+/*       content, incrementing per level and resetting on each
+/*       nested list. Requires the list-style: none reset first,
+/*       since a bullet and a counter would otherwise both render.
+/*    ============================================================ */
+/* nav ol, nav ul {
+/*   list-style: none;
+/*   padding-left: 1.5em;
+/*   counter-reset: toc;
+/* }
+/* nav li {
+/*   counter-increment: toc;
+/* }
+/* nav li::before {
+/*   content: counters(toc, ".") ".  ";  /* 1.  1.1.  1.1.1. */
+/*   font-variant-numeric: tabular-nums;
+/*   color: #666;
+/* }
+
+
+/* /* ============================================================
+/*    5. Decimal top level, letters below it (1, 1.a, 1.a.i is a
+/*       stretch too far for pure CSS counters without three separate
+/*       counter-reset declarations, but two levels is clean)
+/*    ============================================================ */
+/* nav > ul {
+/*   list-style: none;
+/*   counter-reset: chapter;
+/*   padding-left: 0;
+/* }
+/* nav > ul > li {
+/*   counter-increment: chapter;
+/* }
+/* nav > ul > li::marker,
+/* nav > ul > li::before {
+/*   content: counter(chapter) ". ";
+/* }
+/* nav > ul ul {
+/*   list-style: lower-alpha;
+/*   padding-left: 1.5em;
+/* }
+
+
+/* ============================================================
+   6. Compact, dense reference layout --- tight leading, small
+      type, no bullets, hanging indent so wrapped entries align
+      under the link text rather than under the marker column.
+   ============================================================ */
+nav ul {
+  list-style: none;
+  margin: 0;
+  padding-left: 1em;
+  font-size: 0.9em;
+  line-height: 1.4;
+}
+nav li {
+  margin: 0.15em 0;
+  text-indent: -1em;
+  padding-left: 1em;   /* hanging indent for wrapped lines */
+}
+nav a {
+  text-decoration: none;
+}
+nav a:hover {
+  text-decoration: underline;
+}
+*/

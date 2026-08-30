@@ -1,6 +1,6 @@
-# LLM-Synthesized Essay
-### [Curated Presentation](../../)
-## [The Coinage Catalog](./)
+### LLM-Synthesized Essay
+## [Curated Presentation](../../)
+# [The Coinage Catalog](./)
 
 A reader carries out a handful of phrases and forgets the rest---and which
 phrases those are is decided long before the draft: by which concepts get

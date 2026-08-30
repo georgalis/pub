@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+section[role="doc-endnotes"] ol { list-style: none; padding-left: 0; }
+li[role="doc-endnote"] p { display: inline; margin: 0; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h1 id="melopoeia-development-record">Melopoeia --- Development Record</h1>
+<p>The skill artifact carries the working solution and no ambiguity. This document carries everything removed from it: the collisions melopoeia yielded rather than contested, the decisions taken with the alternatives they displaced, and the optimizations deferred until the instrument set is tuned as a set.</p>
+<p><em>(c) 2026 George Georgalis &lt;george@iuxta.com&gt; Unlimited use with attribution.</em></p>
+<pre><code>org 6a93c973 20260829 231059 PDT Sat 11:10 PM 29 Aug 2026
+</code></pre>
+<p>This document is the authoritative artifact for the request effort. A future session possessing only this file, the skill, and the ontology has everything required to resume, audit, or extend the work. Where a later round narrows or reverses a decision recorded here, the reversal and its rationale are recorded in place rather than silently dropped.</p>
+<hr />
+<h2 id="contents">Contents</h2>
+<ul>
+<li><a href="#standing-strategy">Standing Strategy</a></li>
+<li><a href="#collision-inventory">Collision Inventory</a></li>
+<li><a href="#decisions-taken">Decisions Taken</a></li>
+<li><a href="#deferred-optimizations">Deferred Optimizations</a></li>
+<li><a href="#boundary-declarations">Boundary Declarations</a></li>
+<li><a href="#distribution-notes">Distribution Notes</a></li>
+<li><a href="#revision-log">Revision Log</a></li>
+</ul>
+<hr />
+<h2 id="standing-strategy">Standing Strategy</h2>
+<p><strong>Melopoeia yields on every naming collision with a companion instrument, without contest, until the whole set is optimized together.</strong> The goal is a set whose instruments are each optimal alone and composable without collision. That goal is not reachable one instrument at a time, because the optimal name for a melopoeia parameter is frequently the name a prior instrument already spent on something else, and unilateral reclamation would break artifacts already composed.</p>
+<p>The yield rule is therefore an interim, not a preference. Every yielded name is recorded below with the name it would have taken, so that a later pass optimizing the set can restore the better name in both places at once.</p>
+<p><strong>Recorded yields cost precision.</strong> <code>flowing</code> is a plainer word than <code>legato</code> and says less about what the setting measures. Accepting that cost knowingly is the point of recording it.</p>
+<hr />
+<h2 id="collision-inventory">Collision Inventory</h2>
+<p>Keys in use across the companion instruments, checked against every name melopoeia wanted.</p>
+<h3 id="yielded">Yielded</h3>
+<table>
+<thead>
+<tr><th>melopoeia wanted</th><th>holder</th><th>holder's use</th><th>melopoeia took</th><th>cost</th></tr>
+</thead>
+<tbody>
+<tr><td><code>legato</code></td><td><code>transmission-load</code></td><td>a <code>cadence</code> value: long-breath sentences</td><td><code>flowing</code></td><td>Loses the musical precision of a slur. <code>flowing</code> names an effect where <code>legato</code> named a technique, and the effect is one a reader might attribute to sentence length rather than articulation.</td></tr>
+<tr><td><code>register</code> (as the class name for bipolar scalars)</td><td><code>coinage</code></td><td>a denoted key: <code>somatic</code>, <code>operational</code>, <code>credential</code></td><td><code>polar</code></td><td>Small. <code>polar</code> is accurate and arguably clearer, but the essay's own vocabulary says "register" of vowel color, and the skill now uses that word in prose while it names no key.</td></tr>
+<tr><td><code>scale</code></td><td><code>coinage</code></td><td>the active unit of recurrence, stated as a band</td><td><code>band</code></td><td>Small. <code>band</code> is the better word for a range anyway; this yield improved the result.</td></tr>
+<tr><td><code>reach</code></td><td><code>coinage</code></td><td>destination: how far a form travels</td><td><code>ear</code></td><td>None. <code>ear</code> is better for this instrument.</td></tr>
+<tr><td><code>grave</code></td><td><code>coinage</code></td><td>subject weight licensing sub-lexical devices</td><td><code>divergent</code></td><td>None, and the two are genuinely different gates. See Boundary Declarations.</td></tr>
+</tbody>
+</table>
+<h3 id="held-shared-keys-same-meaning-no-collision">Held --- shared keys, same meaning, no collision</h3>
+<p><code>purpose</code> and <code>span</code> are used identically here and in <code>coinage</code>. A key meaning the same thing in two instruments is compatibility, not collision, and should stay identical when the set is tuned.</p>
+<h3 id="held-checked-and-clear">Held --- checked and clear</h3>
+<p><code>dark</code>, <code>rough</code>, <code>sustained</code>, <code>suspended</code>, <code>modulated</code>, <code>incidental</code>, <code>transparent</code>, <code>monodic</code>, <code>family</code>, <code>channel</code>, <code>perform</code>, <code>mute</code>, <code>voice</code>, <code>figure</code>. None appears as a key or a denoted value in <code>transmission</code>, <code>transmission-load</code>, <code>transmission-land</code>, <code>transmission-vantage</code>, or <code>coinage</code>.</p>
+<h3 id="near-misses-worth-watching">Near-misses worth watching</h3>
+<ul>
+<li><code>sustained</code> is a melopoeia key <em>and</em> was a candidate region name inside <code>flowing</code>. The region was renamed <code>mixed</code> to prevent the internal collision. Any future addition to the grain group should be checked against the measure group's key names.</li>
+<li><code>single</code> (<code>transmission-land</code>) and <code>transparent</code> (here) both concern recurrence and do not collide. The objects differ; see Boundary Declarations.</li>
+<li><code>varied</code> (<code>coinage</code>) and <code>modulated</code> (here) both concern variation across returns. Different objects---rotation of a nominated form against rhythmic variance of sentence length---and the near-synonymy is a documentation hazard rather than a functional one.</li>
+</ul>
+<hr />
+<h2 id="decisions-taken">Decisions Taken</h2>
+<h3 id="d1-two-scalar-kinds-polar-and-intensity">D1 --- Two scalar kinds, polar and intensity</h3>
+<p><strong>Taken.</strong> Polar scalars have no yield direction and no light pole.</p>
+<p><em>The alternative not taken:</em> force every setting onto the house's single direction, so that a configuration reads uniformly and yield is stated once for the whole instrument. Rejected because the polar settings would then have to be renamed as intensities of something---<code>dark</code> becoming a depth measure with brightness as its absence---and the instrument would lose the ability to say <em>which</em> sound. The observable failure of that alternative is prose tuned toward an imagined sonic neutral, which is the one setting carrying nothing.</p>
+<p><em>Cost accepted:</em> a reader of a melopoeia calibration must know which kind each key is before knowing what its extremes mean, where a <code>transmission</code> calibration reads without that knowledge. Mitigated by grouping: <code>divergent</code> sits alone in the document group and the other three intensities sit together in <code>carry</code>, so the polar settings are exactly the <code>grain</code> and <code>measure</code> groups.</p>
+<p><em>Reconsider when:</em> the set is tuned together. If <code>transmission</code> or <code>coinage</code> acquires a second bipolar setting, the two-kind distinction becomes a house property rather than a melopoeia exception, and should be promoted to the house statement of direction.</p>
+<h3 id="d2-the-traverse-form">D2 --- The traverse form</h3>
+<p><strong>Taken.</strong> <code>key=a&gt;b@site</code> is available on any scalar and is the normal form for polar settings.</p>
+<p><em>Reconsider for promotion:</em> the form is useful outside this instrument. A <code>transmission</code> document whose reader posture changes between its opening and its close---an onboarding document, a long proposal read across a week---has the same need and no way to state it. If the form proves out here, promote it to the house grammar and make it available in <code>transmission</code> and <code>coinage</code>.</p>
+<p><em>Known limit:</em> a traverse names endpoints and a site, not a curve. Two traverses over adjacent sites is the stated workaround. A curve parameter (<code>ease</code>, <code>late</code>, <code>linear</code>) was considered and declined as premature.</p>
+<h3 id="d3-monodic-retained">D3 --- <code>monodic</code> retained</h3>
+<p><strong>Taken.</strong> Retained as a plan and an aspiration for synthesis, with the skill stating plainly that it is composed above the word and recorded at the outline rather than executed by tuning.</p>
+<p><em>The case for removal, preserved for later:</em></p>
+<ul>
+<li>It is the only setting in the instrument that word-level selection cannot execute. Every other key changes what the next word should be; this one changes what the next <em>section</em> should be.</li>
+<li>Its low pole describes an achievement rather than a configuration. Setting <code>monodic=0.10</code> does not produce counterpoint; it records an intention to compose some.</li>
+<li>It has the weakest diagnostic. "The counter-line never materializes" resolves to a process failure at step six, not to a setting error, which means the setting is not what the diagnosis corrects.</li>
+<li>Nine of the fourteen purpose entries sit between 0.70 and 1.00, and the three that do not (<code>drama</code>, <code>poetry</code>, <code>shakespeare</code> as a voice) are the three where counterpoint is already the genre's defining property. A setting whose informative range is occupied by three entries is a candidate for demotion to a denoted <code>channel</code> option---<code>contrapuntal</code> alongside <code>haptic</code>, <code>mimetic</code>, and <code>architectonic</code>.</li>
+</ul>
+<p><em>Reconsider when:</em> enough documents have been rendered to say whether a low <code>monodic</code> ever changed an outline. If it never did, demote it. If it did, the setting earned its place and the aspiration was correct.</p>
+<h3 id="d4-consonant-family-split-from-continuity">D4 --- Consonant family split from continuity</h3>
+<p><strong>Taken.</strong> <code>family</code> is denoted (<code>plosive</code>, <code>fricative</code>, <code>liquid</code>, <code>nasal</code>, combining with <code>+</code>); <code>flowing</code> is the polar scalar and governs continuity alone.</p>
+<p><em>The alternative not taken:</em> a single scalar running plosive to liquid with fricatives at the midpoint. Rejected because fricatives are a third family and not an average of the other two---Conrad's ambient sibilance is not half-percussive---and because the split turned out to be genuinely orthogonal: a plosive-dominant passage runs continuous where the strikes are separated by open vowels and interrupted where they cluster. McCarthy occupies the first case and hard impact prose the second, and no single axis states both.</p>
+<p><em>Second alternative not taken:</em> four separate scalars, one per family, each measuring that family's weight in the passage. Rejected as four settings that always sum to a constant, which is a simplex badly disguised as a cube.</p>
+<p><em>Known weakness:</em> <code>family</code> combining with <code>+</code> has no stated arbitration when a <code>voice</code> and a <code>figure</code> each name a different combination at the same site. The skill resolves it by overlay order. Whether order is the right arbitration, or whether families should merge rather than override, is open.</p>
+<h3 id="d5-roster-as-the-first-line-of-configuration">D5 --- Roster as the first line of configuration</h3>
+<p><strong>Taken.</strong> Three tiers: fourteen purposes, thirteen voices, twenty-four figures. Coverage targets the precursor's style-guide sections and its author categories rather than a fixed count.</p>
+<p><em>Rationale:</em> polar scalars are meaningless without worked positions. <code>dark=0.50</code> states nothing until something states what a document at 0.50 sounds like, which is a problem <code>transmission</code> does not have because a <code>spread</code> of 0.50 is meaningfully mid-range on a single direction. The roster is therefore load-bearing here in a way it is not elsewhere in the set, and the voice table doubles as validation: an ontology that cannot separate Conrad from McCarthy has not decomposed finely enough.</p>
+<p><em>Open:</em> whether the roster wants purposes the precursor did not contemplate---technical narrative, documentation, journalism, libretto. Adding a purpose is cheap and adding a wrong one is not, so entries should be added on demand from real documents rather than speculatively.</p>
+<h3 id="d6-em-dash-convention">D6 --- Em-dash convention</h3>
+<p><strong>Taken.</strong> <code>---</code> unspaced separates clauses within a sentence. <code> --- </code> spaced separates a term or key from its definition or value.</p>
+<p><em>Note for the set:</em> the companion artifacts disagree. <code>coinage</code> runs 69 spaced and 0 unspaced; <code>character-george</code> runs 76 unspaced and 1 spaced; the three <code>transmission</code> instruments are split roughly evenly. The rule above is the settled one and applies retroactively when the set is tuned.</p>
+<hr />
+<h2 id="deferred-optimizations">Deferred Optimizations</h2>
+<p>Recorded for the pass that tunes the whole set together.</p>
+<p><strong>O1 --- Restore <code>legato</code>.</strong> If <code>transmission-load</code> renames its <code>cadence</code> values, or if <code>cadence</code> itself is folded into a finer setting, <code>flowing</code> should become <code>legato</code> in both places or in neither. The musical vocabulary is the right vocabulary for both instruments and the collision is an accident of composition order.</p>
+<p><strong>O2 --- Unify <code>cadence</code> and <code>sustained</code>.</strong> <code>transmission-load.cadence</code> is three-valued and declared from document kind. <code>sustained</code> is continuous and declared from content trajectory. They measure the same axis at different resolutions. The interim mapping, unstated in the skill and recorded here: <code>staccato</code> corresponds to <code>sustained</code> below 0.35, <code>misura</code> to 0.35-0.70, <code>legato</code> above 0.70. A tuned set should carry one setting, not two, with the coarse form available as a shorthand for the fine one.</p>
+<p><strong>O3 --- Unify the direction statements.</strong> Three instruments now state their own pole direction in their own words. A house statement of direction, stated once and inherited, would remove three near-duplicate sections and would force the two-kind question (D1) to be settled at the house level.</p>
+<p><strong>O4 --- Shared roster keys.</strong> <code>purpose</code> and <code>span</code> mean the same thing in <code>coinage</code> and here. If a third instrument adopts them, they should be lifted to a shared document group that every instrument reads, rather than restated in each.</p>
+<p><strong>O5 --- The self-containment cost.</strong> Each instrument is composed to stand alone, which means none may tell its reader that the others exist. The cost is concentrated where two instruments have adjacent gates: a writer running both <code>coinage</code> and melopoeia has <code>grave</code> and <code>divergent</code> in play and no artifact tells them how the two relate. Accept the cost, or introduce a fourth artifact---a set-level composition note---that is allowed to name all of them. The README is currently doing this job informally.</p>
+<p><strong>O6 --- The <code>family</code> arbitration.</strong> See D4. Overlay order is the interim rule; merge semantics is the alternative.</p>
+<p><strong>O7 --- Traverse curves.</strong> See D2.</p>
+<hr />
+<h2 id="boundary-declarations">Boundary Declarations</h2>
+<p>Stripped from the skill under the self-containment constraint. The overlaps are real and want stating somewhere.</p>
+<p><strong><code>transmission-load.cadence</code> against <code>measure</code>.</strong> Same axis, different resolution and different derivation---one from document kind, one from content trajectory. Interim resolution: <code>cadence</code> sets the rhythmic ground and <code>measure</code> sets the departures from it; where a melopoeia traverse carries <code>sustained</code> outside its declared cadence band, the traverse governs and the excursion is the event. See O2.</p>
+<p><strong><code>coinage.muted</code> and <code>coinage.scale=phonetic</code> against <code>transparent</code>.</strong> Both govern sound recurrence, and the objects differ cleanly. Coinage's phonetic band is alliterative binding <em>attached to nominated vocabulary</em>---sound in service of a struck form, at the junctures where that form appears. <code>transparent</code> governs <em>unnominated</em> phonemic motif---sound returning with no concept attached to it. A document may run both, and Morrison is the case: refrains carrying concepts, and beneath them a sonic environment carrying only itself. No coupling required.</p>
+<p><strong><code>coinage.grave</code> against <code>divergent</code>.</strong> Both gate audible patterning and they are not the same gate. <code>grave</code> is a property of the <em>subject</em> --- whether the material's weight makes any audible play a misjudgment. <code>divergent</code> is a property of the <em>relation</em> between sound and sense. They compose: a grave subject may still perform its content sonically, and does so in Morrison, where the gravity is precisely what licenses the fragmentation. A document running both instruments should expect <code>grave</code> high and <code>divergent</code> low simultaneously, which is a coherent and common configuration that neither artifact can currently describe. See O5.</p>
+<p><strong><code>transmission-land.single</code> against <code>transparent</code>.</strong> No overlap. <code>single</code> allocates the <em>recurring position</em> among competing vocabulary; <code>transparent</code> governs sound recurrence carrying no vocabulary at all.</p>
+<p><strong><code>transmission-vantage</code> against everything here.</strong> No overlap detected. Vantage governs provenance and epoch; melopoeia governs the acoustic channel. The two are orthogonal, which is worth recording so a later pass does not re-derive the check.</p>
+<hr />
+<h2 id="distribution-notes">Distribution Notes</h2>
+<p>Where the precursor's shape reflects its literature rather than its subject. Carried here rather than in the skill, since a skill that argues with its own source is a skill whose reader is attending to the wrong thing.</p>
+<p><strong>Visibility bias.</strong> The melopoeia canon in English-language criticism is concentrated in Anglophone modernism---Woolf, Joyce, Conrad---because that is the body of work the musicality question was asked about. Practice in non-Anglophone traditions, and in pre-modern English prose outside the King James orbit, is under-documented rather than absent. The dimensional set inherits the concentration: <code>suspended</code> and <code>modulated</code> are well-fitted to periodic English syntax and may fit poorly to languages carrying suspension grammatically through word order. Flagged for investigation rather than corrected, since correcting it requires material the training distribution does not hold. The <code>translation</code> purpose limits the damage by refusing phonemic claims about translated work; it does not address composing <em>in</em> another language, which the instrument currently cannot do.</p>
+<p><strong>Institutional influence.</strong> Pound's tripartite division dominates the literature because it is short, citable, and attached to a major name, not because it is the best-fitted decomposition. Vorobyova's five-dimensional classification of prose musicality is finer and better-fitted, and is nearly invisible in English-language sources. This instrument takes the <code>band</code> structure from the translation problem rather than from Pound, and takes the <code>channel</code> options from Vorobyova rather than from the three-property division---both deliberate departures from the high-frequency source.</p>
+<p><strong>Temporal lag.</strong> The precursor asserts that the emotional valence of sonic textures is grounded in physics and neurology rather than convention. The claim is defensible; its citation base does not carry it. The essay cites literary criticism where the load belongs to phonosemantics and sound-symbolism research, a literature the literary-critical tradition does not reach for. The gap is in the warrant, not the claim. The skill accordingly states the haptic mechanism as the physical finding it is---pressure variation, membrane displacement, transduction---and states the emotional mapping as the working hypothesis the instrument operates under. Footnote one in the skill carries this distinction and should not be edited away.</p>
+<p><strong>Alternative-foregrounding.</strong> The training-dominant form for a composition skill of this kind is a directive catalog: a list of devices with usage notes, selected and combined. The precursor's own embedded YAML style guide is exactly that form, and it is the form a synthesis reaching for the highest-frequency pattern would produce. It was declined as the grammar and retained as the roster, because a catalog can specify a technique and cannot specify a <em>position</em>, cannot state a yield direction, and cannot support reverse diagnosis. The catalog was not discarded; it was demoted from grammar to worked example, which is what the figure table is.</p>
+<hr />
+<h2 id="revision-log">Revision Log</h2>
+<pre><code>org 6a93c973 20260829 231059 PDT Sat 11:10 PM 29 Aug 2026
+  First record. D1-D6 taken. O1-O7 deferred. Collision inventory
+  established against transmission, transmission-load,
+  transmission-land, transmission-vantage, and coinage as of this
+  date. Precursor: melopoeia-essay.md, org 69c48e0b, 25 Mar 2026.</code></pre>
+</body>
+</html>

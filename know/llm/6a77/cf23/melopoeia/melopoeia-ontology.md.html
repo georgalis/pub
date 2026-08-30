@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+section[role="doc-endnotes"] ol { list-style: none; padding-left: 0; }
+li[role="doc-endnote"] p { display: inline; margin: 0; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h1 id="melopoeia-model-ontology">Melopoeia --- Model Ontology</h1>
+<p>Prose runs two channels. The semantic channel is read. The sonic channel is <em>felt</em>, arriving through a membrane so fine it answers to pressures below the width of an atom, and arriving there before the sentence has finished parsing.</p>
+<p><strong>Score, voice, entrain</strong> --- the author governs the first, the reader's articulatory system performs the second in a body the author cannot consult, and the third is not consented to at all. Delivery instruments ask a reader for something. This one asks nothing and arrives regardless, which is why it carries what meaning has no words for, and why a technique the reader can hear has already failed.</p>
+<p><em>(c) 2026 George Georgalis &lt;george@iuxta.com&gt; Unlimited use with attribution.</em></p>
+<pre><code>org 6a93c973 20260829 231059 PDT Sat 11:10 PM 29 Aug 2026
+org 6a93b0b9 20260829 212529 PDT Sat 09:25 PM 29 Aug 2026
+</code></pre>
+<p><strong>Model ontology.</strong> This artifact fixes the two scalar kinds, the parameter set, the traverse form, the nomination inputs, and the coordination law. Nothing here composes prose; it says what the things that compose prose are. The <strong>roster</strong> lives in the skill artifact rather than here, because the roster is the first line of configuration and belongs where configuration happens. Decisions taken, alternatives declined, collisions yielded, and deferred optimizations live in <code>melopoeia-development.md</code>.</p>
+<p>This document is the authoritative artifact for the request effort. A future session possessing only this file has everything required to resume, audit, or extend the model. Where a later round narrows or reverses a decision recorded here, the reversal and its rationale are recorded in place rather than silently dropped.</p>
+<p>Precursor: <em>Melopoeia: The Music Beneath Prose</em>, org 69c48e0b, 25 Mar 2026.</p>
+<hr />
+<h2 id="contents">Contents</h2>
+<ul>
+<li><a href="#what-this-instrument-is">What This Instrument Is</a></li>
+<li><a href="#two-scalar-kinds">Two Scalar Kinds</a></li>
+<li><a href="#direction-and-reading">Direction and Reading</a></li>
+<li><a href="#parameter-set">Parameter Set</a></li>
+<li><a href="#traverse">Traverse</a></li>
+<li><a href="#nomination">Nomination</a></li>
+<li><a href="#inscape">Inscape</a> --- the coordination law</li>
+<li><a href="#dispositions">Dispositions</a></li>
+<li><a href="#what-stays-with-the-author">What Stays With the Author</a></li>
+</ul>
+<hr />
+<h2 id="what-this-instrument-is">What This Instrument Is</h2>
+<p>A settings instrument over the acoustic properties of prose, operating on a channel the reader receives without consent and cannot report on.</p>
+<p>Three properties distinguish it from any adjacent instrument and are the reason it exists as one.</p>
+<p><strong>The channel is always running.</strong> A document has a sonic environment whether or not anyone chose it. An unconfigured melopoeia is not silence; it is the register the author's hand reached for on the day of drafting. The instrument does not add a channel---it takes an existing one out of default.</p>
+<p><strong>Reception is somatic and precedes interpretation.</strong> The ear is a tactile organ and the tympanic membrane is touched by every sound it receives. Haptic experience falls natively into emotional categories---rough and smooth, sharp and soft, warm and cool, pressing and releasing---and sound inherits those categories through its physics. The body has responded before the mind finishes parsing.</p>
+<p><strong>There is no feedback path.</strong> A reader who received nothing reports that the prose was adequate. A reader who was moved attributes it to the plot. Neither report reaches the setting that produced it. This is why nomination is a required input here rather than a convenience: it is the only correction the channel will ever get, and it has to be supplied in advance.</p>
+<hr />
+<h2 id="two-scalar-kinds">Two Scalar Kinds</h2>
+<p>The instrument requires two, and the distinction is load-bearing.</p>
+<p><strong>Intensity scalars</strong> measure <em>how much</em> the channel is doing. They run the house direction, are named for the quality maximal at 1.0, and yield toward the light pole under conflict.</p>
+<p><strong>Polar scalars</strong> name <em>which</em> sound, not how much. They are bipolar, have <strong>no light pole and no yield direction</strong>, and a conflict on one is resolved by declaring a traverse or a local override rather than by moving toward a pole.</p>
+<p>The distinction is not a notational convenience. Treating a polar setting as an intensity produces the characteristic error of the whole subject: prose tuned toward an imagined sonic neutral, which is the one setting that carries nothing. <code>dark=0.15</code> is not a lesser setting than <code>dark=0.85</code>; it is a different instrument in the pit.</p>
+<p>Grouping keeps the two legible. The <code>grain</code> and <code>measure</code> groups are polar entire; the <code>carry</code> group and the document gate are intensity entire. No group mixes kinds.</p>
+<hr />
+<h2 id="direction-and-reading">Direction and Reading</h2>
+<p><strong>For intensity scalars: 0.0 is the scored, audible, worked pole; 1.0 is the incidental, transparent, unworked pole.</strong> Yield runs high. Sound worked against a subject that cannot carry it fails visibly and is corrected in the next draft; sound withheld fails only by leaving a channel unused, and leaves no complaint to correct from.</p>
+<p><strong>For polar scalars: the poles are named in each definition and neither is a failure.</strong> Tolerance is wider---plus or minus 0.20 against 0.10 for intensities---because perceptual thresholds on these axes are coarser than their notation.</p>
+<p>Values read by position, not by scale: <code>35</code>, <code>3.5</code>, <code>0.35</code>, and <code>7/20</code> place a setting identically. A setting names a region to occupy, not a limit not to exceed. Any key left unstated resolves to its roster value and widens its tolerance, so an under-specified request looks under-specified rather than average.</p>
+<hr />
+<h2 id="parameter-set">Parameter Set</h2>
+<p>Six groups. Fourteen settings, of which six are polar, four are intensity, and four are denoted.</p>
+<h3 id="document">document</h3>
+<table>
+<thead>
+<tr><th>key</th><th>kind</th><th>0.0</th><th>1.0</th></tr>
+</thead>
+<tbody>
+<tr><td><code>purpose</code></td><td>roster name</td><td>---</td><td>---</td></tr>
+<tr><td><code>span</code></td><td>integer</td><td>---</td><td>---</td></tr>
+<tr><td><code>divergent</code></td><td>intensity</td><td>every sonic decision answers to content</td><td>sound and sense pursue separate ends</td></tr>
+</tbody>
+</table>
+<p><code>divergent</code> is the gate. It is not a quantity of sound but a relation between the two channels, which is why it sits in the document group and governs by capping rather than by coupling. See <a href="#inscape">Inscape</a>.</p>
+<h3 id="grain-the-point-of-contact">grain --- the point of contact</h3>
+<table>
+<thead>
+<tr><th>key</th><th>kind</th><th>0.0</th><th>1.0</th></tr>
+</thead>
+<tbody>
+<tr><td><code>dark</code></td><td>polar</td><td>front vowels dominant: brightness, edge, forward momentum</td><td>back vowels dominant: depth, gravity, enclosure, warmth</td></tr>
+<tr><td><code>flowing</code></td><td>polar</td><td>interrupted: each word a struck surface</td><td>continuous: voicing carried across, laminar</td></tr>
+<tr><td><code>rough</code></td><td>polar</td><td>euphonious: no articulatory friction</td><td>cacophonous: the mouth forced through rough terrain</td></tr>
+<tr><td><code>family</code></td><td>denoted</td><td>---</td><td>---</td></tr>
+</tbody>
+</table>
+<p><code>family</code> takes <code>plosive</code>, <code>fricative</code>, <code>liquid</code>, <code>nasal</code>, combining with <code>+</code>. It is separate from <code>flowing</code> because the two are orthogonal: a plosive-dominant passage runs continuous where the strikes are separated by open vowels and interrupted where they cluster.</p>
+<h3 id="measure-movement-in-time">measure --- movement in time</h3>
+<table>
+<thead>
+<tr><th>key</th><th>kind</th><th>0.0</th><th>1.0</th></tr>
+</thead>
+<tbody>
+<tr><td><code>sustained</code></td><td>polar</td><td>clipped: short declaratives dominant</td><td>long-breath: periods extending through subordination</td></tr>
+<tr><td><code>suspended</code></td><td>polar</td><td>loose: main clause first, accumulation after</td><td>periodic: completion withheld to the sentence's end</td></tr>
+<tr><td><code>modulated</code></td><td>polar</td><td>uniform pulse: a ground against which departure registers</td><td>continuous modulation: length varying as breath varies</td></tr>
+</tbody>
+</table>
+<p><code>sustained</code> and <code>suspended</code> are independent, and the separation is the model's finest distinction. Accumulation without suspension is a different music from accumulation with it, and no single axis states both.</p>
+<h3 id="carry-the-channels-load">carry --- the channel's load</h3>
+<table>
+<thead>
+<tr><th>key</th><th>kind</th><th>0.0</th><th>1.0</th></tr>
+</thead>
+<tbody>
+<tr><td><code>incidental</code></td><td>intensity</td><td>sound is a selection criterion co-equal with meaning</td><td>sound is a byproduct of meaning-selection</td></tr>
+<tr><td><code>transparent</code></td><td>intensity</td><td>dense: phonemic motif binding below the argument</td><td>transparent: no phonemic relation across sentences</td></tr>
+<tr><td><code>monodic</code></td><td>intensity</td><td>counterpoint: simultaneous patterns in tension</td><td>one line, unopposed</td></tr>
+</tbody>
+</table>
+<p><code>incidental</code> is the master setting and the discriminator between prose that has this channel and prose that does not. <code>transparent</code> governs recurrence carrying <em>no concept</em>---sound returning with nothing attached to it---which is what separates it from the repetition of a term.</p>
+<p><code>monodic</code> is composed above the word and recorded at the outline rather than executed by tuning. It is retained as a plan the settings support rather than a value they realize; the case for its removal is in the development record.</p>
+<h3 id="denote">denote</h3>
+<table>
+<thead>
+<tr><th>key</th><th>options</th></tr>
+</thead>
+<tbody>
+<tr><td><code>family</code></td><td><code>plosive</code>, <code>fricative</code>, <code>liquid</code>, <code>nasal</code> --- combining with <code>+</code></td></tr>
+<tr><td><code>band</code></td><td><code>phonemic</code>, <code>lexical</code>, <code>sentential</code>, <code>paragraph</code>, <code>movement</code> --- stated as a range</td></tr>
+<tr><td><code>channel</code></td><td><code>haptic</code>, <code>mimetic</code>, <code>architectonic</code></td></tr>
+<tr><td><code>ear</code></td><td><code>silent</code>, <code>aloud</code>, <code>memory</code></td></tr>
+</tbody>
+</table>
+<p><strong><code>band</code> carries the translation boundary, which is the sharpest line in the model.</strong> <code>phonemic</code> and <code>lexical</code> do not survive passage between languages; <code>sentential</code>, <code>paragraph</code>, and <code>movement</code> do. A translator cannot carry a passage's vowel colors any more than a transcription carries an orchestra's timbre---what a good translator does is compose new phonemic patterns serving the original's structural functions. Any claim about phonemic melopoeia in a translated work is a claim about the translator.</p>
+<p><strong><code>ear</code> binds <code>sustained</code> at <code>aloud</code>.</strong> A sentence longer than one breath is a defect when the reader is a voice in a room, whatever the setting says.</p>
+<h3 id="nominate">nominate</h3>
+<table>
+<thead>
+<tr><th>key</th><th>what it holds</th></tr>
+</thead>
+<tbody>
+<tr><td><code>perform</code></td><td>content events the sonic channel is required to carry</td></tr>
+<tr><td><code>mute</code></td><td>regions where the channel stands down</td></tr>
+</tbody>
+</table>
+<h3 id="overlay">overlay</h3>
+<table>
+<thead>
+<tr><th>key</th><th>what it holds</th></tr>
+</thead>
+<tbody>
+<tr><td><code>voice</code></td><td>author-derived roster overlays, applied in order</td></tr>
+<tr><td><code>figure</code></td><td>passage-scale roster overlays, normally sited</td></tr>
+</tbody>
+</table>
+<hr />
+<h2 id="traverse">Traverse</h2>
+<p><strong>Any scalar may take a traverse form, and the polar scalars normally do.</strong> Written <code>key=a&gt;b@site</code>, it names a movement rather than a position.</p>
+<p>A vowel color held is a palette; a vowel color moved is the compositional event itself---the equivalent of modulation, and the thing a reader registers as an emotional shift with no locatable cause. An instrument stating only positions can specify a sonic environment and cannot specify a single sonic event.</p>
+<p>The form names endpoints and a site. It does not name a curve; two traverses over adjacent sites is the stated means of shaping one. A sited traverse is a local override with a location, and a sited <code>figure</code> is a traverse with a name.</p>
+<hr />
+<h2 id="nomination">Nomination</h2>
+<p><strong>The author names the content moments the sound must perform.</strong> This is the model's primary input and what separates composed melopoeia from the environment a draft acquires when nothing was nominated.</p>
+<p>Unnominated, the channel tracks the author's own state during drafting rather than the content's demand, and the prose arrives sounding like the week it was written. A grief passage composed on a bright afternoon carries the afternoon.</p>
+<p><code>perform</code> entries name the <em>event</em>, not the technique; the settings supply the technique. This is what makes <code>divergent</code> operable rather than aspirational, because alignment is a relation and a relation needs both terms stated.</p>
+<p>An empty <code>perform</code> list is legitimate and means the document maintains a sonic environment without local performance---correct for sustained registers where the whole is the effect and no single moment is.</p>
+<hr />
+<h2 id="inscape">Inscape</h2>
+<p><strong>The coordination law. Audible patterning is licensed by alignment, and unaligned patterning is ornament.</strong></p>
+<p>Hopkins gives the condition its name: the interior logic making a form feel inevitable, such that altering any element damages the whole. A passage possessing inscape cannot be substituted into without loss, and the reader registers that inevitability as <em>rightness</em> without tracing its source.</p>
+<p>The mechanism is a trade. Every dimension driven hard raises the probability the reader notices the technique, and a noticed technique stops carrying and starts costing. What buys the license is alignment: a sound doing conspicuous work <em>the content demanded</em> reads as inevitability, and the identical sound doing conspicuous work the content did not demand reads as a writer arranging.</p>
+<p><strong><code>divergent</code> caps the working range of every other setting.</strong> Above 0.60, no scalar may sit within 0.15 of either extreme, and a request to place one there is refused and reported rather than composed. Below 0.20, the extremes are fully available and the <code>perform</code> list is what makes them safe.</p>
+<p><strong>Alignment cannot be assessed from the prose alone.</strong> Whether a sonic decision answers to content is a question about the content. An instrument given no nomination list can configure a sonic environment and cannot certify a single sonic event, and the listening disposition inherits the same limit.</p>
+<p><strong>No test determines whether a passage possesses inscape.</strong> The condition is settled in a reader's body, before that reader can report on it, and nothing available to the author substitutes for the finding. What is available is preparation---nomination, alignment, and the vocalization pass---and preparation is the best instrument there is on a question that admits no proof.</p>
+<hr />
+<h2 id="dispositions">Dispositions</h2>
+<p><strong>Disposition is derived, never declared.</strong> The request always carries which applies, so no parameter records it.</p>
+<p><strong>Scoring</strong> --- the channel is configured and driven. Roster resolves, nomination sites the traverses, drafting runs with both selection criteria live, and a vocalization pass is non-optional before the draft is delivered.</p>
+<p><strong>Listening</strong> --- the settings read as measurements rather than targets, and the work is detection in four layered passes: pace, joint, return, grain. Findings are presented by function, location, or technique, never serially, because serial cataloguing reports that sound occurs where organized presentation reports what it is carrying.</p>
+<hr />
+<h2 id="what-stays-with-the-author">What Stays With the Author</h2>
+<p><strong>Nomination.</strong> The instrument configures an environment and cannot know which moment is the arrival. Every <code>perform</code> entry is a judgment about the content that no reading of the prose supplies.</p>
+<p><strong>The vocalization pass.</strong> No configuration substitutes for the ear at the draft. A passage reading identically silent and aloud has no sonic channel, and only the pass detects it.</p>
+<p><strong>Standing over the subject.</strong> A grave subject performed sonically is Morrison; the same technique over a subject that did not earn it is mannerism. <code>divergent</code> caps the range and cannot judge the material.</p>
+<p><strong>Accuracy.</strong> A well-scored passage delivers a wrong finding beautifully, and no setting registers anything amiss. The channel amplifies; it does not verify.</p>
+</body>
+</html>

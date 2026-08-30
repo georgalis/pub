@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+section[role="doc-endnotes"] ol { list-style: none; padding-left: 0; }
+li[role="doc-endnote"] p { display: inline; margin: 0; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h1 id="melopoeia">Melopoeia</h1>
+<p>Every document already sounds like something. Written without attention, it sounds like the week it was drafted---the author's own register, carried into a grief passage composed on a bright afternoon. The reader receives it either way, through an organ so tactile that the eardrum answers to pressures below the width of an atom, and answers before the sentence has finished parsing.</p>
+<p>Melopoeia is a skill for taking that channel out of default. Name the moments the sound must carry, set the vowel color and the consonant grain and the rhythm, hand it to a language model with a draft, and the reading experience the reader has is the one you chose.</p>
+<p><em>(c) 2026 George Georgalis &lt;george@iuxta.com&gt; Unlimited use with attribution.</em></p>
+<pre><code>org 6a93c973 20260829 231059 PDT Sat 11:10 PM 29 Aug 2026
+</code></pre>
+<hr />
+<h2 id="the-documents">The Documents</h2>
+<ul>
+<li><a href="./melopoeia-essay.md.html">Melopoeia: The Music Beneath Prose</a> --- the source essay, for the reasoning the skill formalizes: the two channels, the haptic ear, the eight dimensions, and what does and does not survive translation.</li>
+</ul>
+<ul>
+<li><a href="./melopoeia-ontology.md.html">Model Ontology</a> --- fixes what a melopoeia instrument is: the two scalar kinds, the parameter set, the traverse form, the coordination law. Nothing here composes prose; it says what the things that compose prose are.</li>
+</ul>
+<ul>
+<li><a href="./melopoeia-development.md.html">Development Record</a> --- naming collisions yielded to companion instruments, decisions taken with the alternatives they displaced, and optimizations deferred until the whole instrument set is tuned together. Read before changing a key name.</li>
+</ul>
+<ul>
+<li><a href="./melopoeia-SKILL.md.html">Melopoeia</a> --- the instrument. Apply it when prose must be composed for the ear as well as the mind, or when an existing composition is to be examined for what its sound is carrying.
+<ul>
+<li><strong>Roster</strong> --- fifty-one entries in three tiers, carried inside the skill rather than beside it, since the roster is the first line of configuration and the entries are what the invocation names.</li>
+</ul></li>
+</ul>
+<p>A first invocation needs nothing but a purpose name; the entry resolves every setting. Add a <code>voice</code> when a document should sound like a known practice, a <code>figure</code> when one passage should sound unlike the rest, and a <code>perform</code> list when the sound has a job at a specific moment.</p>
+<pre><code>/melopoeia essay
+/melopoeia fiction voice=[morrison] figure=[fracture@ch9]
+/melopoeia liturgy perform=[the entrance, the dismissal]
+</code></pre>
+<p><strong>Every invocation reports its calibration in the response, never in the artifact.</strong> The artifact carries prose; the response carries the settings that produced it, so the next request names a setting instead of describing a symptom.</p>
+<hr />
+<h2 id="quick-reference">Quick Reference</h2>
+<h3 id="the-two-scalar-kinds">The two scalar kinds</h3>
+<p><strong>Intensity</strong> --- <code>divergent</code>, <code>incidental</code>, <code>transparent</code>, <code>monodic</code>. 0.0 is scored and audible; 1.0 is incidental and transparent. Named for the quality maximal at 1.0. Yield runs high.</p>
+<p><strong>Polar</strong> --- <code>dark</code>, <code>flowing</code>, <code>rough</code>, <code>sustained</code>, <code>suspended</code>, <code>modulated</code>. Bipolar. <strong>No light pole and no yield direction</strong>: they name <em>which</em> sound, not how much. Resolve a conflict with a traverse or a local override, never by moving toward a pole.</p>
+<p>Values read by position: <code>35</code>, <code>3.5</code>, <code>0.35</code>, <code>7/20</code> place a setting identically. Tolerance is 0.10 on intensities, 0.20 on polars.</p>
+<h3 id="keys">Keys</h3>
+<table>
+<thead>
+<tr><th>group</th><th>key</th><th>kind</th><th>0.0</th><th>1.0</th></tr>
+</thead>
+<tbody>
+<tr><td>document</td><td><code>purpose</code></td><td>roster</td><td>---</td><td>---</td></tr>
+<tr><td>document</td><td><code>span</code></td><td>integer</td><td>---</td><td>---</td></tr>
+<tr><td>document</td><td><code>divergent</code></td><td>intensity</td><td>sound answers to content</td><td>sound and sense run apart</td></tr>
+<tr><td>grain</td><td><code>dark</code></td><td>polar</td><td>front vowels: bright, edged, forward</td><td>back vowels: deep, grave, enclosed</td></tr>
+<tr><td>grain</td><td><code>flowing</code></td><td>polar</td><td>interrupted: each word a strike</td><td>continuous: voicing carried across</td></tr>
+<tr><td>grain</td><td><code>rough</code></td><td>polar</td><td>euphonious: no friction</td><td>cacophonous: rough terrain</td></tr>
+<tr><td>measure</td><td><code>sustained</code></td><td>polar</td><td>clipped declaratives</td><td>long-breath periods</td></tr>
+<tr><td>measure</td><td><code>suspended</code></td><td>polar</td><td>loose: main clause first</td><td>periodic: completion withheld</td></tr>
+<tr><td>measure</td><td><code>modulated</code></td><td>polar</td><td>uniform pulse</td><td>continuous modulation</td></tr>
+<tr><td>carry</td><td><code>incidental</code></td><td>intensity</td><td>sound is a selection criterion</td><td>sound is a byproduct</td></tr>
+<tr><td>carry</td><td><code>transparent</code></td><td>intensity</td><td>dense phonemic motif</td><td>no relation across sentences</td></tr>
+<tr><td>carry</td><td><code>monodic</code></td><td>intensity</td><td>counterpoint</td><td>one line, unopposed</td></tr>
+</tbody>
+</table>
+<h3 id="denoted-options">Denoted options</h3>
+<table>
+<thead>
+<tr><th>key</th><th>options</th><th>what it sets</th></tr>
+</thead>
+<tbody>
+<tr><td><code>family</code></td><td><code>plosive</code>, <code>fricative</code>, <code>liquid</code>, <code>nasal</code></td><td>Dominant consonant family. Combine with <code>+</code>, dominant first. Independent of <code>flowing</code>.</td></tr>
+<tr><td><code>band</code></td><td><code>phonemic</code>, <code>lexical</code>, <code>sentential</code>, <code>paragraph</code>, <code>movement</code></td><td>Active sonic unit, stated as a range. <code>phonemic</code> and <code>lexical</code> do not survive translation; the rest do.</td></tr>
+<tr><td><code>channel</code></td><td><code>haptic</code>, <code>mimetic</code>, <code>architectonic</code></td><td>What the sound is for: a touch quality, a performance of the content, or a structural marker.</td></tr>
+<tr><td><code>ear</code></td><td><code>silent</code>, <code>aloud</code>, <code>memory</code></td><td>Reception mode. <code>aloud</code> makes breath a hard constraint on <code>sustained</code>.</td></tr>
+</tbody>
+</table>
+<h3 id="lists">Lists</h3>
+<table>
+<thead>
+<tr><th>key</th><th>holds</th></tr>
+</thead>
+<tbody>
+<tr><td><code>perform</code></td><td>Content events the sound must carry. Names the <em>event</em>, not the technique.</td></tr>
+<tr><td><code>mute</code></td><td>Regions where the channel stands down: quotations, catalogs, apparatus.</td></tr>
+<tr><td><code>voice</code></td><td>Author overlays, applied in order. Two is a blend; three is a smear.</td></tr>
+<tr><td><code>figure</code></td><td>Passage overlays, sited with <code>@</code>. A sited figure is also a <code>perform</code> entry.</td></tr>
+</tbody>
+</table>
+<h3 id="traverse">Traverse</h3>
+<p><code>key=a&gt;b@site</code> states a movement rather than a position. <code>dark=0.80&gt;0.15@opening</code> is a dawn. The polar scalars normally take this form; a color held is a palette, a color moved is the event.</p>
+<h3 id="resolution-order">Resolution order</h3>
+<p><code>purpose</code> resolves everything, then <code>voice</code> overlays in order, then <code>figure</code> overlays at their sites, then explicit keys, then the <code>divergent</code> cap. A capped value is reported as capped, never silently moved.</p>
+<hr />
+<h2 id="roster">Roster</h2>
+<p><strong>Purpose</strong> --- the base entry, resolving every key. Exactly one applies.</p>
+<table>
+<thead>
+<tr><th></th><th></th></tr>
+</thead>
+<tbody>
+<tr><td><code>essay</code></td><td>literary non-fiction; the primary entry</td></tr>
+<tr><td><code>fiction</code></td><td>narrative prose; expect a figure per scene</td></tr>
+<tr><td><code>poetry</code></td><td>the line does what prose distributes across paragraphs</td></tr>
+<tr><td><code>drama</code></td><td>counterpoint as the native mode; rhythm as characterization</td></tr>
+<tr><td><code>memoir</code></td><td>retrospect in the first person; warm, continuous, slow</td></tr>
+<tr><td><code>liturgy</code></td><td>the voice in a room; recurrence over variance</td></tr>
+<tr><td><code>oration</code></td><td>one voice to many; the periodic sentence as held attention</td></tr>
+<tr><td><code>criticism</code></td><td>prose about art, staying out of its subject's way</td></tr>
+<tr><td><code>correspondence</code></td><td>letters; conversational rhythm, no movement structure</td></tr>
+<tr><td><code>translation</code></td><td>the structural stack only; grain settings struck out</td></tr>
+<tr><td><code>instrument</code></td><td>frameworks and methodologies; sound at the junctures</td></tr>
+<tr><td><code>brief</code></td><td>decision documents; the channel mostly withheld</td></tr>
+<tr><td><code>spec</code></td><td>standards and schemas; precision governs</td></tr>
+<tr><td><code>record</code></td><td>total abstention, named so it can be invoked</td></tr>
+</tbody>
+</table>
+<p><strong>Voice</strong> --- author overlays, perturbing a named subset.</p>
+<table>
+<thead>
+<tr><th></th><th></th></tr>
+</thead>
+<tbody>
+<tr><td><code>hawthorne</code></td><td>suspension as the sole emotional instrument</td></tr>
+<tr><td><code>shakespeare</code></td><td>counterpoint; speech rhythm against metrical ground</td></tr>
+<tr><td><code>woolf</code></td><td>continuous modulation; sentences that resolve and reopen</td></tr>
+<tr><td><code>morrison</code></td><td>alignment at maximum; the fragmentation is the content</td></tr>
+<tr><td><code>conrad</code></td><td>accumulation without suspension; ambient sibilance</td></tr>
+<tr><td><code>mccarthy</code></td><td>polysyndeton; flow at the clause, hardness at the consonant</td></tr>
+<tr><td><code>robinson</code></td><td>pianissimo; the quietness is the music</td></tr>
+<tr><td><code>joyce</code></td><td>formal musical structure imposed on narrative</td></tr>
+<tr><td><code>hemingway</code></td><td>uniformity as composed ground</td></tr>
+<tr><td><code>hopkins</code></td><td>consonant engineering; substitution damages audibly</td></tr>
+<tr><td><code>thomas</code></td><td>vowel surge; sequences that crest and break</td></tr>
+<tr><td><code>bulgakov</code></td><td>harmonic density as world-marker</td></tr>
+<tr><td><code>whitman</code></td><td>catalog and anaphora; accumulation by parallel</td></tr>
+</tbody>
+</table>
+<p><strong>Figure</strong> --- passage overlays, sited with <code>@</code>.</p>
+<table>
+<thead>
+<tr><th></th><th></th></tr>
+</thead>
+<tbody>
+<tr><td>vowel</td><td><code>bright</code>, <code>gloom</code>, <code>dawn</code>, <code>dusk</code>, <code>monochrome</code></td></tr>
+<tr><td>texture</td><td><code>percussion</code>, <code>ambience</code>, <code>laminar</code>, <code>hinge</code></td></tr>
+<tr><td>rhythm</td><td><code>alternation</code>, <code>period</code>, <code>respiration</code>, <code>polysyndeton</code>, <code>fracture</code></td></tr>
+<tr><td>recurrence</td><td><code>motif</code>, <code>refrain</code>, <code>clarity</code></td></tr>
+<tr><td>composite</td><td><code>mimesis</code>, <code>crest</code>, <code>procession</code>, <code>hush</code>, <code>grief</code>, <code>confrontation</code>, <code>threshold</code></td></tr>
+</tbody>
+</table>
+<p>Full perturbations for every entry are tabled in the skill.</p>
+</body>
+</html>
