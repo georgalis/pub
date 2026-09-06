@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# yml2md.sh --- Bash envelope for yml2md.awk YAML-to-Markdown extractor
+# yml2md.sh --- Bash envelope for the embedded YAML-to-Markdown extractor
 #
-# Validates input, invokes the embedded awk translator, writes output to
-# <input>.md (eg data.yml -> data.yml.md), and preserves the source file
-# timestamp on the output via touch -r. Chains with markdown.sh, which
-# renders <input>.yml.md to <input>.yml.md.html.
+# Validates input, invokes the awk translator, writes output to <input>.md
+# (eg data.yml -> data.yml.md), and preserves the source file timestamp on
+# the output via touch -r. Chains with markdown.sh, which renders
+# <input>.yml.md to <input>.yml.md.html.
 #
 # Structure is decided here; presentation is not. The extractor emits no
 # classes, no colors, and no type annotations -- those belong to the CSS
@@ -15,9 +15,18 @@ set -euo pipefail
 #
 # Usage: yml2md.sh [-d n] [-b n] [-A] [-c] [-q] [-o file] input.yml
 #
+# rev 6a8d202e 20260824 213500 PDT Mon --- quoted flow scalars collected whole;
+#                                      --- values pass through as markdown, YAML
+#                                      --- escapes and folds expanded to real
+#                                      --- breaks; markdown.sh chained on exit
+# rev 6a8d10f2 20260824 205000 PDT Mon --- one pair per list item; a sequence
+#                                      --- element holding a collection is an
+#                                      --- empty + bullet with the collection
+#                                      --- one level deeper; awk quoted inline
 # rev 6a8d0212 20260824 194632 PDT Mon --- ported to markdown, validation and cleanup
 # rev 69898512 20260208 225618 PST Sun --- inc rev yaml2html.awk structure model
 # org 69897a9c 20260208 221140 PST Sun --- initial yaml2html.awk
+#
 # (c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution.
 
 usage() { printf 'usage: %s [-d n] [-b n] [-A] [-c] [-q] [-o file] input.yml\n' "${0##*/}" ;}
@@ -47,12 +56,18 @@ DESCRIPTION
 	             The bold key is load-bearing: markdown.sh consumes a
 	             leading block of bare key: value lines as front matter,
 	             and the emphasis markers are what keep the first mapping
-	             of a document from being silently eaten.
+	             of a document from being silently eaten. Values pass
+	             through as the markdown they are, unescaped; a value
+	             carrying line breaks stands below its key as blocks,
+	             since a heading or a list has to begin a line to be one.
 
 	list items   Everything below the promotion depth, and everything under
-	             a sequence, becomes a bullet. A mapping renders as one item
-	             carrying one line per pair, so a record in an array of
-	             records stays visibly one record.
+	             a sequence, becomes a bullet, one pair or one element per
+	             line. Sequence elements take the + marker and mapping
+	             pairs take the -, so the bullet itself says which is
+	             which. An element holding a collection is an empty +
+	             bullet with the collection one level deeper: a record is a
+	             list of its fields, not a line of them.
 
 	Lossy conversions are reported rather than refused: each is written to
 	stderr as it occurs and collected into a terminal HTML comment block.
@@ -74,12 +89,15 @@ OPTIONS
 MAPPING
 	key: value              **key:** value
 	key:                    heading, or **key:** with the block below it
-	- item                  - item
-	- key: value            - **key:** value, siblings on following lines
+	- scalar                + scalar
+	- key: value            empty + bullet, then - **key:** value under it
 	key: [a, b]             **key:** a, b
 	key: {a: 1}             **key:** a: 1
 	key: |                  fenced code block
 	key: >                  folded into the value text
+	key: 'runs on...        one value to its closing quote, folding expanded
+	key: "a\nb"             escapes resolved, breaks made real
+	key: 'it''s'            one quote, as the format means it
 	key: &a value           value carrying {#y-a}
 	key: *a                 link to #y-a
 	? key / : value         **key:** value
@@ -137,11 +155,15 @@ infile="$1"
 [[ "$outfile" == - || "$outfile" =~ ^[A-Za-z0-9._/-]+$ ]] \
 	|| { printf 'error: unsafe characters in path: %s\n' "$outfile" >&2 ; exit 1 ;}
 
-# --- Embedded awk translator ---
-# Held in a variable rather than inline so the program is one verbatim block,
-# extractable to a standalone yml2md.awk without quote surgery.
-{ read -r -d '' prog || : ;} <<'eof'
-# yml2md.awk --- YAML-to-Markdown extractor
+# --- Translation ---
+# One invocation, output routed through fd 3, so the stdout target and the
+# file target share a single code path.
+exec 3>&1
+[[ "$outfile" == - ]] || exec 3> "$outfile"
+
+awk -v depth="$depth" -v base="$base" -v anchors="$anchors" \
+	-v keepc="$keepc" -v quiet="$quiet" -v src="$infile" '
+# YAML-to-Markdown extractor
 #
 # Converts YAML block-style documents to Markdown carrying structure only.
 # The structure model is inherited from yaml2html.awk: an indent-keyed frame
@@ -156,40 +178,63 @@ infile="$1"
 # Frames carry the output column at which their children write. A negative
 # column is the document margin, where a key becomes a heading or a bold
 # definition paragraph. A non-negative column is list context, where the
-# column holds the bullet and column+2 holds the content. A mapping in list
-# context is one item whose pairs are successive lines, so the bullet marks
-# the record and the lines mark its fields; the marker is therefore pending
-# on the frame and claimed by whichever line is emitted first.
+# column holds the marker and column+2 holds the content.
 #
-# One line of lookahead is held in pend, which buys two things: a trailing
-# hard break can be added to a line after the next line proves it has a
-# sibling, and a folded scalar can be joined onto the key line that
-# introduced it rather than orphaning the key.
+# A value is markdown, not a token to be escaped. Its quoting is resolved --
+# a doubled quote is one quote, a backslash escape is the character it names,
+# a numeric escape is an entity -- and its folding is expanded as the format
+# defines it, so a run of n line breaks in the source carries n-1 breaks into
+# the page. What arrives is the text as it was written before anything
+# serialized it, and it is emitted as it stands: a value on one line beside
+# its key, a value carrying breaks below its key as blocks.
+#
+# In list context every pair is its own bullet and every sequence element is
+# its own bullet, one line each. The two are told apart by marker: + opens a
+# sequence element, - opens a mapping pair. An element whose content is a
+# collection carries no text of its own; it emits an empty + bullet and its
+# collection opens one level deeper, which is what makes a record read as a
+# list of its fields. Only a scalar element shares a line with its marker.
+#
+# The empty marker is + rather than -, and it carries the trailing space its
+# reader needs to see a marker at all. A lone dash line invites a thematic
+# break reading: markdown.sh matches "- " against its three-or-more-dash rule
+# under mawk, whose interval quantifier over a group is unreliable, and the
+# record separator would silently become an <hr>. No renderer reads + as a
+# rule, so the ambiguity does not arise.
+#
+# One line of lookahead is held in pend, which buys two things: a folded
+# scalar joins the key line that introduced it rather than orphaning the key,
+# and a heading promoted for children that never arrive is demoted in place.
 #
 # Compromises are named, not hidden. Each is written to stderr as it occurs
 # and deduplicated into a terminal comment block, so a conversion that lost
 # something says so in both the operator channel and the artifact.
 #
-# limitations: nested flow collections flatten, type annotation is dropped
-#   as presentation, block scalars inside a list require a CommonMark
-#   renderer, chomping indicators are honored only for trailing newlines
+# limitations: type annotation is dropped as presentation, block scalars
+#   inside a list require a CommonMark renderer, chomping indicators are
+#   honored only for trailing newlines, a value carrying markdown keeps the
+#   heading levels it was written with rather than being shifted under the
+#   key that holds it
 # compatibility: posix awk (bsd, darwin, gawk, mawk)
 
 BEGIN {
 	stderr = "cat 1>&2"
-	# defaults for the program run standalone, without the envelope
+	sq = sprintf("%c", 39)   # the quote character, kept out of the program text
+	# defaults, in case the knobs arrive unset
 	if (depth == "") depth = 2
 	if (anchors == "") anchors = 1
 	depth = depth + 0 ; base = base + 0
 	if (base < 1 || base > 6) base = 2
 	# root frame: document margin, mapping depth zero
-	top = 0 ; serial = 1
-	f_id[0] = 1 ; f_ind[0] = 0 ; f_key[0] = -1 ; f_col[0] = -1
+	top = 0
+	f_ind[0] = 0 ; f_key[0] = -1 ; f_col[0] = -1 ; f_mcol[0] = -1
 	f_dep[0] = 0 ; f_seq[0] = 0 ; f_mark[0] = 0 ; f_used[0] = 1
-	f_gap[0] = 0 ; f_head[0] = "" ; f_item[0] = 0 ; f_mcol[0] = -1
-	f_flush[0] = 0 ; pend_on = 0 ; last_blank = 1 ; wrote = 0 ; cont_min = -1
+	f_item[0] = 0 ; f_flush[0] = 0 ; f_gap[0] = 0 ; f_head[0] = ""
+	pend_on = 0 ; last_blank = 1 ; wrote = 0 ; cont_min = -1
 	in_lit = 0 ; in_fold = 0 ; blk_ind = -1 ; blk_par = 0 ; blk_col = 0
-	ckey_on = 0 ; ckey = "" ; ckey_ind = 0 ; docs = 0 ; nnote = 0
+	in_quote = 0 ; q_ch = "" ; q_nl = 0 ; q_started = 0 ; blk_bare = 0
+	q_hold = 0 ; q_held = 0
+	ckey_on = 0 ; ckey = "" ; ckey_ind = 0 ; nnote = 0
 }
 
 # --- Normalization ---
@@ -202,7 +247,7 @@ BEGIN {
 in_lit || in_fold {
 	if ($0 ~ /^[[:space:]]*$/) {
 		if (in_lit) lit = lit "\n"
-		else fold = fold "\n\n"
+		else q_nl++
 		next
 	}
 	match($0, /^ */) ; ci = RLENGTH
@@ -210,11 +255,29 @@ in_lit || in_fold {
 	if (blk_ind >= 0 && ci >= blk_ind) {
 		bline = substr($0, blk_ind + 1)
 		if (in_lit) lit = lit bline "\n"
-		else if (fold == "" || substr(fold, length(fold)) == "\n") fold = fold bline
-		else fold = fold " " bline
+		else q_add(bline)
 		next
 	}
 	end_block()
+}
+
+# --- Quoted Flow Scalar Collection ---
+# A quoted scalar that does not close on its opening line runs until its
+# closing quote, and everything between belongs to the value: a # opens no
+# comment, a --- separates no document, a : divides no key, and a - opens no
+# element. This rule therefore stands ahead of all of them. Line breaks fold
+# to spaces and a blank line becomes a paragraph break, which is what the
+# format says the string means.
+in_quote {
+	if ($0 ~ /^[[:space:]]*$/) { q_nl++ ; next }
+	qline = ltrim($0)
+	qc = quote_end(qline, 1, q_ch)
+	if (qc < 1) { q_add(qline) ; next }
+	qrest = trim(substr(qline, qc + 1))
+	q_add(substr(qline, 1, qc - 1))
+	if (qrest != "") note("text after a closing quote dropped")
+	end_quote()
+	next
 }
 
 # --- Comments ---
@@ -228,8 +291,8 @@ in_lit || in_fold {
 # --- Dispatch ---
 # Inline comments are stripped first, then the frame stack is settled against
 # this line indent, then the line content is routed. Whether the line opens a
-# sequence item travels with it into pop_to, since a sequence written flush
-# with the key that owns it must not close that key frame.
+# sequence element travels with it into pop_to, since a sequence written
+# flush with the key that owns it must not close that key frame.
 {
 	$0 = decomment($0)
 	if ($0 ~ /^[[:space:]]*$/) next
@@ -249,9 +312,9 @@ END {
 
 # --- Line Router ---
 # Complex keys are tested before mappings, since a : value line would
-# otherwise read as a mapping with an empty key. Sequence items push an item
-# frame and re-enter with the remainder, so - key: value, - - nested, and a
-# bare - with its content below all travel one path.
+# otherwise read as a mapping with an empty key. Sequence elements push an
+# element frame and re-enter with the remainder, so - key: value, - - nested,
+# and a bare - with its content below all travel one path.
 function dispatch(text, ind, quiet_note,    rest, mi, cp) {
 	if (text == "?" || substr(text, 1, 2) == "? ") {
 		if (ckey_on) put_pair(ckey, "", ckey_ind)
@@ -290,9 +353,9 @@ function dispatch(text, ind, quiet_note,    rest, mi, cp) {
 	# into the pending line: this is a multi-line plain scalar, not a new
 	# node. The floor is one column past a key, since a value continued
 	# under a key must be indented, and the content column of a sequence
-	# item, since the item text already starts there.
+	# element, since the element text already starts there.
 	if (pend_on && !f_mark[top] && cont_min >= 0 && ind >= cont_min) {
-		pend = pend " " md(text)
+		pend = pend " " text
 		return
 	}
 	if (!quiet_note) note("line carried through as text")
@@ -305,7 +368,7 @@ function dispatch(text, ind, quiet_note,    rest, mi, cp) {
 # opens a container. Placement depends only on the current frame column and
 # mapping depth, so the same pair renders as a heading, a definition, or a
 # list line according to where it stands.
-function put_pair(key, val, ind,    k, a, v, col, opens) {
+function put_pair(key, val, ind,    k, a, v, opens, c, qe) {
 	k = md(unquote(trim(key)))
 	if (k == "") { k = "&lt;empty&gt;" ; note("empty key labeled &lt;empty&gt;") }
 	a = ""
@@ -314,40 +377,71 @@ function put_pair(key, val, ind,    k, a, v, col, opens) {
 		val = trim(substr(val, length(a) + 2))
 	}
 	if (val ~ /^[|>][0-9]*[+-]?$/) { start_block(k, a, val, ind) ; return }
-
-	opens = (val == "")
-	v = opens ? "" : " " value_text(val)
-	if (f_col[top] < 0) {
-		if (opens && depth > 0 && f_dep[top] < depth && base + f_dep[top] <= 6) {
-			blank()
-			set_pend(hashes(base + f_dep[top]) " " k anch(a), -1, "head")
-			push_frame(ind, -1, f_dep[top] + 1)
-			f_head[top] = "**" k ":**" anch(a)
-			cont_min = ind + 1
+	c = substr(val, 1, 1)
+	if (c == "\"" || c == sq) {
+		qe = quote_end(val, 2, c)
+		if (qe < 1) { start_quote(k, a, substr(val, 2), ind, c, 0) ; return }
+		if (c == "\"" && qe == length(val) && index(val, "\\") > 0) {
+			put_dq(k, a, ind, val, 0)
 			return
 		}
+	}
+
+	opens = (val == "")
+	v = opens ? "" : value_text(val)
+	if (v != "") v = " " v
+	place_pair(k, a, v, opens, opens, ind)
+}
+
+# --- Key Placement ---
+# Every key line arrives here, whatever introduced it. A key that opens
+# something -- a nested block, a block scalar, a value carrying line breaks --
+# is structural and may be promoted to a heading; a leaf key is a definition
+# line. Only a key with children pushes a frame. last_col records where the
+# block that follows must be written, which is the margin at document level
+# and the content column of the pair inside a list.
+function place_pair(k, a, v, structural, push, ind) {
+	if (f_col[top] < 0) {
 		blank()
-		set_pend("**" k ":**" v anch(a), 0, "pair")
-		cont_min = ind + 1
-		if (opens) push_frame(ind, 0, f_dep[top] + 1)
+		if (structural && depth > 0 && f_dep[top] < depth && base + f_dep[top] <= 6) {
+			set_pend(hashes(base + f_dep[top]) " " k anch(a), "head")
+			if (push) {
+				push_frame(ind, -1, f_dep[top] + 1)
+				f_head[top] = "**" k ":**" anch(a)
+			}
+			last_col = 0 ; cont_min = ind + 1
+			return
+		}
+		set_pend("**" k ":**" v anch(a), "pair")
+		if (push) push_frame(ind, 0, f_dep[top] + 1)
+		last_col = 0 ; cont_min = ind + 1
 		return
 	}
-	col = f_col[top] + 2
-	write_line("**" k ":**" v anch(a), col, "pair")
-	cont_min = ind + 1
-	if (opens) push_frame(ind, col, f_dep[top] + 1)
+	item_open()
+	write_line("**" k ":**" v anch(a))
+	last_col = f_col[top] + 2 ; cont_min = ind + 1
+	if (push) push_frame(ind, f_col[top] + 2, f_dep[top] + 1)
 }
 
 # --- Scalar Line ---
-# A sequence item scalar, or any line the router could not classify.
-function put_scalar(text, ind) {
+# A scalar sequence element, or any line the router could not classify.
+function put_scalar(text, ind,    c, qe) {
+	c = substr(text, 1, 1)
+	if (c == "\"" || c == sq) {
+		qe = quote_end(text, 2, c)
+		if (qe < 1) { start_quote("", "", substr(text, 2), ind, c, 1) ; return }
+		if (c == "\"" && qe == length(text) && index(text, "\\") > 0) {
+			put_dq("", "", ind, text, 1)
+			return
+		}
+	}
 	if (f_col[top] < 0) {
 		blank()
-		set_pend(guard(value_text(text)), 0, "text")
+		set_pend(value_text(text), "text")
 		cont_min = ind
 		return
 	}
-	write_line(value_text(text), f_col[top] + 2, "text")
+	write_line(value_text(text))
 	cont_min = ind
 }
 
@@ -355,23 +449,14 @@ function put_scalar(text, ind) {
 # The key line is emitted as a container key would be, but no frame is
 # pushed: a block scalar has content, not children. blk_col records where the
 # fence or folded text will be written, which is the margin at document level
-# and the pair column inside a list.
-function start_block(k, a, val, ind,    col) {
-	if (f_col[top] < 0) {
-		blank()
-		if (depth > 0 && f_dep[top] < depth && base + f_dep[top] <= 6)
-			set_pend(hashes(base + f_dep[top]) " " k anch(a), -1, "head")
-		else
-			set_pend("**" k ":**" anch(a), 0, "pair")
-		blk_col = 0
-	}
-	else {
-		col = f_col[top] + 2
-		write_line("**" k ":**" anch(a), col, "pair")
-		blk_col = col
+# and the content column of the pair inside a list.
+function start_block(k, a, val, ind) {
+	place_pair(k, a, "", 1, 0, ind)
+	blk_col = last_col
+	if (blk_col > 0 && substr(val, 1, 1) == "|")
 		note("block scalar inside a list; fence needs a CommonMark renderer")
-	}
-	cont_min = -1 ; blk_par = ind ; blk_ind = -1
+	cont_min = -1 ; blk_par = ind ; blk_ind = -1 ; blk_bare = 0
+	q_ch = "" ; q_nl = 0 ; q_started = 0 ; q_hold = 0 ; q_held = 0
 	blk_keep = (index(val, "+") > 0)
 	if (substr(val, 1, 1) == "|") { in_lit = 1 ; lit = "" }
 	else { in_fold = 1 ; fold = "" }
@@ -380,6 +465,145 @@ function start_block(k, a, val, ind,    col) {
 function end_block() {
 	if (in_lit) end_lit()
 	else if (in_fold) end_fold()
+	else if (in_quote) { note("quoted scalar not closed at end of input") ; end_quote() }
+}
+
+# --- Quoted Flow Scalar ---
+# The key line is emitted first, exactly as a block scalar key would be, and
+# the value accumulates into the same buffer the folded emitter drains, so a
+# quoted scalar and a folded scalar reach the page by one path. A sequence
+# element carrying a bare quoted scalar has no key line to emit; its marker
+# waits for the first paragraph, which claims it in end_fold.
+# A quoted value holds its key line back until the value is in hand, since
+# whether the key stands beside its value or above a block is a fact about
+# the value, not about the quoting.
+function start_quote(k, a, seg, ind, ch, bare) {
+	q_k = k ; q_a = a ; q_ind = ind ; q_bare = bare
+	cont_min = -1 ; in_quote = 1 ; q_ch = ch
+	fold = "" ; q_started = 0 ; q_nl = 0 ; q_hold = 0 ; q_held = 0
+	if (ltrim(seg) != "") q_add(ltrim(seg))
+}
+
+# A double-quoted scalar that closes on its own line can still carry its line
+# breaks as escapes. It travels the same path so those breaks become breaks,
+# rather than the two literal characters they are written as.
+function put_dq(k, a, ind, val, bare) {
+	q_k = k ; q_a = a ; q_ind = ind ; q_bare = bare
+	q_ch = "\"" ; q_hold = 0 ; q_held = 0
+	fold = dq_unescape(substr(val, 2, length(val) - 2))
+	cont_min = -1
+	end_quote()
+}
+
+# --- Quoted Value Emission ---
+# One line beside the key, several lines below it. The key of a block is
+# structural and promotes like any other container key; a bare element has no
+# key at all and its marker is claimed by the first line of the value.
+function put_value(k, a, ind, t, bare) {
+	if (bare) {
+		emit_text(t, (f_col[top] < 0) ? 0 : f_col[top] + 2, 1)
+		return
+	}
+	if (index(t, "\n") == 0) {
+		place_pair(k, a, (t == "" ? "" : " " t), 0, 0, ind)
+		return
+	}
+	place_pair(k, a, "", 1, 0, ind)
+	if (last_col > 0) note("multi-line value placed inside a list item")
+	emit_text(t, last_col, 0)
+}
+
+function end_quote(    t) {
+	in_quote = 0
+	t = fold ; fold = ""
+	sub(/[[:space:]]+$/, "", t)
+	put_value(q_k, q_a, q_ind, t, q_bare)
+}
+
+# Folding, with the quoting style unescaped as it arrives: a doubled quote is
+# one quote in the single-quoted style, a backslash pair is one character in
+# the double-quoted style.
+# Folding as the format defines it: a run of n line breaks carries n-1
+# newlines, so a single break is a space and one blank line is one newline.
+# That is what returns the original message text, paragraph breaks and list
+# breaks intact, rather than a wall of prose. The doubled quote of the
+# single-quoted style and the backslash escapes of the double-quoted style
+# are resolved as each segment arrives; a segment held open by a trailing
+# backslash joins the next one with no break at all.
+function q_add(seg,    join) {
+	join = " "
+	if (q_ch == "") ;                 # a block scalar carries no escapes
+	else if (q_ch == sq) gsub(sq sq, sq, seg)
+	else {
+		if (dq_open(seg)) { seg = substr(seg, 1, length(seg) - 1) ; q_hold = 1 }
+		seg = dq_unescape(seg)
+	}
+	if (!q_started) { fold = seg ; q_started = 1 ; q_nl = 0 ; q_held = q_hold ; q_hold = 0 ; return }
+	if (q_nl > 0) join = nl_run(q_nl)
+	else if (q_held) join = ""
+	fold = fold join seg
+	q_nl = 0 ; q_held = q_hold ; q_hold = 0
+}
+
+function nl_run(n,    s) { s = "" ; while (n-- > 0) s = s "\n" ; return s }
+
+# A double-quoted line ending in an odd number of backslashes ends in an
+# escaped break: the break itself is dropped rather than folded to a space.
+function dq_open(seg,    i, n) {
+	n = 0
+	for (i = length(seg); i > 0; i--) {
+		if (substr(seg, i, 1) != "\\") break
+		n++
+	}
+	return (n % 2)
+}
+
+# The escapes a JSON-derived document actually carries. A line break becomes
+# a paragraph break, since the folded emitter separates on those and a bare
+# newline in an emitted line would break the list it sits in.
+function dq_unescape(s,    i, n, c, x, r) {
+	r = "" ; n = length(s)
+	for (i = 1; i <= n; i++) {
+		c = substr(s, i, 1)
+		if (c != "\\") { r = r c ; continue }
+		x = substr(s, ++i, 1)
+		if (x == "n" || x == "L" || x == "P") { r = r "\n" ; continue }
+		if (x == "t") { r = r "\t" ; continue }
+		if (x == "\"" || x == "\\" || x == "/" || x == " " || x == "N" || x == "_") {
+			r = r (x == "N" || x == "_" ? " " : x) ; continue
+		}
+		if (x == "r" || x == "0" || x == "a" || x == "b" || x == "v" \
+			|| x == "f" || x == "e") continue
+		# a numeric escape becomes an entity, which keeps the output one byte
+		# per character while naming the character it stands for
+		if (x == "x") { r = r ent(substr(s, i + 1, 2)) ; i += 2 ; continue }
+		if (x == "u") { r = r ent(substr(s, i + 1, 4)) ; i += 4 ; continue }
+		if (x == "U") { r = r ent(substr(s, i + 1, 8)) ; i += 8 ; continue }
+		note("backslash escape carried through: " x)
+		r = r "\\" x
+	}
+	return r
+}
+
+function ent(hex,    h) {
+	h = hex ; sub(/^0+/, "", h)
+	if (h == "" || h !~ /^[0-9A-Fa-f]+$/) return ""
+	return "&#x" h ";"
+}
+
+# The closing quote of a quoted scalar, or zero if the scalar runs on. A
+# doubled quote escapes itself in the single-quoted style; a backslash
+# escapes the next character in the double-quoted style.
+function quote_end(s, start, ch,    i, n, c) {
+	n = length(s)
+	for (i = start; i <= n; i++) {
+		c = substr(s, i, 1)
+		if (ch == "\"" && c == "\\") { i++ ; continue }
+		if (c != ch) continue
+		if (ch == sq && substr(s, i + 1, 1) == sq) { i++ ; continue }
+		return i
+	}
+	return 0
 }
 
 # --- Literal Block ---
@@ -406,46 +630,64 @@ function end_lit(    s, fence, n, i, lines) {
 # Folded text is prose, so it joins the key line it belongs to rather than
 # standing alone. A blank line in the source is a paragraph break: at the
 # margin the remainder becomes further paragraphs, inside a list it becomes
-# hard-broken lines within the item.
-function end_fold(    t, n, i, parts) {
+# hard-broken lines within the same item, since a second bullet would claim
+# the paragraph as a sibling of its own key.
+function end_fold(    t) {
 	in_fold = 0 ; t = fold ; fold = "" ; blk_ind = -1
-	gsub(/\n\n\n+/, "\n\n", t)
-	sub(/^\n+/, "", t) ; sub(/\n+$/, "", t)
+	emit_text(t, blk_col, blk_bare)
+}
+
+# --- Value Text ---
+# The value reaches the page as the markdown it is: nothing escaped, and its
+# line breaks are line breaks. A value carrying breaks stands below its key
+# rather than beside it, because a heading, a list, or a fence has to begin a
+# line to be one. Inside a list the separators carry the item indent, so a
+# conforming renderer reads the blocks as content of that item and a folding
+# one still sees no empty line and keeps the item whole.
+function emit_text(t, col, bare,    n, i, lines) {
+	sub(/[[:space:]]+$/, "", t)
 	if (t == "") return
-	n = split(t, parts, "\n\n")
-	for (i = 1; i <= n; i++) {
-		if (i == 1 && pend_on && pend_kind == "pair") {
-			pend = pend " " md(parts[i])
-			continue
+	if (index(t, "\n") == 0) {
+		if (bare) { write_line(t) ; return }
+		if (pend_on && (pend_kind == "pair" || pend_kind == "item")) {
+			pend = pend " " t
+			return
 		}
-		if (blk_col == 0) { blank() ; set_pend(guard(md(parts[i])), 0, "text") }
-		else write_line(md(parts[i]), blk_col, "pair")
+		if (col > 0) { flush_pend() ; putline(spaces(col) t) ; return }
+		blank() ; set_pend(t, "text")
+		return
+	}
+	n = split(t, lines, "\n")
+	for (i = 1; i <= n; i++) {
+		if (i == 1 && bare) { write_line(lines[1]) ; continue }
+		if (i == 1) {
+			if (col > 0) { flush_pend() ; putline(spaces(col)) }
+			else blank()
+		}
+		flush_pend()
+		putline(spaces(col) lines[i])
 	}
 }
 
 # --- Frame Stack ---
 # f_ind   shallowest indent that keeps the frame open
-# f_key   indent of the key or bullet that opened it
+# f_key   indent of the key or marker that opened it
 # f_col   output column of its children; negative is the document margin
-# f_mcol  column of the bullet it owes, fixed at push and never moved
+# f_mcol  column of the empty marker an element frame still owes
 # f_dep   mapping depth, spent on heading levels
-# f_mark  a bullet owed to the next line emitted within the frame
-# f_item  the frame is a sequence item, not a container
+# f_mark  an element marker owed to the next line emitted within the frame
+# f_item  the frame is a sequence element, not a container
 # f_flush its sequence may be written flush with its key
 # f_gap   a blank line is owed above the list about to open at the margin
 # f_head  the definition line to fall back to if no child ever arrives
-# f_used  a child line has been emitted; f_seq the children are items
+# f_used  a child line has been emitted; f_seq the children are elements
 function push_frame(keyind, col, dep,    parent) {
 	parent = f_col[top]
-	top++ ; serial++
-	f_id[top] = serial ; f_ind[top] = keyind + 1 ; f_key[top] = keyind
-	f_col[top] = col ; f_dep[top] = dep ; f_seq[top] = 0
-	f_used[top] = 0 ; f_head[top] = "" ; f_item[top] = 0 ; f_mcol[top] = col
-	f_flush[top] = 1
-	# a mapping in list context is one item, so the frame owes a bullet to
-	# whichever line lands first; open_seq gives it back when the children
-	# turn out to be sequence items, which carry their own
-	f_mark[top] = (col >= 0)
+	top++
+	f_ind[top] = keyind + 1 ; f_key[top] = keyind
+	f_col[top] = col ; f_mcol[top] = col ; f_dep[top] = dep
+	f_seq[top] = 0 ; f_mark[top] = 0 ; f_item[top] = 0
+	f_used[top] = 0 ; f_flush[top] = 1 ; f_head[top] = ""
 	# a list opening at the margin wants a blank line above it
 	f_gap[top] = (col == 0 && parent < 0)
 }
@@ -459,51 +701,53 @@ function pop_to(ind, seqline) {
 		# a heading promoted for children that never arrived is a null value,
 		# not a section; the line is still pending, so demote it in place
 		if (!f_used[top] && f_head[top] != "" && pend_on && pend_kind == "head") {
-			pend = f_head[top] ; pend_kind = "pair" ; pend_col = 0
+			pend = f_head[top] ; pend_kind = "pair"
 		}
 		top--
 	}
 }
 
-# A sequence at the margin starts its bullets at column zero. A sequence
-# inside a sequence item indents past the bullet the item still owes, which
-# is why the owed column is recorded at push time and not read back from the
-# frame column being moved here. A mapping container that turns out to hold a
-# sequence gives back its own bullet; the items carry their own.
+# --- Sequence Element ---
+# An element whose content is a collection owes an empty marker: the marker
+# stands alone and the collection opens at the element content column, so
+# every pair of a record is its own line and the record is one list. A scalar
+# element never reaches here; its marker is claimed by its own text.
+function item_open() {
+	if (!f_item[top] || !f_mark[top]) return
+	if (f_gap[top]) { blank() ; f_gap[top] = 0 }
+	flush_pend()
+	putline(spaces(f_mcol[top]) "+ ")
+	f_mark[top] = 0 ; f_item[top] = 0
+	f_col[top] = f_mcol[top] + 2
+}
+
+# A sequence at the margin starts its markers at column zero; inside an
+# element it starts at the element content column, which item_open sets.
 function open_seq() {
-	if (f_col[top] < 0 && !f_item[top]) f_gap[top] = 1
-	if (f_item[top]) { f_col[top] = f_col[top] + 2 ; f_item[top] = 0 }
-	else {
-		if (f_col[top] < 0) f_col[top] = 0
-		if (f_gap[top]) { blank() ; f_gap[top] = 0 }
-		f_mark[top] = 0
-	}
+	item_open()
+	if (f_col[top] < 0) { f_gap[top] = 1 ; f_col[top] = 0 }
+	if (f_gap[top]) { blank() ; f_gap[top] = 0 }
 	f_seq[top] = 1
 }
 
 # --- Emission ---
-# Every line passes through pend, one line of lookahead. A pair following a
-# pair of the same frame at the same column proves the earlier line has a
-# sibling, so a hard break is appended to it; renderers that fold the pair
-# into one line lose the break, not the data.
-function write_line(text, col, kind,    i, pre, mcol) {
+# A frame owing an element marker spends it here on the scalar that follows;
+# every other line in list context opens its own mapping bullet. Lines pass
+# through pend, one line of lookahead, so the line just written stays
+# available to a folded scalar or a demotion.
+function write_line(text) {
 	if (f_gap[top]) { blank() ; f_gap[top] = 0 }
-	pre = "" ; mcol = col
-	for (i = 0; i <= top; i++)
-		if (f_mark[i]) {
-			if (pre == "") mcol = f_mcol[i]
-			pre = pre "- " ; f_mark[i] = 0
-		}
-	if (pend_on && kind == "pair" && pend_kind == "pair" \
-		&& pend_col == col && pend_fid == f_id[top] && col > 0)
-		pend = pend "  "
-	set_pend(spaces(mcol) pre text, col, kind)
+	if (f_mark[top]) {
+		f_mark[top] = 0 ; f_item[top] = 0
+		set_pend(spaces(f_mcol[top]) "+ " text, "item")
+		return
+	}
+	set_pend(spaces(f_col[top]) "- " text, "pair")
 }
 
-function set_pend(text, col, kind) {
+function set_pend(text, kind) {
 	flush_pend()
-	pend = text ; pend_col = col ; pend_kind = kind
-	pend_fid = f_id[top] ; pend_on = 1
+	pend = text ; pend_kind = kind ; pend_on = 1
 }
 
 function flush_pend() {
@@ -530,9 +774,9 @@ function putline(s) {
 function doc_break() {
 	flush_all()
 	if (wrote) { blank() ; putline("---") ; blank() }
-	docs++
-	f_col[0] = -1 ; f_dep[0] = 0 ; f_seq[0] = 0 ; f_mark[0] = 0
-	f_gap[0] = 0 ; f_head[0] = "" ; cont_min = -1
+	f_col[0] = -1 ; f_mcol[0] = -1 ; f_dep[0] = 0 ; f_seq[0] = 0
+	f_mark[0] = 0 ; f_item[0] = 0 ; f_gap[0] = 0 ; f_head[0] = ""
+	cont_min = -1
 }
 
 function flush_all() {
@@ -551,7 +795,7 @@ function value_text(v,    a, t) {
 	if (v == "") return ""
 	if (substr(v, 1, 1) == "*") {
 		a = v ; sub(/^\*/, "", a) ; sub(/[[:space:]].*$/, "", a)
-		if (anchors + 0) return "[\\*" md(a) "](#y-" slug(a) ")"
+		if (anchors + 0) return "[\\*" a "](#y-" slug(a) ")"
 		return md(v)
 	}
 	if (substr(v, 1, 1) == "!") {
@@ -562,7 +806,9 @@ function value_text(v,    a, t) {
 	}
 	if (substr(v, 1, 1) == "[" && substr(v, length(v)) == "]") return flow_seq(v, 0)
 	if (substr(v, 1, 1) == "{" && substr(v, length(v)) == "}") return flow_map(v, 0)
-	return md(unquote(v))
+	v = unquote(v)
+	if (substr(v, 1, 1) == "\"" || substr(v, 1, 1) == sq) return v
+	return v
 }
 
 function flow_seq(v, nest,    n, a, i, r) {
@@ -574,15 +820,6 @@ function flow_seq(v, nest,    n, a, i, r) {
 	return nest ? "[" r "]" : r
 }
 
-# An entry of a flow collection that is itself a flow collection keeps its
-# brackets: flattening it would leave its commas indistinguishable from the
-# commas of the collection holding it.
-function flow_val(v) {
-	if (substr(v, 1, 1) == "[" && substr(v, length(v)) == "]") return flow_seq(v, 1)
-	if (substr(v, 1, 1) == "{" && substr(v, length(v)) == "}") return flow_map(v, 1)
-	return value_text(v)
-}
-
 function flow_map(v, nest,    n, a, i, r, cp, item) {
 	note(nest ? "nested flow mapping kept in braces" \
 		: "flow mapping inlined as a comma list")
@@ -592,10 +829,19 @@ function flow_map(v, nest,    n, a, i, r, cp, item) {
 		item = trim(a[i])
 		cp = key_colon(item)
 		if (cp < 1) { r = r (i > 1 ? ", " : "") flow_val(item) ; continue }
-		r = r (i > 1 ? ", " : "") md(unquote(trim(substr(item, 1, cp - 1)))) \
+		r = r (i > 1 ? ", " : "") unquote(trim(substr(item, 1, cp - 1))) \
 			": " flow_val(trim(substr(item, cp + 1)))
 	}
 	return nest ? "{" r "}" : r
+}
+
+# An entry of a flow collection that is itself a flow collection keeps its
+# brackets: flattening it would leave its commas indistinguishable from the
+# commas of the collection holding it.
+function flow_val(v) {
+	if (substr(v, 1, 1) == "[" && substr(v, length(v)) == "]") return flow_seq(v, 1)
+	if (substr(v, 1, 1) == "{" && substr(v, length(v)) == "}") return flow_map(v, 1)
+	return value_text(v)
 }
 
 # Commas at bracket depth zero, outside quotes, separate flow entries.
@@ -608,7 +854,7 @@ function split_flow(s, a,    i, n, c, q, d, cur, cnt) {
 			if (c == q) q = ""
 			continue
 		}
-		if (c == "\"" || c == "'") { q = c ; cur = cur c ; continue }
+		if (c == "\"" || c == sq) { q = c ; cur = cur c ; continue }
 		if (c == "[" || c == "{") d++
 		if (c == "]" || c == "}") d--
 		if (c == "," && d == 0) { a[++cnt] = cur ; cur = "" ; continue }
@@ -626,7 +872,7 @@ function key_colon(s,    i, n, c, q) {
 	n = length(s)
 	if (n == 0) return 0
 	c = substr(s, 1, 1)
-	if (c == "\"" || c == "'") {
+	if (c == "\"" || c == sq) {
 		q = c
 		for (i = 2; i <= n; i++) {
 			if (q == "\"" && substr(s, i, 1) == "\\") { i++ ; continue }
@@ -652,7 +898,7 @@ function decomment(s,    i, n, c, q, cut) {
 	for (i = 1; i <= n; i++) {
 		c = substr(s, i, 1)
 		if (q != "") { if (c == q) q = "" ; continue }
-		if (c == "\"" || c == "'") { q = c ; continue }
+		if (c == "\"" || c == sq) { q = c ; continue }
 		if (c == "#" && i > 1 && substr(s, i - 1, 1) == " ") { cut = i - 1 ; break }
 	}
 	if (cut == 0) return s
@@ -696,18 +942,12 @@ function word_c(c) {
 	return (c ~ /^[A-Za-z0-9]$/)
 }
 
-# A line standing at the margin must not open a block by accident.
-function guard(s) {
-	if (s ~ /^[#>|+=-]/ || s ~ /^[0-9]+\./) return "\\" s
-	return s
-}
-
 function unquote(s,    q) {
 	q = substr(s, 1, 1)
-	if ((q == "\"" || q == "'") && length(s) > 1 && substr(s, length(s)) == q) {
+	if ((q == "\"" || q == sq) && length(s) > 1 && substr(s, length(s)) == q) {
 		s = substr(s, 2, length(s) - 2)
 		if (q == "\"") gsub(/\\"/, "\"", s)
-		else gsub(/''/, "'", s)
+		else gsub(sq sq, sq, s)
 	}
 	return s
 }
@@ -754,17 +994,7 @@ function hashes(n,    s) { s = "" ; while (n-- > 0) s = s "#" ; return s }
 function ltrim(s) { sub(/^[[:space:]]+/, "", s) ; return s }
 function rtrim(s) { sub(/[[:space:]]+$/, "", s) ; return s }
 function trim(s) { return rtrim(ltrim(s)) }
-eof
-
-# --- Translation ---
-# One invocation, output routed through fd 3, so the stdout target and the
-# file target share a single code path.
-exec 3>&1
-[[ "$outfile" == - ]] || exec 3> "$outfile"
-
-awk -v depth="$depth" -v base="$base" -v anchors="$anchors" \
-	-v keepc="$keepc" -v quiet="$quiet" -v src="$infile" \
-	"$prog" "$infile" >&3
+' "$infile" >&3
 
 exec 3>&-
 
@@ -774,3 +1004,5 @@ exec 3>&-
 touch -r "$infile" "$outfile"
 
 realpath "$outfile"
+
+command -v markdown.sh >/dev/null && markdown.sh "$outfile" || true

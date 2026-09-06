@@ -4,8 +4,11 @@ set -euo pipefail
 # markdown.sh --- Bash envelope for markdown.awk Markdown-to-HTML renderer
 #
 # Validates input, invokes the embedded awk translator, writes output to
-# <input>.html (eg README.md -> README.md.html), and preserves the source
-# file's timestamp on the output via touch -r.
+# <input>.html (eg chapter.md -> chapter.md.html), and preserves the source
+# file's timestamp on the output via touch -r. A README.md input is a special
+# case, writing to index.html in the same directory rather than
+# README.md.html, since README.md is the directory's index by convention and
+# a static host serves index.html for a bare directory request.
 #
 # Usage: markdown.sh input.md
 
@@ -26,6 +29,15 @@ infile="$1"
 	|| { printf 'error: file not found: %s\n' "$infile" >&2 ; exit 1 ;}
 
 outfile="${infile}.html"
+
+base="${infile##*/}"          # parameter expansion equivalent of basename
+dir="${infile%/*}"            # parameter expansion equivalent of dirname
+[[ "$dir" == "$infile" ]] && dir="."   # no / present: dirname would say "."
+
+[[ "$base" == "README.md" ]] && {
+	outfile="index.html"
+	[[ "$dir" != "." ]] && outfile="${dir}/${outfile}"
+}
 
 # --- Embedded awk translator ---
 awk '
@@ -123,7 +135,9 @@ awk '
 #                      <th> and <td> elements with no CSS dependency.
 #
 # (c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution.
-#
+# rev 6a9dd70e 20260906 141142 PDT Sun --- README.md -> index.html output
+#                                      --- naming; ./README.md -> ./ link
+#                                      --- rewrite; copyright line update
 # rev 6a856101 20260819 005337 PDT Wed --- footnote brackets and definition
 #                                      --- prefix to literal text in bare <span>;
 #                                      --- generated content is excluded from a
@@ -651,6 +665,13 @@ function extract_link(str, i,    sstr) {
 # operates at the parsed-link semantic layer, so code spans and fenced blocks
 # are inherently immune (they never reach this function).
 #
+# README.md special case, checked first since it would otherwise also match
+# the general rule below: ./README.md rewrites to ./, and ./dir/README.md to
+# ./dir/, mirroring the envelope README.md -> index.html output naming so a
+# link between two rendered documents still resolves. A query or fragment
+# suffix is preserved --- ./README.md#usage becomes ./#usage --- since it
+# addresses the rendered page rather than the source filename.
+#
 # URL rewrite guard:
 #   url ~ /^\.\//            must be ./-prefixed (local relative)
 #   url ~ /\.md($|[?#])/    .md must terminate the filename (before ?, #, or EOL)
@@ -670,11 +691,17 @@ function parse_link(str,    arr) {
 	match(str, /^[^() ]*/);
 	url = substr(str, 1, RLENGTH);       # url = everything before space or parens
 
+	# README.md -> ./ (or ./dir/), checked ahead of the general .md rewrite
+	if (url ~ /^\.\/([^() ]*\/)?README\.md($|[?#])/)
+		sub(/README\.md/, "", url);
 	# local .md -> .md.html rewrite for static HTML browsing;
 	# preserves .md identity so rendered filenames trace to their source
-	if (url ~ /^\.\// && url ~ /\.md($|[?#])/)
+	else if (url ~ /^\.\// && url ~ /\.md($|[?#])/)
 		sub(/\.md/, ".md.html", url);
-	if (name ~ /^\.\// && name ~ /\.md$/)
+
+	if (name ~ /^\.\/([^() ]*\/)?README\.md$/)
+		sub(/README\.md$/, "", name);
+	else if (name ~ /^\.\// && name ~ /\.md$/)
 		sub(/\.md$/, ".md.html", name);
 
 	sub(/^[^() ]*/, "", str);            # consume url from remainder
