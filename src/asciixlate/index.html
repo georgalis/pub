@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+section[role="doc-endnotes"] ol { list-style: none; padding-left: 0; }
+li[role="doc-endnote"] p { display: inline; margin: 0; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h1 id="asciixlate-20">asciixlate 2.0</h1>
+<p>UTF-8 to ASCII transliteration under a local rule file. Self-contained: no libiconv, no gconv modules, no runtime data. The transliteration table is generated once and compiled in, so the same input yields the same bytes on Darwin, Linux and NetBSD.</p>
+<pre><code>make            # GNU make, bmake, or Apple make --- all three work
+make check
+make install
+</code></pre>
+<p><code>asciixlate -h</code> is the one-screen option summary; <code>asciixlate --help</code> is the full manual, and <code>make install</code> derives the man page from it so the two cannot disagree.</p>
+<h2 id="why-the-10-build-failed-on-darwin">Why the 1.0 build failed on Darwin</h2>
+<pre><code>ld: symbol(s) not found: _iconv, _iconv_open, _iconv_close
+</code></pre>
+<p>macOS does not put <code>iconv</code> in libSystem. <code>cc foo.c</code> never resolves it; the 1.0 header comment claiming otherwise was wrong. The immediate fix for 1.0 is <code>cc -O2 -o asciixlate asciixlate.c -liconv</code>. With pkgsrc on the path there is a second failure mode behind it: pkgsrc GNU libiconv's header renames the symbols to <code>libiconv*</code>, so whichever <code>iconv.h</code> the include path finds first decides which symbol set the object file asks for, and the <code>-L</code> in effect decides which library answers. That is a link-order lottery on a machine with both.</p>
+<p>2.0 removes the dependency, so neither failure can recur.</p>
+<h2 id="makefile-portability">Makefile portability</h2>
+<p>The 2.0.0 Makefile used <code>ifeq</code> and <code>$(shell ...)</code>, which are GNU-make-only: <code>bmake</code> could not parse the file, and the <code>echo</code> it fed to <code>/bin/sh</code> carried unbalanced quotes and parentheses. Both are gone. There are now no conditionals and no <code>$(shell ...)</code> anywhere; the platform test happens in the recipe shell, where <code>$$</code> escapes a shell variable identically for GNU make, <code>bmake</code>, <code>pmake</code> and Apple's make:</p>
+<pre><code>asciixlate: asciixlate.c translit_table.h
+	@case `uname -s` in \
+	  Darwin) ld= ;; \
+	  *)      ld=-static ;; \
+	esac; \
+	$(CC) $(CFLAGS) -o $@ asciixlate.c $$ld
+</code></pre>
+<p>Nothing in the file is dialect-specific, so pkgsrc <code>bmake</code> on Darwin and <code>gmake</code> on RHEL read the same rules.</p>
+<h2 id="static-linking">Static linking</h2>
+<table>
+<thead>
+<tr><th>Platform</th><th><code>make</code> produces</th></tr>
+</thead>
+<tbody>
+<tr><td>Linux (glibc or musl)</td><td>fully static, no <code>.so</code></td></tr>
+<tr><td>NetBSD</td><td>fully static</td></tr>
+<tr><td>Darwin</td><td>dynamic against <code>/usr/lib/libSystem.B.dylib</code> only</td></tr>
+</tbody>
+</table>
+<p>Apple does not ship a static libSystem and does not support <code>-static</code>; a fully static Mach-O executable is not achievable. Linking libSystem alone is the closest equivalent and needs no Homebrew or pkgsrc at run time.</p>
+<p>Note also that glibc's static linking and <code>iconv()</code> are a bad pair: gconv modules are <code>dlopen</code>ed at run time, so a <code>-static</code> binary that calls iconv can fail on a host with different gconv data. Owning the table avoids that entirely.</p>
+<h2 id="the-rule-file">The rule file</h2>
+<pre><code>U+2014  ---             # em dash
+U+00AD  ""              # soft hyphen: drop
+U+00A0  " "             # no-break space: one plain space
+\xC2\xA9  (c)           # by byte sequence
+&lt;paste&gt;  ---            # or paste the character itself as the key
+</code></pre>
+<p>Keys accept <code>U+XXXX</code>, <code>0xXXXX</code>, <code>\xHH...</code>, or literal UTF-8 pasted straight out of a vim buffer. Prefix with <code>=</code> to force a literal that would otherwise look like a code point. A literal key of more than one code point becomes a longest-match rule.</p>
+<p>Values run to end of line; a whitespace-preceded <code>#</code> starts a comment. Wrap in double quotes for an exact value --- that is how a replacement holds spaces, a <code>#</code>, or nothing. A bare empty value is an error; write <code>""</code> to delete a character.</p>
+<h2 id="building-a-rule-file-from-real-text">Building a rule file from real text</h2>
+<pre><code>asciixlate --report archive/*.md &gt;&gt; ~/.asciixlate
+</code></pre>
+<p><code>--report</code> converts nothing to disk and prints an editable stub for every unmapped code point, most frequent first. <code>--list</code> dumps the whole active table in the same grammar.</p>
+<h2 id="table-provenance">Table provenance</h2>
+<p><code>translit_table.h</code> is generated by <code>mktable.py</code> from three sources, in precedence order: Unicode NFKD folding (1065 entries), glibc <code>ascii//TRANSLIT</code> output captured at generation time (317), and a curated list in the generator (74). Regenerate with <code>make table</code> and diff to audit a Unicode upgrade.</p>
+<p>See <code>asciixlate --help</code> for everything else.</p>
+</body>
+</html>

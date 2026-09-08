@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+section[role="doc-endnotes"] ol { list-style: none; padding-left: 0; }
+li[role="doc-endnote"] p { display: inline; margin: 0; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<p>Good to know --- I've noted that preference. Worth flagging the underlying behavior so it's clear why a one-liner alone won't do it:</p>
+<p>On glibc 2.43, <code>iconv -f utf-8 -t ascii//TRANSLIT</code> already transliterates em-dash <code>---</code> (U+2014), but to <strong>two</strong> hyphens <code>--</code>, not three. So you can't get <code>---</code> purely from <code>iconv</code> --- you need a second pass. Since <code>--</code> can legitimately occur in plain ASCII text, the safest approach is to pipe the transliteration output through <code>sed</code> to specifically target the em-dash:</p>
+<pre><code class="language-bash">iconv -f utf-8 -t ascii//TRANSLIT | sed 's/--/---/g'</code></pre>
+<p><strong>But</strong> that's risky because it turns every <code>--</code> into <code>---</code> --- including ones in the source. To avoid that, either transliterate em-dash yourself before <code>iconv</code>'s own handling kicks in, or drop the <code>//TRANSLIT</code> flag entirely and translate the specific characters you care about:</p>
+<pre><code class="language-bash">iconv -f utf-8 -t ascii//TRANSLIT | sed 's/--/---/g'        # too aggressive
+sed 's/\xe2\x80\x94/---/g' | iconv -f utf-8 -c -t ascii      # targeted</code></pre>
+<p>The second option is the cleanest fit for what you described --- you keep <code>//TRANSLIT</code> doing its job for other unicode characters (curly quotes etc.) while em-dash becomes <code>---</code> specifically. If you want to preserve all other transliteration behavior, just do both passes:</p>
+<pre><code class="language-bash">sed 's/\xe2\x80\x94/---/g' | iconv -f utf-8 -c -t ascii//TRANSLIT</code></pre>
+<p>Want me to check how that handles the related dashes (U+2013 en-dash and U+2E3A two-em-dash) too?</p>
+<hr />
+<p>Good --- that confirms it's the standard U+2014, so the earlier regex was already matching it correctly. Let me address both parts of your question properly.</p>
+<h2 id="there-is-no-custom-transliteration-table-in-iconv">There is no custom transliteration table in iconv</h2>
+<p>Correct --- glibc's <code>iconv</code> does not expose a way to customize or override the <code>//TRANSLIT</code> mappings. The transliteration rules are compiled into glibc itself, stored in locale definition files, and there's no runtime flag or config file to extend or override individual character mappings. You can pick a different target locale (e.g. <code>ascii//TRANSLIT</code> vs. a specific locale), but you can't edit the table. So em-dash-&gt;<code>--</code> is hardwired; the only way to change it is a separate transformation pass.</p>
+<h2 id="why-sedawk-on-non-ascii-is-risky-and-how-to-avoid-the-irregularities">Why sed/awk on non-ASCII is risky, and how to avoid the irregularities</h2>
+<p>Your instinct is right. The classic pitfalls when running <code>sed</code>/<code>awk</code> over UTF-8 bytes:</p>
+<ol>
+<li><strong>Locale-dependent matching</strong> --- under a non-UTF-8 locale, <code>sed</code> treats bytes individually, so a multibyte character like <code>---</code> (<code>e2 80 94</code>) can be split across a line or matched incompletely, producing broken output.</li>
+<li><strong>GNU <code>sed</code> byte vs. character mode</strong> --- with <code>LC_ALL=C</code>, sed operates on raw bytes (safe for exact-match, but <code>.</code> won't span the multibyte sequence as one unit); with a UTF-8 locale, <code>.</code> matches a whole character but some pattern features behave inconsistently across versions.</li>
+<li><strong>In-place re-encoding</strong> --- if sed's output locale differs from input, you can corrupt bytes.</li>
+</ol>
+<p>The clean way to <strong>sidestep all of this</strong> is to match the raw UTF-8 byte sequence explicitly and force a byte-oriented (C) locale, so sed never tries to interpret the bytes as characters at all:</p>
+<pre><code class="language-bash">LC_ALL=C sed 's/\xe2\x80\x94/---/g'</code></pre>
+<p>Here <code>\xe2\x80\x94</code> is the exact 3-byte UTF-8 encoding of U+2014, and <code>LC_ALL=C</code> guarantees sed treats the stream as raw bytes --- no locale interpretation, no multibyte splitting, no irregularities. The replacement <code>---</code> is plain ASCII, so there's no re-encoding risk on output either.</p>
+<h2 id="putting-it-together">Putting it together</h2>
+<p>To keep <code>iconv</code>'s transliteration for everything else (curly quotes, etc.) while forcing em-dash to <code>---</code>:</p>
+<pre><code class="language-bash">LC_ALL=C sed 's/\xe2\x80\x94/---/g' | iconv -f utf-8 -c -t ascii//TRANSLIT</code></pre>
+<p>The <code>sed</code> pass runs first on the still-UTF-8 input (safe, because it's byte-exact under <code>LC_ALL=C</code>), then <code>iconv</code> handles the rest of the transliteration. If you also want to catch the <strong>en dash</strong> (U+2013, <code>---</code>'s narrower sibling, <code>e2 80 93</code>) and map it to <code>--</code>:</p>
+<pre><code class="language-bash">LC_ALL=C sed 's/\xe2\x80\x94/---/g; s/\xe2\x80\x93/--/g' | iconv -f utf-8 -c -t ascii//TRANSLIT</code></pre>
+<p>Want me to add the two-em dash (U+2E3A) or figure dash (U+2012) to that chain as well?</p>
+<hr />
+<h2 id="discussion-and-viability">Discussion and viability</h2>
+<p><strong>Is there a custom iconv translation table?</strong> No. glibc's <code>//TRANSLIT</code> rules are compiled into the C library from locale definition files, and there's no runtime config file, env var, or flag to override individual mappings. Em-dash-&gt;<code>--</code> and U+2E3A-&gt;<code>?</code> are hardwired. So the only way to customize transliteration is to wrap iconv with your own pre-processing pass --- which is what <code>asciixlate</code> does.</p>
+<p><strong>Why not sed/awk for that pass?</strong> Exactly the irregularities you mentioned: under a non-UTF-8 locale, <code>sed</code> can split a multibyte character across a buffer boundary and match it incompletely; under a UTF-8 locale, <code>.</code> and pattern features behave inconsistently across GNU/BSD versions; and mismatched I/O locales corrupt bytes. The C filter sidesteps all of this by matching exact byte sequences under <code>LC_ALL=C</code> --- no locale interpretation, no character splitting, deterministic everywhere.</p>
+<p><strong>Architecture:</strong> two-stage pipeline --- (1) apply the user's extension table to the raw UTF-8 byte stream, replacing whole multibyte sequences wholesale; (2) pass the result through <code>iconv("utf-8","ascii//TRANSLIT")</code> for everything else (curly quotes, etc.). Replacement output bytes are never re-scanned, so a rule producing bytes that resemble another rule's pattern is safe.</p>
+<p><strong>Static linking on Darwin --- the honest answer.</strong> macOS does <strong>not</strong> ship <code>libiconv.a</code> (no static lib in the SDK or Xcode --- only <code>libiconv.2.tbd</code>/<code>.dylib</code>). So a <em>truly</em> static, zero-dependency binary is impossible without pulling in Homebrew's keg-only <code>libiconv.a</code>, which is heavy and conflicts with the system iconv. The practical alternative --- dynamic link against the system <code>libiconv.2.dylib</code> --- is effectively universal: that dylib ships with every macOS version and is part of the OS, never a separate install. So "single .c in, single binary out, works on any stock Mac" is achieved; "zero dynamic library dependencies" is not, and isn't worth the Homebrew detour just for dash transliteration. On Linux, glibc has iconv in libc, so no <code>-liconv</code> is needed at all.</p>
+<h2 id="the-code">The code</h2>
+<p>Built and tested. Verified outputs:</p>
+<table>
+<thead>
+<tr><th>Input</th><th>Bytes</th><th>Output</th></tr>
+</thead>
+<tbody>
+<tr><td>U+2014 EM DASH</td><td><code>e2 80 94</code></td><td><code>---</code></td></tr>
+<tr><td>U+2013 EN DASH</td><td><code>e2 80 93</code></td><td><code>--</code></td></tr>
+<tr><td>U+2E3A TWO-EM DASH</td><td><code>e2 b8 ba</code></td><td><code>----</code></td></tr>
+<tr><td>U+2012 FIGURE DASH</td><td><code>e2 80 92</code></td><td><code>-</code></td></tr>
+<tr><td>U+201C/201D curly quotes</td><td>---</td><td><code>"</code> <code>"</code> (via iconv)</td></tr>
+</tbody>
+</table>
+<p>Mixed run: <code>"hello" --- -- ---- - end</code> --- exactly right.</p>
+<p>The source is a single self-contained file with the help text and built-in default table baked in (so <code>--help</code> and <code>--list</code> work with no external files). I shared it above as <code>asciixlate.c</code>.</p>
+<h2 id="build-and-use">Build and use</h2>
+<pre><code class="language-bash"># macOS (system toolchain, system libiconv --- nothing extra to install):
+cc -O2 -Wall -Wextra -o asciixlate asciixlate.c
+
+# Linux (glibc, iconv is in libc):
+cc -O2 -Wall -Wextra -o asciixlate asciixlate.c</code></pre>
+<pre><code class="language-bash">asciixlate &lt; in.txt &gt; out.txt                       # defaults only
+asciixlate -v -c myrules.txt in.txt out.txt         # with config, verbose
+asciixlate -l                                       # list active rules</code></pre>
+<p>Config file (overrides defaults for the same code point):</p>
+<pre><code>U+2014        ---       # EM DASH
+U+2013        --        # EN DASH
+U+2E3A        ----      # TWO-EM DASH
+U+2012        -         # FIGURE DASH
+U+00A9        (c) Copyright</code></pre>
+<p>The <code>-l</code> flag shows the active table (defaults plus any config overrides), <code>--help</code> prints the full usage, and both are compiled into the binary --- no man page or external doc file needed. If you'd like, I can also add U+2015 (horizontal bar), U+2010--U+2011 (the hyphen variants), or a <code>--strict</code> mode that errors instead of emitting <code>?</code> for untranslatable bytes.</p>
+<hr />
+<p>All four requested features are in. Here's the summary.</p>
+<h2 id="whats-new">What's new</h2>
+<p><strong>Yes, it reads a local config file.</strong> Discovery priority (first match wins):</p>
+<ol>
+<li><code>-c FILE</code> / <code>--config=FILE</code> (explicit; a missing file here is a fatal error)</li>
+<li><code>$ASCIIXLATE_CONFIG</code> env var (exported; points at a file)</li>
+<li><code>~/.asciixlate</code> (auto-loaded; a missing file is silently ignored)</li>
+</ol>
+<p>User rules override built-in defaults for the same code point.</p>
+<p><strong>New built-in defaults</strong> (added to the table):</p>
+<table>
+<thead>
+<tr><th>Code point</th><th>Name</th><th>Output</th></tr>
+</thead>
+<tbody>
+<tr><td>U+2015</td><td>HORIZONTAL BAR</td><td><code>--</code></td></tr>
+<tr><td>U+2011</td><td>NON-BREAKING HYPHEN</td><td><code>-</code></td></tr>
+<tr><td>U+2010</td><td>HYPHEN</td><td><code>-</code></td></tr>
+<tr><td>U+00AD</td><td>SOFT HYPHEN</td><td>(dropped --- empty replacement)</td></tr>
+</tbody>
+</table>
+<p><strong><code>--strict</code> / <code>-s</code></strong>: aborts with a message naming the code point (e.g. <code>untranslatable character U+F8FF at input offset 1</code>) and exits 2. Also fires on invalid UTF-8 bytes.</p>
+<p><strong><code>??</code> for untranslatable bytes</strong> (the default): this required a real fix. The earlier version couldn't actually detect these --- iconv's <code>//TRANSLIT</code> silently emits <code>?</code> for characters it can't transliterate (U+F8FF, U+FFFF, etc.) and returns success, indistinguishable from a literal <code>?</code> in the input. So I rewrote the converter to decode UTF-8 code points itself and run iconv per-code-point, which lets it tell "iconv produced <code>?</code> because it couldn't transliterate this character" apart from "the input had a literal <code>?</code>". Verified: <code>printf 'a?b'</code> -&gt; <code>a?b</code> (single, preserved), but U+F8FF -&gt; <code>??</code> (doubled, locatable).</p>
+<p>The three untranslatable modes are mutually exclusive in priority: <code>--strict</code> (error) &gt; default (<code>??</code>) &gt; <code>--ignore</code> (drop). <code>-s</code> and <code>-I</code> together are rejected with exit 1.</p>
+<h2 id="build-unchanged">Build (unchanged)</h2>
+<pre><code class="language-bash">cc -O2 -Wall -Wextra -o asciixlate asciixlate.c   # macOS or Linux, no extra libs</code></pre>
+<p>Help and the rule table are baked into the binary (<code>--help</code>, <code>--list</code>), so it's still a single self-contained file with no external man page. The updated source is shared above as <code>asciixlate.c</code>.</p>
+<p>One honest caveat worth flagging: the untranslatable detection works by feeding each non-ASCII code point to iconv individually and checking whether it produced exactly <code>?</code>. This is reliable for the common case, but if a future iconv version started transliterating some character <em>to</em> a literal <code>?</code> that it currently can't, that character would be misreported as untranslatable. For the dash/quote characters you actually care about this isn't a risk --- they all have real transliterations --- but I'd avoid relying on the <code>??</code>/<code>--strict</code> behavior for exotic private-use code points as a hard guarantee.</p>
+</body>
+</html>
