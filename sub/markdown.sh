@@ -18,7 +18,7 @@ set -euo pipefail
 infile="$1"
 
 # safe path characters only
-[[ "$infile" =~ ^[A-Za-z0-9._/-]+$ ]] \
+[[ "$infile" =~ ^[A-Za-z0-9,._/-]+$ ]] \
 	|| { printf 'error: unsafe characters in path: %s\n' "$infile" >&2 ; exit 1 ;}
 
 # require .md extension
