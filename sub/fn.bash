@@ -404,60 +404,6 @@ _rcs () { # local rcs function
 # realpath "$outfile"
 # printf '%s\n' "$(cd -- "$(dirname -- "$outfile")" && pwd -P)/$(basename -- "$outfile")"
 
-tss () { # timestamp high resolution
-  # revn: 69891681 117f2234 PST 2026-02-08 15:04:23.293544500
-  # orig: 695c05da 04fa19ec 2026-01-05 10:41:20.083499500
-  local ts xs xss nsec hr
-  command -v tai64n &>/dev/null && { read -r ts < <(tai64n <<<'')
-    read -r xs xss < <(awk '{gsub(/^@4[0]*/,"");print substr($0,1,8), substr($0,9,8)}' <<<"$ts")
-    xargs < <(printf '%s %s ' "$xs" "$xss"; date "+%Z" ; tai64nlocal <<<"$ts")
-  } || { read -r ts nsec hr < <(date "+%s %N %Y-%m-%d %H:%M:%S")
-    printf '%08x %08x %s.%09d\n' "$ts" "$nsec" "$hr" "$nsec" ;} ;}
-
-ts () { # timestamp, low resolution, human (tai vs unix seconds err)
-  # gnu/bsd date, optionally accepts 8-char hex or integer arg
-  # rev: 698925da 20260208 161002 PST Sun 04:10 PM 8 Feb 2026
-  # org: 695c0404 20260105 103340 PST Mon 10:33 AM 5 Jan 2026
-  local ts xs sec dfmt
-  date --version &>/dev/null 2>&1 && dfmt='date -d' || dfmt='date -r'
-  [[ -n "${1:-}" ]] && { [[ "$1" =~ ^[0-9a-fA-F]{8}$ ]] \
-    && { read xs < <(tr 'A-F' 'a-f' <<<"$1"); read -r sec < <(printf '%d\n' "0x${xs}")
-    } || { [[ "$1" =~ ^[0-9]+$ ]] && { sec="$1"; read -r xs < <(printf '%08x' "$sec")
-      } || { printf 'ts: expected 8-char hex or integer\n' >&2; return 1 ;} ;}
-  } || { command -v tai64n &>/dev/null && { read -r ts < <(tai64n <<<'')
-      read -r xs < <(awk '{gsub(/^@4[0]*/,""); print substr($0,1,8)}' <<<"$ts")
-      read -r sec < <(printf '%d' "0x${xs}")
-    } || { read -r sec < <(date +%s); read -r xs < <(printf '%08x' "$sec") ;} ;}
-  xargs < <($dfmt "$sec" +"$xs %Y%m%d %H%M%S %Z %a %I:%M %p %e %b %Y") ;}
-
-ts () { # timestamp, low resolution, human (tai vs unix seconds err)
-  # gnu/bsd date+stat, accepts 8-char hex, integer, or -f path arg
-  # rev: 69df04f4 20260414 202436 PDT Tue 08:24 PM 14 Apr 2026 --- -f path arg, @date linux fix
-  # rev: 698925da 20260208 161002 PST Sun 04:10 PM 8 Feb 2026
-  # org: 695c0404 20260105 103340 PST Mon 10:33 AM 5 Jan 2026
-  local ts xs sec dfmt at stfmt
-  date --version &>/dev/null && { dfmt='date -d'; at='@' ;} || { dfmt='date -r'; at='' ;} # gnu or bsd/darwin
-  stat --version &>/dev/null && stfmt='stat -L -c %Y' || stfmt='stat -L -f %m' # gnu or bsd/darwin
-  [[ -z "${1:-}" ]] && { # no args, use tai64n or date for seconds
-    command -v tai64n &>/dev/null && {
-      read -r ts < <(tai64n <<<'')
-      read -r xs < <(awk '{gsub(/^@4[0]*/,""); print substr($0,1,8)}' <<<"$ts")
-      read -r sec < <(printf '%d\n' "0x${xs}")
-      } || { read -r sec < <(date +%s); read -r xs < <(printf '%08x\n' "$sec") ;}
-    } || { [[ "$1" == "-f" ]] && {
-        [[ -n "${2:-}" ]] || { chkerr "$FUNCNAME: -f requires a path argument (69df04c1)"; return 1 ;}
-        [[ -L "$2" ]] && ! [[ -e "$2" ]] && { chkerr "$FUNCNAME: dangling symlink: $2 (69df04d6)"; return 1 ;}
-        [[ -f "$2" || -d "$2" ]] || { chkerr "$FUNCNAME: not a file or directory $2 (69df04e4)"; return 1 ;}
-        read -r sec < <($stfmt "$2")
-        read -r xs < <(printf '%08x\n' "$sec")
-        } || { [[ "$1" =~ ^[0-9a-fA-F]{8}$ ]] && {
-          read xs < <(tr 'A-F' 'a-f' <<<"$1")
-          read -r sec < <(printf '%d\n' "0x${xs}")
-          } || { [[ "$1" =~ ^[0-9]+$ ]] && { # sloppy test for int or hex arg1 seconds
-            sec="$1"; read -r xs < <(printf '%08x\n' "$sec")
-            } || { chkerr "$FUNCNAME: expected 8-char hex, integer, or -f path"; return 1 ;}
-            } ;} ;}
-  xargs < <($dfmt "${at}${sec}" +"$xs %Y%m%d %H%M%S %Z %a %I:%M %p %e %b %Y") ;}
 
 # ----- timestamp primitives ----------------------------------------------
 
