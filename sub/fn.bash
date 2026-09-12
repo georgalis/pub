@@ -8,6 +8,25 @@
 #
 # https://github.com/georgalis/pub/blob/main/sub/fn.bash
 
+cmdloc () { # report fn definition line/file and/or which -a matches
+  # rev 6aa5b01c 20260912 130340 PDT Sat 01:03 PM 12 Sep 2026
+  # org 6aa5839c 20260912 095348 PDT Sat 09:53 AM 12 Sep 2026
+  # locate a function definition, shell resolution, and every script match for a name
+  local prev first path found=0
+  read -r prev < <(shopt -p extdebug)
+  shopt -s extdebug
+  declare -F "$1" && found=1
+  eval "$prev"
+  read -r first < <(command -v "$1" 2>/dev/null)
+  [ -n "$first" ] && { printf 'command: %s\n' "$first" ; found=1 ;}
+  while read -r path; do
+    [ "$path" = "$first" ] && continue
+    printf 'script: %s\n' "$path"
+    found=1
+    done < <(which -a "$1" 2>/dev/null)
+  [ "$found" -eq 1 ] || { printf 'cmdloc: %s: not found\n' "$1" >&2; return 1 ;}
+  } # 6aa5b01c
+
 _help_skel() {
   cat 1>&2 <<'eof'
 >>>---
@@ -562,7 +581,8 @@ ctt () { #:> always truncate lines to width
     } # ct formally cattrunc
 
 _mksymdir () { # symlink directories named _* into {arg1}/_
-  # rev: 68ec2900 20251012 151726 PDT Sun 03:17 PM 12 Oct
+  # rev 68ec2900 20251012 151736 PDT Sun 03:17 PM 12 Oct 2025
+  # org 68bc9211 20250906 125705 PDT Sat 12:57 PM 6 Sep 2025
   local a= base=
   [ "$1" ] || { cat <<eof
   $FUNCNAME : symlink directories named _* into "{arg1}/_/"
@@ -590,8 +610,47 @@ eof
     rm -rf ./_/%%
     find ./_ -maxdepth 1 -type l -exec readlink {} \; >>_/link.log \
       && sort -u ./_/link.log >./_/link.log~ && mv -f ./_/link.log~ ./_/link.log
-  ) ;} # 68bc9211 20250906 125655 PDT Sat 12:56 PM 6 Sep
+  ) ;} # rev 68ec2900
 
+_mksymdir () { # symlink directories named _* into {arg1}/_
+  # rev 6aa58da0 20260912 103622 PDT Sat 10:36 AM 12 Sep 2025
+  # rev 68ec2900 20251012 151736 PDT Sun 03:17 PM 12 Oct 2025
+  # org 68bc9211 20250906 125705 PDT Sat 12:57 PM 6 Sep 2025
+  local a= base=
+  [ "$1" ] || { cat <<eof
+  $FUNCNAME : symlink directories named _* into "{arg1}/_/"
+  sans their leading '_' while pruning the search on them;
+  previous symlinks are removed, duplicates are not symlinked
+  and recorded in {arg1}/_/duplicate.err
+  68ec254f 20251012 150141
+eof
+  return 1 ;}
+  ( cdphy "$1" || { chkerr "not a directory: '$1' (687c45fe)" ; return 1 ;}
+    rm -rf "_/%%" && mkdir -p "_/%%" # reset tmp directory
+    cd _
+    uniq -d < <(sort < <(sed -e 's|.*/|/|' -e 's|$|$|' < <(
+      # First branch prunes silently, must precede the -name '_*' print branch.
+      # silent prune order: path ../v, path ../0, path ../pool, dir named "_", dir named "_darcs"
+      find -L .. \( -path '../v' -o -path '../0' -o -path '../pool' -o \( -type d \( -name '_' -o -name '_darcs' \) \) \) -prune \
+        -o \( -type d -name '_*' -prune -print \) ))) >./duplicate.err # record duplicates as regex for exclusion
+    while IFS= read a ; do
+      base=${a##*/} ; base=${base#_}
+      ln -s "$a" "./%%/$base"
+      touch -hr "$a" "./%%/$base"
+      # filter the duplicates, and also the target directory from the find
+      done < <(sed -e '/^\.\.\/_/d' < <(grep -vf ./duplicate.err < <(
+        find -L .. \( -path '../v' -o -path '../0' -o -path '../pool' -o \( -type d \( -name '_' -o -name '_darcs' \) \) \) -prune \
+          -o \( -type d -name '_*' -prune -print \) )))
+    find ./duplicate.err -empty -exec rm {} \; # delete the error file if empty
+    [ -e ./duplicate.err ] && { chkwrn "Excluded duplicates:" ; local p="$(cd .. ; pwd -P)"
+      sed "s=^/=  find '$p' -name =;s/\\$//" <./duplicate.err >&2 ;} ||: # help find dups...
+    cd ..
+    find ./_ -mindepth 1 -maxdepth 1 -type l -exec rm {} \; # remove prior symlinks
+    find ./_/%% -type l -exec mv {} ./_ \;
+    rm -rf ./_/%%
+    find ./_ -maxdepth 1 -type l -exec readlink {} \; >>_/link.log \
+      && sort -u ./_/link.log >./_/link.log~ && mv -f ./_/link.log~ ./_/link.log
+  ) ;} # rev 6aa58da0
 
 _youtube_comment_unflatten () { # convert comment text from _youtube_json2txt to ascii formatted
     # echo -e "$( yq -r . )" ... subshell, no \" and no utf
@@ -1067,7 +1126,7 @@ formfilestats () { # accept dir(s) as args, report unique formfile time and pitc
 
 # export c=100 ; rm -rf png/* ; for a in *Couperin-kbd*mp3 ; do b=$(sed -e 's/.*,//' <<<$a) ; echo $b ; done | sort | while read b ; do a=$(ls *$b) ; c=$(( ++c )) ; sox $a -n remix - trim 0 =3 -3 spectrogram -o png/${c},${a}.png ; echo -n .  ; done
 
-  # cd $link ; 
+  # cd $link ;
  # rm -rf tmp/png && mkdir -p tmp/png
  # { export c=100 ; while read a ; do c=$(( ++c )) ; sox $a -n spectrogram -d 5 --o tmp/png/${c},${a}.png ; tmp/png/${c},${a}.png ; done }
 
@@ -1075,14 +1134,14 @@ formfilestats () { # accept dir(s) as args, report unique formfile time and pitc
 # read xs < <(printf '%x\n' $EPOCHSECONDS) ; find . -maxdepth 1 -name \*y4DCSsWXAog\*mp3 | sort -k2 -t'^' -V | { while read a ; do sox $a -n spectrogram -d 5 -o tmp/png/${x},${a#./}.png ; echo "tmp/png/${x},${a#./}.png" ; done } | while read a ; do b=${a%.png} ; echo ${b#*,} ; ffplay -hide_banner -loglevel error -top 52 $a || break 1 ; done
 
 formfilespec () { # visual review of {link} audio heads/tails
- cd $link 
+ cd $link
   # | awk '{a[i++]=$0} END {for (j=i-1; j>=0;) print a[j--] }' \
  # rev: 68f662cd 20251020 092643 PDT
  local count= last= id= track=0
  [[ "$1" =~ ^[0-9]+$ ]] && count=$1 || count=10
  export verb=chkwrn count track
  sed 's/.*_^//;s/\..*//' < <(ls *mp3) | sort -u | head -n $count | tail \
-  | { while read a ; do 
+  | { while read a ; do
     find . -maxdepth 1 -name "*${a}*mp3" | sort -t'^' -k2 -V ; done ;} \
   | while read a ; do
     read id < <(sed 's/.*_^//;s/\..*//' <<<"$a")
