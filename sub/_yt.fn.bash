@@ -1,6 +1,34 @@
 #!/usr/bin/env bash
 #
+cat >/dev/null <<'eof'
+1 geo@AAAA:~/vcs/pub/sub _yt --ot https://youtu.be/8z7QFzDy-as?si=6zPu-z_SX4eoRxgK  /Users/geo/kdb//6/a/9/e/_yt_psych
+[youtube] Extracting URL: 8z7QFzDy-as
+[youtube] 8z7QFzDy-as: Downloading webpage
+[youtube] 8z7QFzDy-as: Downloading visionos player API JSON
+[youtube] 8z7QFzDy-as: Downloading m3u8 information
+[info] 8z7QFzDy-as: Downloading subtitles: en
+[info] 8z7QFzDy-as: Downloading 1 format(s): 616+251-20
+[info] Writing video subtitles to: /Users/geo/kdb//6/a/9/e/_yt_psych/foli/6a9e/ec28/6a9eec28,I_Used_to_Be_a_Scientist._Now_I_m_a_Substitute_Teacher_What_I_Learned_About_Status-20260901_^8z7QFzDy-as.en.vtt
+ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+>>> _yt : json not found (695f500d)
+1 geo@AAAA:~/vcs/pub/sub _yt --ot https://youtu.be/8z7QFzDy-as  /Users/geo/kdb//6/a/9/e/_yt_psych
+[youtube] Extracting URL: 8z7QFzDy-as
+[youtube] 8z7QFzDy-as: Downloading webpage
+[youtube] 8z7QFzDy-as: Downloading visionos player API JSON
+[youtube] 8z7QFzDy-as: Downloading m3u8 information
+[info] 8z7QFzDy-as: Downloading subtitles: en
+[info] 8z7QFzDy-as: Downloading 1 format(s): 616+251-20
+[info] Writing video subtitles to: /Users/geo/kdb//6/a/9/e/_yt_psych/foli/6a9e/ec47/6a9eec47,I_Used_to_Be_a_Scientist._Now_I_m_a_Substitute_Teacher_What_I_Learned_About_Status-20260901_^8z7QFzDy-as.en.vtt
+[download] Destination: /Users/geo/kdb//6/a/9/e/_yt_psych/foli/6a9e/ec47/6a9eec47,I_Used_to_Be_a_Scientist._Now_I_m_a_Substitute_Teacher_What_I_Learned_About_Status-20260901_^8z7QFzDy-as.en.vtt
+[download] 100% of  112.04KiB in 00:00:00 at 282.52KiB/s
+[info] Writing video metadata as JSON to: /Users/geo/kdb//6/a/9/e/_yt_psych/foli/6a9e/ec47/6a9eec47,I_Used_to_Be_a_Scientist._Now_I_m_a_Substitute_Teacher_What_I_Learned_About_Status-20260901_^8z7QFzDy-as.info.json
+><> /Users/geo/kdb//6/a/9/e/_yt_psych/foli/6a9e/ec47/6a9eec47,I_Used_to_Be_a_Scientist._Now_I_m_a_Substitute_Teacher_What_I_Learned_About_Status-20260901_^8z7QFzDy-as.en.vtt.txt
+ geo@AAAA:~/vcs/pub/sub mv /Users/geo/kdb//6/a/9/e/_yt_psych/foli/6a9e/ec47/6a9eec47,I_Used_to_Be_a_Scientist._Now_I_m_a_Substitute_Teacher_What_I_Learned_About_Status-20260901_^8z7QFzDy-as.en.vtt.txt /Users/geo/kdb//6/a/9/e/_yt_psych/
+eof
+# sanitize fails: https://www.youtube.com/watch?v=p-vXirtY0ys&t=49s&pp=0gcJCRsMAYcqIYzv
+#
 # (c) 2026 George Georgalis <george@galis.org> unlimited use with this notice
+# rev 6a777dfb 20260808 120531 PDT Sat 12:05 PM 8 Aug 2026 --- plan composition uplift
 # rev 69c9bcdb 20260329 165923 PDT Sun 04:59 PM 29 Mar 2026 --- playlist management
 # rev 69befaeb 20260321 130915 PDT Sat 01:09 PM 21 Mar 2026 --- playlist management
 # rev 695f5300 20260107 224728 PST Wed 10:47 PM 7 Jan 2026 --- yt-dlp wrapper suite for media download and organization
@@ -8,23 +36,84 @@
 # revision: https://github.com/georgalis/pub/blob/7520c3c0e4301e8698e64d669f1f8df4b4ecbe06/sub/fn.bash#L377
 # original: Feb 4, 2020 https://github.com/georgalis/pub/commit/0fa259132d6ea282c012115138727ab780b47a56
 #
+# 6a777dfb design: every option composes one execution plan; info.json is
+# always captured; -t -v add features to the default (audio) plan, while
+# --to --vo --jo suppress the audio default and run only the named
+# feature(s) (combinable). Staging *.info.json.txt files are downstream
+# processing bookmarks: created in the pending location (single-track: $d;
+# playlist aggregate: $d beside foli/), moved beside their info.json data
+# by the downstream process on completion---location encodes status.
+# Playlist per-track staging lives in the folio permanently. Staging files
+# are never overwritten: name collisions index the xs ({xs}2, {xs}3, ...).
+#
 # Directory Architecture:
 #   $d/                                    root (default ./)
-#   $d/00${xs},{template}.info.json.txt    f2rb2mp3 staging data (single track)
-#   $d/@/_^{id}.{ext}                      hardlinked media (programmatic access)
+#   $d/00{xs},{template}.info.json.txt     f2rb2mp3 staging data (single track, pending)
+#   $d/00{xs},{template}.{lang}.srt.txt    transcript beside pending staging (single track)
+#   $d/@/_^{id}.{ext}                      hardlinked audio (programmatic access, audio only)
 #   $d/foli/{xs_maj}/{xs_min}/             folio per download timestamp
-#     {xs},{template}.{ext}                original media + metadata + thumbnails
+#     {xs},{template}.{ext}                original media + metadata + thumbnails + srt
 #     {xs},{template}.com.yml              comment yaml (unless --nyc)
 #   Playlist: {xs}{playlist_index},{template}.{ext} in shared folio
-#     {xs},{playlist_title}-^{playlist_id}.meta.json   playlist metadata (--dump-single-json)
-#     {xs}{n},{template}.info.json.txt         per-track staging (in folio, sans 00)
-#     $d/00{xs}0,{playlist_title}-^{playlist_id}.list.txt   aggregated staging
+#     {xs},{playlist_title}-^{playlist_id}.meta.json   playlist metadata (single fetch, entries stripped)
+#     {xs}{n},{template}.info.json.txt         per-track staging (in folio, sans 00, permanent)
+#     $d/00{xs}0,{playlist_title}-^{playlist_id}.list.txt   aggregated staging (pending)
 #     {xs},{playlist_title}-^{playlist_id}.unavail.yml   unavailable track manifest
-#     Retry: reuses existing foli, new list.txt gets current session xs
+#     Retry: reuses existing foli and its xs; list.txt collisions index the xs
 #
+# Subtitles: -t runs a dedicated srt pass (upstream srt preferred,
+#   converted from best otherwise); no vtt artifacts. The transcript
+#   carries a meta header and inline chapter markers, and follows the
+#   staging convention: playlist -> folio sans 00, single -> $d with 00
 # xs derivation: ts function (hex epoch), header via ts_header
-# Timestamps: original files use epoch mtime, derived files use ts mtime
-# Dependencies: $ytdl, $kdb (validated), ts, jq, yq, nbsed, iconv
+# Timestamps: original files (media, subs, thumbnails) use epoch mtime,
+#             derived files (json, txt, yml) use ts mtime
+# Duplicate detection root: $_yt_root (default $d/..), for both single-track
+#   media and playlist marker search; find prunes only "-name tmp"
+# Retry: failed ytdl invocations clean partials and retry, $_yt_tries
+#   attempts total (default 3) after $_yt_delay seconds (default 15)
+# Dependencies: $ytdl (yt-dlp), ffmpeg (sub convert, video merge), ts, jq, yq, nbsed, iconv, chkerr chkwrn chktrue
+
+# --- portable epoch date (GNU: date -d @epoch; BSD/Darwin: date -r epoch)
+date --version &>/dev/null \
+  && { _yt_dfmt='-d' ; _yt_at='@' ;} \
+  || { _yt_dfmt='-r' ; _yt_at='' ;}
+_yt_date () { date "$_yt_dfmt" "${_yt_at}$1" "$2" ;} # _yt_date EPOCH +FMT
+
+# =============================================================================
+# _yt_dl --- retried ytdl invocation with output filter and partial cleanup
+# =============================================================================
+
+_yt_dl () { # run ytdl argv with noise filter; on failure clean partials, delay, retry
+  # dynamic scope: $dx (session folio) bounds partial-download cleanup
+  local try=1 tries="${_yt_tries:-3}" delay="${_yt_delay:-15}" rc=
+  while : ; do
+    "$@" 2>&1 | { nbsed -l '/^\[youtube\] Sleeping/d;/API JSON reply thread/d;/replies API JSON page/d;/Downloading video thumbnail/d;/Video Thumbnail .* does not exist/d' || true ;}
+    rc="${PIPESTATUS[0]}" ; [ "$rc" -eq 0 ] && return 0
+    [ "$try" -ge "$tries" ] && { chkerr "$FUNCNAME : ytdl exit $rc after $try attempts (6a777d01)" ; return "$rc" ;}
+    chkwrn "$FUNCNAME : ytdl exit $rc, cleaning partials, attempt $((try+1))/$tries in ${delay}s (6a777d02)"
+    # partial artifacts only---never pre-existing data (name class hard coded)
+    [ -d "${dx:-}" ] && { find "$dx/" -maxdepth 1 \
+      \( -name '*.part' -o -name '*.part-Frag*' -o -name '*.ytdl' \) \
+      -exec rm -f {} + 2>/dev/null || : ;} || :
+    sleep "$delay" ; try=$((try+1))
+  done ;} # _yt_dl 6a777d00
+
+_yt_have () { # track complete in folio: _yt_have FOLIO ID [WANT_MEDIA]
+  # keyed on id: flat playlist data carries no upload_date to match filenames
+  # note: read -d '' always signals at eof, so test the variable, not the read
+  local fdx="${1:?}" tid="${2:?}" want_media="${3:-}" hit=
+  read -d '' hit < <(find "$fdx/" -maxdepth 1 -name "*_^${tid}.info.json" 2>/dev/null) || :
+  [ "$hit" ] || return 1
+  [ "$want_media" ] || return 0
+  hit=
+  read -d '' hit < <(find "$fdx/" -maxdepth 1 -name "*_^${tid}.*" \
+    \( -name "*.opus" -o -name "*.m4a" -o -name "*.mp3" -o -name "*.webm" \) 2>/dev/null) || :
+  [ "$hit" ] || return 1
+  return 0 ;} # _yt_have 6a777d50
+
+_yt_rmdir_empty () { # remove session folio dirs if empty (failure cleanup)
+  rmdir "${1:?}" 2>/dev/null || : ; rmdir "${1%/*}" 2>/dev/null || : ;} # 6a777d40
 
 # =============================================================================
 # _yt --- primary entry for yt-dlp download and organization
@@ -32,61 +121,62 @@
 
 _yt () { # ytdl wrapper: download media, organize folio, create staging txt
   local id= d= ytdl=${ytdl:-yt-dlp} verb=${verb:-devnul}
-  local opt_playlist= opt_srt= opt_vtt= opt_video= opt_video_res=
-  local opt_nc= opt_nyc= opt_json_only= opt_utf8= opt_no_expand=
-  local opt_only_vtt= opt_only_srt=
-  local xs= xs_date= xs_time= dx= existing= json_path= ext= media_file=
+  local opt_playlist= opt_ta= opt_nc= opt_nyc= opt_utf8= opt_no_expand=
+  local do_audio=1 do_subs= do_video= do_thumbs= opt_video_res= video_req= sub_langs=
+  local xs= xs_date= xs_time= dx= existing=
   local ts_touchtime= epoch= epoch_touchtime=
-  local playlist_id= playlist_title= opt_retry= retry_items= existing_xs= new_xs=
+  local playlist_id= playlist_title= safe_title= opt_retry= retry_items= existing_xs=
+  local pl_json= pl_entries=()
   local OPTIND=1 OPTARG= opt=
 
   # --- help dispatch
   [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ] && { _yt_help ; return 0 ;}
 
-  # --- pre-scan for long options before getopts
-  local args=() arg=
+  # --- pre-scan for long options before getopts ("--" passes the rest verbatim)
+  local args=() arg= sawdd= vpend=
   for arg in "$@" ; do
+    [ "$sawdd" ] && { args+=("$arg") ; continue ;}
+    [ "$vpend" ] && { vpend=
+      [[ "$arg" =~ ^[0-9]+$ ]] && { video_req="$arg" ; continue ;} || : ;} # non-numeric: default set, arg falls through
     case "$arg" in
-      --video=*) opt_video=1 ; opt_video_res="bestvideo[height<=${arg#*=}]+bestaudio/best" ;;
+      --to) do_subs=1 ; do_audio= ;;
+      --vo) do_video=1 ; do_audio= ;;
+      --jo) do_audio= ;;
+      --ta) opt_ta=1 ; do_subs=1 ;;
+      --video=*) do_video=1 ; video_req="${arg#*=}" ;;
+      --video) do_video=1 ; vpend=1 ;; # numeric next arg is RES, else default set
       --nc) opt_nc=1 ;;
       --nyc) opt_nyc=1 ;;
-      --ot) opt_only_vtt=1 ;;
-      --os) opt_only_srt=1 ;;
       --help) _yt_help ; return 0 ;;
-      --video) ;; # handled in second pass with its argument
-      --*) ;; # ignore other long opts for now
+      --) sawdd=1 ; args+=("$arg") ;;
+      --*) chkerr "$FUNCNAME : unknown option '$arg' (6a777d10)" ; return 1 ;;
       *) args+=("$arg") ;;
     esac
   done
 
   # --- getopts for short options (allows -tv, -vt, etc)
   set -- "${args[@]}"
-  while getopts ":pstvVjuxh" opt ; do
+  while getopts ":ptvVjuxh" opt ; do
     case "$opt" in
       p) opt_playlist=1 ;;
-      s) opt_srt=1 ;;
-      t) opt_vtt=1 ;;
-      v) opt_video=1 ; opt_video_res="bestvideo[height<=720][fps<=60]+bestaudio/best" ;;
-      V) opt_video=1 ; opt_video_res="bestvideo+bestaudio/best" ;;
-      j) opt_json_only=1 ;;
+      t) do_subs=1 ;;
+      v) do_video=1 ;;         # resolution from default set (see video_req)
+      V) do_video=1 ; video_req=max ;;
+      j) : ;;                  # info.json always captured---default alias
       u) opt_utf8=1 ;;
       x) opt_no_expand=1 ;;
       h) _yt_help ; return 0 ;;
       :) chkerr "$FUNCNAME : option -$OPTARG requires argument (695f5001)" ; return 1 ;;
-      \?) ;; # ignore unknown, may be positional starting with -
+      \?) chkerr "$FUNCNAME : unknown option '-$OPTARG', use -- before ids with leading dash (6a777d11)" ; return 1 ;;
     esac
   done
   shift $((OPTIND - 1))
 
-  # --- parse remaining args (handle --video VALUE and positionals)
+  # --- parse positionals
   while [ $# -gt 0 ] ; do
-    case "$1" in
-      --video) opt_video=1 ; opt_video_res="bestvideo[height<=${2}]+bestaudio/best" ; shift 2 ;;
-      -*) chkerr "$FUNCNAME : unknown option '$1' (695f5002)" ; return 1 ;;
-      *) [ -z "$id" ] && { id="$1" ; shift ; continue ;}
-         [ -z "$d" ] && { d="$1" ; shift ; continue ;}
-         chkerr "$FUNCNAME : unexpected arg '$1' (695f5003)" ; return 1 ;;
-    esac
+    [ -z "$id" ] && { id="$1" ; shift ; continue ;}
+    [ -z "$d" ] && { d="$1" ; shift ; continue ;}
+    chkerr "$FUNCNAME : unexpected arg '$1' (695f5003)" ; return 1
   done
 
   # --- input validation
@@ -95,7 +185,10 @@ _yt () { # ytdl wrapper: download media, organize folio, create staging txt
   read id < <(sed -e 's/[?&]si=[[:alnum:]_-]\{16\}[&]*//' -e 's/\?$//' <<<"$id") # strip trackers
   d="${d:-.}"
   [ -d "$d" ] || mkdir -p "$d" || { chkerr "$FUNCNAME : invalid dir '$d' (695f5006)" ; return 1 ;}
-  [ -d "$kdb" ] || { chkerr "$FUNCNAME : \$kdb not set to directory (695f5007)" ; return 1 ;}
+
+  # --- duplicate detection root (single-track media and playlist markers)
+  local _yt_root="${_yt_root:-${d}/..}"
+  [ -d "$_yt_root" ] || _yt_root="${d}/.."
 
   # --- timestamp via ts function
   # ts output: 695f4d58 20260107 222320 PST Wed 10:23 PM  7 Jan 2026
@@ -105,49 +198,46 @@ _yt () { # ytdl wrapper: download media, organize folio, create staging txt
   ts_header="$ts_out"
   # construct touchtime CCYYMMDDhhmm.SS from xs_date (CCYYMMDD) and xs_time (hhmmSS)
   ts_touchtime="${xs_date}${xs_time:0:4}.${xs_time:4:2}"
-  new_xs="$xs" # preserve current session xs for retry staging txt naming
 
   # --- @ dir setup (needed for all paths including retry)
   [ -d "$d/@" ] || mkdir -p "$d/@" || { chkerr "$FUNCNAME : cannot mkdir '$d/@' (695f5009)" ; return 1 ;}
 
-  # --- pre-check: playlist resolution or single-track id extraction
-  local yt_root="${yt_root:-${d}/..}"
+  # --- pre-check: playlist resolution (single json fetch) or single-track id resolution
   [ "$opt_playlist" ] && {
-    # preserve id as playlist URL for download; extract playlist_id and playlist_title
-    { read playlist_id ; read playlist_title ;} < <($ytdl --flat-playlist --no-warnings --ignore-config \
-      --print playlist_id --print playlist_title -- "$id" | head -2)
-    [ "$playlist_id" ] || { chkerr "$FUNCNAME : no playlist_id from '$id' (695f5017)" ; return 1 ;}
-    local safe_title=
+    read -rd '' pl_json < <($ytdl --flat-playlist --no-warnings --ignore-config \
+      --dump-single-json -- "$id") || :
+    [ "$pl_json" ] || { chkerr "$FUNCNAME : no playlist data from '$id' (695f5017)" ; return 1 ;}
+    read -r playlist_id < <(jq -r '.id // empty' <<<"$pl_json") || :
+    read -r playlist_title < <(jq -r '.title // empty' <<<"$pl_json") || :
+    [ "$playlist_id" ] || { chkerr "$FUNCNAME : no playlist_id from '$id' (6a777d12)" ; return 1 ;}
     read safe_title < <(printf '%s' "$playlist_title" \
       | tr -cs 'A-Za-z0-9_.-' '_' | sed 's/__*/_/g;s/^_//;s/_$//')
-    # duplicate check against marker files in yt_root
-    [ -d "$yt_root" ] || yt_root="${d}/.."
-    read -d '' existing < <(find "$yt_root" -name "*-^${playlist_id}.meta.json" 2>/dev/null \
-      | sort -r) || :
+    # entries reused for retry scan and post-download unavailability report;
+    # flat extraction omits upload_date, so presence is keyed on id alone and
+    # availability on the placeholder title yt-dlp returns for dead entries
+    readarray -t pl_entries < <(jq -r '
+      [.entries[]?] | to_entries[] |
+      "\(.value.playlist_index // (.key + 1))\t\(.value.id // "")\t" +
+      (if ((.value.title // "") | test("^\\[(private|deleted|unavailable)"; "i"))
+        then "u" else "" end)' <<<"$pl_json")
+    # duplicate check against marker files under _yt_root
+    read -d '' existing < <(find "$_yt_root" -name tmp -prune -false \
+      -o -name "*-^${playlist_id}.meta.json" -print 2>/dev/null | sort -r) || :
     [ "$existing" ] && {
       echo "$existing"
-      read -n1 -p "playlist found, (a)bort/(c)ontinue/(r)etry missing? " ; echo
+      read -n1 -p "playlist found, (a)bort/(c)ontinue new foli/(r)esume missing? " ; echo
       case "$REPLY" in
         c) ;; # fresh download to new foli
         r) # retry missing tracks into existing foli
           existing_xs="${existing##*/}" ; existing_xs="${existing_xs%%,*}"
           local existing_dx="${existing%/*}"
-          local expected=() missing_items=() unavail_items=() line= pi= ud= tid=
+          local missing_items=() unavail_items=() line= pi= tid= flag=
           local unavail_file="$existing_dx/${existing_xs},${safe_title}-^${playlist_id}.unavail.yml"
-          readarray -t expected < <($ytdl --flat-playlist --no-warnings --ignore-config \
-            --print "%(playlist_index)s %(upload_date)s %(id)s" -- "$id")
-          for line in "${expected[@]}" ; do
-            read pi ud tid <<<"$line"
-            if [ "$ud" = "NA" ] || [ -z "$ud" ] ; then
-              # unavailable track: no upload_date means yt-dlp cannot access it
-              read -d '' _ < <(find "$existing_dx/" -maxdepth 1 \
-                -name "*_^${tid}.info.json" 2>/dev/null) \
-                || unavail_items+=("$pi:$tid")
-            else
-              read -d '' _ < <(find "$existing_dx/" -maxdepth 1 \
-                -name "*-${ud}_^${tid}.info.json" 2>/dev/null) \
-                || missing_items+=("$pi")
-            fi
+          for line in "${pl_entries[@]}" ; do
+            IFS=$'\t' read pi tid flag <<<"$line"
+            [ "$tid" ] || continue
+            _yt_have "$existing_dx" "$tid" "$do_audio" && continue || :
+            [ "$flag" = u ] && unavail_items+=("$pi:$tid") || missing_items+=("$pi")
           done
           # report unavailable tracks
           [ ${#unavail_items[@]} -gt 0 ] && {
@@ -174,15 +264,31 @@ _yt () { # ytdl wrapper: download media, organize folio, create staging txt
       esac
     } || :
   } || {
-    # single-track: resolve id and acodec, check kdb for duplicates
-    read id ext < <($ytdl --no-playlist --no-warnings --ignore-config --no-check-formats --geo-bypass \
-      --print id --print "%(acodec)s" -- "$id") \
+    # single-track: resolve id, check _yt_root for duplicates
+    read id < <($ytdl --no-playlist --no-warnings --ignore-config --no-check-formats --geo-bypass \
+      --print id -- "$id") \
       || { chkerr "$FUNCNAME : failed to load data '$id' (695f500c)" ; return 1 ;}
-    read -d '' existing < <(sort -r < <(find -E "$kdb" -regex "$kdb/.*/(tmp|0)" -prune -false -o -name "*${id}*")) || :
+    read -d '' existing < <(sort -r < <(find "$_yt_root" -name tmp -prune -false \
+      -o -name "*${id}*" -print 2>/dev/null)) || :
     [ "$existing" ] && { echo "$existing"
       read -p "files found, continue (N/y) "
       [ "$REPLY" = "y" ] || return 1 ;} || :
   }
+
+  # --- video resolution plan (after id resolution, before download)
+  [ "$do_video" ] && {
+    case "$video_req" in
+      max) opt_video_res="bestvideo+bestaudio/best" ;;
+      0) [ "$opt_playlist" ] && { chkerr "$FUNCNAME : interactive resolution needs single track, set RES (6a777d13)" ; return 1 ;} || :
+         $ytdl -F --no-warnings -- "$id"
+         read -p "height? " video_req
+         [[ "$video_req" =~ ^[1-9][0-9]*$ ]] || { chkerr "$FUNCNAME : invalid height '$video_req' (6a777d14)" ; return 1 ;}
+         opt_video_res="bestvideo[height<=${video_req}]+bestaudio/best" ;;
+      "") # first available from the default resolution set
+         opt_video_res="bestvideo[height=1080]+bestaudio/bestvideo[height=720]+bestaudio/bestvideo[height=480]+bestaudio/bestvideo[height=360]+bestaudio/bestvideo+bestaudio/best" ;;
+      *) opt_video_res="bestvideo[height<=${video_req}]+bestaudio/best" ;;
+    esac
+  } || :
 
   # --- folio setup (skip for retry, existing foli reused)
   [ "$opt_retry" ] || {
@@ -191,56 +297,21 @@ _yt () { # ytdl wrapper: download media, organize folio, create staging txt
     mkdir -p "$dx" || { chkerr "$FUNCNAME : cannot mkdir '$dx' (695f500b)" ; return 1 ;}
   }
 
-  # --- only-vtt mode (download vtt + json, create txt)
-  [ "$opt_only_vtt" ] && {
-    $ytdl --write-info-json --no-warnings --restrict-filenames --skip-download --no-playlist \
-      --write-sub --write-auto-sub --sub-langs "en,en-US,en-GB,en-AU" \
-      -o "$dx/${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" -- "$id" 2>&1 \
-      | { nbsed -l '/^\[youtube\] Sleeping/d;/Downloading video thumbnail/d' || true ;}
-    read -d '' json_path < <(find "$dx/" -maxdepth 1 -name "*${id}.info.json") || true
-    [ -e "$json_path" ] || { chkerr "$FUNCNAME : json not found (695f500d)" ; return 1 ;}
-    # set ts mtime on json
-    touch -t "$ts_touchtime" "$json_path"
-    # process vtt files
-    local vtt_files=() vtt_file=
-    readarray -t vtt_files < <(find "$dx/" -maxdepth 1 -name "*${id}*.vtt" 2>/dev/null)
-    [ ${#vtt_files[@]} -gt 0 ] || { chkwrn "$FUNCNAME : no vtt files found (695f500e)" ; return 0 ;}
-    # set epoch mtime on vtt from json
-    read epoch < <(jq -r '.timestamp // empty' "$json_path") || true
-    [ "$epoch" ] && {
-      epoch_touchtime=$(date -r "$epoch" +"%Y%m%d%H%M.%S")
-      for vtt_file in "${vtt_files[@]}" ; do
-        touch -t "$epoch_touchtime" "$vtt_file"
-      done
-    }
-    # create transcripts
-    for vtt_file in "${vtt_files[@]}" ; do
-      _yt_vtt_txt "$vtt_file" && touch -t "$ts_touchtime" "${vtt_file}.txt"
-    done
-    return 0 ;}
-
-  # --- only-srt mode (future implementation)
-  [ "$opt_only_srt" ] && {
-    chkwrn "$FUNCNAME : --os (only srt) not yet implemented (695f500f)"
-    return 1 ;}
-
-  # --- json-only mode
-  [ "$opt_json_only" ] && {
-    local json_opts="--write-info-json --no-warnings --restrict-filenames --skip-download --no-playlist"
-    [ "$opt_nc" ] || json_opts="$json_opts --write-comments"
-    [ "$opt_nc" ] || json_opts="$json_opts --extractor-args youtube:max_comments=all,all,all,all;comment_sort=newest"
-    $ytdl $json_opts -o "$dx/${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s" -- "$id" \
-      || { chkerr "$FUNCNAME : json download failed (695f5010)" ; return 1 ;}
-    read -d '' json_path < <(find "$dx/" -maxdepth 1 -name "*${id}.info.json") || true
-    [ -e "$json_path" ] && { touch -t "$ts_touchtime" "$json_path" ; chktrue "$json_path" ;}
-    return 0 ;}
-
-  # --- build ytdl command options
-  local ytdl_opts="--write-info-json --no-warnings --write-thumbnail --restrict-filenames"
-  [ "$opt_nc" ] || ytdl_opts="$ytdl_opts --write-comments"
-  [ "$opt_playlist" ] && ytdl_opts="$ytdl_opts --yes-playlist" || ytdl_opts="$ytdl_opts --no-playlist"
-  [ "$opt_srt" ] && ytdl_opts="$ytdl_opts --write-sub --sub-langs en,en-US,en-GB,en-AU --sub-format srt"
-  [ "$opt_vtt" ] && ytdl_opts="$ytdl_opts --write-sub --write-auto-sub --sub-langs en,en-US,en-GB,en-AU"
+  # --- execution plan: one primary pass (json always; audio default; subs on
+  #     request), one video pass on request; thumbnails accompany media
+  { [ "$do_audio" ] || [ "$do_video" ] ;} && do_thumbs=1 || :
+  sub_langs="en-US,en-GB,en-AU,en"
+  [ "$opt_ta" ] && sub_langs="en.*,${sub_langs}" || : # include auto-translated english
+  local ytdl_opts=(--write-info-json --no-warnings --restrict-filenames)
+  [ "$do_thumbs" ] && ytdl_opts+=(--write-thumbnail) || :
+  [ "$opt_nc" ] || ytdl_opts+=(--write-comments \
+    --extractor-args 'youtube:max_comments=all,all,all,all;comment_sort=newest')
+  [ "$opt_playlist" ] && ytdl_opts+=(--yes-playlist) || ytdl_opts+=(--no-playlist)
+  # subtitles ride the dedicated srt pass below (no vtt artifacts)
+  local media_opts=() dl_items=() dl_err_mode=
+  [ "$do_audio" ] && media_opts=(-f bestaudio --extract-audio) || media_opts=(--skip-download)
+  [ "$opt_retry" ] && dl_items=(--playlist-items "$retry_items") || :
+  [ "$opt_playlist" ] && dl_err_mode="--ignore-errors" || dl_err_mode="--abort-on-error"
 
   # --- output template
   local tmpl=
@@ -248,54 +319,57 @@ _yt () { # ytdl wrapper: download media, organize folio, create staging txt
     && tmpl="$dx/${xs}%(playlist_index)s,%(title)s-%(upload_date)s_^%(id)s.%(ext)s" \
     || tmpl="$dx/${xs},%(title)s-%(upload_date)s_^%(id)s.%(ext)s"
 
-  # --- extractor args for full comment depth (unless --nc)
-  local extractor_args=
-  [ "$opt_nc" ] || extractor_args='--extractor-args youtube:max_comments=all,all,all,all;comment_sort=newest'
+  # --- playlist marker file from pre-check fetch, written before download so
+  #     an interrupted session leaves a detectable partial (skip for retry)
+  [ "$opt_playlist" ] && [ -z "$opt_retry" ] && {
+    jq 'del(.entries)' <<<"$pl_json" >"$dx/${xs},${safe_title}-^${playlist_id}.meta.json" \
+      || { chkerr "$FUNCNAME : cannot write playlist marker (6a777d1b)" ; return 1 ;}
+  } || :
 
-  # --- execute download: audio first (produces linkable file), then video if requested
-  # note: nbsed exit isolated to prevent SIGPIPE from aborting ytdl
-  local dl_items= dl_err_mode=
-  [ "$opt_retry" ] && dl_items="--playlist-items $retry_items"
-  [ "$opt_playlist" ] && dl_err_mode="--ignore-errors" || dl_err_mode="--abort-on-error"
-  $ytdl $ytdl_opts $dl_items -f bestaudio --extract-audio $dl_err_mode \
-    $extractor_args \
-    -o "$tmpl" -- "$id" 2>&1 \
-    | { nbsed -l '/^\[youtube\] Sleeping/d;/API JSON reply thread/d;/replies API JSON page/d;/Downloading video thumbnail/d;/Video Thumbnail .* does not exist/d' || true ;}
+  # --- primary pass (retried, partials cleaned on failure)
+  _yt_dl $ytdl "${ytdl_opts[@]}" "${media_opts[@]}" "$dl_err_mode" "${dl_items[@]}" \
+    -o "$tmpl" -- "$id" \
+    || { _yt_rmdir_empty "$dx" ; chkerr "$FUNCNAME : primary download failed (6a777d15)" ; return 1 ;}
+
+  # --- srt pass if subs requested (upstream srt preferred, converted from
+  #     best otherwise; the only subtitle artifact retained)
+  [ "$do_subs" ] && {
+    local srt_pl_opt=--no-playlist
+    [ "$opt_playlist" ] && srt_pl_opt=--yes-playlist
+    _yt_dl $ytdl --skip-download --no-warnings --restrict-filenames \
+      "$srt_pl_opt" "${dl_items[@]}" \
+      --write-subs --write-auto-subs --sub-langs "$sub_langs" \
+      --sub-format "srt/best" --convert-subs srt \
+      -o "$tmpl" -- "$id" \
+      || chkwrn "$FUNCNAME : srt pass failed (6a777d1a)"
+  } || :
 
   # --- video pass if requested (merged output, metadata already captured)
-  [ "$opt_video" ] && {
+  [ "$do_video" ] && {
     local ffmpeg_loc=
-    read ffmpeg_loc < <(which ffmpeg8 2>/dev/null || which ffmpeg) || true
+    read ffmpeg_loc < <(which ffmpeg8 2>/dev/null || which ffmpeg) || :
     local vid_pl_opt=--no-playlist
     [ "$opt_playlist" ] && vid_pl_opt=--yes-playlist
-    $ytdl --restrict-filenames --no-warnings \
+    _yt_dl $ytdl --restrict-filenames --no-warnings \
       ${ffmpeg_loc:+--ffmpeg-location "$ffmpeg_loc"} \
-      -f "$opt_video_res" $dl_err_mode $vid_pl_opt $dl_items \
-      -o "$tmpl" -- "$id" 2>&1 \
-      | { nbsed -l '/^\[youtube\] Sleeping/d;/Downloading video thumbnail/d' || true ;}
-  } || true
+      -f "$opt_video_res" "$dl_err_mode" "$vid_pl_opt" "${dl_items[@]}" \
+      -o "$tmpl" -- "$id" \
+      || chkwrn "$FUNCNAME : video pass failed (6a777d16)"
+  } || :
 
-  # --- playlist marker file (skip for retry, marker already exists)
+  # --- playlist marker mtime (content written pre-download)
   [ "$opt_playlist" ] && [ -z "$opt_retry" ] && {
-    $ytdl --flat-playlist --no-warnings --ignore-config --dump-single-json -- "$id" \
-      | jq 'del(.entries)' >"$dx/${xs},${safe_title}-^${playlist_id}.meta.json"
     touch -t "$ts_touchtime" "$dx/${xs},${safe_title}-^${playlist_id}.meta.json"
   } || :
 
-  # --- playlist post-download: report unavailable tracks (initial download only)
+  # --- playlist post-download: report unavailable tracks (initial download
+  #     only, entries reused from pre-check fetch)
   [ "$opt_playlist" ] && [ -z "$opt_retry" ] && {
-    local pd_expected=() pd_line= pd_pi= pd_ud= pd_tid= pd_unavail=()
-    readarray -t pd_expected < <($ytdl --flat-playlist --no-warnings --ignore-config \
-      --print "%(playlist_index)s %(upload_date)s %(id)s" -- "$id")
-    for pd_line in "${pd_expected[@]}" ; do
-      read pd_pi pd_ud pd_tid <<<"$pd_line"
-      if [ "$pd_ud" = "NA" ] || [ -z "$pd_ud" ] ; then
-        read -d '' _ < <(find "$dx/" -maxdepth 1 -name "*_^${pd_tid}.info.json" 2>/dev/null) \
-          || pd_unavail+=("$pd_pi:$pd_tid")
-      else
-        read -d '' _ < <(find "$dx/" -maxdepth 1 -name "*-${pd_ud}_^${pd_tid}.info.json" 2>/dev/null) \
-          || pd_unavail+=("$pd_pi:$pd_tid")
-      fi
+    local pd_line= pd_pi= pd_tid= pd_flag= pd_unavail=()
+    for pd_line in "${pl_entries[@]}" ; do
+      IFS=$'\t' read pd_pi pd_tid pd_flag <<<"$pd_line"
+      [ "$pd_tid" ] || continue
+      _yt_have "$dx" "$pd_tid" "$do_audio" || pd_unavail+=("$pd_pi:$pd_tid")
     done
     [ ${#pd_unavail[@]} -gt 0 ] && {
       local unavail_file="$dx/${xs},${safe_title}-^${playlist_id}.unavail.yml"
@@ -314,10 +388,11 @@ _yt () { # ytdl wrapper: download media, organize folio, create staging txt
   } || :
 
   # --- per-track post-processing (unified iteration: N=1 for single, N=many for playlist)
-  local json_files=() jf= track_id= track_ext= track_media=
+  local json_files=() jf= track_id= track_ext= track_media= media_master= srt_file=
   readarray -t json_files < <(find "$dx/" -maxdepth 1 -name "*.info.json" \
     ! -name "*.meta.json" | sort)
-  [ ${#json_files[@]} -gt 0 ] || { chkerr "$FUNCNAME : no json files in '$dx/' (695f5019)" ; return 1 ;}
+  [ ${#json_files[@]} -gt 0 ] || { _yt_rmdir_empty "$dx"
+    chkerr "$FUNCNAME : no json files in '$dx/' (695f5019)" ; return 1 ;}
 
   for jf in "${json_files[@]}" ; do
     # --- extract track_id from json
@@ -326,7 +401,7 @@ _yt () { # ytdl wrapper: download media, organize folio, create staging txt
 
     # --- extract epoch for original file timestamps
     read epoch < <(jq -r '.timestamp // empty' "$jf") || :
-    [ "$epoch" ] && epoch_touchtime=$(date -r "$epoch" +"%Y%m%d%H%M.%S") \
+    [ "$epoch" ] && epoch_touchtime=$(_yt_date "$epoch" +"%Y%m%d%H%M.%S") \
       || epoch_touchtime="$ts_touchtime"
 
     # --- set ts mtime on json (derived file)
@@ -340,33 +415,38 @@ _yt () { # ytdl wrapper: download media, organize folio, create staging txt
       [ -f "$track_media" ] && track_ext="${track_media##*.}" || track_ext="opus"
     } || :
 
-    # --- locate audio media
-    read -d '' track_media < <(find "$dx/" -mindepth 1 -maxdepth 1 \
-      -name "*${track_id}.${track_ext}") || :
-    [ -f "$track_media" ] || { chkwrn "$FUNCNAME : media not found '*${track_id}.${track_ext}' (695f501b)" ; continue ;}
-
-    # --- set epoch mtime on original media and thumbnails
-    touch -t "$epoch_touchtime" "$track_media"
+    # --- set epoch mtime on thumbnails and video (original files)
     find "$dx/" -maxdepth 1 -name "*${track_id}*" \
       \( -name "*.webp" -o -name "*.jpg" -o -name "*.png" \) \
       -exec touch -t "$epoch_touchtime" {} \; 2>/dev/null || :
+    [ "$do_video" ] && { find "$dx/" -maxdepth 1 -name "*${track_id}*" \
+      \( -name "*.mp4" -o -name "*.mkv" -o -name "*.mov" -o -name "*.webm" \) \
+      -exec touch -t "$epoch_touchtime" {} \; 2>/dev/null || : ;} || :
 
-    # --- hardlink media
-    ln -f "$track_media" "$d/@/_^${track_id}.${track_ext}"
+    # --- audio media: epoch mtime and @ hardlink (audio plan only)
+    media_master="$d/@/_^${track_id}.${track_ext}" # prospective when no audio pass
+    [ "$do_audio" ] && {
+      read -d '' track_media < <(find "$dx/" -mindepth 1 -maxdepth 1 \
+        -name "*${track_id}.${track_ext}") || :
+      [ -f "$track_media" ] || { chkwrn "$FUNCNAME : media not found '*${track_id}.${track_ext}' (695f501b)" ; continue ;}
+      touch -t "$epoch_touchtime" "$track_media"
+      ln -f "$track_media" "$media_master"
+    } || :
 
-    # --- staging txt: playlist -> folio (sans 00 prefix); single -> $d (with 00 prefix)
+    # --- staging txt: playlist -> folio (sans 00 prefix); single -> $d (with 00
+    #     prefix, pending); never overwritten, xs indexed on collision
     [ "$opt_playlist" ] && {
       [ -f "$dx/${jf##*/}.txt" ] && {
         $verb "staging txt exists, skipping: $dx/${jf##*/}.txt"
       } || {
-        _yt_json_txt "$jf" "$d/@/_^${track_id}.${track_ext}" "$dx" "$ts_touchtime" "$ts_header"
-        mv "$dx/00${jf##*/}.txt" "$dx/${jf##*/}.txt"
+        _yt_json_txt "$jf" "$media_master" "$dx" "$ts_touchtime" "$ts_header" \
+          && mv "$_yt_json_txt_out" "$dx/${jf##*/}.txt"
       }
     } || {
       [ -f "$d/00${jf##*/}.txt" ] && {
         $verb "staging txt exists, skipping: $d/00${jf##*/}.txt"
       } || {
-        _yt_json_txt "$jf" "$d/@/_^${track_id}.${track_ext}" "$d" "$ts_touchtime" "$ts_header"
+        _yt_json_txt "$jf" "$media_master" "$d" "$ts_touchtime" "$ts_header"
       }
     }
 
@@ -378,25 +458,40 @@ _yt () { # ytdl wrapper: download media, organize folio, create staging txt
       _yt_com_json_yml $com_opts "$jf" "$ts_touchtime" || $verb "comment extraction skipped for $track_id"
     }
 
-    # --- vtt transcript if downloaded
-    [ "$opt_vtt" ] && {
-      local track_vtts=()
-      readarray -t track_vtts < <(find "$dx/" -maxdepth 1 -name "*${track_id}*.vtt" 2>/dev/null)
-      for vtt_file in "${track_vtts[@]}" ; do
-        touch -t "$epoch_touchtime" "$vtt_file"
-        _yt_vtt_txt "$vtt_file" && touch -t "$ts_touchtime" "${vtt_file}.txt" \
-          || chkwrn "$FUNCNAME : vtt_txt failed '$vtt_file' (695f5014)"
+    # --- subtitles: srt original to epoch mtime, transcript (meta header,
+    #     inline chapters from json) written to its final path with ts mtime;
+    #     placement follows staging: playlist -> folio sans 00; single -> $d
+    #     pending with 00; existing transcripts are never overwritten
+    [ "$do_subs" ] && {
+      local track_srts=() srt_txt=
+      readarray -t track_srts < <(find "$dx/" -maxdepth 1 -name "*${track_id}*.srt" 2>/dev/null)
+      for srt_file in "${track_srts[@]}" ; do
+        touch -t "$epoch_touchtime" "$srt_file"
+        [ "$opt_playlist" ] \
+          && srt_txt="$dx/${srt_file##*/}.txt" \
+          || srt_txt="$d/00${srt_file##*/}.txt"
+        [ -f "$srt_txt" ] && { $verb "srt transcript exists, skipping: $srt_txt" ; continue ;} || :
+        _yt_srt_txt "$srt_file" "$jf" "$srt_txt" && touch -t "$ts_touchtime" "$srt_txt" \
+          || chkwrn "$FUNCNAME : srt_txt failed '$srt_file' (6a777d18)"
       done
     } || :
 
   done
 
-  # --- playlist aggregate: strip metadata, concatenate to .list.txt
+  # --- playlist aggregate: strip metadata, concatenate to .list.txt (pending, $d)
+  #     name carries the foli xs for traceability; collisions index the xs
   [ "$opt_playlist" ] && {
-    local list_file="$d/00${new_xs}0,${safe_title}-^${playlist_id}.list.txt"
-    awk '/^--- metadata/{nextfile}; {print}' "$dx/"*info.json.txt >"$list_file"
-    touch -t "$ts_touchtime" "$list_file"
-    chktrue "$list_file"
+    local staged=() list_file= sfx=0
+    readarray -t staged < <(find "$dx/" -maxdepth 1 -name "*info.json.txt" | sort)
+    [ ${#staged[@]} -gt 0 ] && {
+      list_file="$d/00${xs}${sfx},${safe_title}-^${playlist_id}.list.txt"
+      [ -e "$list_file" ] && { sfx=2
+        while [ -e "$d/00${xs}${sfx},${safe_title}-^${playlist_id}.list.txt" ] ; do sfx=$((sfx+1)) ; done
+        list_file="$d/00${xs}${sfx},${safe_title}-^${playlist_id}.list.txt" ;} || :
+      awk '/^--- metadata/{nextfile}; {print}' "${staged[@]}" >"$list_file"
+      touch -t "$ts_touchtime" "$list_file"
+      chktrue "$list_file"
+    } || chkwrn "$FUNCNAME : no staging txt for aggregate (6a777d19)"
   } || :
 
   } # _yt 695f5000
@@ -407,68 +502,91 @@ cat <<'EOF'
 _yt --- yt-dlp wrapper for media download and organization
 
 SYNOPSIS
-  _yt [-pstvVjuxh] [--video RES] [--nc] [--nyc] [--ot] [--os] URL|ID [DIR]
+  _yt [-ptvVjuxh] [--to|--vo|--jo] [--ta] [--video[=RES]] [--nc] [--nyc] [--] URL|ID [DIR]
 
 DESCRIPTION
-  Download YouTube media with metadata, organize into folio structure,
-  create programmatic access links and f2rb2mp3 staging files.
+  Every option composes one execution plan. The default plan downloads
+  audio, always captures info.json, and creates staging txt bookmarks.
+  -t -v add features to the default; --to --vo --jo suppress the audio
+  default and run only the named feature (combinable). Staging
+  *.info.json.txt location encodes downstream status: target dir is
+  pending, beside its info.json data is complete; staging is never
+  overwritten---name collisions index the xs ({xs}2, {xs}3, ...).
 
 ARGUMENTS
   URL|ID    YouTube URL or video ID (tracking parameters stripped)
+            ids with a leading dash follow --
   DIR       Target directory (default: ./)
 
 OPTIONS
   -p        Treat input as playlist (shared folio, padded index prefix)
-              Duplicate check against $yt_root (or ../DIR) for marker file
-              If existing playlist found, prompt: (a)bort/(c)ontinue/(r)etry
-              Retry: download missing tracks into existing foli
-  -s        Download SRT subtitles (English variants)
-  -t        Download VTT subtitles (English variants), create transcript
-  -v        Download 720p60 video
-  -V        Download highest resolution video
-  --video RES   Download specified video resolution
+              Single metadata fetch reused for markers and reports
+              Duplicate check against $_yt_root for marker file
+              If existing playlist found, prompt: (a)bort/(c)ontinue new foli/(r)esume
+              Retry: download missing tracks into existing foli (reuses xs)
+  -t        Add SRT subtitles (upstream srt preferred, converted
+              otherwise), aggressive english variant selection, converted
+              to transcript txt with meta header and inline chapter
+              markers; transcript follows the staging convention
+              (playlist: folio sans 00; single: DIR with 00 prefix)
+  --ta      Auto-translated english subtitles, implies -t
+  -v        Add video, first available from default set (1080/720/480/360)
+  -V        Add video, highest resolution
+  --video[=RES]  Add video at RES; RES 0 lists formats and prompts;
+              without RES the default set applies
+  -j        Default alias (info.json is always captured)
+  --to      Only subtitles + transcripts + staging (no audio)
+  --vo      Only video + staging (no audio)
+  --jo      Only metadata fetch + staging (no media)
   --nc      Skip comments in JSON download
   --nyc     Skip comment post-processing to YAML
-  --ot      Only download VTT subtitles + json, create transcript (no media)
-  --os      Only download SRT subtitles + json (future, not implemented)
-  -j        JSON-only download to DIR (no media)
   -u        Pass to _yt_com_json_yml: retain UTF-8 encoding
-  -x        Pass to _yt_com_json_yml: disable escape expansion
+  -x        Pass to _yt_com_json_yml: raw comment text (no escape expansion)
   -h, --help    Display this help
 
 OUTPUT STRUCTURE
-  ./foli/{xs_maj}/{xs_min}/   folio with media, json, thumbnails, com.yml
-  ./@/_^{id}.{ext}            hardlink for programmatic access
-  ./00{xs},{tmpl}.info.json.txt   f2rb2mp3 staging data (single track)
+  ./foli/{xs_maj}/{xs_min}/   folio with media, json, subs, thumbnails, com.yml
+  ./@/_^{id}.{ext}            audio hardlink for programmatic access
+  ./00{xs},{tmpl}.info.json.txt   f2rb2mp3 staging data (single track, pending)
+  ./00{xs},{tmpl}.{lang}.srt.txt   single-track transcript beside staging
   Playlist:
     {foli}/{xs},{playlist_title}-^{playlist_id}.meta.json   playlist metadata marker
     {foli}/{xs}{n},{tmpl}.info.json.txt              per-track staging (in folio)
-    ./00{xs}0,{playlist_title}-^{playlist_id}.list.txt   aggregated staging
+    {foli}/{xs}{n},{tmpl}.{lang}.srt.txt             per-track transcript (in folio)
+    ./00{xs}0,{playlist_title}-^{playlist_id}.list.txt   aggregated staging (pending)
     {foli}/{xs},{playlist_title}-^{playlist_id}.unavail.yml   unavailable tracks
       (per-track staging minus metadata sections, concatenated)
-    Retry: reuses existing foli, new list.txt gets current session xs
+    Retry: reuses existing foli and xs; list.txt collisions index the xs
 
 TIMESTAMPS
-  Original files (media, vtt, thumbnails): epoch mtime from json
+  Original files (media, srt subs, thumbnails): epoch mtime from json
   Derived files (json, txt, yml): ts function mtime (download time)
 
+DOWNLOAD RETRY
+  Failed ytdl invocations report, clean partial downloads (never
+  pre-existing data), and retry: $_yt_tries attempts total (default 3)
+  after $_yt_delay seconds (default 15)
+
 ENVIRONMENT
-  ytdl      Path to yt-dlp binary (default: yt-dlp)
-  kdb       Knowledge database directory for duplicate detection (required)
-  yt_root   Root directory for playlist duplicate check (default: DIR/..)
+  ytdl       Path to yt-dlp binary (default: yt-dlp)
+  _yt_root   Duplicate detection root, media and playlist markers (default: DIR/..)
+  _yt_tries  Total download attempts (default: 3)
+  _yt_delay  Delay between attempts, seconds (default: 15)
 
 HELPER FUNCTIONS
   _yt_json_txt JSON MEDIA DIR [TOUCHTIME] [TS_HEADER]   Extract metadata to staging txt
-  _yt_vtt_txt VTT                           Convert VTT to transcript
+  _yt_srt_txt SRT [JSON] [OUT]              Convert SRT to transcript (meta header, chapters)
+  _yt_vtt_txt VTT [JSON] [OUT]              Convert VTT to transcript (manual use)
   _yt_com_json_yml [-ux] JSON [TOUCHTIME]   Extract comments to YAML
 
 EXAMPLES
   _yt dQw4w9WgXcQ                 Download audio + metadata
-  _yt -tv dQw4w9WgXcQ ./music     Download with VTT + 720p video
+  _yt -tv dQw4w9WgXcQ ./music     Add transcripts + video (default set)
+  _yt --video=0 dQw4w9WgXcQ       Add video, interactive resolution
   _yt -p PLxyz123 ./playlists     Download playlist (all tracks)
   _yt -p PLxyz123 ./playlists     Retry: re-run same command, select (r)
-  _yt -j dQw4w9WgXcQ ./meta       JSON-only download
-  _yt --ot dQw4w9WgXcQ ./subs     VTT subtitles only + transcript
+  _yt --jo dQw4w9WgXcQ ./meta     Metadata-only fetch
+  _yt --to dQw4w9WgXcQ ./subs     Subtitles + transcripts + staging only
 EOF
 }
 
@@ -478,7 +596,7 @@ EOF
 # =============================================================================
 
 _yt_json_txt () { # create f2rb2mp3 staging data from youtube info.json
-  # rev 695f5100 20260107
+  # rev 6a777dfb 20260808; final path exported in _yt_json_txt_out (not local)
   local json_file="$1" media_master="$2" txt_dir="${3:-.}" touchtime="${4:-}" ts_header="${5:-}"
   local verb="${verb:-devnul}"
   local json= xs= id= file_ext= duration= title= fulltitle=
@@ -492,12 +610,19 @@ _yt_json_txt () { # create f2rb2mp3 staging data from youtube info.json
   [ "$media_master" ] || { chkerr "usage: $FUNCNAME"' "$json" "$media_master" "$txt_dir" [touchtime] [ts_header] (695f5102)' ; return 1 ;}
   [ -f "$json_file" ] || { chkerr "$FUNCNAME : json_file not found '$json_file' (695f5103)" ; return 1 ;}
   xs="${json_file##*/}"; xs="${xs%%,*}" # extract xs from filename
-  [ -f "${txt_dir}/00${json_file##*/}.txt" ] && { chkerr "$FUNCNAME : exists '${txt_dir}/00${json_file##*/}.txt' (695f5104)" ; return 1 ;}
+
+  # --- output path: never overwrite, index xs on collision ({xs}2, {xs}3, ...)
+  local out_name="00${json_file##*/}.txt" out_head= out_tail= i=
+  [ -e "${txt_dir}/${out_name}" ] && {
+    out_head="${json_file##*/}" ; out_tail="${out_head#*,}" ; out_head="${out_head%%,*}"
+    i=2 ; while [ -e "${txt_dir}/00${out_head}${i},${out_tail}.txt" ] ; do i=$((i+1)) ; done
+    out_name="00${out_head}${i},${out_tail}.txt" ;} || :
+  _yt_json_txt_out="${txt_dir}/${out_name}"
 
   # --- ts_header: use provided or reconstruct from xs
   [ -z "$ts_header" ] && {
     local xs_dec=$(printf '%d' "0x${xs}" 2>/dev/null) || xs_dec=0
-    ts_header="$xs $(date -r "$xs_dec" +"%Y%m%d %H%M%S %Z %a %I:%M %p %e %b %Y" 2>/dev/null || echo "$xs")"
+    ts_header="$xs $(_yt_date "$xs_dec" +"%Y%m%d %H%M%S %Z %a %I:%M %p %e %b %Y" 2>/dev/null || echo "$xs")"
   }
 
   # --- parse json (defensive - missing fields yield empty, jq/yq errors visible on stderr)
@@ -525,7 +650,7 @@ _yt_json_txt () { # create f2rb2mp3 staging data from youtube info.json
   { echo "# $ts_header"
     echo "# see $FUNCNAME (695f5100), applied iconv -f utf-8 -c -t ascii//TRANSLIT"
     echo "# $json_file"
-    printf "# ${json_file##*/}.txt\n\n"
+    printf "# ${out_name}\n\n"
     printf "ss= ; export verb=chkwrn ss= to= t= p= f= c=r3 F= CF= off= tp= lra= i= cmp=pard v=3db\n"
     printf "ss= ; export _f=./@/%s\n\n" "${media_master##*/}"
     printf "ss= _a=%s\n" "$title"
@@ -541,16 +666,16 @@ _yt_json_txt () { # create f2rb2mp3 staging data from youtube info.json
     printf -- "--- description \n%s\n\n" "$description"
     printf -- "--- author_comments \n%s\n\n" "$author_comments" | tr -s '\n\r' '\n' ; echo
     echo "# end of ascii//TRANSLIT"
-    } | iconv -f utf-8 -c -t ascii//TRANSLIT >"${txt_dir}/${json_file##*/}.txt~" || true
+    } | iconv -f utf-8 -c -t ascii//TRANSLIT >"${_yt_json_txt_out}~" || true
 
   # --- append metadata (utf-8 preserved)
-  printf -- "--- metadata \n%s\n\n" "$metadata" >>"${txt_dir}/${json_file##*/}.txt~" \
-    && mv "${txt_dir}/${json_file##*/}.txt~" "${txt_dir}/00${json_file##*/}.txt" \
-    || { chkerr "$FUNCNAME : error creating '${txt_dir}/00${json_file##*/}.txt' (695f510b)" ; return 1 ;}
+  printf -- "--- metadata \n%s\n\n" "$metadata" >>"${_yt_json_txt_out}~" \
+    && mv "${_yt_json_txt_out}~" "$_yt_json_txt_out" \
+    || { chkerr "$FUNCNAME : error creating '$_yt_json_txt_out' (695f510b)" ; return 1 ;}
 
   # --- set timestamp if provided
-  [ "$touchtime" ] && touch -t "$touchtime" "${txt_dir}/00${json_file##*/}.txt"
-  chktrue "${txt_dir}/00${json_file##*/}.txt"
+  [ "$touchtime" ] && touch -t "$touchtime" "$_yt_json_txt_out"
+  chktrue "$_yt_json_txt_out"
   } # _yt_json_txt 695f5100
 
 
@@ -563,19 +688,75 @@ SYNOPSIS
 
 DESCRIPTION
   Parse YouTube info.json, extract critical metadata, create staging
-  data file for f2rb2mp3 audio processing workflow.
+  data file for f2rb2mp3 audio processing workflow. Existing staging
+  files are never overwritten; on name collision the xs is indexed
+  ({xs}2, {xs}3, ...). Final path exported in $_yt_json_txt_out.
 
 ARGUMENTS
   JSON_FILE     Path to {template}.info.json
-  MEDIA_MASTER  Path to media file (for _f variable)
+  MEDIA_MASTER  Path to media file (for _f variable, prospective allowed)
   TXT_DIR       Output directory (default: ./)
   TOUCHTIME     Optional timestamp in CCYYMMDDhhmm.SS format
   TS_HEADER     Optional full ts output for file header (reconstructed from xs if omitted)
 
 OUTPUT
-  {TXT_DIR}/00{json_filename}.txt
+  {TXT_DIR}/00{json_filename}.txt (xs indexed on collision)
 EOF
 }
+
+
+# =============================================================================
+# _yt_sub_txt --- subtitle to transcript core (vtt and srt)
+# =============================================================================
+
+_yt_sub_txt () { # create transcript txt from subtitle file, optional json meta
+  # rev 6a777dfb; header and inline chapter markers sourced from info.json
+  local sub_file="${1:-}" json_file="${2:-}" txt_file="${3:-}" chap= hdr_epoch=
+
+  # --- input validation
+  [ "$sub_file" ] || { chkerr "usage: $FUNCNAME SUB_FILE [JSON_FILE] [OUT_FILE] (6a777d34)" ; return 1 ;}
+  [ -f "$sub_file" ] || { chkerr "$FUNCNAME : file not found '$sub_file' (6a777d35)" ; return 1 ;}
+  [ -z "$json_file" ] || [ -f "$json_file" ] || { chkerr "$FUNCNAME : json not found '$json_file' (6a777d36)" ; return 1 ;}
+  txt_file="${txt_file:-${sub_file}.txt}" # default beside source
+
+  { # --- meta header from json (timestamp, title, url, channel, date, duration)
+    [ "$json_file" ] && {
+      read -r hdr_epoch < <(jq -r '.timestamp // empty' "$json_file") || :
+      [ "$hdr_epoch" ] \
+        && echo "# $hdr_epoch $(_yt_date "$hdr_epoch" +"%Y%m%d %H%M%S %Z %a %I:%M %p %e %b %Y" 2>/dev/null)" \
+        || :
+      jq -r '"# \(.title // "")",
+             "# \(.webpage_url // "")",
+             "# \(.channel // .uploader // "") \(.upload_date // "") \(.duration_string // "")"' "$json_file"
+      echo "--- description"
+      jq -r '.description // ""' "$json_file"
+      echo "--- transcript"
+    } || :
+    # --- chapter stream "seconds<tab>title" for inline markers
+    [ "$json_file" ] && { read -rd '' chap < <(jq -r \
+      '(.chapters // [])[] | "\(.start_time)\t\(.title)"' "$json_file") || : ;} || :
+    # --- body: chapters interleaved at cue time (seconds and HH:MM:SS),
+    #     cue numbers, timing, header lines, and tags stripped, dedupe
+    awk -F'\t' '
+      NR==FNR { if ($0 != "") { nc++ ; cs[nc]=$1+0 ; ct[nc]=$2 } ; next }
+      /-->/ { t=$0 ; sub(/ *-->.*/,"",t) ; gsub(/,/,".",t)
+        nf=split(t,f,":")
+        if (nf==3) sec=f[1]*3600+f[2]*60+f[3]+0 ; else sec=f[1]*60+f[2]+0
+        while (ci<nc) {
+          if (sec>=cs[ci+1]) { ci++
+            h=int(cs[ci]/3600) ; m=int((cs[ci]%3600)/60) ; s=int(cs[ci]%60)
+            printf "--- %ds %02d:%02d:%02d %s\n", cs[ci], h, m, s, ct[ci] }
+          else break }
+        next }
+      /^WEBVTT/ || /^Kind:/ || /^Language:/ || /^NOTE/ || /^STYLE/ { next }
+      /^[0-9]+[[:space:]]*$/ { next }
+      /^[[:space:]]*$/ { next }
+      { line=$0 ; gsub(/<[^>]*>/,"",line) ; gsub(/&nbsp;/," ",line) ; print line }
+    ' <(printf '%s\n' "$chap") "$sub_file" | uniq
+  } >"$txt_file" \
+    || { chkerr "$FUNCNAME : could not create '$txt_file' (6a777d37)" ; return 1 ;}
+  chktrue "$txt_file"
+  } # _yt_sub_txt 6a777d34
 
 
 # =============================================================================
@@ -583,24 +764,9 @@ EOF
 # =============================================================================
 
 _yt_vtt_txt () { # create transcript from vtt subtitles
-  local vtt_file="$1" txt_file=
-  
   # --- help dispatch
   [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ] && { _yt_vtt_txt_help ; return 0 ;}
-
-  # --- input validation
-  [ "$vtt_file" ] || { chkerr "usage: $FUNCNAME VTT_FILE (695f5201)" ; return 1 ;}
-  [ -f "$vtt_file" ] || { chkerr "$FUNCNAME : file not found '$vtt_file' (695f5202)" ; return 1 ;}
-  txt_file="${vtt_file}.txt"
-
-  # --- transform: strip timing, tags, dedupe
-  uniq < <(sed -e '/align:start position/d' \
-               -e 's/<[^>]*>//g' \
-               -e '/ --> /d' \
-               -e '/^[[:space:]]*$/d' \
-               -e 's/&nbsp;/ /g' "$vtt_file") >"$txt_file" \
-    || { chkerr "$FUNCNAME : could not create '$txt_file' (695f5203)" ; return 1 ;}
-  chktrue "$txt_file"
+  _yt_sub_txt "$@"
   } # _yt_vtt_txt 695f5200
 
 
@@ -609,25 +775,28 @@ cat <<'EOF'
 _yt_vtt_txt --- convert VTT subtitles to plain text transcript
 
 SYNOPSIS
-  _yt_vtt_txt VTT_FILE
+  _yt_vtt_txt VTT_FILE [JSON_FILE] [OUT_FILE]
 
 DESCRIPTION
-  Strip WebVTT timing metadata, HTML tags, deduplicate lines.
+  Strip WebVTT header, timing metadata, HTML tags, deduplicate lines.
+  With JSON_FILE, prepend meta header (timestamp, title, url, channel,
+  date, duration, description) and interleave chapter markers at cue
+  time as "--- {sec}s HH:MM:SS {title}".
 
 OUTPUT
-  {VTT_FILE}.txt alongside source
+  OUT_FILE, or {VTT_FILE}.txt alongside source
 EOF
 }
 
 
 # =============================================================================
-# _yt_srt_txt --- convert SRT subtitles to plain transcript (deferred)
+# _yt_srt_txt --- convert SRT subtitles to plain transcript
 # =============================================================================
 
-_yt_srt_txt () { # create transcript from srt subtitles (deferred)
+_yt_srt_txt () { # create transcript from srt subtitles
+  # --- help dispatch
   [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ] && { _yt_srt_txt_help ; return 0 ;}
-  chkwrn "$FUNCNAME : deferred implementation (695f5300)"
-  return 1
+  _yt_sub_txt "$@"
   } # _yt_srt_txt 695f5300
 
 
@@ -635,7 +804,17 @@ _yt_srt_txt_help () { # display _yt_srt_txt usage
 cat <<'EOF'
 _yt_srt_txt --- convert SRT subtitles to plain text transcript
 
-STATUS: Deferred implementation.
+SYNOPSIS
+  _yt_srt_txt SRT_FILE [JSON_FILE] [OUT_FILE]
+
+DESCRIPTION
+  Strip cue numbers, timing metadata, HTML tags, deduplicate lines.
+  With JSON_FILE, prepend meta header (timestamp, title, url, channel,
+  date, duration, description) and interleave chapter markers at cue
+  time as "--- {sec}s HH:MM:SS {title}".
+
+OUTPUT
+  OUT_FILE, or {SRT_FILE}.txt alongside source
 EOF
 }
 
@@ -665,9 +844,6 @@ _yt_com_json_yml () { # extract youtube comments to structured yaml
   json_file="${1:-}"
   touchtime="${2:-}"
 
-  # --- reserved flag warning
-  [ "$opt_no_expand" ] && chkwrn "$FUNCNAME : -x flag reserved, escapes expanded via jq -r (695f5402)"
-
   # --- input validation
   [ "$json_file" ] || { chkerr "usage: $FUNCNAME [-ux] JSON_FILE [TOUCHTIME] (695f5403)" ; return 1 ;}
   [ -f "$json_file" ] || { chkerr "$FUNCNAME : file not found '$json_file' (695f5404)" ; return 1 ;}
@@ -684,7 +860,7 @@ _yt_com_json_yml () { # extract youtube comments to structured yaml
   # --- extract and format comments via jq/yq pipeline
   # sort by parent timestamp (nulls first = root), then comment timestamp
   # format: meta line + literal text block
-  # note: jq -r expands JSON escapes (\n -> newline) - -x flag reserved for future raw mode
+  # note: jq -r expands JSON escapes (\n -> newline); -x emits @json raw form
   {
     # --- yaml header
     cat <<META
@@ -698,21 +874,22 @@ META
 
     # --- author comments section (empty array yields no output, section header only)
     echo "author_comments:"
-    jq -r --arg cc "$comment_count" '
+    jq -r --arg cc "$comment_count" --arg raw "${opt_no_expand:+1}" '
       (.comments // []) | map(select(.author_is_uploader == true))
       | sort_by(.timestamp // 0)
-      | .[] | 
+      | .[] |
       "  - meta: \(.timestamp // 0) \(.like_count // 0)/\($cc)" +
       (if .is_favorited then " [favored|1]" else "" end) +
       (if .is_pinned then " [pin|1]" else "" end) +
       " \(.id // "") \(.parent // "root") \(.author_url // "")\n" +
       "    text: |\n" +
-      ((.text // "") | split("\n") | map("      " + .) | join("\n"))
+      ((.text // "") | (if $raw == "1" then @json else . end)
+        | split("\n") | map("      " + .) | join("\n"))
     ' "$json_file" || true
 
     # --- all comments section (including author, sorted)
     echo "comments:"
-    jq -r --arg cc "$comment_count" '
+    jq -r --arg cc "$comment_count" --arg raw "${opt_no_expand:+1}" '
       (.comments // [])
       | sort_by([(.parent // ""), (.timestamp // 0)])
       | .[] |
@@ -721,7 +898,8 @@ META
       (if .is_pinned then " [pin|1]" else "" end) +
       " \(.id // "") \(.parent // "root") \(.author_url // "")\n" +
       "    text: |\n" +
-      ((.text // "") | split("\n") | map("      " + .) | join("\n"))
+      ((.text // "") | (if $raw == "1" then @json else . end)
+        | split("\n") | map("      " + .) | join("\n"))
     ' "$json_file" || true
 
   } | {
@@ -745,10 +923,11 @@ SYNOPSIS
 DESCRIPTION
   Extract comments from info.json to YAML with metadata header,
   author comments first, then all comments sorted by thread.
+  Default expands JSON escapes to presentation form.
 
 OPTIONS
   -u    Retain UTF-8 encoding (disable ascii//TRANSLIT)
-  -x    Disable escape character expansion
+  -x    Raw comment text (@json form, no escape expansion)
 
 ARGUMENTS
   JSON_FILE   Path to {template}.info.json
