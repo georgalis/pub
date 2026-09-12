@@ -6,6 +6,8 @@
 <style>
 table { border-collapse: collapse; }
 th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+section[role="doc-endnotes"] ol { list-style: none; padding-left: 0; }
+li[role="doc-endnote"] p { display: inline; margin: 0; }
 </style>
 <link rel="stylesheet" href="/default.css">
 <link rel="stylesheet" href="./default.css">
@@ -24,6 +26,7 @@ orig: 67208428 20241028 234352 PDT Mon 11:43 PM 28 Oct 2024 --- fonts.yml
 <li><a href="#discovery-usage">Discovery Usage</a></li>
 <li><a href="#discovery-output-format">Discovery Output Format</a></li>
 <li><a href="#sample-document">Sample Document</a></li>
+<li><a href="#sample-filters">Sample Filters</a></li>
 </ul></li>
 <li><a href="#ttf-font-installation">TTF Font Installation</a>
 <ul>
@@ -53,15 +56,31 @@ orig: 668973c5 20240706 094141 PDT Sat 09:41 AM 6 Jul 2024 --- texlive-font-pack
 -->
 <p>Identifying installed fonts in a TexLive environment is difficult because font metadata is distributed across <code>.sty</code> packages (which set document defaults) and <code>.fd</code> definition files (which declare available weight/shape combinations). The <a href="./texlive-font-discovery.sh">texlive-font-discovery.sh</a> script scans both system and user <code>texmf</code> trees to produce a machine-parseable inventory of installed font packages and font family definitions, with an optional sample <code>.tex</code> document for visual confirmation.</p>
 <h2 id="discovery-usage">Discovery Usage</h2>
-<pre><code>texlive-font-discovery.sh [-t sample.tex] [-u]
-  -t FILE  generate sample tex document rendering each discovered family
+<pre><code>texlive-font-discovery.sh [-t sample.tex] [-d inventory.tsv]
+                           [-e conservative|broader|probe] [-u]
+  -t FILE  generate sample tex rendering each discovered family
+  -d FILE  write discovery tsv to file (default: stdout only)
+  -e MODE  encoding filter for sample (default: conservative)
+           conservative: T1,OT1,LY1  broader: +TS1,IL2,QX,L7x,LGR,T2A-C,T5,CS
+           probe: all encodings (math, symbol, CJK, scripts)
   -u       scan user texmf only (default: system + user)</code></pre>
+<p>The TSV inventory always streams to stdout; <code>-d</code> additionally writes it to a file for manual review alongside the sample. The <code>-e</code> flag controls only the sample <code>.tex</code> output. The sample pipeline applies five filters before writing <code>\showfont</code> entries:</p>
+<p><strong>Encoding whitelist.</strong> Conservative (default) restricts to T1, OT1, LY1---encodings renderable as Latin text under the document's <code>\usepackage[T1]{fontenc}</code> preamble. Broader adds TS1, IL2, QX, L7x, LGR, T2A-C, T5, CS for extended-Latin, Cyrillic, Greek, and Vietnamese coverage. Probe passes all encodings unfiltered.</p>
+<p><strong>Bitmap exclusion.</strong> Families matching known Metafont conventions (Computer Modern derivatives, Concrete, Almost European, LH Cyrillic, Washington, KC, schulschriften, bookhands, and their clones) are dropped. Latin Modern (<code>lm*</code>), TeX Gyre (<code>q*</code>), PostScript base (<code>p*</code>), and TX/PX families are Type1 and retained.</p>
+<p><strong>Package-dependency exclusion.</strong> Families whose <code>.fd</code> font specifications contain <code>@</code>-prefixed internal macros (requiring <code>\usepackage</code>) or <code>.otf</code> file references (incompatible with <code>pdflatex</code>) are flagged <code>dep</code> in the TSV output and excluded from the sample.</p>
+<p><strong>Font file validation.</strong> After encoding, bitmap, and dependency filters, each remaining family is validated via <code>kpsewhich</code>: the script locates the <code>.fd</code> file, extracts the primary font file reference, and confirms its <code>.tfm</code> exists. Families with missing font metrics are skipped with a diagnostic message on stderr. This catches packages that provide <code>\DeclareFontShape</code> entries but lack compiled font files (common in archaic/decorative packages distributed as Metafont sources).</p>
+<p><strong>Figure-style deduplication.</strong> Families differing only by figure-style suffix (<code>-TLF</code>, <code>-LF</code>, <code>-OsF</code>, <code>-TOsF</code>) are collapsed to a single representative per base typeface for the visual showcase, preferring TLF (tabular lining) over LF, OsF, and TOsF. Encoding priority applies within each base: T1 over OT1, OT1 over LY1. Families with numeral-only suffixes (<code>-Inf</code>, <code>-Sup</code>, <code>-Dnom</code>, <code>-Numr</code>) and ornament-only suffixes (<code>-Orn</code>) are excluded from the showcase but appear in the reference appendix.</p>
+<p><strong>Reference appendix.</strong> A trailing section lists every base family that has figure-style or glyph-class variants, showing which suffixes are available (e.g., <code>CormorantGaramond: TLF, LF, OsF, TOsF, Inf, Sup</code>). A legend defines each suffix. This enables locating specific figure styles and ornament sets by typeface without rendering each variant.</p>
 <h2 id="discovery-output-format">Discovery Output Format</h2>
 <p>Phase 1 (font packages) produces tab-separated fields: package name, class (<code>rm</code>, <code>sf</code>, <code>tt</code>, or comma-joined), version string, file path.</p>
-<p>Phase 2 (font families) produces tab-separated fields: encoding, family name, comma-joined weight codes, comma-joined shape codes, file path.</p>
+<p>Phase 2 (font families) produces tab-separated fields: encoding, family name, comma-joined weight codes, comma-joined shape codes, file path, dep flag. The <code>dep</code> column is non-empty (<code>dep</code>) when the <code>.fd</code> file contains <code>@</code>-macro references or <code>.otf</code> file references in its font specifications, indicating a dependency that prevents standalone use with <code>pdflatex</code>.</p>
 <p>Both phases are prefixed with <code>#</code> comment headers suitable for downstream parsing with <code>grep -v '^#'</code> or <code>awk</code> column extraction.</p>
 <h2 id="sample-document">Sample Document</h2>
-<p>The <code>-t</code> flag writes a <code>.tex</code> file that renders every discovered font family in normal, bold, and italic with pangram text. Compile with <code>pdflatex</code> for visual comparison. Fonts that lack a bold or italic shape will fall back to the nearest available substitute per NFSS rules---this is expected and diagnostic (a missing shape in the sample confirms the <code>.fd</code> weight/shape inventory from phase 2).</p>
+<p>The <code>-t</code> flag writes a <code>.tex</code> file with two sections: a visual showcase rendering one representative per typeface, followed by a reference appendix listing all available figure-style and glyph-class variants per base family with a suffix legend.</p>
+<p>Compile with <code>pdflatex</code> for visual comparison. The showcase renders bold and italic lines only when those shapes are actually declared in the font's NFSS definition---families lacking bold or italic display only the regular pangram, eliminating substitution noise where NFSS would silently fall back to regular weight or upright shape. Each label line annotates available shapes (<code>[b]</code>/<code>[bx]</code>, <code>[it]</code>/<code>[sl]</code>, <code>[sc]</code>) for quick reference.</p>
+<p>A <code>\clearpage</code> fires every 30 entries to manage TeX font memory. The preamble includes <code>\nonstopmode</code> as a safety net for edge cases not caught by the validation filters.</p>
+<h2 id="sample-filters">Sample Filters</h2>
+<p>The <code>-e</code> flag controls which encodings appear in the sample. The conservative default (T1, OT1, LY1) produces a manageable showcase of Latin text fonts compatible with the document's <code>\usepackage[T1]{fontenc}</code> preamble. The broader mode adds extended-Latin, Cyrillic, Greek, Vietnamese, and Czech/Slovak encodings---fonts with Latin glyph subsets will render the pangram, while those without will show substitution glyphs. Probe mode is unfiltered and includes math, symbol, CJK, and script encodings; expect rendering failures for non-text families.</p>
 <hr />
 <h1 id="ttf-font-installation">TTF Font Installation</h1>
 <p>Adding True Type Fonts to a LaTeX user environment is easy with the <code>autoinst</code> program, from &lt;https://ctan.org/tex-archive/fonts/utilities/fontools/&gt; and bundled with TexLive; only a few manual steps are required. These instructions are for a user env install (and the sudo root averse). The steps are:</p>

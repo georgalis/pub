@@ -69,12 +69,8 @@ texlive-font-discovery.sh [-t sample.tex] [-d inventory.tsv]
 
 The TSV inventory always streams to stdout; `-d` additionally
 writes it to a file for manual review alongside the sample.
-
-The TSV inventory always streams to stdout; `-d` additionally
-writes it to a file for manual review alongside the sample.
-The `-e` flag controls only the sample `.tex` output. Within each
-encoding scope, the sample applies four filters and a deduplication
-pass:
+The `-e` flag controls only the sample `.tex` output. The sample
+pipeline applies five filters before writing `\showfont` entries:
 
 **Encoding whitelist.** Conservative (default) restricts to T1, OT1,
 LY1---encodings renderable as Latin text under the document's
@@ -84,17 +80,22 @@ coverage. Probe passes all encodings unfiltered.
 
 **Bitmap exclusion.** Families matching known Metafont conventions
 (Computer Modern derivatives, Concrete, Almost European, LH Cyrillic,
-Washington, KC, and their clones) are dropped from both showcase and
-reference. Latin Modern (`lm*`), TeX Gyre (`q*`), PostScript base
-(`p*`), and TX/PX families are Type1 and retained.
+Washington, KC, schulschriften, bookhands, and their clones) are dropped.
+Latin Modern (`lm*`), TeX Gyre (`q*`), PostScript base (`p*`), and
+TX/PX families are Type1 and retained.
 
-**Package-dependency exclusion.** Some `.fd` files reference
-`@`-prefixed internal macros (e.g., `\auri@slant` from the `aurical`
-package) in their font specifications. These families require their
-parent `.sty` package loaded via `\usepackage` and crash under bare
-`\fontfamily{}\selectfont`. The discovery scan detects `\\[a-zA-Z]*@`
-patterns in the 5th argument of `\DeclareFontShape` and flags them
-with `dep` in the TSV output; the sample excludes these automatically.
+**Package-dependency exclusion.** Families whose `.fd` font specifications
+contain `@`-prefixed internal macros (requiring `\usepackage`) or `.otf`
+file references (incompatible with `pdflatex`) are flagged `dep` in the
+TSV output and excluded from the sample.
+
+**Font file validation.** After encoding, bitmap, and dependency filters,
+each remaining family is validated via `kpsewhich`: the script locates
+the `.fd` file, extracts the primary font file reference, and confirms
+its `.tfm` exists. Families with missing font metrics are skipped with
+a diagnostic message on stderr. This catches packages that provide
+`\DeclareFontShape` entries but lack compiled font files (common in
+archaic/decorative packages distributed as Metafont sources).
 
 **Figure-style deduplication.** Families differing only by figure-style
 suffix (`-TLF`, `-LF`, `-OsF`, `-TOsF`) are collapsed to a single
@@ -120,8 +121,9 @@ package name, class (`rm`, `sf`, `tt`, or comma-joined), version string, file pa
 Phase 2 (font families) produces tab-separated fields:
 encoding, family name, comma-joined weight codes, comma-joined shape codes,
 file path, dep flag. The `dep` column is non-empty (`dep`) when the `.fd`
-file contains `@`-macro references in its font specifications, indicating
-a package dependency that prevents standalone `\fontfamily` usage.
+file contains `@`-macro references or `.otf` file references in its font
+specifications, indicating a dependency that prevents standalone use with
+`pdflatex`.
 
 Both phases are prefixed with `#` comment headers suitable for
 downstream parsing with `grep -v '^#'` or `awk` column extraction.
@@ -130,22 +132,21 @@ downstream parsing with `grep -v '^#'` or `awk` column extraction.
 ## Sample Document
 
 The `-t` flag writes a `.tex` file with two sections: a visual
-showcase rendering one representative per typeface in normal, bold,
-and italic with pangram text, followed by a reference appendix
-listing all available figure-style and glyph-class variants per
-base family with a suffix legend.
+showcase rendering one representative per typeface, followed by
+a reference appendix listing all available figure-style and
+glyph-class variants per base family with a suffix legend.
 
-Compile with `pdflatex` for visual comparison. Fonts that lack
-a bold or italic shape will fall back to the nearest available
-substitute per NFSS rules---this is expected and diagnostic
-(a missing shape in the sample confirms the `.fd` weight/shape
-inventory from phase 2).
+Compile with `pdflatex` for visual comparison. The showcase
+renders bold and italic lines only when those shapes are actually
+declared in the font's NFSS definition---families lacking bold or
+italic display only the regular pangram, eliminating substitution
+noise where NFSS would silently fall back to regular weight or
+upright shape. Each label line annotates available shapes
+(`[b]`/`[bx]`, `[it]`/`[sl]`, `[sc]`) for quick reference.
 
-The sample macro renders bold and italic demo text (not just the
-labels) so that weight and shape differences are visible across the
-full pangram. A `\clearpage` fires every 30 entries to manage TeX
-font memory; if compilation still exhausts memory, use
-`pdflatex --extra-mem-top=10000000` to increase the allocation.
+A `\clearpage` fires every 30 entries to manage TeX font memory.
+The preamble includes `\nonstopmode` as a safety net for edge
+cases not caught by the validation filters.
 
 
 ## Sample Filters
