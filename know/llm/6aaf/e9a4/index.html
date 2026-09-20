@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+section[role="doc-endnotes"] ol { list-style: none; padding-left: 0; }
+li[role="doc-endnote"] p { display: inline; margin: 0; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h3 id="llm-synthesized-essay">LLM-Synthesized Essay</h3>
+<h2 id="curated-presentation"><a href="../../">Curated Presentation</a></h2>
+<h1 id="the-patina-catalog"><a href="./">The Patina Catalog</a></h1>
+<p>Patina is an LLM skill to establish a warrant to communicate. Patina affiliates---words, phrases, habits of construction, analogies, allusions---so that a reader places the author inside a parlance and receives the subject in the light the author intends. Every text sounds like it comes from somewhere, and patina makes that a choice: the writing reads as coming from a community of people rather than from a machine.</p>
+<p><em>(c) 2026 George Georgalis &lt;george@iuxta.com&gt; Unlimited use with attribution.</em></p>
+<p>An introductory essay demonstrates the skill in three degrees <a href="./patina-essay-natural.md.html">natural</a> 1317 words, <a href="./patina-essay-brief.md.html">brief</a> 678 words, and an exaggerated <a href="./patina-essay-vivid.md.html">vivid</a> style of 1785 words. The three carry the same argument from the same parlance; what differs is the calibration, so reading any two together shows what a setting does.</p>
+<p>The <a href="./patina-ontology.md.html">ontology</a> is the foundational document used to develop the skill which is defined in a single file and leverages library files containing markers [words and phrases] to affiliate or displace, within a given parlance. It also carries the decision record, including the reversals, so a later revision can see what was tried and why it was set aside.</p>
+<ul>
+<li><a href="./patina-essay-brief.md.html">patina-essay-brief.md</a> --- short form, for a scanning reader (<a href="./patina-essay-brief-setting.txt">settings</a>)</li>
+<li><a href="./patina-essay-natural.md.html">patina-essay-natural.md</a> --- the reference rendering (<a href="./patina-essay-natural-setting.txt">settings</a>)</li>
+<li><a href="./patina-essay-vivid.md.html">patina-essay-vivid.md</a> --- pressed toward saturation (<a href="./patina-essay-vivid-setting.txt">settings</a>)</li>
+</ul>
+<ul>
+<li><a href="./patina-SKILL.md.html">patina-SKILL.md</a> --- the skill entire
+<ul>
+<li><a href="./patina-lib-commons.yml">patina-lib-commons.yml</a> --- allusion English readers share</li>
+<li><a href="./patina-lib-synthetic.yml">patina-lib-synthetic.yml</a> --- the machine's markers, displaced by default</li>
+</ul></li>
+</ul>
+<ul>
+<li><a href="./patina-ontology.md.html">patina-ontology.md</a> --- entities, laws, decision record</li>
+<li><a href="./_schema.yml">_schema.yml</a> --- library file template</li>
+</ul>
+<p>The library files published here are seeds; a working installation adds one per parlance, built by the harvest and discover workflows below. The printed settings are likewise a starting point. The effective configuration is synthesized per use and confirmed by fine tuning: render, read the calibration report, move one key, render again.</p>
+<h2 id="quick-reference">Quick Reference</h2>
+<p><strong>Invocation.</strong> A purpose and a parlance are a complete invocation; everything else perturbs. The purpose may be omitted where the material shows it, and the parlance where the subject implies one.</p>
+<pre><code>/patina essay parlance=[kitchen]
+/patina letter parlance=[nautical] cast=homely steep=antique
+/patina memo parlance=[unix-admin] markers=[lexical,figurative] truss=0.30
+/patina fiction parlance=[kitchen] neutral=saturated emblematic=0.90 poetic=free
+</code></pre>
+<p>Values read by position: <code>35</code>, <code>3.5</code>, <code>0.35</code>, and <code>7/20</code> are the same setting. A region name may stand in place of a numeral, and a polar key may take a band, <code>a:b</code>.</p>
+<p><strong>Dispositions</strong>, derived from the request and never declared: <code>compose</code> with no draft, <code>revoice</code> with a draft, <code>discover</code> with an attached corpus. Harvest is a request, not a disposition.</p>
+<table>
+<thead>
+<tr><th>key</th><th>0.0</th><th>1.0</th><th>regions</th></tr>
+</thead>
+<tbody>
+<tr><td><code>neutral</code></td><td>saturated with the parlance</td><td>no markers added</td><td><code>saturated</code> <code>marked</code> <code>tinted</code> <code>neutral</code></td></tr>
+<tr><td><code>emblematic</code></td><td>operative, noticed by members</td><td>emblematic, recognized by anyone</td><td><code>operative</code> <code>mixed</code> <code>emblematic</code></td></tr>
+<tr><td><code>steep</code></td><td>new in print</td><td>antique</td><td><code>new</code> <code>longstanding</code> <code>antique</code></td></tr>
+<tr><td><code>gloss</code></td><td>left for the reader to decode</td><td>decoded in context</td><td><code>undecoded</code> <code>contextual</code> <code>glossed</code></td></tr>
+<tr><td><code>cited</code></td><td>the author speaks the parlance</td><td>the parlance quoted at a distance</td><td><code>inhabited</code> <code>mixed</code> <code>cited</code></td></tr>
+<tr><td><code>truss</code></td><td>no bridges, or minimal</td><td>heavy use of bridges</td><td><code>minimal</code> <code>measured</code> <code>frequent</code> <code>abundant</code></td></tr>
+<tr><td><code>poetic</code></td><td>tight ground, attested allusion</td><td>invented vehicles, loose ground</td><td><code>literal</code> <code>grounded</code> <code>loose</code> <code>free</code></td></tr>
+</tbody>
+</table>
+<p>Denoted settings: <code>purpose</code>, <code>cast</code>, <code>parlance</code>, <code>markers</code>, <code>displace</code>, <code>span</code>. The <strong>cast</strong> is the light the subject is received in, and it is fixed before any figure is chosen; no vehicle out of cast is admitted at any setting. <code>poetic</code> tracks <code>truss</code> unless stated. Every invocation emits a calibration report in the response body, never in the artifact, so a revision names a key rather than describing a symptom.</p>
+<h2 id="harvest-workflow">Harvest Workflow</h2>
+<p>The skill is built to be fed. It reads whatever library it is given and never writes to one, so every entry arrives by the author's decision; harvest is the mechanism that makes those decisions cheap.</p>
+<ol>
+<li><strong>Render</strong>, then read the report. The invented bridges are listed with their locations, vehicles, tenors, and casts; library entries used are not listed.</li>
+<li><strong>Ask for the harvest.</strong> The response returns library entries for every marker and bridge placed, each located, in the schema of <a href="./_schema.yml">_schema.yml</a>. Forms already held come back with their current values, for amendment or exclusion.</li>
+<li><strong>Amend by hand.</strong> Correct <code>salience</code> and the <code>steep</code> attestation, add <code>cast</code> tags and a <code>gloss</code>, set <code>admit</code> or <code>forbid</code> where a purpose should license or exclude the form, and delete what proved operative rather than emblematic.</li>
+<li><strong>Research the evidence.</strong> Replace intuition-tier entries with an <code>evidence</code> block from the English print record; Ngram development arrives as YAML, never as a fabricated series.</li>
+<li><strong>File it</strong> as one file per parlance, the file name matching <code>parlance.name</code>. An attached file supplements a directory file of the same name and replaces it entry by entry, so a session may carry amendments without disturbing what is installed.</li>
+<li><strong>Re-render</strong> the same material against the grown library. The report's evidence line shows the intuition count falling as the library takes over.</li>
+</ol>
+<p>For a parlance with a body of writing behind it, the <code>discover</code> disposition inverts the order: attach a corpus, and the skill measures form and construction frequency against a baseline and emits candidate entries, syntactic habits included, for the same amendment pass.</p>
+</body>
+</html>

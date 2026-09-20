@@ -1,4 +1,6 @@
-# Melopoeia
+### LLM-Synthesized Essay
+## [Curated Presentation](../../)
+# [The Melopoeia Catalog](./)
 
 Every document already sounds like something. Written without attention,
 it sounds like the week it was drafted---the author's own register,

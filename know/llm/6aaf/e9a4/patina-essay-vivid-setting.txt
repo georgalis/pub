@@ -1,0 +1,21 @@
+/transmission document office=construct cadence=legato priority=content span=1500
+posture  fluency=0.75 stamina=0.60 appetite=0.45 scrutiny=0.35 oblige=0.75 triage=full
+load     spread=0.45 sparse=0.40 plain=0.35 ground=0.55
+land     steady=0.70 invite=0.55 single=0.45 place=coda
+vantage  settled=0.45 linked=0.50 flat=0.60 bare=0.55
+         iuxta=0.30 sequent=0.35 attribute=artifact
+
+/melopoeia shakespeare:marked    purpose=essay (inferred)    score
+document     span=1500        divergent=0.30 <p>
+perform      derived --- correct or accept
+  1  the reader recognizing the machine's parlance          (opening)
+  2  the turn on the name --- founders patinating bronze     (the etymology)
+  3  the return of membership warrant                        (coda)
+mute         none
+channel=mimetic
+
+/patina     essay    cast=reverent    compose
+affiliate   parlance=[founding, rhetoric:secondary]   markers=all
+            displace=[synthetic]
+select      neutral=0.40   emblematic=0.70   steep=0.30:0.85   gloss=0.40   cited=0.25
+bridge      truss=0.65   poetic=0.55

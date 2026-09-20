@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+section[role="doc-endnotes"] ol { list-style: none; padding-left: 0; }
+li[role="doc-endnote"] p { display: inline; margin: 0; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h1 id="patina-ontology">Patina --- Ontology</h1>
+<p><em>(c) 2026 George Georgalis &lt;george@iuxta.com&gt; Unlimited use with attribution.</em></p>
+<pre><code>org 6aaf8524 20260920 000300 PDT Sun 12:03 AM 20 Sep 2026 --- revision 4: skill crafted
+</code></pre>
+<p>This document is the authoritative foundation for the skill <em>patina</em>. It is written to stand complete in itself: a future session possessing only this file, without conversational history, has everything required to resume, audit, or extend the work without retrograde. Every revision supersedes its predecessor in full; no revision may summarize away a prior constraint to save length. Where a later round narrows or reverses an earlier decision, the reversal and its rationale are recorded in the <a href="#decision-record">Decision Record</a> rather than silently dropped. This declaration is a standing requirement for this document and its successors.</p>
+<p>This is an ontology, not the skill. It fixes the entities, relations, keys, couplings, dispositions, library schema, report form, and roster from which the skill will be built. Operative prose, exemplars, and reverse diagnosis are deferred to crafting.</p>
+<hr />
+<h2 id="contents">Contents</h2>
+<nav>
+<ul>
+<li><a href="#office">Office</a></li>
+<li><a href="#boundary">Boundary</a></li>
+<li><a href="#entities">Entities</a>
+<ul>
+<li><a href="#parlance">Parlance</a></li>
+<li><a href="#marker">Marker</a></li>
+<li><a href="#salience">Salience</a></li>
+<li><a href="#steep">Steep</a></li>
+<li><a href="#cast">Cast</a></li>
+<li><a href="#bridge">Bridge</a></li>
+<li><a href="#association">Association</a></li>
+<li><a href="#membership-warrant">Membership Warrant</a></li>
+<li><a href="#displacement-parlance">Displacement Parlance</a></li>
+<li><a href="#library-and-evidence">Library and Evidence</a></li>
+<li><a href="#purpose">Purpose</a></li>
+<li><a href="#disposition">Disposition</a></li>
+</ul></li>
+<li><a href="#relations">Relations</a></li>
+<li><a href="#keys">Keys</a></li>
+<li><a href="#couplings">Couplings</a></li>
+<li><a href="#yield">Yield</a></li>
+<li><a href="#dispositions">Dispositions</a>
+<ul>
+<li><a href="#compose-and-revoice">Compose and revoice</a></li>
+<li><a href="#discover">Discover</a></li>
+<li><a href="#harvest-request">Harvest (request)</a></li>
+</ul></li>
+<li><a href="#library">Library</a>
+<ul>
+<li><a href="#layout">Layout</a></li>
+<li><a href="#file-header">File header</a></li>
+<li><a href="#entry-schema">Entry schema</a></li>
+<li><a href="#evidence-block">Evidence block</a></li>
+<li><a href="#template-spectrum">Template spectrum</a></li>
+</ul></li>
+<li><a href="#report">Report</a></li>
+<li><a href="#roster">Roster</a></li>
+<li><a href="#decision-record">Decision Record</a></li>
+<li><a href="#open-items">Open Items</a></li>
+<li><a href="#notes">Notes</a></li>
+</ul>
+</nav>
+<!--
+[Office](#office) --- [Boundary](#boundary) --- [Entities](#entities)
+--- [Relations](#relations) --- [Keys](#keys) ---
+[Couplings](#couplings) --- [Yield](#yield) ---
+[Dispositions](#dispositions) --- [Library](#library) ---
+[Report](#report) --- [Roster](#roster) ---
+[Decision Record](#decision-record) --- [Open Items](#open-items) ---
+[Notes](#notes)
+-->
+<hr />
+<h2 id="office">Office</h2>
+<p><strong>Patina affiliates.</strong> It selects forms already in circulation --- words, phrases, habits of construction, analogies, allusions --- so that a reader places the author inside a parlance and receives the subject in the light the author intends.</p>
+<p>Its target outcome is <strong>membership warrant</strong>: the reader's unreflective inference that the author belongs. Membership warrant is conferred at reading speed and withdrawn the same way; no argument secures it and no disclaimer restores it. Where coined vocabulary earns the warrant of capacity --- the author holds the material --- membership warrant is the warrant of belonging: the author holds the culture.</p>
+<p><strong>The operating problem.</strong> Prose synthesized by a language model is recognized by its readers, and the recognition withdraws warrant retroactively, across everything already read. Such prose is not unmarked. It belongs to a parlance of its own, one readers learned recently and recognize by its emblems. <strong>No prose is unaffiliated</strong>; the only question is with whom. Patina is a prose construction tool that also specifies the affiliation. It adds belonging to prose that had none or was synthesized, displacing the machine's markers with a culture's, and it does so without performing the culture it joins.</p>
+<p><strong>The name.</strong> Bronze leaves the foundry bright and uniform. Weather and handling give it, over decades, the surface that makes it look as though it has always stood where it stands. Founders do not wait for that. They patinate --- heat, chemical washes, wax --- depositing deliberately what time would deposit slowly, and the practice is a recognized finishing art rather than a counterfeit of age. The instrument is the patineur's craft applied to prose: the surface of use, laid on as finish, over a text that left synthesis bright and uniform.</p>
+<p><strong>The success condition is placement.</strong> A reader, unprompted, places the author inside the specified parlance and accepts the subject in the cast in which it was presented. No internal criterion outranks that one.</p>
+<hr />
+<h2 id="boundary">Boundary</h2>
+<p>The skill itself is self-contained and names no companion instrument. This table exists only to verify non-overlap during development.</p>
+<table>
+<thead>
+<tr><th>instrument</th><th>governs</th><th>leaves to patina</th></tr>
+</thead>
+<tbody>
+<tr><td>coinage</td><td>striking new forms and scheduling their return</td><td>selection among forms already in stock; membership credential, whose <code>credential</code> register a forthcoming coinage revision is expected to separate or retire</td></tr>
+<tr><td>melopoeia</td><td>the sonic channel; its <code>lexical</code> band chooses synonyms by sound-shape</td><td>synonym choice by social provenance</td></tr>
+<tr><td>transmission</td><td>delivery configured to a reader's posture</td><td>the lexicon itself; transmission positions prose and stocks none</td></tr>
+</tbody>
+</table>
+<p>Patina selects by what a form says about its speaker: the parlance it comes from, the time steeped into it, the associations it brings. When layered, patina decides which inherited forms appear; the other instruments decide how forms are struck, sounded, and delivered.</p>
+<p><strong>Key collisions.</strong> <code>purpose</code> and <code>span</code> are shared deliberately, each instrument resolving them independently. Patina yields on any other collision.</p>
+<hr />
+<h2 id="entities">Entities</h2>
+<h3 id="parlance">Parlance</h3>
+<p>The social type a text is placed inside. Five composable axes: <strong>domain</strong> (profession, trade, craft, pursuit), <strong>region</strong>, <strong>era</strong>, <strong>institution</strong>, and <strong>stance</strong>. A document carries a primary parlance and may carry secondary ones, stated as an ordered stack. A parlance is realized as a library file; a parlance named without a file resolves at the intuition tier.</p>
+<p>Each parlance has a <strong>role</strong>: <code>affiliate</code>, whose markers are used, or <code>displace</code>, whose markers are replaced.</p>
+<h3 id="marker">Marker</h3>
+<p>The atomic unit: any form whose selection indexes a parlance. Six classes.</p>
+<table>
+<thead>
+<tr><th>class</th><th>unit</th><th>template example</th></tr>
+</thead>
+<tbody>
+<tr><td><code>lexical</code></td><td>word, jargon, slang</td><td><em>86</em> --- kitchen, out of stock</td></tr>
+<tr><td><code>phraseological</code></td><td>idiom, collocation, formula</td><td><em>the cut of his jib</em> --- nautical</td></tr>
+<tr><td><code>syntactic</code></td><td>a habit of construction</td><td>object deletion in recipe imperatives: <em>bake until set</em></td></tr>
+<tr><td><code>orthographic</code></td><td>abbreviation, capitalization, spelling</td><td>trade abbreviations; house spellings</td></tr>
+<tr><td><code>figurative</code></td><td>analogy, simile, metaphor chosen by source domain</td><td><em>trim the sails</em> for adjusting plans to conditions</td></tr>
+<tr><td><code>allusive</code></td><td>reference to a shared text, event, or figure</td><td><em>a pound of flesh</em></td></tr>
+</tbody>
+</table>
+<p>Figurative and allusive markers are also <strong>bridges</strong>, defined below.</p>
+<p><strong>Syntactic habits are discovered, not presumed.</strong> Registers documented densely in the literature --- legal drafting, radio procedure, recipes, academic hedging --- can be derived from a named domain with reasonable reliability<a href="#fn-4" role="doc-noteref"><span>[^</span>4<span>]</span></a>. For thinly documented domains, derivation from the name alone is guesswork presenting as knowledge. A syntactic habit is therefore specifiable only where the library holds it for the parlance, and the library acquires it through the discover disposition.</p>
+<h3 id="salience">Salience</h3>
+<p>A property of a marker: how widely it is recognized as belonging to its parlance. At 0.0 the marker is <strong>operative</strong>, used unremarked by members and unnoticed by others. At 1.0 it is <strong>emblematic</strong>, recognized by anyone as the parlance's own<a href="#fn-2" role="doc-noteref"><span>[^</span>2<span>]</span></a><a href="#fn-3" role="doc-noteref"><span>[^</span>3<span>]</span></a>. Salience is stored per entry, and the <code>emblematic</code> key selects against it.</p>
+<p><strong>Patina's bias is emblematic.</strong> The aim is genuine affiliation within the reader's reach, not membership that survives an insider's scrutiny. The content of the prose carries more of the placement than any operative marker could, and emblems reach the goal more directly.</p>
+<h3 id="steep">Steep</h3>
+<p>A property of a marker: the time steeped into it. It runs from <strong>new</strong> (recent in the English print corpus), through <strong>longstanding</strong> (long attested and still current), to <strong>antique</strong> (long attested, carrying its age audibly). Steep is stored per entry as attestation and status, and the <code>steep</code> key selects against it, as a value or as a band.</p>
+<p>Steep is measured in print, over long baselines. Usage emerging only in speech or social media lies outside the instrument's evidence and outside its intent.</p>
+<h3 id="cast">Cast</h3>
+<p>The light in which the subject is to be received. The vocabulary is open; examples are reverent, homely, wry, convivial, heroic, elegiac, urgent, austere, and comic. Cast is a property of the document (and of a region under local override), and it appears as affinity tags on library entries.</p>
+<p><strong>The cast is chosen before any marker or bridge is selected</strong>, because everything selected afterward carries it. It is either stated or inferred from the material; when inferred, it is reported as a claim for correction.</p>
+<p><em>Terminology.</em> "Disposition" stays reserved for the operating mode (compose, revoice, discover), following the convention of the instrument family. The subject's received light is named <code>cast</code>.</p>
+<h3 id="bridge">Bridge</h3>
+<p>A figurative or allusive marker that asserts an association between the subject and something the reader already holds. A bridge has three parts, in rhetoric's standard terms<a href="#fn-1" role="doc-noteref"><span>[^</span>1<span>]</span></a>:</p>
+<ul>
+<li><strong>tenor</strong>: the subject carried.</li>
+<li><strong>vehicle</strong>: the familiar thing that carries it.</li>
+<li><strong>ground</strong>: what the two share.</li>
+</ul>
+<p>A bridge has one further property, <strong>attestation</strong>. It is <code>attested</code> where the vehicle or allusion exists in the culture as stated, and <code>invented</code> where synthesis made it. Invented bridges are listed in the report as candidates for the library.</p>
+<p><strong>Bridges are the instrument's strongest device and the chief return on synthesis.</strong> A reader accepts the unfamiliar by association with the familiar more easily than an author can justify the unfamiliar directly. Bridges therefore assert couplings the source did not make. That is their purpose, not a defect.</p>
+<h3 id="association">Association</h3>
+<p>The transfer a bridge performs. <strong>The mapping is never one to one; the association always is.</strong> Readers know an analogy is partial and forgive a thin ground. What they transfer whole is the vehicle's standing --- its familiarity, its acceptability, its cast --- to the tenor. If the vehicle is accepted, the subject is accepted by connection.</p>
+<p>Two consequences govern both admission and amplification:</p>
+<ul>
+<li>A marginal analogy in the right cast outperforms a fidelity that leaves the subject without flavor.</li>
+<li>An exact analogy in the wrong cast carries the subject into a light it should not be received in, however sound its ground.</li>
+</ul>
+<p>More bridges are preferred wherever they align with the cast. None are admitted where they do not.</p>
+<h3 id="membership-warrant">Membership Warrant</h3>
+<p>The outcome the instrument exists to confer; the credential of belonging. It accumulates across every marker and bridge the reader accepts. It is settled at reading, never issued by the author, and withdrawn retroactively when the reader recognizes a foreign parlance --- most catastrophically the synthetic one. When membership warrant is withheld, nothing else in the document can fully redeem it. When it is conferred, the subject arrives already half accepted.</p>
+<h3 id="displacement-parlance">Displacement Parlance</h3>
+<p>A parlance whose markers are replaced rather than used. The principal case is <code>synthetic</code>: the vocabulary, phrasing, and constructions by which readers recognize model-synthesized prose<a href="#fn-5" role="doc-noteref"><span>[^</span>5<span>]</span></a>. A displacement parlance is an ordinary library file with <code>role: displace</code>, and the <code>displace</code> key names which such parlances run.</p>
+<p>Displacement is the other half of affiliation, not a rule ranked above it. The prose moves from one parlance to another: the machine's markers leave as the culture's arrive.</p>
+<h3 id="library-and-evidence">Library and Evidence</h3>
+<p>The library is the set of per-parlance YAML files, held in the skill's <code>library/</code> directory or attached to a session. Evidence is ranked in four tiers:</p>
+<ol>
+<li>a library entry carrying an evidence block, such as Ngram series supplied as YAML;</li>
+<li>a library entry without evidence;</li>
+<li>dated external evidence supplied in session;</li>
+<li>model intuition.</li>
+</ol>
+<p>The model's own sense of currency ranks lowest because its training distribution carries the biases the instrument works against<a href="#fn-6" role="doc-noteref"><span>[^</span>6<span>]</span></a>:</p>
+<ul>
+<li><strong>visibility</strong>: emblems are what gets written about;</li>
+<li><strong>temporal lag</strong>: knowledge anchored at a training cutoff;</li>
+<li><strong>institutional density</strong>: print and web registers overweighted against speech.</li>
+</ul>
+<p>Tiers are applied silently, and the calibration report counts them.</p>
+<h3 id="purpose">Purpose</h3>
+<p>The document class, naming a roster entry that resolves every scalar. Where a class overlaps a sibling instrument's class, the sibling's name is reused.</p>
+<h3 id="disposition">Disposition</h3>
+<p>The operating mode, derived from the request and never declared:</p>
+<ul>
+<li><code>compose</code>: no draft is present.</li>
+<li><code>revoice</code>: a draft is present.</li>
+<li><code>discover</code>: an attached corpus is mined for library entries.</li>
+</ul>
+<p><strong>Harvest</strong> is a request, not a disposition. It asks for library entries covering the markers a compose or revoice used, for manual inclusion or exclusion in future rounds.</p>
+<hr />
+<h2 id="relations">Relations</h2>
+<table>
+<thead>
+<tr><th>subject</th><th>relation</th><th>object</th></tr>
+</thead>
+<tbody>
+<tr><td>parlance</td><td>holds</td><td>markers</td></tr>
+<tr><td>parlance</td><td>has role</td><td><code>affiliate</code> or <code>displace</code></td></tr>
+<tr><td>marker</td><td>has</td><td>class, salience, steep, cast affinities</td></tr>
+<tr><td>bridge</td><td>is a</td><td>marker of class <code>figurative</code> or <code>allusive</code></td></tr>
+<tr><td>bridge</td><td>joins</td><td>tenor to vehicle over a ground</td></tr>
+<tr><td>bridge</td><td>has</td><td>attestation</td></tr>
+<tr><td>document</td><td>has</td><td>purpose, cast, parlance stack</td></tr>
+<tr><td>purpose</td><td>resolves</td><td>every scalar setting</td></tr>
+<tr><td>cast</td><td>governs</td><td>admission of bridges; selection of markers by affinity</td></tr>
+<tr><td><code>emblematic</code></td><td>selects against</td><td>salience</td></tr>
+<tr><td><code>steep</code></td><td>selects against</td><td>attestation and status</td></tr>
+<tr><td>displacement parlance</td><td>supplies</td><td>markers to replace</td></tr>
+<tr><td>library entry</td><td>carries</td><td>evidence at a tier</td></tr>
+<tr><td>accepted markers and bridges</td><td>confer</td><td>membership warrant</td></tr>
+<tr><td>recognized foreign parlance</td><td>withdraws</td><td>membership warrant, retroactively</td></tr>
+</tbody>
+</table>
+<hr />
+<h2 id="keys">Keys</h2>
+<p><strong>Direction.</strong> Each scale is stated per key; no global direction is assumed. Values read by position, not by scale: <code>35</code>, <code>3.5</code>, <code>0.35</code>, and <code>7/20</code> place a setting identically. A setting names a region to occupy, not a limit not to exceed, and a region name may stand in place of a numeral.</p>
+<p><strong>Two kinds of scalar.</strong> <em>Intensity</em> scalars measure how much. Each has a <strong>patina pole</strong>, the end at which the key adds affiliation, and yields toward it under conflict (see <a href="#yield">Yield</a>); their tolerance is 0.10. <em>Polar</em> scalars name which kind, not how much, and have no patina pole; a conflict between them is resolved by local override, never by moving toward a pole. Their tolerance is 0.20. A polar key may be stated as a band, <code>a:b</code>, meaning the selection ranges across it.</p>
+<table>
+<thead>
+<tr><th>key</th><th>kind</th><th>0.0</th><th>1.0</th><th>patina pole</th><th>regions</th></tr>
+</thead>
+<tbody>
+<tr><td><code>neutral</code></td><td>intensity</td><td>saturated with the parlance</td><td>no markers added</td><td>0.0</td><td><code>saturated</code> .00-.25, <code>marked</code> .25-.55, <code>tinted</code> .55-.85, <code>neutral</code> .85-1.0</td></tr>
+<tr><td><code>emblematic</code></td><td>polar</td><td>operative: used unremarked by members</td><td>emblematic: recognized by anyone</td><td>---</td><td><code>operative</code> .00-.35, <code>mixed</code> .35-.65, <code>emblematic</code> .65-1.0</td></tr>
+<tr><td><code>steep</code></td><td>polar</td><td>new in print</td><td>antique</td><td>---</td><td><code>new</code> .00-.30, <code>longstanding</code> .30-.70, <code>antique</code> .70-1.0</td></tr>
+<tr><td><code>gloss</code></td><td>intensity</td><td>markers left for the reader to decode</td><td>every marker decoded in context</td><td>0.0</td><td><code>undecoded</code> .00-.30, <code>contextual</code> .30-.65, <code>glossed</code> .65-1.0</td></tr>
+<tr><td><code>cited</code></td><td>polar</td><td>inhabited: the author speaks the parlance</td><td>cited: the parlance held at quotation distance</td><td>---</td><td><code>inhabited</code> .00-.35, <code>mixed</code> .35-.65, <code>cited</code> .65-1.0</td></tr>
+<tr><td><code>truss</code></td><td>intensity</td><td>no bridges, or minimal</td><td>heavy use of bridges</td><td>1.0</td><td><code>minimal</code> .00-.20, <code>measured</code> .20-.50, <code>frequent</code> .50-.80, <code>abundant</code> .80-1.0</td></tr>
+<tr><td><code>poetic</code></td><td>intensity</td><td>literal: tight ground, attested allusion only</td><td>free: loose ground, invented vehicles and allusions, license to the hallucinogenic</td><td>1.0</td><td><code>literal</code> .00-.20, <code>grounded</code> .20-.50, <code>loose</code> .50-.80, <code>free</code> .80-1.0</td></tr>
+</tbody>
+</table>
+<p><code>truss</code> takes its name from the bridge: each analogy or allusion is a supporting member, and toward 1.0 the members multiply until the subject is carried on a full framework of support.</p>
+<p><strong>Bridge keys.</strong> <code>truss</code> sets how many bridges appear; <code>poetic</code> sets how freely they are made. <code>poetic</code> <strong>tracks</strong> <code>truss</code>: where an invocation states <code>truss</code> and not <code>poetic</code>, <code>poetic</code> moves by the same amount from its default, clamped to 0.0-1.0; where the invocation states <code>poetic</code>, it holds. Heavy bridging generally wants a looser license, and sparse bridging a tighter one.</p>
+<p><code>neutral</code> and <code>truss</code> are independent. A document may saturate its bridges while its lexical markers stay light, or the reverse.</p>
+<table>
+<thead>
+<tr><th>key</th><th>values</th><th>what it does</th></tr>
+</thead>
+<tbody>
+<tr><td><code>purpose</code></td><td>a roster name</td><td>resolves every scalar</td></tr>
+<tr><td><code>cast</code></td><td>open vocabulary</td><td>the subject's received light; inferred and reported when unstated</td></tr>
+<tr><td><code>parlance</code></td><td><code>[name, name:secondary]</code></td><td>stack of affiliating parlances, primary first</td></tr>
+<tr><td><code>markers</code></td><td>subset of the six classes</td><td>classes admitted; default is every class the library holds for the parlance</td></tr>
+<tr><td><code>displace</code></td><td><code>[name]</code></td><td>displacement parlances; default <code>[synthetic]</code> where that file is present</td></tr>
+<tr><td><code>span</code></td><td>integer</td><td>target extent in words; reports rather than binds</td></tr>
+</tbody>
+</table>
+<p><strong>Invocation.</strong> A purpose and a parlance form a complete invocation; everything else perturbs. Full per-purpose settings appear in the <a href="#roster">Roster</a>.</p>
+<pre><code>/patina essay parlance=[kitchen]
+/patina letter parlance=[nautical] cast=homely steep=0.60:0.95
+/patina memo parlance=[unix-admin] markers=[lexical,figurative] poetic=grounded
+/patina fiction parlance=[kitchen] neutral=saturated emblematic=0.90 truss=abundant poetic=free
+/patina essay parlance=[commons] cast=wry cited=0.75 truss=0.80
+</code></pre>
+<p>The last line is satire, reached by perturbing <code>essay</code>: a wry cast and the parlance held at quotation distance.</p>
+<p><strong>Local override.</strong> Any setting may be overridden for a declared region, for example dialogue against narration, or a quoted passage. The override is declared as an exception. A setting wanting override everywhere is a document setting stated wrongly.</p>
+<hr />
+<h2 id="couplings">Couplings</h2>
+<ol>
+<li><strong><code>neutral</code> with <code>emblematic</code> --- the caricature register.</strong> Where <code>neutral</code> is at or below 0.25 and <code>emblematic</code> is at or above 0.75, the render occupies <code>caricature</code>: a portrait of the parlance with its features simplified or exaggerated, and humor available. The register is named and reported, and never capped. Nothing in the instrument limits the saturation of emblematic markers, and <code>gloss</code> holds its setting inside the register, where a gloss may be the only means of amplification.</li>
+</ol>
+<ol>
+<li><strong><code>cast</code> with every bridge.</strong> Each vehicle carries the cast. A vehicle misaligned with the cast is not admitted at any <code>poetic</code> setting. This is the instrument's one admission rule, and it follows from <a href="#association">Association</a>.</li>
+</ol>
+<ol>
+<li><strong><code>poetic</code> with attestation.</strong> At <code>literal</code>, only attested allusion is admitted, over a tight ground. At <code>grounded</code>, invented analogies are admitted, while allusions stay attested. At <code>loose</code> and <code>free</code>, invented vehicles and allusions are both admitted. Every invented bridge is marked and located in the report.</li>
+</ol>
+<ol>
+<li><strong><code>truss</code> with <code>poetic</code> --- tracking.</strong> Unless stated, <code>poetic</code> moves with <code>truss</code> by the same amount, as defined under <a href="#keys">Keys</a>.</li>
+</ol>
+<ol>
+<li><strong><code>truss</code> with <code>cast</code>.</strong> <code>truss</code> sets how many bridges appear; the cast sets which bridges may. Amplification never relaxes alignment.</li>
+</ol>
+<ol>
+<li><strong><code>steep</code> with evidence.</strong> <code>steep</code> filters by the attestation and status recorded in the library. Where only intuition supplies a date, the selection is counted at the intuition tier.</li>
+</ol>
+<hr />
+<h2 id="yield">Yield</h2>
+<p><strong>Intensity scalars yield toward patina</strong>: <code>neutral</code> and <code>gloss</code> toward 0.0, <code>truss</code> and <code>poetic</code> toward 1.0. The asymmetry is the inverse of the other instruments' and rests on the same ground: which failure is silent, and which is visible.</p>
+<ul>
+<li><strong>Sterility fails silently and catastrophically.</strong> The reader recognizes the synthetic parlance, withdraws membership warrant retroactively, and says nothing.</li>
+<li><strong>Excess fails visibly and recoverably.</strong> It is caught in proofreading and corrected at revision, before it has consequence.</li>
+</ul>
+<p>Yield governs uncertainty, not knowledge. Where a setting is stated or resolved by the roster, the center holds.</p>
+<hr />
+<h2 id="dispositions">Dispositions</h2>
+<h3 id="compose-and-revoice">Compose and revoice</h3>
+<ol>
+<li><strong>Read the material</strong> --- the brief or the draft, entire. Infer <code>purpose</code> and <code>cast</code>, and report both as claims.</li>
+<li><strong>Resolve</strong> the purpose roster entry, the parlance stack, and any explicit keys, then apply the couplings.</li>
+<li><strong>Fix the cast.</strong> It precedes every selection.</li>
+<li><strong>Gather associations.</strong> Collect candidate vehicles and allusions from the parlance library that align with the cast, as many as <code>truss</code> admits, within the license <code>poetic</code> allows.</li>
+<li><strong>Identify displacement</strong>: the markers of every parlance named in <code>displace</code> present in the draft, or likely to arise in synthesis.</li>
+<li><strong>Draft or revoice.</strong> Place lexical, phraseological, syntactic, and orthographic markers at the <code>neutral</code> density, the <code>emblematic</code> salience, and the <code>steep</code> band. Place bridges at the sites where the subject needs carrying.</li>
+<li><strong>Proof for alignment.</strong> Read every bridge against the cast.</li>
+<li><strong>Report.</strong></li>
+</ol>
+<p><strong>Preservation under revoice.</strong> Every proposition in the source draft survives, and new figurative material is admitted. Bridges may assert associations the source did not make; that is their purpose. What may not move: a claim's content, its hedging or force, its attribution, or its presence. The delta reports propositions moved (none expected) and the count of bridges added; invented bridges are located in the report.</p>
+<h3 id="discover">Discover</h3>
+<p>The input is an attached corpus. The output is candidate library entries.</p>
+<ol>
+<li>Name the parlance the corpus is taken to represent.</li>
+<li>Measure marker frequency in the corpus against a baseline: library evidence where present, then session-supplied evidence, then model intuition. Forms markedly more frequent than in ordinary English are candidates.</li>
+<li>Classify each candidate by class, estimate its salience, and record its steep from evidence where available.</li>
+<li>Detect syntactic habits by construction frequency --- sentence length, imperative rate, article deletion, passive rate, and the like --- and record them as <code>syntactic</code> entries.</li>
+<li>Emit the entries as YAML under the <a href="#library">Library</a> schema, for amendment by the operator.</li>
+</ol>
+<h3 id="harvest-request">Harvest (request)</h3>
+<p>After a compose or revoice, emit library entries for the markers and bridges used, located, for manual inclusion or exclusion. These entries are emitted only on request, never by default.</p>
+<hr />
+<h2 id="library">Library</h2>
+<h3 id="layout">Layout</h3>
+<pre><code>patina/
+  SKILL.md
+  library/
+    kitchen.yml
+    nautical.yml
+    synthetic.yml      # role: displace
+    ...
+</code></pre>
+<p>Files are added to the skill directory by hand or attached to a session. Ngram development arrives as evidence blocks inside library files.</p>
+<h3 id="file-header">File header</h3>
+<pre><code class="language-yaml">parlance:
+  name: kitchen
+  title: Kitchen and cookery
+  role: affiliate          # affiliate | displace
+  axes: {domain: cookery}
+  sources: [ngram, operator]
+  revised: 20260919</code></pre>
+<h3 id="entry-schema">Entry schema</h3>
+<table>
+<thead>
+<tr><th>field</th><th>type</th><th>required</th><th>meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>marker</code></td><td>string</td><td>yes</td><td>the form as written</td></tr>
+<tr><td><code>class</code></td><td>enum</td><td>yes</td><td><code>lexical</code>, <code>phraseological</code>, <code>syntactic</code>, <code>orthographic</code>, <code>figurative</code>, <code>allusive</code></td></tr>
+<tr><td><code>salience</code></td><td>0.0-1.0</td><td>yes</td><td>operative to emblematic</td></tr>
+<tr><td><code>steep</code></td><td>map</td><td>yes</td><td><code>attested</code> (year, decade, or century: <code>1597</code>, <code>1930s</code>, <code>c19</code>); <code>status</code> (<code>new</code>, <code>longstanding</code>, <code>antique</code>)</td></tr>
+<tr><td><code>cast</code></td><td>list</td><td>no</td><td>affinity tags</td></tr>
+<tr><td><code>gloss</code></td><td>string</td><td>no</td><td>decoding, for use under <code>gloss</code></td></tr>
+<tr><td><code>tenor</code></td><td>list</td><td>bridges</td><td>kinds of subject the vehicle can carry</td></tr>
+<tr><td><code>ground</code></td><td>string</td><td>bridges</td><td>what vehicle and tenor share</td></tr>
+<tr><td><code>attestation</code></td><td>enum</td><td>bridges</td><td><code>attested</code> or <code>invented</code></td></tr>
+<tr><td><code>displaces</code></td><td>list</td><td>no</td><td>forms this marker replaces, synthetic markers included</td></tr>
+<tr><td><code>admit</code> / <code>forbid</code></td><td>list</td><td>no</td><td>purposes that license or exclude the marker</td></tr>
+<tr><td><code>evidence</code></td><td>map</td><td>no</td><td>see below; absent means tier two</td></tr>
+<tr><td><code>notes</code></td><td>string</td><td>no</td><td>free text</td></tr>
+</tbody>
+</table>
+<h3 id="evidence-block">Evidence block</h3>
+<pre><code class="language-yaml">evidence:
+  source: ngram            # ngram | study | operator | intuition
+  corpus: en               # en | en-US | en-GB | en-fiction, with version
+  span: &lt;start&gt;-&lt;end&gt;
+  smoothing: &lt;n&gt;
+  case_insensitive: true
+  retrieved: &lt;yyyymmdd&gt;
+  trend: steady            # rising | steady | falling | revived
+  series: {}               # optional: decade -&gt; relative frequency</code></pre>
+<h3 id="template-spectrum">Template spectrum</h3>
+<p>These entries are illustrative. Their evidence is marked <code>intuition</code> and must be replaced in research sessions; no numeric series is supplied here, because a fabricated series is worse than none.</p>
+<pre><code class="language-yaml"># kitchen.yml
+entries:
+  - marker: "86"
+    class: lexical
+    salience: 0.70
+    steep: {attested: c20, status: longstanding}
+    cast: [convivial, urgent]
+    gloss: "out of stock; take it off the menu"
+    displaces: ["no longer available"]
+    forbid: ["null"]
+    evidence: {source: intuition}
+  - marker: "&lt;verb&gt; until &lt;state&gt;"      # bake until set
+    class: syntactic
+    salience: 0.60
+    steep: {attested: c19, status: longstanding}
+    cast: [homely]
+    notes: "object deletion in imperatives; procedural passages only"
+    evidence: {source: intuition}
+
+# nautical.yml
+entries:
+  - marker: "the cut of his jib"
+    class: phraseological
+    salience: 0.75
+    steep: {attested: c19, status: antique}
+    cast: [wry, homely]
+    gloss: "a person's look or manner"
+    evidence: {source: intuition}
+  - marker: "trim the sails"
+    class: figurative
+    salience: 0.80
+    steep: {attested: c19, status: longstanding}
+    cast: [pragmatic, austere]
+    tenor: [budget cuts, plan adjusted to conditions]
+    ground: "adjustment to forces one cannot change"
+    attestation: attested
+    evidence: {source: intuition}
+
+# commons.yml --- allusion held in common by English readers
+entries:
+  - marker: "a pound of flesh"
+    class: allusive
+    salience: 0.85
+    steep: {attested: 1597, status: antique}
+    cast: [austere, adversarial]
+    tenor: [a harsh demand exacted to the letter]
+    ground: "a lawful claim pressed past mercy"
+    attestation: attested
+    notes: "Shakespeare, The Merchant of Venice"
+    evidence: {source: intuition}
+
+# software.yml
+entries:
+  - marker: "technical debt"
+    class: phraseological
+    salience: 0.70
+    steep: {attested: 1992, status: new}
+    cast: [urgent, sober]
+    gloss: "future cost incurred by an expedient choice now"
+    evidence: {source: intuition}
+
+# synthetic.yml --- role: displace
+entries:
+  - marker: "delve into"
+    class: phraseological
+    salience: 0.90
+    steep: {attested: c19, status: longstanding}
+    evidence: {source: study}           # excess-vocabulary finding, note 5
+  - marker: "it is important to note"
+    class: phraseological
+    salience: 0.80
+    steep: {attested: c20, status: longstanding}
+    evidence: {source: intuition}</code></pre>
+<p><strong>Precedence.</strong> An attached file supplements a directory file of the same parlance, and replaces it entry by entry where a marker appears in both.</p>
+<hr />
+<h2 id="report">Report</h2>
+<p><strong>Every invocation emits the calibration report in the response body, never inside the artifact.</strong> Library entries used are not listed. Invented bridges are listed, each located and given its vehicle, tenor, and cast, as candidates for library calibration uplift. Full library entries appear only on a harvest request, or as the product of <code>discover</code>.</p>
+<pre><code>patina    essay (inferred)    cast=convivial (inferred)    revoice
+
+affiliate   parlance=[kitchen, nautical:secondary]   markers=all
+            displace=[synthetic]   register=none
+select      neutral=0.45 &lt;p&gt;    emblematic=0.65 &lt;p&gt;    steep=0.40:0.85 &lt;p&gt;
+            gloss=0.40 &lt;p&gt;    cited=0.25 &lt;p&gt;
+bridge      truss=0.60 &lt;p&gt;    poetic=0.50 &lt;p&gt;    placed=7    invented=2
+evidence    library=11    session=0    intuition=3
+displaced   4
+delta       propositions: none moved    bridges added: 7
+invented    P3 S1   stockpot left on the back burner -&gt; the deferred backlog    cast=homely
+            P5 S2   the ticket rail at the Friday rush -&gt; the release queue      cast=convivial
+</code></pre>
+<p>Marks: <code>&lt;p&gt;</code> purpose, <code>&lt;x&gt;</code> explicit, <code>&lt;c&gt;</code> coupling, <code>&lt;o&gt;</code> local override, <code>&lt;t&gt;</code> tracking. The report also carries the region of any override, and the caricature register wherever it is entered.</p>
+<hr />
+<h2 id="roster">Roster</h2>
+<p><strong>These are demonstration settings only.</strong> The skill carries the actual defaults; the two are identical at the outset and may diverge as the skill is tuned by use.</p>
+<p>Each line is a complete invocation, ready to copy and adjust. Change a value to perturb it; delete a key to return it to the skill's default; delete <code>poetic</code> to let it track <code>truss</code>. Replace <code>name</code> with a library parlance. <code>cast</code>, <code>markers</code>, <code>displace</code>, and <code>span</code> belong to the document rather than the purpose, and are omitted.</p>
+<pre><code>/patina essay    neutral=0.45 emblematic=0.65 steep=0.40:0.85 gloss=0.40 cited=0.25 truss=0.60 poetic=0.50 parlance=[name]
+/patina fiction  neutral=0.30 emblematic=0.60 steep=0.30:0.90 gloss=0.20 cited=0.15 truss=0.65 poetic=0.70 parlance=[name]
+/patina oration  neutral=0.35 emblematic=0.80 steep=0.50:0.90 gloss=0.30 cited=0.20 truss=0.75 poetic=0.55 parlance=[name]
+/patina letter   neutral=0.45 emblematic=0.65 steep=0.40:0.80 gloss=0.35 cited=0.20 truss=0.50 poetic=0.45 parlance=[name]
+/patina memo     neutral=0.65 emblematic=0.70 steep=0.30:0.70 gloss=0.55 cited=0.30 truss=0.35 poetic=0.30 parlance=[name]
+/patina article  neutral=0.50 emblematic=0.70 steep=0.30:0.75 gloss=0.60 cited=0.35 truss=0.55 poetic=0.40 parlance=[name]
+/patina manual   neutral=0.70 emblematic=0.55 steep=0.20:0.60 gloss=0.70 cited=0.25 truss=0.25 poetic=0.15 parlance=[name]
+/patina recruit  neutral=0.30 emblematic=0.85 steep=0.20:0.80 gloss=0.25 cited=0.20 truss=0.80 poetic=0.65 parlance=[name]
+/patina null     neutral=1.00 truss=0.00 poetic=0.00</code></pre>
+<p>At <code>null</code>, <code>emblematic</code>, <code>steep</code>, <code>gloss</code>, and <code>cited</code> are inert.</p>
+<p><code>essay</code>, <code>fiction</code>, <code>oration</code>, <code>letter</code>, and <code>recruit</code> are shared with the sibling instruments. <code>null</code> is total abstention; <code>spec</code> and <code>record</code> resolve to <code>null</code> as aliases, so a layered invocation reads consistently across instruments. Satire is reached by perturbing <code>essay</code>, chiefly through <code>cast</code> and <code>cited</code>: satire works on ideas, while the caricature register works on patina. The cast is never a roster value; it belongs to the subject.</p>
+<hr />
+<h2 id="decision-record">Decision Record</h2>
+<p>Round 1 was the prototype; round 2 the first review; round 3 the second review, which produced the first ontology; round 4 the ontology review, which produced the second; round 5 the key-name review, which produced the third; round 6 the crafting of the skill, whose extensions this revision records.</p>
+<ul>
+<li><strong>Name.</strong> R1 proposed <code>logopoeia</code>, after Pound's third mode<a href="#fn-7" role="doc-noteref"><span>[^</span>7<span>]</span></a>. R2 judged it too academic for the power intended, and adopted <code>affiliate</code> as the working name for its simplicity. R2 proposed <code>seasoned</code> and <code>patina</code>. R3 rejected <code>season</code> for its weather association and adopted <strong>patina</strong>.</li>
+<li><strong>Operative against emblematic.</strong> R1 weighted operative markers (members recognize members by the unremarkable). R2 reversed this: bias toward emblematic, for genuine affiliation rather than scrutiny-proof membership, calibrated against performative caricature. R3 affirmed caricature as a legitimate register and retained the density coupling without limiting emblem saturation. R4 struck the coupling's connotation sentence, and struck its clause yielding <code>glossed</code> low inside the register, since a gloss may be the register's only means of amplification.</li>
+<li><strong><code>relation</code> key.</strong> R1 proposed <code>member | observer | bridge</code>. R2 removed it.</li>
+<li><strong>Misfire law.</strong> R1 proposed it. R2 removed it: parameter performance is tuned by use and proofreading, which keeps the solution space open.</li>
+<li><strong>Subtraction.</strong> R1 ranked subtraction above addition. R2 asked for refactor, and the R2 response recast it as displacement of the synthetic parlance, affiliation's other half. R3 affirmed the premise that no prose is unaffiliated. R4 confirmed the <code>displace</code> default of <code>[synthetic]</code>.</li>
+<li><strong>Evidence.</strong> R1's asymmetry paragraph, emergent-usage concerns, and insider-departure hypothesis were removed in R2. The English print corpus over long baselines is the evidence of credibility; social emergence is out of scope. Ranking is library, then dated external evidence, then intuition, applied silently.</li>
+<li><strong>Audit disposition.</strong> R1 proposed it. R2 refactored it as <strong>discover</strong>, a library-entry generator from an attached corpus.</li>
+<li><strong>Disqualifying applications.</strong> Enumerated in R1. R2 directed that they not be restated in the skill.</li>
+<li><strong>Time key.</strong> R1 proposed <code>established</code> and <code>era</code>. R2 proposed a single polar key, <code>steeped</code>, with bands, folding in <code>era</code>. R3 accepted it and renamed it <strong><code>steep</code></strong>.</li>
+<li><strong>Preservation.</strong> R2 proposed admitting figurative material only where it asserts nothing new. R3 reversed this: bridges assert associations the source did not make, and that is their purpose. The cast is chosen first, and bridges are amplified wherever aligned.</li>
+<li><strong>Bridge keys.</strong> R3 proposed <code>sparing</code>, running from abundant at 0.0 to rare at 1.0, and <code>literal</code>, with poetic license as its <code>licensed</code> region. R4 retired <code>literal</code>, which had no use case, inverted <code>sparing</code> to run from none at 0.0 to heavy at 1.0, and introduced <strong><code>poetic</code></strong>, running from literal at 0.0 to free at 1.0, tracking <code>sparing</code> unless stated. With the patina pole now differing by key, R4 replaced the single direction convention with a patina pole declared per intensity key. R5 renamed <code>sparing</code> to <strong><code>truss</code></strong>: analogy as the truss of a bridge, its supporting members multiplying toward 1.0, so the name now designates its own high pole.</li>
+<li><strong>Report.</strong> R1: always emitted. R2: on request. R3 reversed to <strong>always emitted</strong>, with library entries only on harvest. R4: invented bridges listed and located for library calibration uplift; library entries used are not listed.</li>
+<li><strong>Library.</strong> R2: populated in dedicated sessions, with template examples only in the skill. R3: per-parlance YAML files, in the skill directory or attached; Ngram development supplied as YAML. R4 confirmed precedence: attached files supplement directory files and replace them entry by entry.</li>
+<li><strong>Roster.</strong> R3 accepted the candidate set, reused sibling names where classes overlap, and adopted <code>letter</code> and <code>null</code>. R4 presented the roster as copy-ready invocations of demonstration settings, with the actual defaults held in the skill; moved <code>recruit</code> to <code>neutral=0.30</code>, so the caricature register is entered by choice rather than by default; and placed satire as a perturbation of <code>essay</code>. The sibling instruments will adopt <code>letter</code>.</li>
+<li><strong>Yield.</strong> R3 proposed yield toward patina, the inverse of the sibling instruments. R4 confirmed it.</li>
+<li><strong>Spelling.</strong> R3: <code>revoice</code>, not "re-voice". R5: the key <code>glossed</code> became <strong><code>gloss</code></strong>; <code>glossed</code> survives as the name of its high region.</li>
+<li><strong>Credential.</strong> R2: membership credential is this instrument's outcome. A coinage revision is expected to separate or retire its <code>credential</code> register.</li>
+<li><strong>License.</strong> R2: private development for public release; no organization-internal vocabulary in the skill. Internal libraries are the operator's concern; the license needs no extension.</li>
+<li><strong>Crafting extensions.</strong> R6 built <code>SKILL.md</code> and a seed library from this ontology, and made these additions for verification:
+<ul>
+<li>the parlance may be inferred from the subject and reported as a claim, as <code>purpose</code> and <code>cast</code> are;</li>
+<li>compose and revoice run two passes, truss before surface, since bridges reshape sentences and markers substitute within them; under compose, the truss pass runs at the outline;</li>
+<li>vehicles are drawn from the parlance stack first and a <code>commons</code> library after; stock vehicles are markers of the synthetic parlance;</li>
+<li>library entries whose cast tags oppose the cast are passed over while an aligned entry exists;</li>
+<li><code>truss</code> is inert, and reported, when <code>markers</code> excludes both <code>figurative</code> and <code>allusive</code>;</li>
+<li>under revoice, no claim about the subject may appear outside a bridge;</li>
+<li>a displaced form is replaced by the affiliating marker that <code>displaces</code> it, else by the plainest form the parlance would use;</li>
+<li>harvest emits every form placed: library entries with current values, new forms as new entries;</li>
+<li>library files beginning with <code>_</code> are documentation, never loaded; the seed library ships <code>_schema.yml</code>, <code>commons.yml</code>, and <code>synthetic.yml</code>;</li>
+<li>the purpose name <code>null</code> is quoted in YAML, where a bare <code>null</code> parses as an empty value.</li>
+</ul></li>
+<li><strong><code>cast</code>.</strong> Introduced in R3, to keep "disposition" for the operating mode while naming the subject's received light. R4 confirmed it.</li>
+</ul>
+<hr />
+<h2 id="open-items">Open Items</h2>
+<ol>
+<li><strong>Caricature thresholds</strong> of 0.25 and 0.75.</li>
+<li><strong>Roster values</strong>: demonstration only, to be tuned by use.</li>
+<li><strong>Crafting extensions</strong> listed under R6 in the decision record.</li>
+<li><strong>Exemplars</strong>: one constant source rendered across purposes, once a parlance library holds researched entries.</li>
+</ol>
+<hr />
+<h2 id="notes">Notes</h2>
+
+
+
+
+
+
+
+<section id="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn-1" role="doc-endnote"><span>[^1]: </span><p>I. A. Richards, <em>The Philosophy of Rhetoric</em> (New York: Oxford University Press, 1936). Source of <em>tenor</em> and <em>vehicle</em>; <em>ground</em> is the customary third term.</p></li>
+<li id="fn-2" role="doc-endnote"><span>[^2]: </span><p>Asif Agha, <em>Language and Social Relations</em> (Cambridge: Cambridge University Press, 2007). Source of <em>enregisterment</em>, the process by which forms come to be recognized as belonging to a social type.</p></li>
+<li id="fn-3" role="doc-endnote"><span>[^3]: </span><p>Michael Silverstein, "Indexical order and the dialectics of sociolinguistic life," <em>Language &amp; Communication</em> 23 (2003): 193--229, &lt;https://doi.org/10.1016/S0271-5309(03)00013-2&gt;</p></li>
+<li id="fn-4" role="doc-endnote"><span>[^4]: </span><p>Douglas Biber, <em>Variation across Speech and Writing</em> (Cambridge: Cambridge University Press, 1988). Multidimensional register analysis; the basis for discovering syntactic habits from a corpus.</p></li>
+<li id="fn-5" role="doc-endnote"><span>[^5]: </span><p>Dmitry Kobak et al., "Delving into ChatGPT usage in academic writing through excess vocabulary," <em>arXiv</em> 2406.07016 (2024), &lt;https://arxiv.org/abs/2406.07016&gt;</p></li>
+<li id="fn-6" role="doc-endnote"><span>[^6]: </span><p>Jean-Baptiste Michel et al., "Quantitative Analysis of Culture Using Millions of Digitized Books," <em>Science</em> 331 (2011): 176--182, &lt;https://doi.org/10.1126/science.1199644&gt;; Eitan Pechenick, Christopher Danforth, and Peter Dodds, "Characterizing the Google Books Corpus," <em>PLoS ONE</em> 10(10) (2015): e0137041, &lt;https://doi.org/10.1371/journal.pone.0137041&gt;. Viewer: &lt;https://books.google.com/ngrams/&gt;</p></li>
+<li id="fn-7" role="doc-endnote"><span>[^7]: </span><p>Ezra Pound, <em>How to Read</em> (1929); <em>ABC of Reading</em> (London: Routledge, 1934). &lt;https://en.wikipedia.org/wiki/Ezra_Pound%27s_Three_Kinds_of_Poetry&gt;</p></li>
+</ol>
+</section>
+</body>
+</html>

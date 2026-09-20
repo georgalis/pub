@@ -1,0 +1,122 @@
+# commons.yml --- allusion held in common by English readers
+# (c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution.
+# org 6aaf8486 20260920 000022 PDT Sun 12:00 AM 20 Sep 2026
+# Seed entries, intuition-tier; replace and extend in research sessions.
+
+parlance:
+  name: commons
+  title: Allusion held in common by English readers
+  role: affiliate
+  axes: {stance: general-literate}
+  sources: [template]
+  revised: 20260920
+
+entries:
+
+  - marker: "a pound of flesh"
+    class: allusive
+    salience: 0.85
+    steep: {attested: c16, status: antique}
+    cast: [austere, adversarial]
+    tenor: ["a harsh demand exacted to the letter"]
+    ground: "a lawful claim pressed past mercy"
+    attestation: attested
+    notes: "Shakespeare, The Merchant of Venice"
+    evidence: {source: intuition}
+
+  - marker: "the writing on the wall"
+    class: allusive
+    salience: 0.90
+    steep: {attested: 1611, status: antique}
+    cast: [urgent, austere]
+    tenor: ["an unmistakable sign of coming failure"]
+    ground: "judgment announced before it arrives"
+    attestation: attested
+    notes: "Daniel 5"
+    evidence: {source: intuition}
+
+  - marker: "the widow's mite"
+    class: allusive
+    salience: 0.70
+    steep: {attested: 1611, status: antique}
+    cast: [reverent, homely]
+    tenor: ["a small contribution great in proportion to means"]
+    ground: "worth measured by cost to the giver, not size"
+    attestation: attested
+    notes: "Mark 12:41-44"
+    evidence: {source: intuition}
+
+  - marker: "tilting at windmills"
+    class: allusive
+    salience: 0.85
+    steep: {attested: c17, status: antique}
+    cast: [wry, comic]
+    tenor: ["futile effort against an imagined adversary"]
+    ground: "the enemy is of the fighter's own making"
+    attestation: attested
+    notes: "Cervantes, Don Quixote"
+    evidence: {source: intuition}
+
+  - marker: "the emperor's new clothes"
+    class: allusive
+    salience: 0.85
+    steep: {attested: c19, status: longstanding}
+    cast: [wry, comic]
+    tenor: ["a collective pretense no one will name"]
+    ground: "everyone sees; no one says"
+    attestation: attested
+    notes: "Andersen"
+    evidence: {source: intuition}
+
+  - marker: "a Pyrrhic victory"
+    class: allusive
+    salience: 0.80
+    steep: {attested: c19, status: longstanding}
+    cast: [austere, wry]
+    tenor: ["a win at ruinous cost"]
+    ground: "the winner cannot afford another such win"
+    attestation: attested
+    notes: "Plutarch, Life of Pyrrhus"
+    evidence: {source: intuition}
+
+  - marker: "an Achilles' heel"
+    class: allusive
+    salience: 0.90
+    steep: {attested: c19, status: longstanding}
+    cast: [pragmatic, urgent]
+    tenor: ["a single weakness in an otherwise strong system"]
+    ground: "invulnerable everywhere but one place"
+    attestation: attested
+    evidence: {source: intuition}
+
+  - marker: "crossing the Rubicon"
+    class: allusive
+    salience: 0.80
+    steep: {attested: c17, status: antique}
+    cast: [heroic, urgent]
+    tenor: ["an irreversible commitment"]
+    ground: "past this point there is no return"
+    attestation: attested
+    notes: "Suetonius; Caesar"
+    evidence: {source: intuition}
+
+  - marker: "a Trojan horse"
+    class: allusive
+    salience: 0.90
+    steep: {attested: c16, status: antique}
+    cast: [urgent, adversarial]
+    tenor: ["a threat admitted in the guise of a gift"]
+    ground: "the defenders open the gate themselves"
+    attestation: attested
+    notes: "Virgil, Aeneid II"
+    evidence: {source: intuition}
+
+  - marker: "Sisyphean"
+    class: allusive
+    salience: 0.75
+    steep: {attested: c17, status: antique}
+    cast: [wry, elegiac]
+    tenor: ["endless labor that never completes"]
+    ground: "the stone always rolls back"
+    attestation: attested
+    evidence: {source: intuition}

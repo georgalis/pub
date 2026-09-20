@@ -27,15 +27,14 @@ _(c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution._
   <br>The inquiry leading to the _Transformative Journey_, and the first indexed composition
 * [Preventing the Technical Debt Avalanche: Essential Early-Stage Controls](6717-tech_debt_prevention_framework.yml.html) [^*] <!--672d453c-->
 * [Worship and Glorification of the Holy Spirit in Eastern Orthodox Theology](./6839-Nicene_Creed_Analysis.md) <!--6839390e-->
-* [Coinage](./6959/67e6/),
-  [ontology](./6959/67e6/coinage-ontology.md),
-  [skill](./6959/67e6/coinage-SKILL.md),
-  [repetition](./6959/67e6/rhetorical_repetition-essay.md),
-  [compression](./6959/67e6/compression_imperative-essay.md),
-  and [doy family research](./6959/67e6/doy_family_expressions-research.md)
-  <br>when a document's vocabulary must be built and carried, not merely sent
-    * Examples: [GibberLink](./6959/67e6/gibberlink.md) <!-- * [The Compression Imperative: Why Communication Creates Atomic Forms](./68c4-Compression_Imperative_of_Atomic_Linguistic_Forms.md) * [Academic Documentation of "Doy" Family Expressions: A Comprehensive Research Finding](./68c4-Doy_Family_Expressions_Research_Finding.md) * [Rhetorical Repetition: Recognition Rewards Recurrence](./6959-Rhetorical_Repetition_Recognition_Rewards_Recurrence.md) -->
-
+* [Repetition](./6959/67e6/rhetorical_repetition-essay.md),
+  [Compression](./6959/67e6/compression_imperative-essay.md),
+  and the [Doy](./6959/67e6/doy_family_expressions-research.md) family;
+  <br>when a vocabulary must be built, carried, and sent
+    * [Coinage](./6959/67e6/):
+      [ontology](./6959/67e6/coinage-ontology.md),
+      [skill](./6959/67e6/coinage-SKILL.md)
+      (Example [GibberLink](./6959/67e6/gibberlink.md)) <!-- * [The Compression Imperative: Why Communication Creates Atomic Forms](./68c4-Compression_Imperative_of_Atomic_Linguistic_Forms.md) * [Academic Documentation of "Doy" Family Expressions: A Comprehensive Research Finding](./68c4-Doy_Family_Expressions_Research_Finding.md) * [Rhetorical Repetition: Recognition Rewards Recurrence](./6959-Rhetorical_Repetition_Recognition_Rewards_Recurrence.md) -->
 * [Epochal Contrast in Psychoanalytic Methodology: Leonardo's Analysis Across Centuries](./68cf-Psychoanalytic_reinterpretation_of_Leonardo.md) <!--68cf4f1b-->
 * [Ultra-High-Speed Camera System for Filming Light Propagation: A Technical Implementation Guide](./68f3-Laser_pulse_propagation_visualization_technique.html) <!--68f32cb0-->
 * [When the Body Remembers What the Mind Cannot Access](./6919-When_the_Body_Remembers_what_the_Mind_Cannot_Access.html) <!--6919efb7-->
@@ -46,7 +45,12 @@ _(c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution._
 * [Character Selector](69b5-character-selector.yml) <!-- 69b5e4e0 -->
 * At Patriarch's Ponds, Again [Catalog](./69ba/7d57/), [Chapter](./69ba/7d57/at-patriarchs-ponds-again.md) and
   a [Bulgakov Companion](./69ba/7d57/reading-at-patriarchs-ponds-again.md)
-* [Melopedia](./6a77/cf23/melopoeia/melopoeia-essay.md) The Music Beneath Prose
+* [Melopedia](./69c4/7c42/) --- Vowel color, consonant grain, sentence rhythm
+<!--- suspension,
+  and sonic recurrence, configured from a roster of purposes, author
+  voices, and passage figures. For prose whose effect depends on how it
+  sounds, and for reading an existing composition to find what its sound
+  is carrying. --->
 * [Open Training Constraints: Economics, Architecture, and Nemotron 3 Super](./69d6-open-training-economics-architecture.md) <!-- 69d65753 -->
 * The Transmission Layer [Catalog](./6a77/cf23/),
   [Essay](./6a77/cf23/transmission_layer-essay.md),
@@ -56,7 +60,7 @@ _(c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution._
     [Load](./6a77/cf23/transmission-load-SKILL.md),
     [Land](./6a77/cf23/transmission-land-SKILL.md),
     [Vantage](./6a77/cf23/transmission-vantage-SKILL.md)
-  * [Melopoeia](./6a77/cf23/melopoeia/) --- the sonic channel of prose
+* [Patina](./6aaf/e9a4/) affiliates prose to community
 
 [^*]: Revision forthcoming
 

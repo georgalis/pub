@@ -1,0 +1,155 @@
+# synthetic.yml --- the machine's parlance, for displacement
+# (c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution.
+# org 6aaf8486 20260920 000022 PDT Sun 12:00 AM 20 Sep 2026
+# Forms by which readers recognize model-synthesized prose. Seed entries;
+# replace intuition-tier evidence in research sessions. Salience here is
+# how readily a reader takes the form as a sign of synthesis.
+
+parlance:
+  name: synthetic
+  title: Model-synthesized prose
+  role: displace
+  axes: {stance: synthesized}
+  sources: [study, template]
+  revised: 20260920
+
+entries:
+
+  - marker: "delve into"
+    class: phraseological
+    salience: 0.95
+    steep: {attested: c19, status: longstanding}
+    evidence: {source: study}
+    notes: "excess-vocabulary finding; SKILL.md note 4"
+
+  - marker: "it is important to note"
+    class: phraseological
+    salience: 0.85
+    steep: {attested: c20, status: longstanding}
+    evidence: {source: intuition}
+
+  - marker: "it's worth noting"
+    class: phraseological
+    salience: 0.80
+    steep: {attested: c20, status: longstanding}
+    evidence: {source: intuition}
+
+  - marker: "a rich tapestry"
+    class: figurative
+    salience: 0.90
+    steep: {attested: c20, status: longstanding}
+    evidence: {source: intuition}
+
+  - marker: "navigate the complexities"
+    class: figurative
+    salience: 0.85
+    steep: {attested: c20, status: longstanding}
+    evidence: {source: intuition}
+
+  - marker: "in today's fast-paced world"
+    class: phraseological
+    salience: 0.85
+    steep: {attested: c20, status: longstanding}
+    evidence: {source: intuition}
+
+  - marker: "plays a crucial role"
+    class: phraseological
+    salience: 0.80
+    steep: {attested: c20, status: longstanding}
+    evidence: {source: intuition}
+
+  - marker: "stands as a testament to"
+    class: phraseological
+    salience: 0.85
+    steep: {attested: c20, status: longstanding}
+    evidence: {source: intuition}
+
+  - marker: "embark on a journey"
+    class: figurative
+    salience: 0.80
+    steep: {attested: c20, status: longstanding}
+    evidence: {source: intuition}
+
+  - marker: "unlock the potential"
+    class: figurative
+    salience: 0.80
+    steep: {attested: c20, status: longstanding}
+    evidence: {source: intuition}
+
+  - marker: "in the realm of"
+    class: phraseological
+    salience: 0.80
+    steep: {attested: c19, status: longstanding}
+    evidence: {source: intuition}
+
+  - marker: "a double-edged sword"
+    class: figurative
+    salience: 0.75
+    steep: {attested: c19, status: longstanding}
+    evidence: {source: intuition}
+    notes: "stock vehicle"
+
+  - marker: "a well-oiled machine"
+    class: figurative
+    salience: 0.70
+    steep: {attested: c20, status: longstanding}
+    evidence: {source: intuition}
+    notes: "stock vehicle"
+
+  - marker: "underscores"
+    class: lexical
+    salience: 0.75
+    steep: {attested: c20, status: longstanding}
+    evidence: {source: intuition}
+
+  - marker: "showcasing"
+    class: lexical
+    salience: 0.70
+    steep: {attested: c20, status: longstanding}
+    evidence: {source: intuition}
+
+  - marker: "pivotal"
+    class: lexical
+    salience: 0.70
+    steep: {attested: c19, status: longstanding}
+    evidence: {source: intuition}
+
+  - marker: "multifaceted"
+    class: lexical
+    salience: 0.70
+    steep: {attested: c19, status: longstanding}
+    evidence: {source: intuition}
+
+  - marker: "seamless"
+    class: lexical
+    salience: 0.65
+    steep: {attested: c20, status: longstanding}
+    evidence: {source: intuition}
+
+  - marker: "leverage"
+    class: lexical
+    salience: 0.55
+    steep: {attested: c20, status: longstanding}
+    evidence: {source: intuition}
+    notes: "as a verb; also corporate parlance, so displace only where corporate is not the affiliating parlance"
+
+  - marker: "not just <X>, but <Y>"
+    class: syntactic
+    salience: 0.75
+    steep: {attested: c20, status: longstanding}
+    evidence: {source: intuition}
+    notes: "the corrective reframe, especially repeated"
+
+  - marker: "<adjective>, <adjective>, and <adjective>"
+    class: syntactic
+    salience: 0.60
+    steep: {attested: c19, status: longstanding}
+    evidence: {source: intuition}
+    notes: "reflexive triads; the rule of three applied by default"
+
+  - marker: "Ultimately, <summary>"
+    class: syntactic
+    salience: 0.65
+    steep: {attested: c20, status: longstanding}
+    evidence: {source: intuition}
+    notes: "summary openers closing paragraphs; also In conclusion"

@@ -30,13 +30,6 @@ and configurations, and to try re-voicing an existing composition.
   - [Vantage](./transmission-vantage-SKILL.md.html) --- viewpoint persistence,
     sentence contiguity, perspectival layering, unrequested justification, and
     attribution mode
-- [Melopoeia](./melopoeia/) --- the sonic channel of prose composed as an
-  instrument. Vowel color, consonant grain, sentence rhythm, suspension,
-  and sonic recurrence, configured from a roster of purposes, author
-  voices, and passage figures. For prose whose effect depends on how it
-  sounds, and for reading an existing composition to find what its sound
-  is carrying.
-
 
 - [Model Ontology](./transmission_layer-ontology.md.html) ---
   fixes what a transmission instrument is; nothing here composes prose, it

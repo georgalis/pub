@@ -1,0 +1,102 @@
+# _schema.yml --- patina library schema, annotated
+# (c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution.
+# org 6aaf8486 20260920 000022 PDT Sun 12:00 AM 20 Sep 2026
+#
+# Files beginning with an underscore are documentation and are never
+# loaded as parlances. One file per parlance; the file name matches
+# parlance.name. An attached file supplements a directory file of the
+# same name and replaces it entry by entry.
+#
+# Entries below are illustrative, one per marker class, drawn from
+# several parlances for demonstration. Their evidence is intuition-tier.
+
+parlance:
+  name: example            # matches the file name; used in parlance=[...]
+  title: Schema demonstration
+  role: affiliate          # affiliate | displace
+  axes:                    # any of: domain, region, era, institution, stance
+    domain: demonstration
+  sources: [template]      # provenance of the file: ngram, study, operator, harvest, discover, template
+  revised: 20260920
+
+entries:
+
+  - marker: "86"
+    class: lexical         # lexical | phraseological | syntactic | orthographic | figurative | allusive
+    salience: 0.70         # 0.0 operative (members only) ... 1.0 emblematic (anyone)
+    steep:
+      attested: c20        # year (1611), decade (1930s), or century (c19)
+      status: longstanding # new | longstanding | antique
+    cast: [convivial, urgent]
+    gloss: "out of stock; take it off the menu"
+    displaces: ["no longer available", "currently unavailable"]
+    forbid: ["null"]         # purposes that exclude the marker; admit: lists purposes that license it
+    evidence: {source: intuition}
+    notes: "kitchen parlance"
+
+  - marker: "technical debt"
+    class: phraseological
+    salience: 0.70
+    steep: {attested: 1992, status: new}
+    cast: [urgent, pragmatic]
+    gloss: "future cost incurred by an expedient choice now"
+    evidence: {source: intuition}
+    notes: "software parlance"
+
+  - marker: "<verb> until <state>"
+    class: syntactic       # angle brackets mark the slots of a habit
+    salience: 0.60
+    steep: {attested: c19, status: longstanding}
+    cast: [homely]
+    notes: "object deletion in recipe imperatives (bake until set); procedural passages only"
+    evidence: {source: intuition}
+
+  - marker: "<command>(<section>)"
+    class: orthographic
+    salience: 0.55
+    steep: {attested: 1970s, status: longstanding}
+    cast: [pragmatic]
+    gloss: "a manual page named with its section, as in ls(1)"
+    admit: [manual, memo, article]
+    evidence: {source: intuition}
+    notes: "unix-admin parlance"
+
+  - marker: "trim the sails"
+    class: figurative
+    salience: 0.80
+    steep: {attested: c19, status: longstanding}
+    cast: [pragmatic, austere]
+    tenor: ["budget cuts", "a plan adjusted to conditions"]
+    ground: "adjustment to forces one cannot change"
+    attestation: attested  # attested | invented
+    evidence: {source: intuition}
+    notes: "nautical parlance"
+
+  - marker: "a stockpot left on the back burner"
+    class: figurative
+    salience: 0.65
+    steep: {attested: c20, status: longstanding}
+    cast: [homely]
+    tenor: ["a deferred backlog"]
+    ground: "work set aside that keeps reducing, and keeps needing attention"
+    attestation: invented  # harvested from a report's invented list
+    evidence: {source: harvest}
+
+  - marker: "tilting at windmills"
+    class: allusive
+    salience: 0.85
+    steep: {attested: c17, status: antique}
+    cast: [wry, comic]
+    tenor: ["futile effort against an imagined adversary"]
+    ground: "the enemy is of the fighter's own making"
+    attestation: attested
+    notes: "Cervantes, Don Quixote"
+    evidence:              # full evidence block; placeholders shown
+      source: ngram        # ngram | study | operator | intuition
+      corpus: en           # en | en-US | en-GB | en-fiction, with version
+      span: "<start>-<end>"
+      smoothing: 3
+      case_insensitive: true
+      retrieved: "<yyyymmdd>"
+      trend: steady        # rising | steady | falling | revived
+      series: {}           # optional: decade -> relative frequency; never fabricated

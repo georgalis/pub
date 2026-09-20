@@ -1,0 +1,22 @@
+/transmission document    office=construct  cadence=misura  priority=balance  span=650
+posture     fluency=0.55  stamina=0.35  appetite=0.35  scrutiny=0.20
+            oblige=0.65   triage=scan
+load        spread=0.68   sparse=0.62   plain=0.60   ground=0.65
+land        steady=0.73   invite=0.48   single=0.55  place=frame
+vantage     settled=0.55  linked=0.60   flat=0.70    bare=0.65
+            iuxta=0.25    sequent=0.45  attribute=artifact
+
+/melopoeia  (no voice)    purpose=essay    score
+document    span=650         divergent=0.30 <p>
+grain       dark=0.50 <p>    flowing=0.60 <p>    rough=0.35 <p>
+measure     sustained=0.65 <p>  suspended=0.55 <p>  modulated=0.70 <p>
+carry       incidental=0.45 <p> transparent=0.40 <p>  monodic=0.70 <p>
+denote      family=fricative+nasal <p>   band=phonemic:movement <p>
+            channel=haptic <p>           ear=silent <p>
+perform     none
+mute        none
+
+/patina     essay    cast=reverent    compose
+affiliate   parlance=[founding, rhetoric:secondary]   markers=all displace=[synthetic]
+select      neutral=0.55 <x>   emblematic=0.45 <x>   steep=0.40:0.85   gloss=0.55 <x>   cited=0.25
+bridge      truss=0.35 <x>   poetic=0.25 (tracked)
