@@ -1,0 +1,152 @@
+.TH FF 1
+.SH NAME
+.nf
+  ff - functional find: walk file trees, one letter per switch
+
+.SH SYNOPSIS
+.nf
+  ff [-EIHLDSX0] [--] [path ...] [expression]
+  ff -h | --help
+
+.SH DESCRIPTION
+.nf
+  ff walks each path (default .) and evaluates the expression for every
+  node, as find(1) does, with one letter per switch. Options are
+  uppercase and global; they may appear anywhere except as the argument
+  of a primary. Primaries are lowercase. With no action in the
+  expression, each node for which it is true is printed.
+
+  Printed paths are the operand, then / and each name below it. Output
+  is raw bytes when stdout is not a terminal or -0 is given. On a
+  terminal, C0 and C1 control characters, DEL and bytes that are not
+  valid UTF-8 print as \eooo octal escapes, so a crafted name cannot
+  drive the terminal; names in diagnostics follow the same rule.
+
+  Directories are opened relative to their verified parent descriptor,
+  never by re-resolving a path; a directory swapped for another node
+  between listing and opening is reported and skipped.
+
+.SH OPTIONS
+.nf
+  -E     extended regular expressions (ERE) for -r; default basic (BRE)
+  -I     case-insensitive -n, -p and -r
+  -H     follow symlinks named as path operands
+  -L     follow all symlinks; loops are reported, not followed
+  -D     post-order: a directory is tested after its contents
+  -S     sorted walk: each directory's names in bytewise order
+  -X     do not descend into directories on other filesystems
+  -0     end names from -f and the default print with NUL, not newline
+  --     end of options: following words are paths, even with a
+         leading -, until a primary or operator
+  -h     short usage;  --help  this manual
+
+.SH PRIMARIES
+.nf
+  N is decimal: +N more than N, -N less than N, N exactly.
+  -n glob     last component matches glob (fnmatch; * matches a leading .)
+  -p glob     whole path matches glob (* also matches /)
+  -r re       path contains a match for re: unanchored, add ^ and $
+  -t types    type is any of: f file, d directory, l symlink, p fifo,
+              s socket, b block, c character device; -t fl is f or l
+  -d N        walk bound, global wherever it appears; operands are
+              depth 0.  -d -2: operands and their entries;
+              -d +0: everything below the operands; -d 1: entries only
+  -s N[ckMGT] size in bytes compared exactly; k M G T are 1024-based
+  -m N[smhdw] modified: age in seconds against N units, default d.
+              -m -2h under 2 hours; -m +7 over 7 days; -m 7 from 7 up
+              to 8 days
+  -a -c -b    the same for access, status change and birth time;
+              -b is false where the filesystem records no birth time
+  -w file     modified more recently than file
+  -k mode     permission bits: octal or symbolic (u+x,go-w); mode is
+              exact, -mode all bits set, +mode any bit set
+  -u user     owner, name or number;  -g group  group, name or number
+  -l N        link count;  -i N  inode number
+  -e          empty regular file or directory
+  -z          prune: do not descend into this directory; true
+
+.SH ACTIONS
+.nf
+  -f          print the path; explicit form for use with -o
+  -v          print a cksh line: inode links . size mdate name, hex,
+              the same as cksh -n0 -x0 on that name
+  -x cmd ... ;       run cmd inside the directory holding the node, {}
+                     as ./name; true when cmd exits 0
+  -x cmd ... {} +    the same, many names per run, per directory
+  -j cmd ... ;       run cmd from the current directory, {} as the path
+  -j cmd ... {} +    the same, many paths per run
+  -delete     remove the node; implies -D; refused with -L and for
+              .. and /; . is skipped silently
+  -q          stop the walk; pending + batches still run
+
+.SH OPERATORS
+.nf
+  ( expr )  ! expr  expr expr (and)  expr -o expr
+  ! binds tightest, then and, then -o. Quote ( ) ! and ; for the shell.
+
+.SH EXEC
+.nf
+  Commands run by fork and exec, never through a shell. {} is replaced
+  only when it is a whole argument. With +, {} must be last and appear
+  once. -x changes into the node's directory through the descriptor the
+  walk verified, so the path above the node cannot be swapped between
+  test and use; -x refuses to run when PATH holds a relative or empty
+  element, since a file planted in the walked directory would run.
+  -j passes the full path, which is exposed to that race, as find
+  -exec is; use it when the command needs whole paths.
+
+.SH EXIT STATUS
+.nf
+  A bitmask. 1 and 2 are fatal; the others accumulate as the walk
+  continues.
+     0  success
+     1  invalid option or expression
+     2  environment: memory, stdout, fork, unsafe PATH for -x
+     4  cannot stat, open, read or delete a node; subtree skipped
+     8  a command could not run, or a + batch exited nonzero
+    16  filesystem or symlink loop
+    32  node changed between listing and opening; skipped
+  A -x or -j ... ; command that exits nonzero is only false.
+
+  On stderr, errors as '>>> ff : ...' and warnings as '^^^ ff : ...',
+  each ending in a hex tag naming the message.
+
+.SH DIFFERENCES
+.nf
+  From NetBSD find: one-letter switches; -r is unanchored; -s is bytes
+  with no rounding; times compare seconds, not rounded days; -d is a
+  global bound; {} is never replaced inside a larger word; names are
+  escaped on a terminal; -I replaces -iname, -ipath and -iregex.
+
+.SH EXAMPLES
+.nf
+  ff . -t f -n '*.c'              C sources
+  ff -E src -r '\e.(c|h)$'         the same by regex
+  ff . -n .git -z -o -t f -f      files, skipping .git trees
+  ff . -t f -m -1 -v | sort -k5   changed today, by mtime
+  ff . -t f -x grep -l TODO {} +  per-directory grep, race safe
+  ff . -n '*.o' -delete           remove objects
+  ff -0 . -t f | xargs -0 cksh    hash everything
+
+.SH NOTES
+.nf
+  -u and -g resolve names on Linux by running getent from /usr/bin or
+  /bin, so a static binary sees the same users as the host; without
+  getent a name is an error (2) and a numeric id still works. Other
+  platforms use the C library.
+  Names are compared as bytes: no Unicode normalization, so on Darwin
+  HFS+ a precomposed pattern does not match a decomposed name.
+
+.SH HISTORY
+.nf
+  org 6ab7fec8 20260926 102008 PDT Sat 10:20 AM 26 Sep 2026
+      owned openat walker with dev/ino verification; one-letter
+      grammar; -x execdir, -j exec, -delete through the verified parent;
+      getent ids on Linux; tty escaping; status bitmask; chkerr/chkwrn
+      diagnostics; bash translator ff.fn.bash for the native find.
+
+.SH COPYRIGHT
+.nf
+  (c) 2026 George Georgalis <george@iuxta.com>
+  Unlimited use with attribution.
+.fi
