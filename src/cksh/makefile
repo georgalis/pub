@@ -1,6 +1,15 @@
 # makefile --- build, test and install cksh
-# rev 6ab75454 20260926
 # (c) 2017-2026 George Georgalis <george@iuxta.com> Unlimited use with attribution.
+#
+# rev 6ab7e734 20260926 083932 PDT Sat 08:39 AM 26 Sep 2026
+#     C build, test and install for the cksh port
+# rev 68e9ff40 20251010 235456 PDT Fri 11:54 PM 10 Oct 2025
+#     -0..-5, bare -n and -x (getopts :), -n and -x range validation
+# rev 68e20bca 20251004 231018 PDT Sat 11:10 PM 04 Oct 2025
+#     renamed cksh, getopts -n -x -h; ckstat and ckstatsum retired
+# rev 677c9c44 20250106 191516 PST Mon 07:15 PM 06 Jan 2025
+#     chksthash, from ckstatsum: shake256 -xoflen 3 hash column
+# org 6305e87b 20220824 015939 PDT Wed 01:59 AM 24 Aug 2022 ckstat ckstatsum cks
 #
 # Portable across GNU make, bmake (NetBSD, pkgsrc) and Apple make: no ifeq,
 # no $(shell), no ?=; platform branching happens inside recipe shells.
@@ -10,8 +19,11 @@
 #
 #   make                       build ./cksh and ./cksh.1
 #   make test                  regression suite (test.sh)
-#   make install [PREFIX=dir]  PREFIX defaults to $LOCALBASE (pkgsrc), else /usr/local
-#   make CC=$LOCALBASE/bin/gcc toolchain override, e.g. pkgsrc gcc
+#   make install [PREFIX=dir]  PREFIX defaults to /usr/local for root, else $HOME
+#   make CC=clang              toolchain override
+#
+# $LOCALBASE (pkgsrc) is consulted only for dependencies: the bash function
+# prefers $LOCALBASE/bin/openssl. It is never an install target.
 
 CKFLAGS = -std=c99 -Wall -Wextra -Wpedantic -O2
 PREFIX =
@@ -38,7 +50,7 @@ test: cksh
 	sh ./test.sh
 
 install: all
-	@p='$(PREFIX)'; [ -n "$$p" ] || p='$(LOCALBASE)'; [ -n "$$p" ] || p=/usr/local; \
+	@p='$(PREFIX)'; [ -n "$$p" ] || { [ "`id -u`" = 0 ] && p=/usr/local || p="$$HOME" ; }; \
 	case "$$p$(DESTDIR)" in *[!A-Za-z0-9._/+-]*) echo "install: unsafe path '$$p'" >&2; exit 1 ;; esac; \
 	m=man; [ -d "$$p/share/man" ] && m=share/man; \
 	d='$(DESTDIR)'; set -x; \

@@ -1,0 +1,138 @@
+.TH CKSH 1
+.SH NAME
+.nf
+  cksh - sortable stat and SHAKE256 listing of files
+
+.SH SYNOPSIS
+.nf
+  cksh [-0..-5] [-n [NUM]] [-x [LEN]] [-k [N]] [-r] [--] [FILE...]
+  cksh -h | --help
+
+.SH DESCRIPTION
+.nf
+  For each FILE, or each line of stdin when no FILE is given, print
+  one line of six space separated fields, numbers in lowercase hex
+  padded to minimum widths, so the data aligns in columns:
+
+       inode lk hash       size    mdate name
+      1cc01d  1 483366        3 5e0bd2c0 t/a
+      1cc01c  2 000000     1000 5e0bd2c0 t/d/
+      1cc01f  1 483366        1 5e0bd2c0 t/l@
+
+    inode  %8x   inode number of the node itself (not followed)
+    lk     %2x   hard link count
+    hash   SHAKE256 of the content, LEN bytes as 2*LEN hex digits;
+           zeros for directories and nodes that are not hashed
+    size   %8x   size in bytes (a symlink reports its own size)
+    mdate  %08x  modification time, unix seconds
+    name   as given, with ls -F style indicator:
+           / directory  @ symlink  | fifo  = socket
+
+  Omitted fields print as '.', so field numbers never shift and the
+  name always begins at field 6. A value wider than its column offsets
+  the rest of that line only; fields stay space separated, so awk $N
+  and sorting by field are unaffected. A name containing spaces runs
+  to end of line; recover it with:
+    awk '{print substr($0, index($0,$6))}'
+
+  Symlinks report their own inode, links, size and mdate, but the
+  hash is of the target content.
+
+.SH OPTIONS
+.nf
+  -0 .. -5   same as -n 0 .. -n 5
+  -n [NUM]   omit the first NUM fields, 0-5. Bare -n (last on the
+             line) means 0. Default 2: inode and links are omitted,
+             since they differ between copies of identical trees.
+             NUM above 2 omits the hash, so no file is read.
+  -x [LEN]   hash length in bytes, 0-64; 0 skips hashing. Bare -x
+             means 0. Default 3 (6 hex digits) suits change and
+             integrity checks among a person's own files; use 32 or
+             more where collisions must be infeasible.
+  -k [N]     sort on field N, 1-6, then the fields after it, then
+             the name. Hex numbers compare by value, so wide values
+             sort correctly; hash and name compare bytewise, as in
+             LC_ALL=C. An omitted field compares equal. Bare -k
+             means 6 (by name). Sorting buffers all output; without
+             -k or -r lines stream as produced.
+             A following word is taken as N only if it consists of
+             digits or 'r'; otherwise -k is bare and the word is a
+             file, so 'cksh -k *' works. Use -- or ./ for a file
+             named like a number.
+  -r         with -k, reverse the sort; alone, reverse input order.
+             Accepted forms: -k[ ][N]  -rk[ ][N]  -kr[ ][N]
+             Invalid: -k r  -k5r  -k 7
+  --         end of options
+  -h         short usage
+  --help     this manual
+
+.SH EXAMPLES
+.nf
+  cksh -k5 *                     by modification time, oldest first
+  cksh -rk5 *                    newest first
+  find . -type f | cksh -k3      group identical content by hash
+  cksh -x 32 -n 0 file           full 256 bit digest with inode
+  cksh -4 -k4 *                  names and sizes, sorted by size
+  find a -type f | cksh > a.ck; find b -type f | cksh > b.ck
+                                 compare trees with diff or join
+
+.SH HASH
+.nf
+  SHAKE256 is an extendable output function: the first L bytes of a
+  longer digest equal the L byte digest, so -x 3 values remain valid
+  prefixes of -x 32 values and of openssl shake256 -xoflen output.
+  The C binary computes SHAKE256 itself (FIPS 202) and needs no
+  openssl. The bash function uses openssl, preferring pkgsrc
+  $LOCALBASE/bin/openssl; with OpenSSL older than 3.0 it truncates
+  the 32 byte default digest, which limits it to -x 32.
+
+.SH EXIT STATUS
+.nf
+  A bitmask. 1 and 2 are fatal and stop before any file is read;
+  the others accumulate while the run continues.
+     0  success
+     1  invalid option or argument
+     2  environment: out of memory, stdin or stdout failure
+        (bash: no usable openssl shake256 for the requested -x)
+     4  cannot stat a name; line skipped
+     8  cannot open or read a regular file; line skipped
+    16  fifo, socket or device; warned, never opened, hash zeros
+    32  dangling symlink; warned, hash zeros
+  e.g. 52 = 4|16|32: a missing name, a fifo and a dangling link.
+
+.SH DIAGNOSTICS
+.nf
+  On stderr, errors as '>>> cksh : ...' and warnings as
+  '^^^ cksh : ...', each ending in a hex tag naming the message.
+
+.SH NOTES
+.nf
+  Names are read one per line; a name containing a newline cannot be
+  passed on stdin.
+
+.SH HISTORY
+.nf
+  rev 6ab7e734 20260926 083932 PDT Sat 08:39 AM 26 Sep 2026
+      C port with built-in SHAKE256; openssl<3 xoflen fallback in the
+      bash function; -k/-r value sort; --help manual; status bitmask;
+      chkerr/chkwrn diagnostics; bash helpers isolated in a subshell.
+      Changes from 68e9ff40: non-regular nodes hash as zeros (were
+      blank); fifos are warned and never opened (blocked the run);
+      per-file errors warn and continue (aborted the run); exit status
+      is a bitmask (was 0 or 1); ls -F indicators come from lstat, so a
+      name ending in * or % keeps it (was stripped); stdin names are
+      read raw, backslashes kept; numbers formatted by printf, not awk.
+  rev 68e9ff40 20251010 235456 PDT Fri 11:54 PM 10 Oct 2025
+      -0..-5, bare -n and -x (getopts :), -n and -x range validation
+  rev 68e20bca 20251004 231018 PDT Sat 11:10 PM 04 Oct 2025
+      renamed cksh, getopts -n -x -h; ckstat and ckstatsum retired
+  rev 677c9c44 20250106 191516 PST Mon 07:15 PM 06 Jan 2025
+      chksthash, from ckstatsum: shake256 -xoflen 3 hash column
+  org 6305e87b 20220824 015939 PDT Wed 01:59 AM 24 Aug 2022
+      ckstat ckstatsum cks
+
+.SH COPYRIGHT
+.nf
+  (c) 2017-2026 George Georgalis <george@iuxta.com>
+  Unlimited use with attribution.
+.fi
