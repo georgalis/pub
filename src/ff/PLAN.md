@@ -1,5 +1,8 @@
 # ff --- functional find: plan r2 (approved 20260926)
 
+(c) 2026 George Georgalis <george@iuxta.com>
+Unlimited use with attribution.
+
 <!-- org 6ab7fec8 20260926 102008 PDT Sat 10:20 AM 26 Sep 2026; model: cksh (cksh.c + cksh.fn.bash + makefile + test.sh) -->
 
 ## Context
@@ -240,3 +243,19 @@ Where the build departs from or fills a gap in the plan above:
   COPYRIGHT. `make install` defaults PREFIX to /usr/local for root, else
   $HOME. `warned_btime` is declared only where -b can warn (unused-variable
   warning on Darwin and NetBSD).
+- r5: `-k` is a permission query, not find's chmod arithmetic (`-k u+x`
+  had meant "mode is exactly 0100"). Octal: bare exact, `+mode` at least
+  (superset), `-mode` at most (subset), following ff's +N more / -N less;
+  find's any-bit form is dropped. Symbolic: `[ugoa][+-][rwxXst]` clauses
+  joined by commas, all required; `+` has, `-` lacks, bare means `+`; no
+  `=`. Named classes each satisfy; no class means some class for `+`,
+  none for `-`. `s` setuid/setgid, `t` sticky, `X` directory-only
+  execute; `o+s`, `u+t`, `g+t` rejected (tag 6ab7ff46). `-not` spells
+  `!`. The manual's OPERATORS gains shell-quoting guidance and a
+  two-directory prune example. ff.fn.bash writes every clause with plain
+  `-perm -BITS`, "lacks" as one `! -perm -BIT` per bit, so no dialect
+  split. Review follow-up in the same rev: `-k +rs` holding through the
+  other class (which holds no s) is documented; diagnostics that state a
+  rule end in ", not" (or "after", "in", "of") before the quoted value,
+  and the time rule names its primary (`-m: time is ...`); copyright
+  and license added to README and PLAN.

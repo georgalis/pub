@@ -2,6 +2,8 @@
  * ff.c --- functional find: NetBSD find(1) semantics, one letter per switch
  * (c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution.
  *
+ * rev 6ab89f43 20260926 214451 PDT Sat 09:44 PM 26 Sep 2026
+ *     -k permission query (at least/at most, has/lacks, X s t), -not, "not" diagnostics
  * org 6ab7fec8 20260926 102008 PDT Sat 10:20 AM 26 Sep 2026
  *     owned openat walker, one-letter grammar, -x/-j/-delete, getent ids,
  *     tty escaping, status bitmask, chkerr/chkwrn diagnostics; companion
@@ -212,13 +214,22 @@ struct batch {			/* pending {} + arguments */
 	unsigned long gen;	/* -x: that level's generation */
 };
 
+struct kq {			/* one -k symbolic clause */
+	int sign;		/* '+' has, '-' lacks */
+	int any;		/* no class named: + holds for some class */
+	int dir;		/* X: only a directory satisfies */
+	mode_t bits[3];		/* per class u g o; 0 when not participating */
+};
+
 struct node {
 	int type, l, r;
 	int cmp;		/* '+', '-' or 0 */
 	uintmax_t num, unit;	/* compared value; time unit in seconds */
 	int tsel;		/* time: 'm' 'a' 'c' 'b' */
 	unsigned tmask;		/* type letters */
-	mode_t mode;
+	mode_t mode;		/* -k octal */
+	struct kq *kq;		/* -k symbolic clauses, all must hold */
+	int nkq;
 	const char *pat;
 	regex_t re;
 	struct timespec ref;
@@ -287,43 +298,63 @@ mul(uintmax_t a, uintmax_t b, const char *what, const char *arg, const char *tag
 	return a * b;
 }
 
-/* octal, or symbolic [ugoa]*[-+=][rwxst]* clauses joined by commas */
-static mode_t
-parse_mode(const char *s, const char *arg)
+/*
+ * -k: octal is exact, +mode a superset (every bit, maybe more), -mode a
+ * subset (no bit outside, maybe fewer). Symbolic is a query, not chmod:
+ * clauses [ugoa]*[+-]?[rwxXst]+ joined by commas; + has, - lacks, no sign
+ * means +. Named classes must each satisfy a clause; with none, + holds
+ * for some class and - for none. s is setuid (u) or setgid (g); t is the
+ * sticky bit (o); X is x that only a directory satisfies.
+ */
+static void
+parse_perm(struct node *n, const char *a)
 {
-	unsigned long m = 0, who, bits, all = 07777;
-	const char *p;
-	char op;
+	static const mode_t rwx[3][3] = {	/* r w x per class */
+		{ 0400, 0200, 0100 }, { 040, 020, 010 }, { 04, 02, 01 } };
+	static const mode_t sbit[3] = { 04000, 02000, 0 }, tbit[3] = { 0, 0, 01000 };
+	const char *p = a, *d;
+	unsigned who, c;
+	struct kq *q;
 
-	if (*s >= '0' && *s <= '7') {
-		for (p = s; *p >= '0' && *p <= '7' && p - s < 4; p++)
-			m = m << 3 | (unsigned long)(*p - '0');
+	n->cmp = (*p == '+' || *p == '-') && p[1] >= '0' && p[1] <= '7' ? *p++ : 0;
+	if (*p >= '0' && *p <= '7') {
+		for (d = p; *p >= '0' && *p <= '7' && p - d < 4; p++)
+			n->mode = (mode_t)(n->mode << 3 | (mode_t)(*p - '0'));
 		if (*p != '\0')
-			bad("-k: bad mode", arg, "6ab7ff11");
-		return (mode_t)m;
+			bad("-k: bad mode", a, "6ab7ff11");
+		return;
 	}
-	for (p = s;;) {
+	for (;;) {
+		n->kq = xrealloc(n->kq, (size_t)(n->nkq + 1) * sizeof *n->kq);
+		q = &n->kq[n->nkq++];
+		memset(q, 0, sizeof *q);
 		for (who = 0; *p && strchr("ugoa", *p); p++)
-			who |= *p == 'u' ? 04700 : *p == 'g' ? 02070 :
-			    *p == 'o' ? 01007 : 07777;
-		if (who == 0)
-			who = 07777;
-		if (*p != '+' && *p != '-' && *p != '=')
-			bad("-k: bad mode", arg, "6ab7ff11");
-		op = *p++;
-		for (bits = 0; *p && strchr("rwxst", *p); p++)
-			bits |= *p == 'r' ? 0444 : *p == 'w' ? 0222 :
-			    *p == 'x' ? 0111 : *p == 's' ? 06000 : 01000;
-		bits &= who & all;
-		if (op == '=')
-			m &= ~(who & all);
-		m = op == '-' ? m & ~bits : m | bits;
+			who |= *p == 'u' ? 1 : *p == 'g' ? 2 : *p == 'o' ? 4 : 8;
+		q->any = who == 0;
+		q->sign = *p == '+' || *p == '-' ? *p++ : '+';
+		if (!strchr("rwxXst", *p) || *p == '\0')
+			bad("-k: bad mode", a, "6ab7ff11");
+		for (; *p && strchr("rwxXst", *p); p++)
+			for (c = 0; c < 3; c++) {
+				if (!(who & 8) && who && !(who & 1u << c))
+					continue;
+				if (*p == 's' || *p == 't') {
+					/* named classes must each own the bit */
+					if (who && !(who & 8) &&
+					    !(*p == 's' ? sbit[c] : tbit[c]))
+						bad("-k: s is for u or g, t is for o, not",
+						    a, "6ab7ff46");
+					q->bits[c] |= *p == 's' ? sbit[c] : tbit[c];
+				} else {
+					q->bits[c] |= rwx[c][*p == 'r' ? 0 : *p == 'w' ? 1 : 2];
+					q->dir |= *p == 'X';
+				}
+			}
 		if (*p == '\0')
 			break;
 		if (*p++ != ',' || *p == '\0')
-			bad("-k: bad mode", arg, "6ab7ff11");
+			bad("-k: bad mode", a, "6ab7ff11");
 	}
-	return (mode_t)m;
 }
 
 #if defined(__linux__)
@@ -345,7 +376,7 @@ getent_id(const char *db, const char *s, const char *what, const char *tag)
 	for (i = 0; i < sizeof bin / sizeof *bin && access(bin[i], X_OK); i++)
 		;
 	if (i == sizeof bin / sizeof *bin)
-		die(ST_ENV, "no getent to resolve names, use a numeric id", s, NULL, "6ab7ff22");
+		die(ST_ENV, "no getent, use a numeric id for", s, NULL, "6ab7ff22");
 	av[0] = (char *)"getent";
 	av[1] = (char *)db;
 	av[2] = (char *)"--";
@@ -444,7 +475,7 @@ is_prim(const char *s, const char *list)
 static int
 is_exprtok(const char *s)
 {
-	return !strcmp(s, "!") || !strcmp(s, "(") || !strcmp(s, ")") ||
+	return !strcmp(s, "!") || !strcmp(s, "-not") || !strcmp(s, "(") || !strcmp(s, ")") ||
 	    !strcmp(s, "-o") || !strcmp(s, "-delete") || is_prim(s, P_ARG) ||
 	    is_prim(s, P_NONE) || is_prim(s, P_EXEC);
 }
@@ -464,6 +495,7 @@ primary(void)
 	    1073741824, 1073741824, 1099511627776ULL, 1099511627776ULL };
 	static const uintmax_t tm[] = { 1, 60, 3600, 86400, 604800 };
 	const char *t = tok[ti++], *a, *p;
+	char tw[40];		/* time rule naming its primary */
 	struct stat sb;
 	uintmax_t v;
 	int n, cmp, i, fl;
@@ -495,18 +527,18 @@ primary(void)
 			const char *q = strchr("fdlpsbc", *p);
 
 			if (q == NULL)
-				bad("-t: types are f d l p s b c", a, "6ab7ff0a");
+				bad("-t: types are f d l p s b c, not", a, "6ab7ff0a");
 			nd[n].tmask |= 1u << (q - "fdlpsbc");
 		}
 		if (*a == '\0')
-			bad("-t: types are f d l p s b c", a, "6ab7ff0a");
+			bad("-t: types are f d l p s b c, not", a, "6ab7ff0a");
 		return n;
 	case 'd': {
 		long lo, hi;
 
 		a = arg1();
 		if ((p = num(a, &cmp, &v)) == NULL || *p || v > LONG_MAX - 1)
-			bad("-d: depth is [+-]N", a, "6ab7ff0b");
+			bad("-d: depth is [+-]N, not", a, "6ab7ff0b");
 		lo = cmp == '+' ? (long)v + 1 : cmp == '-' ? 0 : (long)v;
 		hi = cmp == '-' ? (long)v - 1 : cmp == '+' ? LONG_MAX : (long)v;
 		if (lo > mindepth)
@@ -519,9 +551,9 @@ primary(void)
 		n = mk(N_SIZE, -1, -1);
 		a = arg1();
 		if ((p = num(a, &nd[n].cmp, &v)) == NULL)
-			bad("-s: size is [+-]N[ckMGT]", a, "6ab7ff0c");
+			bad("-s: size is [+-]N[ckMGT], not", a, "6ab7ff0c");
 		nd[n].num = mul(v, suffix(p, "ckKmMgGtT", szm, 1,
-		    "-s: size is [+-]N[ckMGT]", a, "6ab7ff0c"),
+		    "-s: size is [+-]N[ckMGT], not", a, "6ab7ff0c"),
 		    "-s: size overflows", a, "6ab7ff0d");
 		need_stat = 1;
 		return n;
@@ -529,10 +561,10 @@ primary(void)
 		n = mk(N_TIME, -1, -1);
 		nd[n].tsel = t[1];
 		a = arg1();
+		(void)snprintf(tw, sizeof tw, "-%c: time is [+-]N[smhdw], not", t[1]);
 		if ((p = num(a, &nd[n].cmp, &v)) == NULL)
-			bad("time is [+-]N[smhdw]", a, "6ab7ff0e");
-		nd[n].unit = suffix(p, "smhdw", tm, 86400,
-		    "time is [+-]N[smhdw]", a, "6ab7ff0e");
+			bad(tw, a, "6ab7ff0e");
+		nd[n].unit = suffix(p, "smhdw", tm, 86400, tw, a, "6ab7ff0e");
 		nd[n].num = v;
 		(void)mul(v, nd[n].unit, "time overflows", a, "6ab7ff0f");
 		if (v * nd[n].unit > (uintmax_t)INTMAX_MAX)
@@ -549,9 +581,7 @@ primary(void)
 		return n;
 	case 'k':
 		n = mk(N_PERM, -1, -1);
-		a = arg1();
-		nd[n].cmp = (*a == '-' || *a == '+') ? *a : 0;
-		nd[n].mode = parse_mode(a + (nd[n].cmp != 0), a);
+		parse_perm(&nd[n], arg1());
 		need_stat = 1;
 		return n;
 	case 'u': case 'g':
@@ -563,7 +593,7 @@ primary(void)
 		n = mk(t[1] == 'l' ? N_LINKS : N_INUM, -1, -1);
 		a = arg1();
 		if ((p = num(a, &nd[n].cmp, &nd[n].num)) == NULL || *p)
-			bad(t[1] == 'l' ? "-l: links is [+-]N" : "-i: inode is [+-]N", a,
+			bad(t[1] == 'l' ? "-l: links is [+-]N, not" : "-i: inode is [+-]N, not", a,
 			    t[1] == 'l' ? "6ab7ff16" : "6ab7ff17");
 		need_stat = 1;
 		return n;
@@ -591,15 +621,15 @@ primary(void)
 			bad("missing command after", t, "6ab7ff18");
 		for (i = 0; i < nd[n].argc; i++) {
 			if (strstr(nd[n].argv[i], "{}") && strcmp(nd[n].argv[i], "{}"))
-				bad("{} must be a whole argument", nd[n].argv[i], "6ab7ff19");
+				bad("{} must be a whole argument, not", nd[n].argv[i], "6ab7ff19");
 			if (nd[n].plus && i < nd[n].argc - 1 &&
 			    !strcmp(nd[n].argv[i], "{}"))
-				bad("with +, {} may appear only once, last", t, "6ab7ff1a");
+				bad("with +, {} may appear only once, last, in", t, "6ab7ff1a");
 			if (i == 0 && !strcmp(nd[n].argv[i], "{}"))
-				bad("{} cannot be the command", t, "6ab7ff1b");
+				bad("{} cannot be the command of", t, "6ab7ff1b");
 		}
 		if (t[1] == 'x' && strchr(nd[n].argv[0], '/') && nd[n].argv[0][0] != '/')
-			bad("-x: command must be absolute or found in PATH", nd[n].argv[0], "6ab7ff1c");
+			bad("-x: command must be absolute or found in PATH, not", nd[n].argv[0], "6ab7ff1c");
 		return n;
 	}
 	bad("unknown primary", t, "6ab7ff03");
@@ -612,8 +642,8 @@ parse_not(void)
 	int n;
 
 	if (ti >= ntok)
-		bad("expression ends early", ntok ? tok[ntok - 1] : NULL, "6ab7ff06");
-	if (!strcmp(tok[ti], "!")) {
+		bad("expression ends early, after", ntok ? tok[ntok - 1] : NULL, "6ab7ff06");
+	if (!strcmp(tok[ti], "!") || !strcmp(tok[ti], "-not")) {
 		ti++;
 		n = parse_not();
 		return mk(N_NOT, n, -1);
@@ -667,7 +697,7 @@ check_path(void)
 	for (;;) {
 		q = strchr(p, ':');
 		if (*p != '/')
-			die(ST_ENV, "-x: refusing relative or empty PATH element", getenv("PATH"), NULL, "6ab7ff29");
+			die(ST_ENV, "-x: refusing a relative or empty element in PATH", getenv("PATH"), NULL, "6ab7ff29");
 		if (q == NULL)
 			break;
 		p = q + 1;
@@ -973,6 +1003,38 @@ do_exec(struct node *n, struct ent *e)
 /* ------------------------------------------------------------ predicates */
 
 static int
+p_perm(struct node *n, struct ent *e)
+{
+	mode_t m = e->st.st_mode & 07777, all;
+	struct kq *q;
+	int i, c, some;
+
+	if (n->kq == NULL)
+		return n->cmp == '+' ? (m & n->mode) == n->mode :
+		    n->cmp == '-' ? (m & ~n->mode) == 0 : m == n->mode;
+	for (i = 0; i < n->nkq; i++) {
+		q = &n->kq[i];
+		if (q->dir && !S_ISDIR(e->st.st_mode))
+			return 0;
+		all = q->bits[0] | q->bits[1] | q->bits[2];
+		if (q->sign == '-') {
+			if (m & all)
+				return 0;
+		} else if (!q->any) {
+			if ((m & all) != all)
+				return 0;
+		} else {
+			/* some participating class has every one of its bits */
+			for (c = some = 0; c < 3 && !some; c++)
+				some = q->bits[c] && (m & q->bits[c]) == q->bits[c];
+			if (!some)
+				return 0;
+		}
+	}
+	return 1;
+}
+
+static int
 cmpnum(int cmp, uintmax_t have, uintmax_t want)
 {
 	return cmp == '+' ? have > want : cmp == '-' ? have < want : have == want;
@@ -1132,11 +1194,7 @@ eval(int i, struct ent *e)
 		return MTIM(&e->st).tv_sec > n->ref.tv_sec ||
 		    (MTIM(&e->st).tv_sec == n->ref.tv_sec &&
 		    MTIM(&e->st).tv_nsec > n->ref.tv_nsec);
-	case N_PERM:
-		f = e->st.st_mode & 07777;
-		return n->cmp == '-' ? (f & n->mode) == n->mode :
-		    n->cmp == '+' ? (n->mode == 0 || (f & n->mode) != 0) :
-		    (mode_t)f == n->mode;
+	case N_PERM: return p_perm(n, e);
 	case N_USER: return (uintmax_t)e->st.st_uid == n->num;
 	case N_GROUP: return (uintmax_t)e->st.st_gid == n->num;
 	case N_EMPTY: return p_empty(e);
@@ -1353,7 +1411,7 @@ static const char usage_text[] =
 "           -g group  -l [+-]N  -i [+-]N  -e  -z (prune)\n"
 "  actions  -f print  -v cksh line  -x cmd {} ;|+  (in entry's dir)\n"
 "           -j cmd {} ;|+  (full path)  -delete  -q quit\n"
-"  logic    ( )  !  juxtaposition = and  -o or\n"
+"  logic    ( )  ! or -not  juxtaposition = and  -o or\n"
 "  -h this summary, --help the manual\n";
 
 /* chunks below the C99 4095 byte literal limit, joined on output */
@@ -1412,8 +1470,36 @@ static const char *const manual[] = {
 "  -a -c -b    the same for access, status change and birth time;\n"
 "              -b is false where the filesystem records no birth time\n"
 "  -w file     modified more recently than file\n"
-"  -k mode     permission bits: octal or symbolic (u+x,go-w); mode is\n"
-"              exact, -mode all bits set, +mode any bit set\n"
+"  -k mode     permission bits. Octal, all twelve bits:\n"
+"                0755     exactly 0755\n"
+"                +0755    at least 0755: every bit of it, maybe more\n"
+"                -0755    at most 0755: no bit outside it, maybe fewer\n"
+"              Symbolic, clauses [ugoa][+-][rwxXst] joined by commas,\n"
+"              all of which must hold. + has, - lacks; a clause with\n"
+"              no sign means +. u owner, g group, o other, a all\n"
+"              three; each named class must satisfy the clause. With\n"
+"              no class, + holds when some class has the bits and -\n"
+"              when no class has any of them.\n"
+"              X is x that only a directory satisfies (search); a\n"
+"              clause with X is false for anything else. s is setuid\n"
+"              with u, setgid with g, either with no class, both with\n"
+"              a; t is the sticky (/tmp) bit, alone or with o.\n"
+"              With no class, each class is tested with only the bits\n"
+"              it can hold, so -k +rs holds when other has r, since\n"
+"              other has no s; name the class to need both: -k u+rs.\n"
+"                -k u+x           owner may execute\n"
+"                -k x             someone may execute (same as +x)\n"
+"                -k -x            no one may execute\n"
+"                -k o-X           directories others may not search\n"
+"                -k o-r           others may not read\n"
+"                -k w             someone may write\n"
+"                -k o+w           world writable\n"
+"                -k go-w          neither group nor other may write\n"
+"                -not -k go-w     group or other may write\n"
+"                -k u+s  -k g+s   setuid; setgid\n"
+"                -k +s            setuid or setgid\n"
+"                -k +t            sticky\n"
+"              Either of two bits in one class: -k u+r -o -k u+x\n"
 "  -u user     owner, name or number;  -g group  group, name or number\n"
 "  -l N        link count;  -i N  inode number\n"
 "  -e          empty regular file or directory\n"
@@ -1432,9 +1518,26 @@ static const char *const manual[] = {
 "              .. and /; . is skipped silently\n"
 "  -q          stop the walk; pending + batches still run\n"
 "\n"
+"\n",
 "OPERATORS\n"
-"  ( expr )  ! expr  expr expr (and)  expr -o expr\n"
-"  ! binds tightest, then and, then -o. Quote ( ) ! and ; for the shell.\n"
+"  expr expr       and: the right side is evaluated only when the\n"
+"                  left is true\n"
+"  expr -o expr    or: the right side is evaluated only when the left\n"
+"                  is false, so its actions see only nodes the left\n"
+"                  rejected\n"
+"  ! expr          not; -not expr is the same\n"
+"  ( expr )        grouping\n"
+"  -not binds tightest, then and, then -o.\n"
+"  The shell treats ( ) ; * and sometimes ! as its own syntax, so\n"
+"  escape them with a backslash or quote them: \\( \\) \\; '*.c'.\n"
+"    ff . -n '*.c' -o -n '*.h' -t f          .c of any type, or .h files\n"
+"    ff . \\( -n '*.c' -o -n '*.h' \\) -t f    .c and .h files only\n"
+"    ff . -k u+r -o -k u+x                   owner may read or execute\n"
+"  With no action in the expression, a node is printed when the whole\n"
+"  expression is true. Once any action appears (-f -v -x -j -delete\n"
+"  -q), only actions print. Pruning two directory names and printing\n"
+"  only files therefore ends in -f:\n"
+"    ff . \\( -n .git -o -n node_modules \\) -z -o -t f -f\n"
 "\n",
 "EXEC\n"
 "  Commands run by fork and exec, never through a shell. {} is replaced\n"
@@ -1465,7 +1568,10 @@ static const char *const manual[] = {
 "  From NetBSD find: one-letter switches; -r is unanchored; -s is bytes\n"
 "  with no rounding; times compare seconds, not rounded days; -d is a\n"
 "  global bound; {} is never replaced inside a larger word; names are\n"
-"  escaped on a terminal; -I replaces -iname, -ipath and -iregex.\n"
+"  escaped on a terminal; -I replaces -iname, -ipath and -iregex;\n"
+"  -k symbolic modes are queries, not chmod arithmetic, and octal\n"
+"  +mode (at least) and -mode (at most) read the opposite way to\n"
+"  find -perm -mode.\n"
 "\n"
 "EXAMPLES\n"
 "  ff . -t f -n '*.c'              C sources\n"
@@ -1485,6 +1591,10 @@ static const char *const manual[] = {
 "  HFS+ a precomposed pattern does not match a decomposed name.\n"
 "\n",
 "HISTORY\n"
+"  rev 6ab89f43 20260926 214451 PDT Sat 09:44 PM 26 Sep 2026\n"
+"      -k is a permission query: octal exact, +mode at least, -mode\n"
+"      at most; symbolic clauses + has, - lacks, with X s t. -not.\n"
+"      Diagnostics that state a rule end in \"not\" before the value.\n"
 "  org 6ab7fec8 20260926 102008 PDT Sat 10:20 AM 26 Sep 2026\n"
 "      owned openat walker with dev/ino verification; one-letter\n"
 "      grammar; -x execdir, -j exec, -delete through the verified parent;\n"

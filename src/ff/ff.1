@@ -58,8 +58,36 @@
   -a -c -b    the same for access, status change and birth time;
               -b is false where the filesystem records no birth time
   -w file     modified more recently than file
-  -k mode     permission bits: octal or symbolic (u+x,go-w); mode is
-              exact, -mode all bits set, +mode any bit set
+  -k mode     permission bits. Octal, all twelve bits:
+                0755     exactly 0755
+                +0755    at least 0755: every bit of it, maybe more
+                -0755    at most 0755: no bit outside it, maybe fewer
+              Symbolic, clauses [ugoa][+-][rwxXst] joined by commas,
+              all of which must hold. + has, - lacks; a clause with
+              no sign means +. u owner, g group, o other, a all
+              three; each named class must satisfy the clause. With
+              no class, + holds when some class has the bits and -
+              when no class has any of them.
+              X is x that only a directory satisfies (search); a
+              clause with X is false for anything else. s is setuid
+              with u, setgid with g, either with no class, both with
+              a; t is the sticky (/tmp) bit, alone or with o.
+              With no class, each class is tested with only the bits
+              it can hold, so -k +rs holds when other has r, since
+              other has no s; name the class to need both: -k u+rs.
+                -k u+x           owner may execute
+                -k x             someone may execute (same as +x)
+                -k -x            no one may execute
+                -k o-X           directories others may not search
+                -k o-r           others may not read
+                -k w             someone may write
+                -k o+w           world writable
+                -k go-w          neither group nor other may write
+                -not -k go-w     group or other may write
+                -k u+s  -k g+s   setuid; setgid
+                -k +s            setuid or setgid
+                -k +t            sticky
+              Either of two bits in one class: -k u+r -o -k u+x
   -u user     owner, name or number;  -g group  group, name or number
   -l N        link count;  -i N  inode number
   -e          empty regular file or directory
@@ -79,10 +107,27 @@
               .. and /; . is skipped silently
   -q          stop the walk; pending + batches still run
 
+
 .SH OPERATORS
 .nf
-  ( expr )  ! expr  expr expr (and)  expr -o expr
-  ! binds tightest, then and, then -o. Quote ( ) ! and ; for the shell.
+  expr expr       and: the right side is evaluated only when the
+                  left is true
+  expr -o expr    or: the right side is evaluated only when the left
+                  is false, so its actions see only nodes the left
+                  rejected
+  ! expr          not; -not expr is the same
+  ( expr )        grouping
+  -not binds tightest, then and, then -o.
+  The shell treats ( ) ; * and sometimes ! as its own syntax, so
+  escape them with a backslash or quote them: \e( \e) \e; '*.c'.
+    ff . -n '*.c' -o -n '*.h' -t f          .c of any type, or .h files
+    ff . \e( -n '*.c' -o -n '*.h' \e) -t f    .c and .h files only
+    ff . -k u+r -o -k u+x                   owner may read or execute
+  With no action in the expression, a node is printed when the whole
+  expression is true. Once any action appears (-f -v -x -j -delete
+  -q), only actions print. Pruning two directory names and printing
+  only files therefore ends in -f:
+    ff . \e( -n .git -o -n node_modules \e) -z -o -t f -f
 
 .SH EXEC
 .nf
@@ -116,7 +161,10 @@
   From NetBSD find: one-letter switches; -r is unanchored; -s is bytes
   with no rounding; times compare seconds, not rounded days; -d is a
   global bound; {} is never replaced inside a larger word; names are
-  escaped on a terminal; -I replaces -iname, -ipath and -iregex.
+  escaped on a terminal; -I replaces -iname, -ipath and -iregex;
+  -k symbolic modes are queries, not chmod arithmetic, and octal
+  +mode (at least) and -mode (at most) read the opposite way to
+  find -perm -mode.
 
 .SH EXAMPLES
 .nf
@@ -139,6 +187,10 @@
 
 .SH HISTORY
 .nf
+  rev 6ab89f43 20260926 214451 PDT Sat 09:44 PM 26 Sep 2026
+      -k is a permission query: octal exact, +mode at least, -mode
+      at most; symbolic clauses + has, - lacks, with X s t. -not.
+      Diagnostics that state a rule end in "not" before the value.
   org 6ab7fec8 20260926 102008 PDT Sat 10:20 AM 26 Sep 2026
       owned openat walker with dev/ino verification; one-letter
       grammar; -x execdir, -j exec, -delete through the verified parent;

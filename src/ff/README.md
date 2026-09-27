@@ -77,7 +77,7 @@ primary's argument. Primaries are lowercase.
 | `-s [+-]N[ckMGT]` | `-size` | bytes, exact, no rounding |
 | `-m -a -c -b [+-]N[smhdw]` | `-mtime` ... `-Btime` | age in seconds; default unit d |
 | `-w file` | `-newer` | |
-| `-k [+-]mode` | `-perm` | `+` any bit |
+| `-k [+-]mode` | `-perm` | a query, see below |
 | `-u` `-g` | `-user` `-group` | |
 | `-l` `-i` | `-links` `-inum` | |
 | `-e` | `-empty` | |
@@ -89,7 +89,29 @@ primary's argument. Primaries are lowercase.
 | `-delete` | `-delete` | the one long switch, by design |
 | `-q` | `-quit` / `-exit` | |
 
-Operators: `( )`, `!`, juxtaposition for and, `-o`.
+Operators: `( )`, `!` or `-not`, juxtaposition for and, `-o`. The shell
+treats `( ) ; *` and sometimes `!` as its own syntax, so escape or quote
+them: `ff . \( -n .git -o -n node_modules \) -z -o -t f -f`.
+
+`-k` asks about permission bits rather than doing chmod arithmetic, and
+its `+` and `-` keep ff's sense of more and less:
+
+- Octal: `0755` exactly; `+0755` at least (every bit, maybe more, find
+  `-perm -0755`); `-0755` at most (no bit outside it).
+- Symbolic: clauses `[ugoa][+-][rwxXst]` joined by commas, all required;
+  `+` has, `-` lacks, no sign means `+`. Named classes must each satisfy a
+  clause; with no class, `+x` means someone may execute and `-x` no one
+  may. `X` is execute that only a directory satisfies, `s` setuid (`u`) or
+  setgid (`g`), `t` the sticky bit. With no class, each class is tested
+  with only the bits it can hold, so `-k +rs` holds for a 0644 file
+  (other has `r` and can hold no `s`); `-k u+rs` needs both in one class.
+
+```
+ff . -t f -k o+w        world-writable files
+ff . -k +s              setuid or setgid
+ff . -not -k go-w       group or other may write
+ff . -k o-X             directories others may not search
+```
 
 `-x` or `-j`: `-j` passes the full path, and the child looks every
 component up again, so a directory swapped for a symlink after ff checked
@@ -196,7 +218,7 @@ A path operand beginning with `-` also exits 2.
 
 ## Verified
 
-- `make test` passes, 219 cases, under GNU make on Linux (glibc 2.39): gcc
+- `make test` passes, 274 cases, under GNU make on Linux (glibc 2.39): gcc
   and clang, a gcc build with ASan and UBSan, and as root and non-root.
   Root skips the unreadable-directory case. gcc and clang compile ff.c
   clean under `-Werror`, including a syntax check of the Darwin branch.
@@ -210,9 +232,18 @@ See `PLAN.md` for the design record and the decisions log.
 ## History
 
 ```
+rev 6ab89f43 20260926 214451 PDT Sat 09:44 PM 26 Sep 2026
+    -k permission query: octal exact, +mode at least, -mode at most;
+    symbolic clauses + has, - lacks, with X s t; -not; diagnostics that
+    state a rule end in "not" before the rejected value
 org 6ab7fec8 20260926 102008 PDT Sat 10:20 AM 26 Sep 2026
     owned openat walker with dev/ino verification; one-letter grammar;
     -x execdir, -j exec, -delete through the verified parent; getent ids
     on Linux; tty escaping; status bitmask; chkerr/chkwrn diagnostics;
     bash translator ff.fn.bash for the native find
 ```
+
+## Copyright
+
+(c) 2026 George Georgalis <george@iuxta.com>
+Unlimited use with attribution.

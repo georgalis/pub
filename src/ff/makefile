@@ -1,6 +1,8 @@
 # makefile --- build, test and install ff
 # (c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution.
 #
+# rev 6ab89f43 20260926 214451 PDT Sat 09:44 PM 26 Sep 2026
+#     -k permission query (at least/at most, has/lacks, X s t), -not, "not" diagnostics
 # org 6ab7fec8 20260926 102008 PDT Sat 10:20 AM 26 Sep 2026
 #     C build, test and install for ff, from the cksh makefile
 #
