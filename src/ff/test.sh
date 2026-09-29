@@ -2,6 +2,9 @@
 # test.sh --- regression suite for ff (C binary) and ff.fn.bash (translator)
 # (c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution.
 #
+# rev 6abb42b9 20260928 214649 PDT Mon 09:46 PM 28 Sep 2026
+#     -w when [+-]([.]/file|HEX), -same, -true -false, -i hex, -V, examples;
+#     Darwin test fixes; ff.fn.bash -w reference files without -newermt
 # rev 6ab89f43 20260926 214451 PDT Sat 09:44 PM 26 Sep 2026
 #     -k permission query (at least/at most, has/lacks, X s t), -not, "not" diagnostics
 # org 6ab7fec8 20260926 102008 PDT Sat 10:20 AM 26 Sep 2026
@@ -11,12 +14,17 @@
 # bash parity cases skip when bash is absent; tty cases need script(1).
 
 set -u
+# host independence: absolute PATH elements only (a relative or empty one makes -x
+# refuse by design), UTC for touch -t fixtures and expected mdates
+P=; oifs=$IFS; IFS=:; set -f
+for d in $PATH; do case "$d" in /*) P="${P:+$P:}$d" ;; esac; done
+IFS=$oifs; set +f; PATH=$P; TZ=UTC0; export PATH TZ
 here=`pwd`
 B="$here/ff"
 F="$here/ff.fn.bash"
 [ -x "$B" ] || { echo "test.sh: build ./ff first" >&2; exit 1; }
 w=`mktemp -d "${TMPDIR:-/tmp}/ff-test.XXXXXX"` || exit 1
-trap 'chmod -R u+rwx "$w" 2>/dev/null; rm -rf "$w/t" "$w/km" "$w/deep" "$w/del" "$w/race" "$w/o"* ; rmdir "$w" 2>/dev/null' 0 1 2 15
+trap 'chmod -R u+rwx "$w" 2>/dev/null; rm -rf "$w/t" "$w/km" "$w/wt" "$w/deep" "$w/del" "$w/race" "$w/o"* ; rmdir "$w" 2>/dev/null' 0 1 2 15
 pass=0 fail=0 skip=0
 
 ok () { pass=`expr $pass + 1`; }
@@ -26,13 +34,19 @@ eq () { [ "$2" = "$3" ] && ok || { no "$1"; printf '  want: %s\n  got:  %s\n' "$
 # C binary: stdout, then rc on its own line
 c () { "$B" "$@" 2>/dev/null; echo "rc=$?"; }
 # bash translator, same contract
-b () { bash -c '. "$0"; ff "$@"' "$F" "$@" 2>/dev/null; echo "rc=$?"; }
+# bash in a clean environment: no exported functions (such as a prior ff) leak in
+be () { env -i PATH="$PATH" HOME="${HOME:-/}" TMPDIR="${TMPDIR:-/tmp}" TZ=UTC0 \
+  FF_NO_SAMEFILE="${FF_NO_SAMEFILE:-}" FF_NO_NEWERMT="${FF_NO_NEWERMT:-}" bash "$@"; }
+b () { be -c '. "$0"; ff "$@"' "$F" "$@" 2>/dev/null; echo "rc=$?"; }
 # sorted output, for comparison with native find where only the set matters
 cs () { "$B" "$@" 2>/dev/null | LC_ALL=C sort; }
 fs () { find "$@" 2>/dev/null | LC_ALL=C sort; }
 
 have_bash=; command -v bash >/dev/null 2>&1 && have_bash=1
-have_script=; script -qc true /dev/null >/dev/null 2>&1 && have_script=1
+# a pty for tty cases: util-linux script -qc CMD, or BSD script -q /dev/null CMD
+have_script=; script -qc true /dev/null >/dev/null 2>&1 && have_script=u || {
+  script -q /dev/null true >/dev/null 2>&1 && have_script=b; }
+st () { if [ "$have_script" = u ]; then script -qc "$1" /dev/null; else script -q /dev/null sh -c "$1"; fi; }
 root=; [ "`id -u`" = 0 ] && root=1
 
 # fixtures: regular, empty, symlinks, dirs, fifo, space, dotdir, newline, ESC
@@ -56,10 +70,10 @@ for pair in \
   "t -t fl|t ( -type f -o -type l )" "t -n *.c|t -name *.c" "t -n *|t -name *" \
   "t -p */d/*|t -path */d/*" "t -e|t -empty" "t -l +1|t -links +1" \
   "t -k 755|t -perm 755" "t -k +755|t -perm -755" "t -k u+x -t f|t -perm -u+x -type f" "t -k 0|t -perm 0" \
-  "t -k 600|t -perm 600" "t -w t/a|t -newer t/a" "t -n .h -z -o -t f -f|t -name .h -prune -o -type f -print" \
+  "t -k 600|t -perm 600" "t -w +./t/a|t -newer t/a" "t -true|t -true" "t -false|t -false" "t -same t/a|t -samefile t/a" "t -n .h -z -o -t f -f|t -name .h -prune -o -type f -print" \
   "t ( -n a -o -n em ) -t f|t ( -name a -o -name em ) -type f" "t ! -t d|t ! -type d" \
   "t -d 0|t -maxdepth 0" "t -d -2|t -maxdepth 1" "t -d +0|t -mindepth 1" "t -d 1|t -mindepth 1 -maxdepth 1" \
-  "t -d +1 -d -3|t -mindepth 2 -maxdepth 2" "-L t -t d|-L t -type d" "-H t/ld|-H t/ld" "t/ld|t/ld" \
+  "t -d +1 -d -3|t -mindepth 2 -maxdepth 2" "-H t/ld|-H t/ld" "t/ld|t/ld" \
   "-D t|t -depth" "t -u `id -u`|t -uid `id -u`" "t -g `id -g`|t -gid `id -g`" \
   "t -u `id -un`|t -user `id -un`" "t -g `id -gn`|t -group `id -gn`" "/etc -d -2 -u root|/etc -maxdepth 1 -user root"
 do
@@ -68,8 +82,10 @@ do
   eq "find [$ff_args]" "`fs $find_args`" "`cs $ff_args`"
   set +f
 done
+# a directory closing a -L loop (t/d/up): GNU find and ff skip it, BSD find tests it
+eq "find [-L t -t d] less loop entries" "`fs -L t -type d | grep -v '/up$'`" "`cs -L t -t d | grep -v '/up$'`"
 ino=`ls -id t/a | awk '{print $1}'`
-eq "-i inode" "t/a" "`"$B" t -i $ino`"
+eq "-i inode, hex" "t/a" "`"$B" t -i \`printf %x $ino\``"
 
 # --- deliberate departures (--help DIFFERENCES) ---
 eq "-r unanchored" "t/d/e t/d/e/f.c" "`cs t -r 'd/e' | tr '\n' ' ' | sed 's/ $//'`"
@@ -97,7 +113,10 @@ eq "-0 NUL" "`find t -name 'n*' -print0 | od -c`" "`"$B" -0 t -n 'n*' | od -c`"
 eq "-0 with -f" "`find t -name 'n*' -print0 | od -c`" "`"$B" -0 t -n 'n*' -f | od -c`"
 
 # --- -k: octal exact, +superset, -subset; symbolic query, + has, - lacks (--help -k) ---
-mkdir -p km; for m in 0755 0644 0600 0666 4755 2755 0000; do : > km/f$m; chmod $m km/f$m; done
+mkdir -p km; for m in 0755 0644 0600 0666 4755 2755 0000; do
+  : > km/f$m; chgrp "`id -g`" km/f$m 2>/dev/null; chmod $m km/f$m 2>/dev/null; done
+# setgid needs the file's group among the user's; where it still fails, drop f2755
+nosgid=; [ -g km/f2755 ] || { rm -f km/f2755; nosgid=1; sk "setgid on km/f2755 (not permitted here)"; }
 mkdir km/d1777 km/d0711 km/d0700; chmod 1777 km/d1777; chmod 0711 km/d0711; chmod 0700 km/d0700
 kq () { "$B" km -d 1 "$@" 2>/dev/null | sed 's,^km/,,' | LC_ALL=C sort | tr '\n' ' ' | sed 's/ $//'; }
 for pair in \
@@ -108,7 +127,8 @@ for pair in \
   "go-w|d0700 d0711 f0000 f0600 f0644 f0755 f2755 f4755" "u+s|f4755" "g+s|f2755" \
   "+s|f2755 f4755" "+t|d1777" "u+rwx,u-s|d0700 d0711 d1777 f0755 f2755" "-7777|`ls km | tr '\n' ' ' | sed 's/ $//'`"
 do
-  eq "-k ${pair%%|*}" "${pair#*|}" "`kq -k "${pair%%|*}"`"
+  exp=${pair#*|}; [ -n "$nosgid" ] && exp=`echo "$exp" | sed 's/ *f2755//; s/^ //'`
+  eq "-k ${pair%%|*}" "$exp" "`kq -k "${pair%%|*}"`"
 done
 eq "-not -k go-w" "d1777 f0666" "`kq -not -k go-w`"
 # no class: each class tested with the bits it can hold; o holds no s (--help -k)
@@ -119,6 +139,34 @@ eq "-k u+r -o -k u+x" "`kq -k u+r`" "`kq -k u+r -o -k u+x`"
 eq "-k X never a file" "" "`"$B" km -t f -k X`"
 for o in u=rwx o+s u+t g+t u+q u+ , x, 99 -8; do eq "-k reject [$o]" "rc=1" "`c km -k "$o" | tail -1`"; done
 eq "-k s/t class tag" ">>> ff : -k: s is for u or g, t is for o, not 'o+s' (6ab7ff46)" "`"$B" km -k o+s 2>&1`"
+
+# --- -w when [+-](file|HEX), -same, -true/-false, -i hex, -V (--help PRIMARIES) ---
+mkdir -p wt; printf a > wt/old; printf b > wt/ref; printf c > wt/new; printf x > wt/cafe; printf y > wt/-x
+touch -t 202001010000.00 wt/old wt/-x; touch -t 202101010000.00 wt/ref; touch -t 202201010000.00 wt/new
+touch -r wt/ref wt/same wt/cafe; ln wt/new wt/hard
+wq () { "$B" wt -t f "$@" 2>/dev/null | sed 's,^wt/,,' | LC_ALL=C sort | tr '\n' ' ' | sed 's/ $//'; }
+R=`"$B" wt/ref -v | awk '{print $5}'`
+eq "-w +file after" "hard new" "`wq -w +./wt/ref`"
+eq "-w -file before" "-x old" "`wq -w -./wt/ref`"
+eq "-w file at" "cafe ref same" "`wq -w ./wt/ref`"
+eq "-w ../file" "cafe ref same" "`cd wt && "$B" . -t f -w ../wt/ref | sed 's,^\./,,' | LC_ALL=C sort | tr '\n' ' ' | sed 's/ $//'`"
+eq "-w /file" "cafe ref same" "`wq -w $w/wt/ref`"
+eq "-w bare word is an error" ">>> ff : -w: file is ./file or /file, time is HEX, not 'wt/ref' (6ab7ff4b)" "`"$B" wt -w wt/ref 2>&1`"
+eq "-w +HEX after" "hard new" "`wq -w +$R`"
+eq "-w -HEX before" "-x old" "`wq -w -$R`"
+eq "-w HEX at" "cafe ref same" "`wq -w $R`"
+eq "-w ./cafe is a file" "./cafe ./ref ./same" "`cd wt && "$B" . -t f -w ./cafe | LC_ALL=C sort | tr '\n' ' ' | sed 's/ $//'`"
+eq "-w cafe is a time" "" "`wq -w cafe`"
+eq "-w +./-x is a file" "./cafe ./hard ./new ./ref ./same" "`cd wt && "$B" . -t f -w +./-x | LC_ALL=C sort | tr '\n' ' ' | sed 's/ $//'`"
+eq "-w HEX overflow" "rc=1" "`c wt -w 8000000000000000 | tail -1`"
+eq "-same hard links" "hard new" "`wq -same wt/new`"
+eq "-i hex from -v" "hard new" "`wq -i \`"$B" wt/new -v | awk '{print $1}'\``"
+eq "-true all" "`cs wt`" "`cs wt -true`"
+eq "-false none" "" "`cs wt -false`"
+eq "-z -false prune" "wt/-x wt/cafe wt/hard wt/new wt/old wt/ref wt/same" "`cs wt -n wt -false -o -t f | tr '\n' ' ' | sed 's/ $//'`"
+eq "-V binary note" "^^^ ff : -V: the native find command is printed by ff.fn.bash (6ab7ff47)" "`"$B" -V wt -d 0 2>&1 >/dev/null`"
+eq "-V binary walks" "wt rc=0" "`c -V wt -d 0 | tr '\n' ' ' | sed 's/ $//'`"
+eq "prune example" "`cs t -t f ! -n '*,v' ! -n '*~'`" "`cs t \( -n .git -o -n tmp \) -z -t f -o -t f -not -E -r ',v$|~$'`"
 
 # --- walk order: -S bytewise per directory, / sorts lowest; -D post-order ---
 exp=`find t/d 2>/dev/null | tr / '\001' | LC_ALL=C sort | tr '\001' /`
@@ -185,15 +233,15 @@ eq "deep -e at bottom" "$p/leaf" "`(ulimit -n 24; "$B" deep -t f -e)`"
 
 # --- terminal: control bytes escaped on a tty, raw to a pipe ---
 if [ -n "$have_script" ]; then
-  eq "tty escapes ESC" 't/x\033[31my' "`script -qc "'$B' t -n 'x*'" /dev/null | tr -d '\r'`"
-  eq "tty escapes newline" 't/n\012l' "`script -qc "'$B' t -n 'n*'" /dev/null | tr -d '\r'`"
-  eq "tty -0 raw" 1 "`script -qc "'$B' -0 t -n 'x*'" /dev/null | od -c | grep -c 033`"
+  eq "tty escapes ESC" 't/x\033[31my' "`st "'$B' t -n 'x*'" | tr -d '\r'`"
+  eq "tty escapes newline" 't/n\012l' "`st "'$B' t -n 'n*'" | tr -d '\r'`"
+  eq "tty -0 raw" 1 "`st "'$B' -0 t -n 'x*'" | od -c | grep -c 033`"
 else sk "tty escaping (no script)"; fi
 eq "pipe raw ESC" "$esc" "`"$B" t -n 'x*'`"
 
 # --- grammar: [options] [path ...] [expression] ---
 for o in "-q t" "t -n" "t -t q" "t -t ''" "t -d x" "t -s 1q" "t -s 1kk" "t -m 1y" "t -k 999" \
-    "t -k u+q" "t -u nosuchuser_ff" "t -g nosuchgroup_ff" "t -u -root" "t -u a:b" "t -u ''" "t -l x" "t -w t/nope" "t (" "t ( )" \
+    "t -k u+q" "t -u nosuchuser_ff" "t -g nosuchgroup_ff" "t -u -root" "t -u a:b" "t -u ''" "t -l x" "t -w t/nope" "t -w ./nope" "t (" "t ( )" \
     "t )" "t -o -f" "t -n a -o" "t !" "t -r [" "t -x echo {}" "t -x {} ;" "t -x ;" \
     "t -x echo a{} ;" "t -j echo {} {} +" "t -x ./x ;" "t -y" "--nope" "t -n a b"
 do
@@ -221,31 +269,43 @@ if [ -n "$have_bash" ]; then
       "t -n .h -z -o -t f -f" "t ( -n a -o -n em ) -t f" \
       "t -d -2" "t -d 1" "t -d +1 -d -3" "-D t" "-E t -r \.(c|C)$" "t -r d/e" "t -r ^t/d/e$" \
       "-I t -n *.C" "-I t -r \.c$" "t -n f.c -x echo {} ;" "t -n f.c -j echo {} ;" "-0 t -n n*" \
-      "t -q" "t -f -q" "t/a t/em -v" "-S t/d" "-SD t/d" "t -w t/a" "t -l +1" "t/nope" \
+      "t -q" "t -f -q" "t/a t/em -v" "-S t/d" "-SD t/d" "t -w +./t/a" "t -l +1" "t/nope" \
+      "wt -t f -w +./wt/ref" "wt -t f -w -./wt/ref" "wt -t f -w ./wt/ref" "wt -t f -w +$R" "wt -t f -w -$R" "wt -t f -w $R" \
+      "wt -same wt/new" "wt -true" "wt -false" "wt -n wt -false -o -t f" "wt -i 0" \
       "-q t" "t -n" "t (" "t ( )" "t -o -f" "t -k 999" "t -x ./x ;" "-L t -delete" "t -u nosuchuser_ff"
   do
     set -f; eq "bash parity [$o]" "`c $o | od -c`" "`TZ=UTC0 b $o | od -c`"; set +f
   done
   # the native find reports failure as one bit: status parity only for success and usage
-  eq "bash -L loop stdout" "`c -L t -t d | sed '$d'`" "`b -L t -t d | sed '$d'`"
-  eq "bash -L loop status nonzero" 1 "`b -L t -t d | tail -1 | grep -vc '^rc=0$'`"
+  eq "bash -L loop stdout" "`c -L t -t d | sed '$d' | grep -v '/up$'`" "`b -L t -t d | sed '$d' | grep -v '/up$'`"
+  if ! find -L t >/dev/null 2>&1; then
+    eq "bash -L loop status nonzero" 1 "`b -L t -t d | tail -1 | grep -vc '^rc=0$'`"
+  else sk "bash -L loop status (native find does not report the loop)"; fi
   # usage diagnostics are identical, message and tag
   for o in "-q t" "t -n" "t -t q" "t (" "t ( )" "t )" "t -o -f" "t !" "t -d x" "t -s 1q" "t -m 1y" \
-      "t -k 999" "t -k u=rwx" "t -k o+s" "t -k u+t" "t -l x" "t -i x" "t -a 1y" "t -b x" "t -x {} ;" "t -w t/nope" "t -u nosuchuser_ff" "t -g nosuchgroup_ff" "t -y" "t -n a b" \
+      "t -k 999" "t -k u=rwx" "t -k o+s" "t -k u+t" "t -l x" "t -i x" "t -i 12g" "t -same nope" "t -w ./nope" "t -w -nope" "t -w cafe/x" "t -a 1y" "t -b x" "t -x {} ;" "t -w t/nope" "t -u nosuchuser_ff" "t -g nosuchgroup_ff" "t -y" "t -n a b" \
       "t -x echo {}" "t -x {} ;" "t -x ;" "t -x echo a{} ;" "t -j echo {} {} +" "t -x ./x ;" "-L t -delete"
   do
-    set -f; eq "bash diagnostics [$o]" "`"$B" $o 2>&1 >/dev/null`" "`bash -c '. "$0"; ff "$@"' "$F" $o 2>&1 >/dev/null`"; set +f
+    set -f; eq "bash diagnostics [$o]" "`"$B" $o 2>&1 >/dev/null`" "`be -c '. "$0"; ff "$@"' "$F" $o 2>&1 >/dev/null`"; set +f
   done
+  eq "bash -same inum fallback" "`c wt -same wt/new | sort`" "`FF_NO_SAMEFILE=1 b wt -same wt/new | sort`"
+  eq "bash -V stderr" "find wt -maxdepth 0 -print" "`be -c '. "$0"; ff -V wt -d 0' "$F" 2>&1 >/dev/null`"
+  eq "bash -V stdout unchanged" "`c wt -t f -w +./wt/ref`" "`b -V wt -t f -w +./wt/ref 2>/dev/null`"
+  # reference-file path, as on finds without -newermt @ (Darwin)
+  for o in "+./wt/ref" "-./wt/ref" "./wt/ref" "+$R" "-$R" "$R"; do
+    eq "bash -w refs [$o]" "`c wt -t f -w $o`" "`FF_NO_NEWERMT=1 b wt -t f -w $o`"
+  done
+  eq "bash -w refs removed" "" "`FF_NO_NEWERMT=1 be -c '. "$0"; ff -V wt -w +$1 2>&1 >/dev/null | sed -n "s/^# reference files under \(.*\) are removed.*/\1/p" | while read d; do ls -d "$d" 2>/dev/null; done' "$F" $R`"
   # namespace: only ff is defined in the caller's shell
-  eq "bash namespace" "declare -f ff" "`bash -c '. "$0"; declare -F' "$F"`"
+  eq "bash namespace" "declare -f ff" "`be -c '. "$0"; declare -F' "$F"`"
   eq "bash PATH guard" "rc=2" "`PATH=.:$PATH b t -x ls \;`"
   eq "bash + sets" "`"$B" t -t f -x echo {} + | tr ' ' '\n' | LC_ALL=C sort`" \
-    "`bash -c '. "$0"; ff t -t f -x echo {} +' "$F" | tr ' ' '\n' | LC_ALL=C sort`"
-  eq "bash -h" "`$B -h`" "`bash -c '. "$0"; ff -h' "$F"`"
-  eq "bash --help" "`$B --help`" "`bash -c '. "$0"; ff --help' "$F"`"
+    "`be -c '. "$0"; ff t -t f -x echo {} +' "$F" | tr ' ' '\n' | LC_ALL=C sort`"
+  eq "bash -h" "`$B -h`" "`be -c '. "$0"; ff -h' "$F"`"
+  eq "bash --help" "`$B --help`" "`be -c '. "$0"; ff --help' "$F"`"
   if [ -n "$have_script" ]; then
-    eq "bash tty escapes" "`script -qc "'$B' t -n 'x*'" /dev/null`" \
-      "`script -qc "bash -c '. $F; ff t -n x\*'" /dev/null`"
+    eq "bash tty escapes" "`st "'$B' t -n 'x*'"`" \
+      "`st "env -i PATH='$PATH' TZ=UTC0 bash -c '. $F; ff t -n x\*'"`"
   fi
 else sk "bash parity (no bash)"; fi
 

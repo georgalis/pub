@@ -259,3 +259,27 @@ Where the build departs from or fills a gap in the plan above:
   rule end in ", not" (or "after", "in", "of") before the quoted value,
   and the time rule names its primary (`-m: time is ...`); copyright
   and license added to README and PLAN.
+- r6 (rev 6abb34a2): `-w` is "when", `[+-](file|HEX)`: after, before or
+  at a file's mtime (full timestamp) or a hex epoch second (whole
+  seconds, the `-v` mdate); hex digits are a time, else a file, `./`
+  for names that look like either; bare `-w file` (was newer) is now
+  "at", newer is `-w +file`. `-same file` (find `-samefile`; translator
+  falls back to `-inum` from `stat` where missing, e.g. NetBSD). `-true`,
+  `-false`. `-i` reads hex, as `-v` prints the inode. `-V`: ff.fn.bash
+  prints the native command to stderr; the binary accepts it and notes
+  where it lives (tag 6ab7ff47), decided against a second translator in
+  C. Manual: `-n`/`-p` in find's words (no code change; semantics
+  already match find `-name`/`-path`), `[+-]N`/`[+-]HEX` shown for `-l`
+  and `-i`, new prune example, grouped EXAMPLES each run on a scratch
+  tree.
+- r7 (squashed into rev 6abb42b9 with r6; 6abb34a2 retired): first Darwin
+  `make test` showed 26 failures, none in the walker. test.sh now keeps
+  only absolute PATH elements (the user's disabled `x/Library/TeX/texbin`
+  entry is deliberate; `-x` still refuses it interactively, by design),
+  runs in UTC, chgrps the setgid fixture and skips it where still not
+  permitted, runs bash under `env -i`, filters loop entries BSD find
+  tests but GNU find and ff skip, and drives BSD `script`. Tests use
+  whole seconds only. `-w` files must begin with `./ ../ /` (tag
+  6ab7ff4b), so no word is both a file and a HEX time. ff.fn.bash writes
+  `-w` with reference files (`touch -d ...Z`, `-newer`) where the native
+  find lacks `-newermt @` (hook `FF_NO_NEWERMT` tests it on GNU).

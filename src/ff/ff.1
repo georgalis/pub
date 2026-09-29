@@ -5,7 +5,7 @@
 
 .SH SYNOPSIS
 .nf
-  ff [-EIHLDSX0] [--] [path ...] [expression]
+  ff [-EIHLDSX0V] [--] [path ...] [expression]
   ff -h | --help
 
 .SH DESCRIPTION
@@ -38,13 +38,21 @@
   -0     end names from -f and the default print with NUL, not newline
   --     end of options: following words are paths, even with a
          leading -, until a primary or operator
+  -V     ff.fn.bash only: print the native find command to stderr
+         before running it; helpful to extend a command to an OS find
+         specific implementation. The binary notes this and runs.
   -h     short usage;  --help  this manual
 
 .SH PRIMARIES
 .nf
-  N is decimal: +N more than N, -N less than N, N exactly.
-  -n glob     last component matches glob (fnmatch; * matches a leading .)
-  -p glob     whole path matches glob (* also matches /)
+  N           decimal: +N more than N, -N less than N, N exactly.
+  HEX         hexadecimal without 0x, as ff -v prints it.
+  -n glob     last component of the examined pathname matches glob
+  -p glob     examined pathname matches glob
+              The special shell pattern characters [ ] * and ? may be
+              used, and \e makes the next one literal. A leading . is
+              not special, and in -p * and ? also match /. Quote the
+              pattern so the shell does not expand it first.
   -r re       path contains a match for re: unanchored, add ^ and $
   -t types    type is any of: f file, d directory, l symlink, p fifo,
               s socket, b block, c character device; -t fl is f or l
@@ -57,7 +65,13 @@
               to 8 days
   -a -c -b    the same for access, status change and birth time;
               -b is false where the filesystem records no birth time
-  -w file     modified more recently than file
+  -w [+-]([.]./file|HEX)
+              when: modified after (+), before (-) or at the same time
+              as file's mtime, or as HEX epoch seconds (the -v mdate).
+              A file begins with ./ ../ or /, so no word is both a file
+              and a time. A file compares the full timestamp, HEX
+              whole seconds. find -newer file is -w +./file.
+  -same file  the same node as file: same device and inode
   -k mode     permission bits. Octal, all twelve bits:
                 0755     exactly 0755
                 +0755    at least 0755: every bit of it, maybe more
@@ -89,9 +103,11 @@
                 -k +t            sticky
               Either of two bits in one class: -k u+r -o -k u+x
   -u user     owner, name or number;  -g group  group, name or number
-  -l N        link count;  -i N  inode number
+  -l [+-]N    link count
+  -i [+-]HEX  inode number, hex as ff -v prints it
   -e          empty regular file or directory
   -z          prune: do not descend into this directory; true
+  -true       always true;  -false  always false
 
 .SH ACTIONS
 .nf
@@ -125,9 +141,12 @@
     ff . -k u+r -o -k u+x                   owner may read or execute
   With no action in the expression, a node is printed when the whole
   expression is true. Once any action appears (-f -v -x -j -delete
-  -q), only actions print. Pruning two directory names and printing
-  only files therefore ends in -f:
-    ff . \e( -n .git -o -n node_modules \e) -z -o -t f -f
+  -q), only actions print. Prune directories by name and print the
+  files that are not RCS (,v) or backup (~) files:
+    ff . \e( -n .git -o -n tmp \e) -z -t f -o -t f -not -E -r ',v$|~$'
+  -z is true, so the -t f after it makes that side false for the
+  pruned directories; -z -false does the same. Options such as -E
+  may appear anywhere, even after -not.
 
 .SH EXEC
 .nf
@@ -162,20 +181,67 @@
   with no rounding; times compare seconds, not rounded days; -d is a
   global bound; {} is never replaced inside a larger word; names are
   escaped on a terminal; -I replaces -iname, -ipath and -iregex;
+  -w is when, before, after or at (find -newer is -w +./file); -i
+  reads hex, as ff -v prints the inode;
   -k symbolic modes are queries, not chmod arithmetic, and octal
   +mode (at least) and -mode (at most) read the opposite way to
   find -perm -mode.
 
 .SH EXAMPLES
 .nf
-  ff . -t f -n '*.c'              C sources
-  ff -E src -r '\e.(c|h)$'         the same by regex
-  ff . -n .git -z -o -t f -f      files, skipping .git trees
-  ff . -t f -m -1 -v | sort -k5   changed today, by mtime
-  ff . -t f -x grep -l TODO {} +  per-directory grep, race safe
-  ff . -n '*.o' -delete           remove objects
-  ff -0 . -t f | xargs -0 cksh    hash everything
-
+  Options
+    ff -S src -t f                      files in sorted walk order
+    ff -L . -t d                        directories, following symlinks
+    ff -H lib -d 0 -v                   the directory a lib symlink names
+    ff -X / -d -2 -t d                  top directories, root filesystem
+    ff -I . -n '*.jpg'                  .jpg .JPG .Jpg
+    ff -E . -r '/(src|lib)/[^/]*\e.c$'   C files directly in src or lib
+    ff -D src                           each directory after its contents
+    ff -0 . -t f -s +1M | xargs -0 ls -l   large files, any names
+    ff -V . -n '*.h'                    ff.fn.bash: show the find command
+  Primaries
+    ff . -n '[A-Z]*.[ch]'               capitalized C sources and headers
+    ff . -p '*/test/*' -t f             files below any test directory
+    ff . -r '\e.orig$' -o -r '\e.rej$'    patch leftovers
+    ff . -t lp                          symlinks and fifos
+    ff . -d 1 -t d                      subdirectories, one level
+    ff . -t f -s +100M                  files over 100 MiB
+    ff . -t f -m -30m                   modified in the last 30 minutes
+    ff . -t f -a +365                   not read for a year
+    ff . -t f -c -1 -o -b -1            changed or born within a day
+    ff . -w +./Makefile -n '*.c'        sources newer than Makefile
+    ff . -w -6abb2e78                   modified before that second
+    ff . -t f -k o+w                    world-writable files
+    ff / -X -t f -k +s                  setuid or setgid files
+    ff . -u root -o -g 0                owned by root or by group 0
+    ff . -t f -l +1 -v                  hard-linked files, with inodes
+    ff . -i 1cc01d                      the node -v showed as 1cc01d
+    ff . -same notes.txt                notes.txt and its hard links
+    ff . -e                             empty files and directories
+  Actions
+    ff . -t f -v | sort -k5             cksh lines, oldest first
+    ff . -n core -t f -f -q             the first core file, then stop
+    ff . -n '*.o' -delete               remove objects
+    ff build -d +0 -t d -e -delete      remove empty directories below
+                                        build, and those left empty
+  Exec
+    ff . -n '*.sh' -x sh -n {} \e;       syntax-check each script
+    ff . -t f -x grep -l TODO {} +      grep per directory, race safe
+    ff . -t f -j wc -l {} +             line counts with full paths
+    ff . -t f -j grep -q TODO {} \e; -f  a command as a test
+    ff . -n '*.log' -x sh -c 'f="$1"; gzip -- "$f" && echo "$f.gz"' - {} \e;
+                                        compress each log, name the result
+    ff . -t f -j sh -c 'for f; do wc -c <"$f"; done' - {} +
+                                        one shell for many paths
+  Operators
+    ff . \e( -n '*.c' -o -n '*.h' \e) -not -p '*/vendor/*'
+                                        C files outside vendor trees
+    ff . \e( -n .git -o -n tmp \e) -z -false -o -t f
+                                        files, pruning two directory names
+    ff . -t f \e( -j grep -q TODO {} \e; -j echo todo: {} \e; -o -true \e) -f
+                                        every file, TODO files marked first
+    ff . -t f -not -k u+w -f -o -t d -e -f
+                                        read-only files and empty directories
 .SH NOTES
 .nf
   -u and -g resolve names on Linux by running getent from /usr/bin or
@@ -187,6 +253,12 @@
 
 .SH HISTORY
 .nf
+  rev 6abb42b9 20260928 214649 PDT Mon 09:46 PM 28 Sep 2026
+      -w is when: [+-]([.]./file|HEX), before, after or at a file's
+      mtime or a hex epoch second; a file takes ./ ../ or /; bare
+      -w file was newer, now -w +./file. -same, -true, -false; -i
+      reads hex; -V shows the native find command (ff.fn.bash), which
+      uses reference files where find lacks -newermt; grouped examples.
   rev 6ab89f43 20260926 214451 PDT Sat 09:44 PM 26 Sep 2026
       -k is a permission query: octal exact, +mode at least, -mode
       at most; symbolic clauses + has, - lacks, with X s t. -not.

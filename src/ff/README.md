@@ -66,6 +66,7 @@ primary's argument. Primaries are lowercase.
 | `-S` | `-s` | sorted walk |
 | `-X` | `-x` / `-xdev` | one filesystem |
 | `-0` | `-print0` | NUL-terminated names |
+| `-V` | | bash function: print the native find command to stderr |
 
 | primary | find | ff semantics |
 |---------|------|--------------|
@@ -76,12 +77,15 @@ primary's argument. Primaries are lowercase.
 | `-d [+-]N` | `-mindepth` `-maxdepth` | global walk bound |
 | `-s [+-]N[ckMGT]` | `-size` | bytes, exact, no rounding |
 | `-m -a -c -b [+-]N[smhdw]` | `-mtime` ... `-Btime` | age in seconds; default unit d |
-| `-w file` | `-newer` | |
+| `-w [+-]([.]/file\|HEX)` | `-newer` | when: after, before or at; see below |
+| `-same file` | `-samefile` | same device and inode |
 | `-k [+-]mode` | `-perm` | a query, see below |
 | `-u` `-g` | `-user` `-group` | |
-| `-l` `-i` | `-links` `-inum` | |
+| `-l [+-]N` | `-links` | |
+| `-i [+-]HEX` | `-inum` | hex, as `-v` prints it |
 | `-e` | `-empty` | |
 | `-z` | `-prune` | |
+| `-true` `-false` | `-true` `-false` | |
 | `-f` | `-print` | |
 | `-v` | `-ls` | cksh line, identical to `cksh -n0 -x0` |
 | `-x cmd ... ;` / `{} +` | `-execdir` | runs in the node's verified directory |
@@ -92,6 +96,15 @@ primary's argument. Primaries are lowercase.
 Operators: `( )`, `!` or `-not`, juxtaposition for and, `-o`. The shell
 treats `( ) ; *` and sometimes `!` as its own syntax, so escape or quote
 them: `ff . \( -n .git -o -n node_modules \) -z -o -t f -f`.
+
+`-w` is "when": `-w +./ref` modified after file `ref` (find `-newer`),
+`-w -./ref` before it, `-w ./ref` at the same time, comparing the full
+timestamp. With a hex epoch second, the mdate column of `ff -v`, the
+comparison is by whole seconds: `-w -6abb2e78` modified before that
+second. A file always begins with `./`, `../` or `/`, and anything else
+must be hex, so no word is both: a file named `cafe` or `6abb2e78` is
+`./cafe`, `./6abb2e78`. Before rev 6abb42b9, bare `-w file` meant "newer";
+it is now an error, and newer is `-w +./file`.
 
 `-k` asks about permission bits rather than doing chmod arithmetic, and
 its `+` and `-` keep ff's sense of more and less:
@@ -136,7 +149,7 @@ functions, one line each, ending in a hex tag that names the message:
 
 ```
 >>> ff : cannot stat 't/nope': No such file or directory (6ab7ff32)
->>> ff : -t: types are f d l p s b c 'q' (6ab7ff0a)
+>>> ff : -t: types are f d l p s b c, not 'q' (6ab7ff0a)
 ^^^ ff : filesystem loop, skipped 't/d/up' (6ab7ff3a)
 ```
 
@@ -216,22 +229,53 @@ Each of these exits 2 and names the binary:
 
 A path operand beginning with `-` also exits 2.
 
+`-w` uses `-newermt @S.N` where the native find takes it (GNU). Elsewhere
+(Darwin, BSD) it writes reference files at the needed instants with
+`touch -d YYYY-MM-DDThh:mm:ss.nnnnnnnnnZ` and compares with `-newer`,
+which every find has; they live in one temporary directory removed after
+the run, and `-V` names it. Sub-second file comparisons then depend on
+the native `-newer`; HEX forms are whole seconds either way. Where `date`,
+`touch -d` or a nanosecond `stat` is missing, those forms exit 2.
+
+Where the native find has no `-samefile` (NetBSD), `-same` uses the
+reference's inode number from `stat` as `-inum`. find has no primary for
+the device, so that is exact unless the walk crosses into another
+filesystem holding the same inode number; `-V` shows which form ran.
+
+`-V` prints the native command before running it, quoted to paste back
+into a shell, as a starting point for an OS-specific find command:
+
+```
+$ ff -V . -n '*.h' -w +./Makefile
+find . \( -name \*.h -newer ./Makefile \) -print
+```
+
 ## Verified
 
-- `make test` passes, 274 cases, under GNU make on Linux (glibc 2.39): gcc
+- `make test` passes, 325 cases, under GNU make on Linux (glibc 2.39): gcc
   and clang, a gcc build with ASan and UBSan, and as root and non-root.
   Root skips the unreadable-directory case. gcc and clang compile ff.c
   clean under `-Werror`, including a syntax check of the Darwin branch.
 - The walk matches GNU find 4.9 on each primary it shares.
-- Not yet run under bmake, on NetBSD, or on Darwin. The makefile avoids
-  every construct bmake rejects, but it is unverified there, as are the
-  BSD branches of `ff.fn.bash`.
+- Darwin (arm64, Apple clang): builds clean; the first `make test` of rev
+  6abb34a2 found test-host assumptions (PATH, time zone, setgid group,
+  exported shell functions, BSD find loop entries) and the missing
+  `-newermt @` in Darwin find. test.sh is now independent of those, and
+  each condition was reproduced and passed on Linux; the Darwin re-run is
+  pending.
+- Not yet run under bmake or on NetBSD. The makefile avoids every
+  construct bmake rejects, but it is unverified there.
 
 See `PLAN.md` for the design record and the decisions log.
 
 ## History
 
 ```
+rev 6abb42b9 20260928 214649 PDT Mon 09:46 PM 28 Sep 2026
+    -w when [+-]([.]/file|HEX): before, after or at a file's mtime or a
+    hex epoch second, a file taking ./ ../ or /; -same, -true, -false;
+    -i reads hex; -V shows the native find command, reference files where
+    find lacks -newermt; grouped examples; Darwin test fixes
 rev 6ab89f43 20260926 214451 PDT Sat 09:44 PM 26 Sep 2026
     -k permission query: octal exact, +mode at least, -mode at most;
     symbolic clauses + has, - lacks, with X s t; -not; diagnostics that
