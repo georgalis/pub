@@ -4,7 +4,8 @@
  *
  * rev 6abc5da8 20260929 175400 PDT Tue 05:54 PM 29 Sep 2026
  *     -0 true and -1 false replace -true -false; -Z NUL output (was -0);
- *     -y replaces -same; -w [+-][ ]: the sign may stand apart
+ *     -y replaces -same; -w [+-][ ]: the sign may stand apart;
+ *     -delete refuses an operand ending in .. or the root directory whole
  * rev 6abb42b9 20260928 214649 PDT Mon 09:46 PM 28 Sep 2026
  *     -w when [+-]([.][.]/file|HEX), -same, -true -false, -i hex, -V, examples;
  *     Darwin test fixes; ff.fn.bash -w reference files without -newermt
@@ -92,6 +93,7 @@ static long mindepth = 0, maxdepth = LONG_MAX;
 static time_t now;
 static int esc_out, esc_err;	/* escape names: stdout/stderr is a tty */
 static int quitting, need_stat;
+static int deleting;		/* -delete in the expression: refuse_operand */
 
 /* ---------------------------------------------------------------- output */
 
@@ -1192,13 +1194,10 @@ p_delete(struct ent *e)
 	const char *b = e->base;
 
 	if (e->depth == 0) {
+		/* find skips . silently; .. and / never get here, their
+		 * operands were refused whole (refuse_operand) */
 		if (!strcmp(b, "."))
-			return 1;	/* find skips . silently */
-		if (!strcmp(b, "..") || !strcmp(b, "/")) {
-			ERR("refusing to delete", e->path, NULL, "6ab7ff37");
-			status |= ST_NODE;
-			return 0;
-		}
+			return 1;
 		if (lstat(e->path, &sb) == -1 ||
 		    unlinkat(AT_FDCWD, e->path, S_ISDIR(sb.st_mode) ? AT_REMOVEDIR : 0)) {
 			ERR("cannot delete", e->path, strerror(errno), "6ab7ff38");
@@ -1439,6 +1438,23 @@ visit(struct ent *e)
 		(void)eval(root, e);
 }
 
+/*
+ * -delete refuses an operand whole, before any walk below it: one whose last
+ * component is .., or the root directory by identity (/ // /. /usr/.., or .
+ * run from /; with -H a symlink to /). Refusing only the node, as find does,
+ * would still empty it in post-order.
+ */
+static int
+refuse_operand(const char *path, const char *base)
+{
+	struct stat sb, rs;
+
+	if (!strcmp(base, ".."))
+		return 1;
+	return (opt_H ? stat(path, &sb) : lstat(path, &sb)) == 0 &&
+	    stat("/", &rs) == 0 && sb.st_dev == rs.st_dev && sb.st_ino == rs.st_ino;
+}
+
 static void
 walk_operand(const char *path)
 {
@@ -1453,6 +1469,12 @@ walk_operand(const char *path)
 	s = strrchr(base, '/');
 	memset(&e, 0, sizeof e);
 	e.base = s && s[1] ? s + 1 : base;
+	if (deleting && refuse_operand(path, e.base)) {
+		ERR("refusing to delete", path, NULL, "6ab7ff37");
+		status |= ST_NODE;
+		free(base);
+		return;
+	}
 	n = strlen(path);
 	if (n + 2 > pbcap) {
 		pbcap = n + 256;
@@ -1601,8 +1623,10 @@ static const char *const manual[] = {
 "  -x cmd ... {} +    the same, many names per run, per directory\n"
 "  -j cmd ... ;       run cmd from the current directory, {} as the path\n"
 "  -j cmd ... {} +    the same, many paths per run\n"
-"  -delete     remove the node; implies -D; refused with -L and for\n"
-"              .. and /; . is skipped silently\n"
+"  -delete     remove the node; implies -D; refused with -L. An operand\n"
+"              ending in .., or that is the root directory (/, /., or .\n"
+"              run from /), is refused whole and not walked (4); an\n"
+"              operand . is walked and kept itself, as find does\n"
 "  -q          stop the walk; pending + batches still run\n"
 "\n"
 "\n",
@@ -1734,7 +1758,8 @@ static const char *const manual[] = {
 "      -0 true and -1 false replace -true and -false; -Z is NUL output\n"
 "      (was -0); -y replaces -same; -w [+-][ ]: the sign may stand\n"
 "      apart; -delete is a long switch to confirm. ff.fn.bash gives -x\n"
-"      ./name where BSD find -execdir passes a bare name.\n"
+"      ./name where BSD find -execdir passes a bare name. -delete\n"
+"      refuses an operand ending in .., or the root directory, whole.\n"
 "  rev 6abb42b9 20260928 214649 PDT Mon 09:46 PM 28 Sep 2026\n"
 "      -w is when: [+-]([.][.]/file|HEX), before, after or at a file's\n"
 "      mtime or a hex epoch second; a file takes ./ ../ or /; bare\n"
@@ -1873,8 +1898,11 @@ main(int argc, char **argv)
 		root = root < 0 ? mk(N_PRINT, -1, -1) :
 		    mk(N_AND, root, mk(N_PRINT, -1, -1));
 	for (i = 0; i < nnd; i++)
-		if (nd[i].type == N_DELETE && opt_L)
-			bad("-delete is refused with -L", NULL, "6ab7ff1e");
+		if (nd[i].type == N_DELETE) {
+			if (opt_L)
+				bad("-delete is refused with -L", NULL, "6ab7ff1e");
+			deleting = 1;
+		}
 	for (i = 0; i < nnd; i++)
 		if (nd[i].type == N_EXECDIR && !strchr(nd[i].argv[0], '/'))
 			useenv = 2;

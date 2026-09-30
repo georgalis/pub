@@ -5,7 +5,8 @@
 # rev 6abc5da8 20260929 175400 PDT Tue 05:54 PM 29 Sep 2026
 #     -0 -1 (were -true -false), -Z (was -0), -y (was -same), -w sign apart;
 #     physical work dir (Darwin /tmp is /private/tmp); bare -execdir names;
-#     every behavior case runs twice, through the binary and the function
+#     every behavior case runs twice, through the binary and the function;
+#     native find differences probed per host (nd), never by uname
 # rev 6abb42b9 20260928 214649 PDT Mon 09:46 PM 28 Sep 2026
 #     -w when [+-]([.][.]/file|HEX), -same, -true -false, -i hex, -V, examples;
 #     Darwin test fixes; ff.fn.bash -w reference files without -newermt
@@ -55,6 +56,14 @@ cs () { "$RUN" "$@" 2>/dev/null | LC_ALL=C sort; }
 fs () { find "$@" 2>/dev/null | LC_ALL=C sort; }
 # binary-only group: true for ff; in the bash pass one named skip, false
 bo () { [ "$impl" = ff ] && return 0; sk "$impl: binary only: $1"; return 1; }
+# native difference: in the bash pass, when probe (the rest of the words) shows
+# the host's find behaving otherwise than ff, one named skip, false; probes
+# test behavior, never the platform name, so a host that changes runs the case
+nd () { nd_=$1; shift; [ "$impl" = bash ] && "$@" >/dev/null 2>&1 && { sk "$impl: native find: $nd_"; return 1; }; return 0; }
+# probes: each succeeds when the host's find differs from ff
+pr_notempty () { mkdir -p o.pn/d; : > o.pn/d/f; find o.pn -name d -delete >/dev/null 2>&1; pr_=$?; rm -rf o.pn; [ $pr_ -eq 0 ]; }
+pr_loop () { find -L t -name up 2>/dev/null | grep -q .; }
+pr_unr () { ! find o.unr 2>/dev/null | grep -q .; }
 
 # parity references: c the binary, b the function, same contract as r
 c () { "$B" "$@" 2>/dev/null; echo "rc=$?"; }
@@ -270,7 +279,26 @@ bo "-x with an absolute command under a relative PATH (GNU find refuses -execdir
 rm -rf del; cp -R t del 2>/dev/null; rm -f del/p; mkfifo del/p
 X del -n '*.c' -delete; eq "-delete file" "" "`find del -name '*.c'`"
 X del/d -delete 2>/dev/null; eq "-delete tree" 1 "`[ -d del/d ] && echo 0 || echo 1`"
+# an operand ending in .., or the root directory by identity, is refused whole:
+# not walked, status 4. Root cases carry -d 0, so a broken refusal could only
+# try rmdir on /, which fails.
 eq "-delete .. refused" "rc=4" "`r .. -d 0 -delete`"
+rm -rf o.dd; mkdir -p o.dd/a/b; : > o.dd/a/f; : > o.dd/a/b/g
+eq "-delete .. refused whole" "rc=4 o.dd/a/b/g o.dd/a/f" "`(cd o.dd/a/b && r .. -delete) | tr '\n' ' '; ls -d o.dd/a/b/g o.dd/a/f | tr '\n' ' ' | sed 's/ $//'`"
+eq "-delete ../ refused whole" "rc=4 o.dd/a/b/g o.dd/a/f" "`(cd o.dd/a/b && r ../ -delete) | tr '\n' ' '; ls -d o.dd/a/b/g o.dd/a/f | tr '\n' ' ' | sed 's/ $//'`"
+eq "-delete a/b/.. refused whole" "rc=4 o.dd/a/b/g o.dd/a/f" "`r o.dd/a/b/.. -delete | tr '\n' ' '; ls -d o.dd/a/b/g o.dd/a/f | tr '\n' ' ' | sed 's/ $//'`"
+eq "-delete .. with others" "rc=4 o.dd/a/b/g" "`r o.dd/a/f o.dd/a/b/.. -delete | tr '\n' ' '; ls -d o.dd/a/b/g o.dd/a/f 2>/dev/null | tr '\n' ' ' | sed 's/ $//'`"
+eq "-delete / refused" ">>> ff : refusing to delete '/' (6ab7ff37)" "`X / -d 0 -delete 2>&1 >/dev/null`"
+eq "-delete / rc" "rc=4" "`r / -d 0 -delete`"
+eq "-delete // refused" "rc=4" "`r // -d 0 -delete`"
+eq "-delete /. refused" "rc=4" "`r /. -d 0 -delete`"
+eq "-delete . from / refused" "rc=4" "`cd / && r . -d 0 -delete`"
+rm -f o.rl; ln -s / o.rl
+eq "-delete -H link to / refused" "rc=4 o.rl" "`r -H o.rl -d 0 -delete | tr '\n' ' '; ls -d o.rl`"
+eq "-delete link to / is the link" "rc=0 gone" "`r o.rl -d 0 -delete | tr '\n' ' '; [ -h o.rl ] && echo kept || echo gone`"
+rm -rf o.dd o.rl
+nd "-delete ignores a directory that is not empty, status 0" pr_notempty && \
+  eq "-delete not empty is 4" "rc=4" "`mkdir -p o.ne/d; : > o.ne/d/f; r o.ne -n d -delete; rm -rf o.ne`"
 eq "-delete -L refused" "rc=1" "`r -L del -delete`"
 eq "-delete . skipped" 1 "`mkdir -p del/k; (cd del/k && X . -delete); [ -d del/k ] && echo 1`"
 
@@ -278,11 +306,13 @@ eq "-delete . skipped" 1 "`mkdir -p del/k; (cd del/k && X . -delete); [ -d del/k
 eq "rc ok" "rc=0" "`r t -n a | tail -1`"
 eq "rc missing 4" "rc=4" "`r t/nope | tail -1`"
 eq "rc missing, rest walked" "t/a" "`X t/nope t/a 2>/dev/null`"
-eq "-L loop entry not tested" "" "`X -L t -n up 2>/dev/null`"
+nd "-L tests a directory that closes a loop" pr_loop && \
+  eq "-L loop entry not tested" "" "`X -L t -n up 2>/dev/null`"
 if [ -z "$root" ]; then
   mkdir -p o.unr/in; chmod 000 o.unr
   eq "rc unreadable dir 4" "rc=4" "`r o.unr | tail -1`"
-  eq "unreadable dir still listed" "o.unr" "`X o.unr 2>/dev/null`"
+  nd "an unreadable directory named as an operand is not tested" pr_unr && \
+    eq "unreadable dir still listed" "o.unr" "`X o.unr 2>/dev/null`"
   chmod 755 o.unr; rm -rf o.unr
 else sk "${impl:+$impl: }unreadable dir (running as root)"; fi
 # race: a directory swapped for a symlink after listing is refused, not followed;
@@ -366,7 +396,8 @@ if [ -n "$have_bash" ]; then
   # usage diagnostics are identical, message and tag
   for o in "-q t" "t -n" "t -t q" "t (" "t ( )" "t )" "t -o -f" "t !" "t -d x" "t -s 1q" "t -m 1y" \
       "t -k 999" "t -k u=rwx" "t -k o+s" "t -k u+t" "t -l x" "t -i x" "t -i 12g" "t -y nope" "t -w ./nope" "t -w -nope" "t -w cafe/x" "t -a 1y" "t -b x" "t -x {} ;" "t -w t/nope" "t -u nosuchuser_ff" "t -g nosuchgroup_ff" "t -y" "t -yy" "t -true" "-0 t" "t -w +" "t -w + -./wt/ref" "t -w - cafe/x" "t -w + 8000000000000000" "t -w .../x" "t -n a b" \
-      "t -x echo {}" "t -x {} ;" "t -x ;" "t -x echo a{} ;" "t -j echo {} {} +" "t -x ./x ;" "-L t -delete"
+      "t -x echo {}" "t -x {} ;" "t -x ;" "t -x echo a{} ;" "t -j echo {} {} +" "t -x ./x ;" "-L t -delete" \
+      "/ -d 0 -delete" ".. -d 0 -delete" "/. -d 0 -delete"
   do
     set -f; eq "bash diagnostics [$o]" "`"$B" $o 2>&1 >/dev/null`" "`be -c '. "$0"; ff "$@"' "$F" $o 2>&1 >/dev/null`"; set +f
   done

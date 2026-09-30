@@ -112,9 +112,12 @@ Primaries (after paths); `!` not, `-o` or, juxtaposition and, `(` `)` group
 one-keystroke typo cannot destroy data.
 Implies `-D` post-order, as find does. Removal is `unlinkat(dirfd, name,
 0 | AT_REMOVEDIR)` against the already-verified parent dirfd --- the same
-race closure as `-x`: no path is re-resolved. Refuses operands `.`, `..`, `/`
-and any path ending in `/..`; non-empty dir failure = bit 4, walk continues.
-The bash translator maps it to native `-delete` (both dialects have it).
+race closure as `-x`: no path is re-resolved. An operand ending in `..`, or
+the root directory by device and inode, is refused whole, not walked, bit 4
+(r8; before, only the node was refused and its contents were still
+deleted); `.` is walked and kept, as find does; non-empty dir failure = bit
+4, walk continues. The bash translator maps it to native `-delete` (both
+dialects have it) after refusing the same operands itself.
 
 Excluded phase 1: `-ok`, `-fprint`, `-printf` (GNU only anyway), `-flags`,
 `-fstype`.
@@ -327,3 +330,31 @@ Where the build departs from or fills a gap in the plan above:
   does; and a bad `-r` failed at walk time with status 4, so the native
   find now compiles it first and a bad one is usage status 1, tag
   6ab7ff09, without the reason only the binary adds.
+  Darwin run of the two-pass suite: the binary and parity passes clean,
+  the `./` wrapper confirmed on real BSD `-execdir`. The bash pass failed
+  3 cases, each BSD find itself, not the translator: `-delete ..` silent
+  with status 0 (ff refuses, 4; nothing deleted either way); `-L` tests a
+  directory closing a loop (r7 had filtered this in parity only); an
+  unreadable directory operand is not tested. Decided: pass them through,
+  not emulate, since each emulation would re-walk or re-evaluate the
+  expression beside the native find and none could be verified here. A
+  fourth, `-delete` of a non-empty directory (FreeBSD ignores ENOTEMPTY),
+  is added as a case. test.sh `nd "reason" probe` skips a case in the
+  bash pass only when a probe of the host's find shows the difference;
+  probes test behavior, never `uname`, so a host that changes runs the
+  case again. Noted, unchanged: refusing `..` or `/` spares only that
+  node; its contents are deleted in post-order, as find does.
+  Refusal covers the whole operand (same rev, on review): with -delete
+  in the expression, an operand whose last component is `..`, or that
+  is the root directory by device and inode (`/ // /. /usr/..`, `.`
+  run from `/`, under `-H` a symlink to `/`), is refused before any walk
+  below it, tag 6ab7ff37, bit 4; other operands proceed. Identity rather
+  than spelling, since `/.` and `.` from `/` name the root without
+  saying so. find and the earlier ff refused only the node and emptied
+  it in post-order. The refusal holds whether or not the expression
+  would reach -delete on that operand: the check is on the operand, not
+  the node. ff.fn.bash refuses the same operands before the native find
+  runs (`-ef /`, skipped for a symlink operand without -H), so the BSD
+  `..` difference above no longer reaches the native find and its probe
+  is retired. Tests carry `-d 0` on every root case, so a broken refusal
+  could only attempt rmdir on `/`.

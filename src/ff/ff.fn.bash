@@ -4,7 +4,8 @@ ff () ( # functional find: ff grammar run by the host's native find; companion f
   # rev 6abc5da8 20260929 175400 PDT Tue 05:54 PM 29 Sep 2026
   #     -0 true, -1 false, -Z NUL, -y same node; -w [+-][ ] sign apart;
   #     -x ./name through a fixed /bin/sh where BSD -execdir passes a bare name;
-  #     options set before translation (-n x -I); a bad -r is a usage error
+  #     options set before translation (-n x -I); a bad -r is a usage error;
+  #     -delete refuses an operand ending in .. or the root directory whole
   # rev 6abb42b9 20260928 214649 PDT Mon 09:46 PM 28 Sep 2026
   #     -w when [+-]([.][.]/file|HEX), -same, -true -false, -i hex, -V, examples;
   #     Darwin test fixes; ff.fn.bash -w reference files without -newermt
@@ -345,8 +346,10 @@ ff () ( # functional find: ff grammar run by the host's native find; companion f
 	  -x cmd ... {} +    the same, many names per run, per directory
 	  -j cmd ... ;       run cmd from the current directory, {} as the path
 	  -j cmd ... {} +    the same, many paths per run
-	  -delete     remove the node; implies -D; refused with -L and for
-	              .. and /; . is skipped silently
+	  -delete     remove the node; implies -D; refused with -L. An operand
+	              ending in .., or that is the root directory (/, /., or .
+	              run from /), is refused whole and not walked (4); an
+	              operand . is walked and kept itself, as find does
 	  -q          stop the walk; pending + batches still run
 
 
@@ -478,7 +481,8 @@ ff () ( # functional find: ff grammar run by the host's native find; companion f
 	      -0 true and -1 false replace -true and -false; -Z is NUL output
 	      (was -0); -y replaces -same; -w [+-][ ]: the sign may stand
 	      apart; -delete is a long switch to confirm. ff.fn.bash gives -x
-	      ./name where BSD find -execdir passes a bare name.
+	      ./name where BSD find -execdir passes a bare name. -delete
+	      refuses an operand ending in .., or the root directory, whole.
 	  rev 6abb42b9 20260928 214649 PDT Mon 09:46 PM 28 Sep 2026
 	      -w is when: [+-]([.][.]/file|HEX), before, after or at a file's
 	      mtime or a hex epoch second; a file takes ./ ../ or /; bare
@@ -502,7 +506,7 @@ ff () ( # functional find: ff grammar run by the host's native find; companion f
     } # _ff_manual
   local a= b= c= i= n= v= v2= u= s= k= dia= gs=e gd=0 prev= endopt= inexpr= act= ls= xd= rc=0
   local E= I= H= L= D= S= X= Z= V= lo=0 hi= re= ro= reader= f= t= wd= rf= nref=0 xb= xm=
-  local -a paths=() opt=() pre=() ex=() xw=()
+  local -a paths=() opt=() pre=() ex=() xw=() kp=()
   # -x where -execdir passes a bare name (BSD): words stay arguments, never
   # evaluated; names ($1 marks {} words with 1, and every + name) gain ./
   local dotsh='m=$1; shift; n=$#; for a in "$@"; do case $m in 0*) ;; *) case $a in ./*) ;; *) a=./$a ;; esac ;; esac; m=${m#?}; set -- "$@" "$a"; done; shift $n; exec "$@"'
@@ -653,6 +657,17 @@ ff () ( # functional find: ff grammar run by the host's native find; companion f
     [[ "$a" =~ ^- ]] && { chkerr "ff : path begins with -, use ./ or ff.c '$a' (6ab7ff45)" ; return 2 ;} || :
   done
   ((${#paths[@]})) || paths=(.)
+  # -delete refuses an operand whole, as ff.c refuse_operand: last component
+  # .., or the root directory by identity (-ef; with -H a symlink to it), not
+  # walked, status 4; the native find would refuse only the node, or not at all
+  [[ "$act" == *r* ]] && {
+    kp=() ; for a in "${paths[@]}"; do
+      b="$a" ; while [[ "$b" == */ && "$b" != / ]]; do b="${b%/}" ; done
+      { [ "${b##*/}" = .. ] || { { [ -n "$H" ] || [ ! -L "$a" ] ;} && [ "$a" -ef / ] ;} ;} \
+        && { _ffbad "refusing to delete" 6ab7ff37 "$a" ; rc=$((rc|4)) ;} || kp+=("$a")
+    done
+    ((${#kp[@]})) || return $rc
+    paths=("${kp[@]}") ;} || :
   [ -n "$hi" ] && ((hi<lo)) && return 0 || :   # no depth satisfies -d
   # options before paths, global primaries first in the expression
   [ -n "$H" ] && opt+=(-H) || : ; [ -n "$L" ] && opt+=(-L) || :

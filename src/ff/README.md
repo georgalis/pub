@@ -137,7 +137,13 @@ changes into the directory ff already opened and verified, then passes
 `./name`, so only the last component is resolved again. `-x` refuses to run
 when `PATH` holds a relative or empty element, since the working directory
 is the walked one. `-delete` removes through the same verified parent
-descriptor.
+descriptor. It refuses an operand whole, walking nothing below it, when
+the operand ends in `..` or is the root directory itself: `/`, `//`,
+`/.`, `/usr/..`, `.` run from `/`, or under `-H` a symlink to `/`. The
+root is found by device and inode, not by spelling. find refuses only
+the node and still empties it; ff reports status 4 and leaves it whole.
+An operand `.` keeps find's meaning: its contents are walked and it is
+kept.
 
 ## Output safety
 
@@ -233,6 +239,21 @@ Each of these exits 2 and names the binary:
 
 A path operand beginning with `-` also exits 2.
 
+Where the native find itself differs, the function passes the difference
+through rather than emulate a walk it does not own. BSD find (seen on
+Darwin):
+
+- `-delete` of a directory that is not empty is expected to be silent,
+  status 0, where ff reports status 4 (FreeBSD ignores `ENOTEMPTY`; the
+  test probes the host);
+- under `-L`, a directory that closes a loop is tested, where ff and GNU
+  find skip it;
+- an unreadable directory named as an operand is not tested, where ff
+  lists it, with status 4.
+
+test.sh probes the host's find for each and skips that case in the bash
+pass only where the host behaves so.
+
 `-w` uses `-newermt @S.N` where the native find takes it (GNU). Elsewhere
 (Darwin, BSD) it writes reference files at the needed instants with
 `touch -d YYYY-MM-DDThh:mm:ss.nnnnnnnnnZ` and compares with `-newer`,
@@ -276,7 +297,7 @@ find . \( -name \*.h -newer ./Makefile \) -print
   path operand beginning with `-`; walk diagnostics in chkerr form (the
   native find writes its own).
 - It passes under GNU make on Linux (glibc 2.39, GNU find 4.9, bash 5.2):
-  586 cases non-root, 582 as root, which skips the unreadable-directory
+  613 cases non-root, 609 as root, which skips the unreadable-directory
   cases; with gcc and clang, and a gcc build with ASan and UBSan; again
   with `TMPDIR` behind a symlink, as Darwin's `/tmp` is. gcc and clang
   compile ff.c clean under `-Werror -Wpedantic`.
@@ -288,7 +309,12 @@ find . \( -name \*.h -newer ./Makefile \) -print
   function, which now adds `./` (see Bash translator limits). The first
   was reproduced on Linux with a symlinked `TMPDIR`; the second is
   exercised on Linux only through `FF_BARE_EXECDIR`, since GNU find cannot
-  give bare names. The Darwin re-run of rev 6abc5da8 is pending.
+  give bare names. The `make test` of rev 6abc5da8 then passed on Darwin
+  in the binary pass (224 cases, `/dev/full` absent) and the parity pass,
+  including the `./` wrapper on real BSD `-execdir`. Its bash pass failed
+  3 cases, each a BSD find difference listed under Bash translator
+  limits; they are now probed and skipped there, and the Darwin re-run of
+  that change is pending.
 - Not yet run under bmake or on NetBSD. The makefile avoids every
   construct bmake rejects, but it is unverified there.
 
@@ -302,7 +328,8 @@ rev 6abc5da8 20260929 175400 PDT Tue 05:54 PM 29 Sep 2026
     -y replaces -same; -w [+-][ ]([.][.]/file|HEX): the sign may stand
     apart; -delete is a long switch to confirm; ff.fn.bash gives -x
     ./name where BSD -execdir passes a bare name; test.sh in the
-    physical work directory (Darwin /tmp is /private/tmp)
+    physical work directory (Darwin /tmp is /private/tmp); -delete
+    refuses an operand ending in .., or the root directory, whole
 rev 6abb42b9 20260928 214649 PDT Mon 09:46 PM 28 Sep 2026
     -w when [+-]([.][.]/file|HEX): before, after or at a file's mtime or a
     hex epoch second, a file taking ./ ../ or /; -same, -true, -false;
