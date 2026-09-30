@@ -25,7 +25,8 @@ scheme:
 
 The same model as cksh: `-h` and
 `--help` are compiled in, the man page is generated from `--help`, and the
-test suite checks the two implementations against each other.
+test suite runs its cases through both implementations and checks them
+against each other.
 
 ## Build
 
@@ -55,7 +56,7 @@ Linking by platform:
 
 `ff [options] [path ...] [expression]`, default path `.`, default action
 print. Options are uppercase and global, and may appear anywhere outside a
-primary's argument. Primaries are lowercase.
+primary's argument. Primaries are lowercase, or the digits 0 and 1.
 
 | option | find | |
 |--------|------|-|
@@ -65,7 +66,7 @@ primary's argument. Primaries are lowercase.
 | `-D` | `-d` / `-depth` | post-order |
 | `-S` | `-s` | sorted walk |
 | `-X` | `-x` / `-xdev` | one filesystem |
-| `-0` | `-print0` | NUL-terminated names |
+| `-Z` | `-print0` | NUL-terminated names |
 | `-V` | | bash function: print the native find command to stderr |
 
 | primary | find | ff semantics |
@@ -77,20 +78,20 @@ primary's argument. Primaries are lowercase.
 | `-d [+-]N` | `-mindepth` `-maxdepth` | global walk bound |
 | `-s [+-]N[ckMGT]` | `-size` | bytes, exact, no rounding |
 | `-m -a -c -b [+-]N[smhdw]` | `-mtime` ... `-Btime` | age in seconds; default unit d |
-| `-w [+-]([.]/file\|HEX)` | `-newer` | when: after, before or at; see below |
-| `-same file` | `-samefile` | same device and inode |
+| `-w [+-][ ]([.][.]/file\|HEX)` | `-newer` | when: after, before or at; see below |
+| `-y file` | `-samefile` | same device and inode |
 | `-k [+-]mode` | `-perm` | a query, see below |
 | `-u` `-g` | `-user` `-group` | |
 | `-l [+-]N` | `-links` | |
 | `-i [+-]HEX` | `-inum` | hex, as `-v` prints it |
 | `-e` | `-empty` | |
 | `-z` | `-prune` | |
-| `-true` `-false` | `-true` `-false` | |
+| `-0` `-1` | `-true` `-false` | |
 | `-f` | `-print` | |
 | `-v` | `-ls` | cksh line, identical to `cksh -n0 -x0` |
 | `-x cmd ... ;` / `{} +` | `-execdir` | runs in the node's verified directory |
 | `-j cmd ... ;` / `{} +` | `-exec` | full path, race exposed like find |
-| `-delete` | `-delete` | the one long switch, by design |
+| `-delete` | `-delete` | a long switch to confirm |
 | `-q` | `-quit` / `-exit` | |
 
 Operators: `( )`, `!` or `-not`, juxtaposition for and, `-o`. The shell
@@ -103,8 +104,11 @@ timestamp. With a hex epoch second, the mdate column of `ff -v`, the
 comparison is by whole seconds: `-w -6abb2e78` modified before that
 second. A file always begins with `./`, `../` or `/`, and anything else
 must be hex, so no word is both: a file named `cafe` or `6abb2e78` is
-`./cafe`, `./6abb2e78`. Before rev 6abb42b9, bare `-w file` meant "newer";
-it is now an error, and newer is `-w +./file`.
+`./cafe`, `./6abb2e78`. The sign may stand apart as its own word, so
+`-w + ./ref` is `-w +./ref` and `-w - 6abb2e78` is `-w -6abb2e78`; the
+word after a lone sign takes no sign of its own.
+
+The primaries `-0` and `-1` are read as true and false.
 
 `-k` asks about permission bits rather than doing chmod arithmetic, and
 its `+` and `-` keep ff's sense of more and less:
@@ -137,7 +141,7 @@ descriptor.
 
 ## Output safety
 
-Names go out as raw bytes to a pipe or with `-0`. On a terminal, C0 and C1
+Names go out as raw bytes to a pipe or with `-Z`. On a terminal, C0 and C1
 control characters, DEL and invalid UTF-8 print as `\ooo`, so a crafted file
 name cannot drive the terminal. Diagnostics on a terminal follow the same
 rule.
@@ -237,10 +241,20 @@ the run, and `-V` names it. Sub-second file comparisons then depend on
 the native `-newer`; HEX forms are whole seconds either way. Where `date`,
 `touch -d` or a nanosecond `stat` is missing, those forms exit 2.
 
-Where the native find has no `-samefile` (NetBSD), `-same` uses the
+Where the native find has no `-samefile` (NetBSD), `-y` uses the
 reference's inode number from `stat` as `-inum`. find has no primary for
 the device, so that is exact unless the walk crosses into another
 filesystem holding the same inode number; `-V` shows which form ran.
+
+`-x` must hand each command `./name`, as the binary does, so a name such
+as `-rf` is never read as an option. GNU `-execdir` gives `./name`; BSD
+`-execdir` gives the bare name (seen on Darwin). The function probes which
+once per call. For bare names it runs the command through a fixed
+`/bin/sh -c` script that prefixes `./` to each `{}` name and every `+`
+name: the command and its words reach the script as arguments and are
+never evaluated, and the script ends in `exec`, so the status is the
+command's own. `-V` shows the wrapped form. `FF_BARE_EXECDIR=1` forces it,
+for testing on GNU.
 
 `-V` prints the native command before running it, quoted to paste back
 into a shell, as a starting point for an OS-specific find command:
@@ -252,17 +266,29 @@ find . \( -name \*.h -newer ./Makefile \) -print
 
 ## Verified
 
-- `make test` passes, 325 cases, under GNU make on Linux (glibc 2.39): gcc
-  and clang, a gcc build with ASan and UBSan, and as root and non-root.
-  Root skips the unreadable-directory case. gcc and clang compile ff.c
-  clean under `-Werror`, including a syntax check of the Darwin branch.
+- `make test` runs every behavior case twice, once through the binary
+  and once through the bash function, then a parity pass comparing the
+  two byte for byte, with a tally for each. The function skips only the
+  cases it cannot meet, in named groups: status bits 8, 16 and 32 and
+  status 2 for a full stdout (the native find reports any failure as 1,
+  read as 4); the binary's `-V` note; `-x` with an absolute command under
+  a relative `PATH` (GNU find refuses `-execdir` whatever the command); a
+  path operand beginning with `-`; walk diagnostics in chkerr form (the
+  native find writes its own).
+- It passes under GNU make on Linux (glibc 2.39, GNU find 4.9, bash 5.2):
+  586 cases non-root, 582 as root, which skips the unreadable-directory
+  cases; with gcc and clang, and a gcc build with ASan and UBSan; again
+  with `TMPDIR` behind a symlink, as Darwin's `/tmp` is. gcc and clang
+  compile ff.c clean under `-Werror -Wpedantic`.
 - The walk matches GNU find 4.9 on each primary it shares.
-- Darwin (arm64, Apple clang): builds clean; the first `make test` of rev
-  6abb34a2 found test-host assumptions (PATH, time zone, setgid group,
-  exported shell functions, BSD find loop entries) and the missing
-  `-newermt @` in Darwin find. test.sh is now independent of those, and
-  each condition was reproduced and passed on Linux; the Darwin re-run is
-  pending.
+- Darwin (arm64, Apple clang): builds clean. The `make test` of rev
+  6abb42b9 failed 4 of 325. Two came from `/tmp` being a symlink to
+  `/private/tmp`: `-x pwd` prints the physical path, and test.sh now works
+  in `pwd -P`. Two were BSD `-execdir` passing bare names to the bash
+  function, which now adds `./` (see Bash translator limits). The first
+  was reproduced on Linux with a symlinked `TMPDIR`; the second is
+  exercised on Linux only through `FF_BARE_EXECDIR`, since GNU find cannot
+  give bare names. The Darwin re-run of rev 6abc5da8 is pending.
 - Not yet run under bmake or on NetBSD. The makefile avoids every
   construct bmake rejects, but it is unverified there.
 
@@ -271,8 +297,14 @@ See `PLAN.md` for the design record and the decisions log.
 ## History
 
 ```
+rev 6abc5da8 20260929 175400 PDT Tue 05:54 PM 29 Sep 2026
+    -0 true and -1 false replace -true -false; -Z NUL output (was -0);
+    -y replaces -same; -w [+-][ ]([.][.]/file|HEX): the sign may stand
+    apart; -delete is a long switch to confirm; ff.fn.bash gives -x
+    ./name where BSD -execdir passes a bare name; test.sh in the
+    physical work directory (Darwin /tmp is /private/tmp)
 rev 6abb42b9 20260928 214649 PDT Mon 09:46 PM 28 Sep 2026
-    -w when [+-]([.]/file|HEX): before, after or at a file's mtime or a
+    -w when [+-]([.][.]/file|HEX): before, after or at a file's mtime or a
     hex epoch second, a file taking ./ ../ or /; -same, -true, -false;
     -i reads hex; -V shows the native find command, reference files where
     find lacks -newermt; grouped examples; Darwin test fixes

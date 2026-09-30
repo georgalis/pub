@@ -1,8 +1,10 @@
 # makefile --- build, test and install ff
 # (c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution.
 #
+# rev 6abc5da8 20260929 175400 PDT Tue 05:54 PM 29 Sep 2026
+#     -0 -1 true false, -Z NUL, -y same node, -w sign apart; recipes unchanged
 # rev 6abb42b9 20260928 214649 PDT Mon 09:46 PM 28 Sep 2026
-#     -w when [+-]([.]/file|HEX), -same, -true -false, -i hex, -V, examples;
+#     -w when [+-]([.][.]/file|HEX), -same, -true -false, -i hex, -V, examples;
 #     Darwin test fixes; ff.fn.bash -w reference files without -newermt
 # rev 6ab89f43 20260926 214451 PDT Sat 09:44 PM 26 Sep 2026
 #     -k permission query (at least/at most, has/lacks, X s t), -not, "not" diagnostics
