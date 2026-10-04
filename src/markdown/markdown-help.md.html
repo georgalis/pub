@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+section[role="doc-endnotes"] ol { list-style: none; padding-left: 0; }
+li[role="doc-endnote"] > p:first-of-type { display: inline; margin: 0; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h1 id="markdownsh">markdown.sh</h1>
+<p>A GitHub-flavored Markdown renderer in bash and awk. Markdown stays the master format: the same file reads correctly on GitHub and, rendered by <code>markdown.sh</code>, as standalone HTML on a static host. This document is the feature reference, the command reference, and the regression corpus at once; every case below is rendered live, so the page you are reading is also its own test output.</p>
+<h2 id="contents">Contents</h2>
+<nav>
+<ul>
+<li><a href="#usage">Usage</a></li>
+<li><a href="#output">Output</a></li>
+<li><a href="#features">Features</a></li>
+<li><a href="#divergences-from-github">Divergences from GitHub</a></li>
+<li><a href="#regression-corpus">Regression corpus</a>
+<ul>
+<li><a href="#t01-paragraph-with-leading-indent">T01 Paragraph with leading indent</a></li>
+<li><a href="#t02-atx-headings">T02 ATX headings</a></li>
+<li><a href="#t03-setext-headings">T03 Setext headings</a></li>
+<li><a href="#t04-custom-heading-id">T04 Custom heading id</a></li>
+<li><a href="#t05-github-heading-slugs">T05 GitHub heading slugs</a></li>
+<li><a href="#t06-thematic-breaks">T06 Thematic breaks</a></li>
+<li><a href="#t07-blockquote-with-lazy-continuation">T07 Blockquote with lazy continuation</a></li>
+<li><a href="#t08-blocks-inside-a-blockquote">T08 Blocks inside a blockquote</a></li>
+<li><a href="#t09-fenced-code-with-language">T09 Fenced code with language</a></li>
+<li><a href="#t10-fence-opening-on-a-blank-line">T10 Fence opening on a blank line</a></li>
+<li><a href="#t11-closing-fence-with-trailing-spaces">T11 Closing fence with trailing spaces</a></li>
+<li><a href="#t12-fence-length-and-tilde-fences">T12 Fence length and tilde fences</a></li>
+<li><a href="#t13-indented-code">T13 Indented code</a></li>
+<li><a href="#t14-html-block-with-markdown-inside">T14 HTML block with markdown inside</a></li>
+<li><a href="#t15-html-comments">T15 HTML comments</a></li>
+<li><a href="#t16-sized-image-as-raw-html">T16 Sized image as raw HTML</a></li>
+<li><a href="#t17-bullet-nesting">T17 Bullet nesting</a></li>
+<li><a href="#t18-ordered-list-start">T18 Ordered list start</a></li>
+<li><a href="#t19-loose-ordered-list">T19 Loose ordered list</a></li>
+<li><a href="#t20-fence-inside-a-list-item">T20 Fence inside a list item</a></li>
+<li><a href="#t21-paragraphs-inside-a-list-item">T21 Paragraphs inside a list item</a></li>
+<li><a href="#t22-delimiter-change-starts-a-new-list">T22 Delimiter change starts a new list</a></li>
+<li><a href="#t23-only-1-interrupts-a-paragraph">T23 Only 1 interrupts a paragraph</a></li>
+<li><a href="#t24-list-marker-as-item-text">T24 List marker as item text</a></li>
+<li><a href="#t25-nesting-needs-the-content-column">T25 Nesting needs the content column</a></li>
+<li><a href="#t26-looseness-belongs-to-each-list">T26 Looseness belongs to each list</a></li>
+<li><a href="#t27-task-list-items">T27 Task list items</a></li>
+<li><a href="#t28-lazy-continuation-in-a-list-item">T28 Lazy continuation in a list item</a></li>
+<li><a href="#t29-table-with-alignment">T29 Table with alignment</a></li>
+<li><a href="#t30-table-without-outer-pipes">T30 Table without outer pipes</a></li>
+<li><a href="#t31-escaped-pipe-in-a-table">T31 Escaped pipe in a table</a></li>
+<li><a href="#t32-emphasis-and-strong">T32 Emphasis and strong</a></li>
+<li><a href="#t33-nested-emphasis">T33 Nested emphasis</a></li>
+<li><a href="#t34-strikethrough">T34 Strikethrough</a></li>
+<li><a href="#t35-code-spans">T35 Code spans</a></li>
+<li><a href="#t36-backslash-escapes">T36 Backslash escapes</a></li>
+<li><a href="#t37-hard-line-breaks">T37 Hard line breaks</a></li>
+<li><a href="#t38-inline-links">T38 Inline links</a></li>
+<li><a href="#t39-local-link-rewrite">T39 Local link rewrite</a></li>
+<li><a href="#t40-reference-links">T40 Reference links</a></li>
+<li><a href="#t41-autolinks">T41 Autolinks</a></li>
+<li><a href="#t42-image">T42 Image</a></li>
+<li><a href="#t43-linked-image">T43 Linked image</a></li>
+<li><a href="#t44-inline-html">T44 Inline HTML</a></li>
+<li><a href="#t45-entities">T45 Entities</a></li>
+<li><a href="#t46-inline-anchor">T46 Inline anchor</a></li>
+<li><a href="#t47-footnotes">T47 Footnotes</a></li>
+<li><a href="#t48-footnote-with-several-paragraphs">T48 Footnote with several paragraphs</a></li>
+<li><a href="#t49-consecutive-footnote-definitions">T49 Consecutive footnote definitions</a></li>
+<li><a href="#t50-contents-with-heading-and-rule">T50 Contents with heading and rule</a></li>
+<li><a href="#t51-contents-default-window">T51 Contents default window</a></li>
+<li><a href="#t52-contents-with-nothing-to-index">T52 Contents with nothing to index</a></li>
+<li><a href="#t53-front-matter">T53 Front matter</a></li>
+<li><a href="#t54-metadata-block">T54 Metadata block</a></li>
+<li><a href="#t55-single-colon-line-is-content">T55 Single colon line is content</a></li>
+<li><a href="#t56-opening-rule-is-not-front-matter">T56 Opening rule is not front matter</a></li>
+</ul></li>
+<li><a href="#source">Source</a></li>
+</ul>
+</nav>
+<hr />
+<h2 id="usage">Usage</h2>
+<pre><code>usage: markdown.sh input.md        render to input.md.html, print its realpath
+       markdown.sh -f input.md     print the HTML fragment to stdout (- reads stdin)
+       markdown.sh -H              print markdown-help.md (usage, features, corpus)
+       markdown.sh -c [corpus.md]  run the regression corpus (default: built in)
+       markdown.sh -h              print this usage
+</code></pre>
+<ul>
+<li><code>markdown.sh input.md</code> writes <code>input.md.html</code> beside the source and prints its realpath. <code>README.md</code> writes <code>index.html</code> instead, the directory index a static host serves for a bare request.</li>
+<li><code>-f</code> prints the body fragment with no document envelope, for embedding, pipelines, and authoring corpus cases.</li>
+<li><code>-H</code> prints this document. <code>markdown.sh -H &gt; markdown-help.md &amp;&amp; markdown.sh markdown-help.md</code> renders it.</li>
+<li><code>-c</code> extracts every case from the corpus, renders its source, and compares the result with its expected HTML; it also confirms the live copy matches the source. Exit status is 1 on any failure.</li>
+<li>Input paths are limited to <code>[A-Za-z0-9,._/-]</code> and must end in <code>.md</code>.</li>
+</ul>
+<h2 id="output">Output</h2>
+<ul>
+<li>The page is a complete HTML document: <code>&lt;meta charset="utf-8"&gt;</code>, a viewport line, and stylesheets <code>/default.css</code> (site baseline) then <code>./default.css</code> (local override). Small table and footnote defaults precede them as element selectors, so either stylesheet overrides without <code>!important</code>.</li>
+<li>No classes or divisions are emitted, apart from <code>class="language-x"</code> on fenced code with an info string and the DPUB-ARIA roles on footnotes. Style hooks are native elements.</li>
+<li>The output carries the source timestamp (<code>touch -r</code>). It is written to a temporary file and moved into place, so a failed render never leaves a truncated page.</li>
+<li>Markdown passes through as bytes; UTF-8 is untouched.</li>
+</ul>
+<h2 id="features">Features</h2>
+<table>
+<thead>
+<tr><th>Area</th><th>Supported</th></tr>
+</thead>
+<tbody>
+<tr><td>Blocks</td><td>paragraphs, ATX and setext headings, thematic breaks, blockquotes with lazy continuation, fenced code (backtick or tilde, length tracked, language class), indented code, HTML blocks (raw, comments, block tags, lone tags)</td></tr>
+<tr><td>Lists</td><td>bullets and ordered (<code>.</code> or <code>)</code>), <code>start</code> numbers, tight and loose, any block inside an item, nesting by content column, lazy continuation, task items</td></tr>
+<tr><td>Tables</td><td>GFM pipe tables, optional outer pipes, alignment as <code>align=</code>, escaped pipes</td></tr>
+<tr><td>Inline</td><td>emphasis and strong by the CommonMark delimiter rules, strikethrough, code spans of any backtick length, backslash escapes, hard breaks, inline and reference links, images, autolinks and bare URLs, raw HTML, entities</td></tr>
+<tr><td>Headings</td><td>GitHub slug ids with <code>-1</code>, <code>-2</code> de-duplication, or an explicit <code>{#custom-id}</code></td></tr>
+<tr><td>Extensions</td><td>footnotes in source form, <code>{#id}</code> inline anchors, local <code>.md</code> link rewriting, contents directive, front matter and metadata skip</td></tr>
+</tbody>
+</table>
+<h2 id="divergences-from-github">Divergences from GitHub</h2>
+<p>Deliberate:</p>
+<table>
+<thead>
+<tr><th>Feature</th><th>GitHub</th><th>markdown.sh</th></tr>
+</thead>
+<tbody>
+<tr><td>Footnotes</td><td>superscript numbers in citation order, back links</td><td><code>[^label]</code> source text in definition order, no back links; a definition also interrupts a paragraph, so consecutive definitions need no blank lines</td></tr>
+<tr><td><code>{#id}</code></td><td>literal text</td><td>heading id, or a zero-width anchor in running text</td></tr>
+<tr><td><code>./x.md</code>, <code>../x.md</code> links</td><td>followed as written</td><td>rewritten to <code>x.md.html</code>; a <code>README.md</code> target becomes its directory</td></tr>
+<tr><td><code>&lt;!--contents--&gt;</code></td><td>invisible comment</td><td>table of contents, with optional heading and closing rule</td></tr>
+<tr><td>Front matter</td><td>rendered as a table</td><td>skipped; a leading block of two or more <code>Key: value</code> lines is skipped too</td></tr>
+<tr><td>Raw HTML</td><td>sanitized</td><td>passed through unfiltered</td></tr>
+</tbody>
+</table>
+<p>Not implemented: bare email autolinks, multi-line link reference definitions, percent-encoding of spaces in link targets, HTML blocks of CommonMark types 3 to 5 (processing instructions, declarations, CDATA), GitHub alerts (<code>&gt; [!NOTE]</code>), math, and emoji shortcodes. Tab expansion inside list items is approximate, and UTF-8 punctuation is kept in heading slugs where GitHub drops it.</p>
+<h2 id="regression-corpus">Regression corpus</h2>
+<p>Each case below has three parts: its markdown source, the HTML fragment <code>markdown.sh -f</code> must produce for it, and the same source rendered live in this document. Three HTML comments tie them together and pass into the rendered page, so any piece of the output can be traced to its case by T-number:</p>
+<ul>
+<li><code>&lt;!--case T07 name--&gt;</code> opens a case; <code>nolive</code> after the name marks a case that depends on its position in a document (front matter, contents) and is tested but not rendered in place.</li>
+<li><code>&lt;!--live T07--&gt;</code> and <code>&lt;!--end T07--&gt;</code> enclose the live copy. In the rendered HTML, everything between them is that case's output.</li>
+</ul>
+<p>To add a case, write its source in a scratch file, run <code>markdown.sh -f scratch.md</code>, check the result against GitHub's rendering or the GFM spec, and add the three parts under a new number. <code>markdown.sh -c</code> then holds every later change to it. A corpus kept outside the script runs with <code>markdown.sh -c file.md</code>.</p>
+<p>Case T11 and case T37 depend on trailing spaces in their source; an editor that strips trailing whitespace will break them.</p>
+<h3 id="t01-paragraph-with-leading-indent">T01 Paragraph with leading indent</h3>
+<!--case T01 paragraph-indent-->
+<p>Up to three leading spaces are ignored, and the paragraph continues across lines.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">  indented para
+continues here
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;p&gt;indented para
+continues here&lt;/p&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T01-->
+<p>indented para
+continues here</p>
+<!--end T01-->
+<h3 id="t02-atx-headings">T02 ATX headings</h3>
+<!--case T02 atx-headings-->
+<p>One to six <code>#</code> followed by a space; a closing <code>#</code> run is dropped. Seven <code>#</code>, or none followed by a space, is paragraph text.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">#### Four
+##### Five ###
+###### Six
+####### seven
+#hashtag
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;h4 id="four"&gt;Four&lt;/h4&gt;
+&lt;h5 id="five"&gt;Five&lt;/h5&gt;
+&lt;h6 id="six"&gt;Six&lt;/h6&gt;
+&lt;p&gt;####### seven
+#hashtag&lt;/p&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T02-->
+<h4 id="four">Four</h4>
+<h5 id="five">Five</h5>
+<h6 id="six">Six</h6>
+<p>####### seven
+#hashtag</p>
+<!--end T02-->
+<h3 id="t03-setext-headings">T03 Setext headings</h3>
+<!--case T03 setext-headings nolive-->
+<p>An <code>=</code> or <code>-</code> underline turns every preceding paragraph line into the heading; a line break in the heading slugs as a space.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">Title
+=====
+
+line one
+line two
+---
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;h1 id="title"&gt;Title&lt;/h1&gt;
+&lt;h2 id="line-one-line-two"&gt;line one
+line two&lt;/h2&gt;
+</code></pre>
+<p>Not rendered live: this case depends on its position in a document.</p>
+<h3 id="t04-custom-heading-id">T04 Custom heading id</h3>
+<!--case T04 custom-heading-id-->
+<p>A trailing <code>{#id}</code> sets the heading id explicitly.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">#### Custom anchor {#my-anchor}
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;h4 id="my-anchor"&gt;Custom anchor&lt;/h4&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T04-->
+<h4 id="my-anchor">Custom anchor</h4>
+<!--end T04-->
+<h3 id="t05-github-heading-slugs">T05 GitHub heading slugs</h3>
+<!--case T05 heading-slugs-->
+<p>Slugs come from the rendered text: lowercase, letters, digits, <code>-</code> and <code>_</code> kept, each space a hyphen, no collapsing. Repeated headings get <code>-1</code>, <code>-2</code>.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">#### Foo -- Bar &amp; Baz_q
+#### [Link](./x.md) and `code`
+#### Dup
+#### Dup
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;h4 id="foo----bar--baz_q"&gt;Foo -- Bar &amp;amp; Baz_q&lt;/h4&gt;
+&lt;h4 id="link-and-code"&gt;&lt;a href="./x.md.html"&gt;Link&lt;/a&gt; and &lt;code&gt;code&lt;/code&gt;&lt;/h4&gt;
+&lt;h4 id="dup"&gt;Dup&lt;/h4&gt;
+&lt;h4 id="dup-1"&gt;Dup&lt;/h4&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T05-->
+<h4 id="foo----bar--baz_q">Foo -- Bar &amp; Baz_q</h4>
+<h4 id="link-and-code"><a href="./x.md.html">Link</a> and <code>code</code></h4>
+<h4 id="dup">Dup</h4>
+<h4 id="dup-1">Dup</h4>
+<!--end T05-->
+<h3 id="t06-thematic-breaks">T06 Thematic breaks</h3>
+<!--case T06 thematic-breaks-->
+<p>Three or more <code>*</code>, <code>-</code> or <code>_</code>, spaces allowed; a spaced rule interrupts a paragraph.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">***
+- - -
+para
+* * *
+next
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;hr /&gt;
+&lt;hr /&gt;
+&lt;p&gt;para&lt;/p&gt;
+&lt;hr /&gt;
+&lt;p&gt;next&lt;/p&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T06-->
+<hr />
+<hr />
+<p>para</p>
+<hr />
+<p>next</p>
+<!--end T06-->
+<h3 id="t07-blockquote-with-lazy-continuation">T07 Blockquote with lazy continuation</h3>
+<!--case T07 blockquote-lazy-->
+<p>A line without <code>&gt;</code> continues a quoted paragraph; quotes nest.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">&gt; quote with **bold**
+lazy continuation
+&gt;
+&gt; &gt; nested
+
+after
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;blockquote&gt;
+&lt;p&gt;quote with &lt;strong&gt;bold&lt;/strong&gt;
+lazy continuation&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;nested&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;after&lt;/p&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T07-->
+<blockquote>
+<p>quote with <strong>bold</strong>
+lazy continuation</p>
+<blockquote>
+<p>nested</p>
+</blockquote>
+</blockquote>
+<p>after</p>
+<!--end T07-->
+<h3 id="t08-blocks-inside-a-blockquote">T08 Blocks inside a blockquote</h3>
+<!--case T08 blockquote-blocks-->
+<p>Headings, lists and fences parse inside a quote by the same rules as the top level.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">&gt; #### Quoted heading
+&gt; - item
+&gt; ```
+&gt; code
+&gt; ```
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;blockquote&gt;
+&lt;h4 id="quoted-heading"&gt;Quoted heading&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;item&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;code
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T08-->
+<blockquote>
+<h4 id="quoted-heading">Quoted heading</h4>
+<ul>
+<li>item</li>
+</ul>
+<pre><code>code
+</code></pre>
+</blockquote>
+<!--end T08-->
+<h3 id="t09-fenced-code-with-language">T09 Fenced code with language</h3>
+<!--case T09 fence-language-->
+<p>The first info word becomes <code>class="language-x"</code>.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">```bash
+echo "a &lt; b &amp;&amp; c"
+```
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;pre&gt;&lt;code class="language-bash"&gt;echo "a &amp;lt; b &amp;amp;&amp;amp; c"
+&lt;/code&gt;&lt;/pre&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T09-->
+<pre><code class="language-bash">echo "a &lt; b &amp;&amp; c"
+</code></pre>
+<!--end T09-->
+<h3 id="t10-fence-opening-on-a-blank-line">T10 Fence opening on a blank line</h3>
+<!--case T10 fence-blank-first-line-->
+<p>A blank first line belongs to the code; the fence does not break.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">```
+
+code
+```
+after
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;pre&gt;&lt;code&gt;
+code
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;after&lt;/p&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T10-->
+<pre><code>
+code
+</code></pre>
+<p>after</p>
+<!--end T10-->
+<h3 id="t11-closing-fence-with-trailing-spaces">T11 Closing fence with trailing spaces</h3>
+<!--case T11 fence-trailing-space-->
+<p>Trailing spaces after a closing fence are allowed; the fence still closes.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">```
+code
+```   
+para
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;pre&gt;&lt;code&gt;code
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;para&lt;/p&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T11-->
+<pre><code>code
+</code></pre>
+<p>para</p>
+<!--end T11-->
+<h3 id="t12-fence-length-and-tilde-fences">T12 Fence length and tilde fences</h3>
+<!--case T12 fence-length-tilde-->
+<p>A fence closes only on a run at least as long as its opener, so a longer fence can show a shorter one; tilde fences work the same way.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">````markdown
+```
+inner
+```
+````
+~~~
+tilde
+~~~
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;pre&gt;&lt;code class="language-markdown"&gt;```
+inner
+```
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;tilde
+&lt;/code&gt;&lt;/pre&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T12-->
+<pre><code class="language-markdown">```
+inner
+```
+</code></pre>
+<pre><code>tilde
+</code></pre>
+<!--end T12-->
+<h3 id="t13-indented-code">T13 Indented code</h3>
+<!--case T13 indented-code-->
+<p>Four columns of indent make code; blank lines inside are kept.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">    indented
+      more
+
+    after blank
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;pre&gt;&lt;code&gt;indented
+  more
+
+after blank
+&lt;/code&gt;&lt;/pre&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T13-->
+<pre><code>indented
+  more
+
+after blank
+</code></pre>
+<!--end T13-->
+<h3 id="t14-html-block-with-markdown-inside">T14 HTML block with markdown inside</h3>
+<!--case T14 html-block-details-->
+<p>A block tag starts raw HTML that runs to a blank line; markdown resumes between blank lines, the common GitHub pattern for collapsible sections.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">&lt;details&gt;
+&lt;summary&gt;Summary&lt;/summary&gt;
+
+Hidden **markdown**.
+
+&lt;/details&gt;
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;details&gt;
+&lt;summary&gt;Summary&lt;/summary&gt;
+&lt;p&gt;Hidden &lt;strong&gt;markdown&lt;/strong&gt;.&lt;/p&gt;
+&lt;/details&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T14-->
+<details>
+<summary>Summary</summary>
+<p>Hidden <strong>markdown</strong>.</p>
+</details>
+<!--end T14-->
+<h3 id="t15-html-comments">T15 HTML comments</h3>
+<!--case T15 html-comments-->
+<p>Block comments, across lines, and inline comments pass through.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">&lt;!-- block comment
+spans lines --&gt;
+Text with &lt;!-- inline --&gt; comment.
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;!-- block comment
+spans lines --&gt;
+&lt;p&gt;Text with &lt;!-- inline --&gt; comment.&lt;/p&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T15-->
+<!-- block comment
+spans lines -->
+<p>Text with <!-- inline --> comment.</p>
+<!--end T15-->
+<h3 id="t16-sized-image-as-raw-html">T16 Sized image as raw HTML</h3>
+<!--case T16 html-image-sized-->
+<p>A complete tag alone on its line is a raw HTML block, here the 312 by 313 pixel diagram with explicit dimensions.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">&lt;img src="../know/Operations-Framework-0.5.png" width="312" height="313" alt="Operations Framework 0.5"&gt;
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;img src="../know/Operations-Framework-0.5.png" width="312" height="313" alt="Operations Framework 0.5"&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T16-->
+<img src="../know/Operations-Framework-0.5.png" width="312" height="313" alt="Operations Framework 0.5">
+<!--end T16-->
+<h3 id="t17-bullet-nesting">T17 Bullet nesting</h3>
+<!--case T17 bullet-nesting-->
+<p>Items nest by content column.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">- a
+  - b
+    - c
+- d
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;ul&gt;
+&lt;li&gt;a
+&lt;ul&gt;
+&lt;li&gt;b
+&lt;ul&gt;
+&lt;li&gt;c&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;d&lt;/li&gt;
+&lt;/ul&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T17-->
+<ul>
+<li>a
+<ul>
+<li>b
+<ul>
+<li>c</li>
+</ul></li>
+</ul></li>
+<li>d</li>
+</ul>
+<!--end T17-->
+<h3 id="t18-ordered-list-start">T18 Ordered list start</h3>
+<!--case T18 ordered-start-->
+<p>The first number becomes <code>start</code>.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">3. three
+4. four
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;ol start="3"&gt;
+&lt;li&gt;three&lt;/li&gt;
+&lt;li&gt;four&lt;/li&gt;
+&lt;/ol&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T18-->
+<ol start="3">
+<li>three</li>
+<li>four</li>
+</ol>
+<!--end T18-->
+<h3 id="t19-loose-ordered-list">T19 Loose ordered list</h3>
+<!--case T19 ordered-loose-->
+<p>Blank lines between items keep one list and make it loose (paragraphs in each item); numbering continues.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">1. one
+
+2. two
+
+3. three
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;one&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;two&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;three&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T19-->
+<ol>
+<li>
+<p>one</p>
+</li>
+<li>
+<p>two</p>
+</li>
+<li>
+<p>three</p>
+</li>
+</ol>
+<!--end T19-->
+<h3 id="t20-fence-inside-a-list-item">T20 Fence inside a list item</h3>
+<!--case T20 ordered-fence-in-item-->
+<p>Content indented to the item column belongs to the item, code included, and the list continues after it.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">1. Step one
+   ```bash
+   make
+</code></pre>
+<ol start="2">
+<li>Step two</li>
+</ol>
+<pre><code>
+Expected:
+
+```html
+&lt;ol&gt;
+&lt;li&gt;Step one
+&lt;pre&gt;&lt;code class="language-bash"&gt;make
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+&lt;li&gt;Step two&lt;/li&gt;
+&lt;/ol&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T20-->
+<ol>
+<li>Step one
+<pre><code class="language-bash">make
+</code></pre></li>
+<li>Step two</li>
+</ol>
+<!--end T20-->
+<h3 id="t21-paragraphs-inside-a-list-item">T21 Paragraphs inside a list item</h3>
+<!--case T21 ordered-multi-paragraph-->
+<p>A blank line and indented text add a paragraph to the item, which makes the list loose.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">1. First
+
+   continued paragraph
+2. Second
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;First&lt;/p&gt;
+&lt;p&gt;continued paragraph&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Second&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T21-->
+<ol>
+<li>
+<p>First</p>
+<p>continued paragraph</p>
+</li>
+<li>
+<p>Second</p>
+</li>
+</ol>
+<!--end T21-->
+<h3 id="t22-delimiter-change-starts-a-new-list">T22 Delimiter change starts a new list</h3>
+<!--case T22 ordered-delimiter-change-->
+<p><code>)</code> and <code>.</code> are both ordered markers; changing the delimiter (or the bullet character) starts a new list, a way to restart numbering.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">1) a
+2) b
+1. c
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;ol&gt;
+&lt;li&gt;a&lt;/li&gt;
+&lt;li&gt;b&lt;/li&gt;
+&lt;/ol&gt;
+&lt;ol&gt;
+&lt;li&gt;c&lt;/li&gt;
+&lt;/ol&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T22-->
+<ol>
+<li>a</li>
+<li>b</li>
+</ol>
+<ol>
+<li>c</li>
+</ol>
+<!--end T22-->
+<h3 id="t23-only-1-interrupts-a-paragraph">T23 Only 1 interrupts a paragraph</h3>
+<!--case T23 ordered-interrupt-->
+<p>A number other than 1 cannot start a list inside a paragraph, so prose that wraps onto a year stays prose.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">The year was
+1984. A good year.
+
+Steps:
+1. first
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;p&gt;The year was
+1984. A good year.&lt;/p&gt;
+&lt;p&gt;Steps:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;first&lt;/li&gt;
+&lt;/ol&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T23-->
+<p>The year was
+1984. A good year.</p>
+<p>Steps:</p>
+<ol>
+<li>first</li>
+</ol>
+<!--end T23-->
+<h3 id="t24-list-marker-as-item-text">T24 List marker as item text</h3>
+<!--case T24 marker-in-item-->
+<p>Item content is parsed as blocks, so <code>2. x</code> inside a bullet is a nested ordered list; escape the dot to keep the number as text.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">- 1\. literal
+- 2. nested
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;ul&gt;
+&lt;li&gt;1. literal&lt;/li&gt;
+&lt;li&gt;&lt;ol start="2"&gt;
+&lt;li&gt;nested&lt;/li&gt;
+&lt;/ol&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T24-->
+<ul>
+<li>1. literal</li>
+<li><ol start="2">
+<li>nested</li>
+</ol></li>
+</ul>
+<!--end T24-->
+<h3 id="t25-nesting-needs-the-content-column">T25 Nesting needs the content column</h3>
+<!--case T25 nesting-indent-->
+<p>A sublist must be indented to its parent content column (3 for <code>1. </code>); one space starts a separate list.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">1. a
+ - b
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;ol&gt;
+&lt;li&gt;a&lt;/li&gt;
+&lt;/ol&gt;
+&lt;ul&gt;
+&lt;li&gt;b&lt;/li&gt;
+&lt;/ul&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T25-->
+<ol>
+<li>a</li>
+</ol>
+<ul>
+<li>b</li>
+</ul>
+<!--end T25-->
+<h3 id="t26-looseness-belongs-to-each-list">T26 Looseness belongs to each list</h3>
+<!--case T26 tight-outer-loose-inner-->
+<p>A blank line between nested items makes the nested list loose and leaves the outer list tight.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">- a
+  - b
+
+  - c
+- d
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;ul&gt;
+&lt;li&gt;a
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;b&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;c&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;d&lt;/li&gt;
+&lt;/ul&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T26-->
+<ul>
+<li>a
+<ul>
+<li>
+<p>b</p>
+</li>
+<li>
+<p>c</p>
+</li>
+</ul></li>
+<li>d</li>
+</ul>
+<!--end T26-->
+<h3 id="t27-task-list-items">T27 Task list items</h3>
+<!--case T27 task-list-->
+<p><code>[ ]</code> and <code>[x]</code> before item text become disabled checkboxes.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">- [ ] todo
+- [x] done
+- not a task
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;ul&gt;
+&lt;li&gt;&lt;input type="checkbox" disabled="" /&gt; todo&lt;/li&gt;
+&lt;li&gt;&lt;input type="checkbox" checked="" disabled="" /&gt; done&lt;/li&gt;
+&lt;li&gt;not a task&lt;/li&gt;
+&lt;/ul&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T27-->
+<ul>
+<li><input type="checkbox" disabled="" /> todo</li>
+<li><input type="checkbox" checked="" disabled="" /> done</li>
+<li>not a task</li>
+</ul>
+<!--end T27-->
+<h3 id="t28-lazy-continuation-in-a-list-item">T28 Lazy continuation in a list item</h3>
+<!--case T28 lazy-item-->
+<p>An unindented line continues the item paragraph.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">1. a
+b
+2. c
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;ol&gt;
+&lt;li&gt;a
+b&lt;/li&gt;
+&lt;li&gt;c&lt;/li&gt;
+&lt;/ol&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T28-->
+<ol>
+<li>a
+b</li>
+<li>c</li>
+</ol>
+<!--end T28-->
+<h3 id="t29-table-with-alignment">T29 Table with alignment</h3>
+<!--case T29 table-align-->
+<p>Colons in the delimiter row set <code>align=</code> on every cell of the column.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">| Left | Center | Right |
+|:--|:-:|--:|
+| a | b | c |
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;&lt;th align="left"&gt;Left&lt;/th&gt;&lt;th align="center"&gt;Center&lt;/th&gt;&lt;th align="right"&gt;Right&lt;/th&gt;&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;&lt;td align="left"&gt;a&lt;/td&gt;&lt;td align="center"&gt;b&lt;/td&gt;&lt;td align="right"&gt;c&lt;/td&gt;&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T29-->
+<table>
+<thead>
+<tr><th align="left">Left</th><th align="center">Center</th><th align="right">Right</th></tr>
+</thead>
+<tbody>
+<tr><td align="left">a</td><td align="center">b</td><td align="right">c</td></tr>
+</tbody>
+</table>
+<!--end T29-->
+<h3 id="t30-table-without-outer-pipes">T30 Table without outer pipes</h3>
+<!--case T30 table-bare-->
+<p>Leading and trailing pipes are optional.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">a | b
+--|--
+1 | 2
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;&lt;th&gt;a&lt;/th&gt;&lt;th&gt;b&lt;/th&gt;&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;1&lt;/td&gt;&lt;td&gt;2&lt;/td&gt;&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T30-->
+<table>
+<thead>
+<tr><th>a</th><th>b</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>2</td></tr>
+</tbody>
+</table>
+<!--end T30-->
+<h3 id="t31-escaped-pipe-in-a-table">T31 Escaped pipe in a table</h3>
+<!--case T31 table-escaped-pipe-->
+<p>An escaped <code>\|</code> is a literal pipe, inside a code span too; an unescaped pipe always divides cells, as on GitHub.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">| code | text |
+|---|---|
+| `x\|y` | a\|b |
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;&lt;th&gt;code&lt;/th&gt;&lt;th&gt;text&lt;/th&gt;&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;x|y&lt;/code&gt;&lt;/td&gt;&lt;td&gt;a|b&lt;/td&gt;&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T31-->
+<table>
+<thead>
+<tr><th>code</th><th>text</th></tr>
+</thead>
+<tbody>
+<tr><td><code>x|y</code></td><td>a|b</td></tr>
+</tbody>
+</table>
+<!--end T31-->
+<h3 id="t32-emphasis-and-strong">T32 Emphasis and strong</h3>
+<!--case T32 emphasis-->
+<p><code>*</code> and <code>_</code> by the CommonMark flanking rules: <code>_</code> never acts inside a word, and a delimiter beside spaces is literal.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">*em* **strong** ***both*** _u_ __uu__
+snake_case_word 2 * 3 * 4
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;p&gt;&lt;em&gt;em&lt;/em&gt; &lt;strong&gt;strong&lt;/strong&gt; &lt;em&gt;&lt;strong&gt;both&lt;/strong&gt;&lt;/em&gt; &lt;em&gt;u&lt;/em&gt; &lt;strong&gt;uu&lt;/strong&gt;
+snake_case_word 2 * 3 * 4&lt;/p&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T32-->
+<p><em>em</em> <strong>strong</strong> <em><strong>both</strong></em> <em>u</em> <strong>uu</strong>
+snake_case_word 2 * 3 * 4</p>
+<!--end T32-->
+<h3 id="t33-nested-emphasis">T33 Nested emphasis</h3>
+<!--case T33 emphasis-nesting-->
+<p>Delimiters of either kind nest.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">**bold _it_ tail** and *a *b* c*
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;p&gt;&lt;strong&gt;bold &lt;em&gt;it&lt;/em&gt; tail&lt;/strong&gt; and &lt;em&gt;a &lt;em&gt;b&lt;/em&gt; c&lt;/em&gt;&lt;/p&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T33-->
+<p><strong>bold <em>it</em> tail</strong> and <em>a <em>b</em> c</em></p>
+<!--end T33-->
+<h3 id="t34-strikethrough">T34 Strikethrough</h3>
+<!--case T34 strikethrough-->
+<p>One or two tildes, matched by length; three is literal.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">~~gone~~ and ~one~ and ~~~three~~~
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;p&gt;&lt;del&gt;gone&lt;/del&gt; and &lt;del&gt;one&lt;/del&gt; and ~~~three~~~&lt;/p&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T34-->
+<p><del>gone</del> and <del>one</del> and ~~~three~~~</p>
+<!--end T34-->
+<h3 id="t35-code-spans">T35 Code spans</h3>
+<!--case T35 code-spans-->
+<p>A span closes on a backtick run of its own length, so a longer run can hold a backtick; one space is trimmed from each side.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">`a` and ``x`y`` and `` `tick` `` and `unclosed
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;p&gt;&lt;code&gt;a&lt;/code&gt; and &lt;code&gt;x`y&lt;/code&gt; and &lt;code&gt;`tick`&lt;/code&gt; and `unclosed&lt;/p&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T35-->
+<p><code>a</code> and <code>x`y</code> and <code>`tick`</code> and `unclosed</p>
+<!--end T35-->
+<h3 id="t36-backslash-escapes">T36 Backslash escapes</h3>
+<!--case T36 escapes-->
+<p>Any ASCII punctuation can be escaped; other backslashes are literal.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">\*not em\* \# \[x\] \\ backslash \a
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;p&gt;*not em* # [x] \ backslash \a&lt;/p&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T36-->
+<p>*not em* # [x] \ backslash \a</p>
+<!--end T36-->
+<h3 id="t37-hard-line-breaks">T37 Hard line breaks</h3>
+<!--case T37 hard-breaks-->
+<p>Two trailing spaces, or a trailing backslash, end a line with <code>&lt;br /&gt;</code>.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">two spaces  
+backslash\
+end
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;p&gt;two spaces&lt;br /&gt;
+backslash&lt;br /&gt;
+end&lt;/p&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T37-->
+<p>two spaces<br />
+backslash<br />
+end</p>
+<!--end T37-->
+<h3 id="t38-inline-links">T38 Inline links</h3>
+<!--case T38 links-inline-->
+<p>Titles in either quote style; balanced parentheses in the target.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">[text](https://example.com "Title") [paren](https://example.com/a_(b)) [single](https://example.com 'Single')
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;p&gt;&lt;a href="https://example.com" title="Title"&gt;text&lt;/a&gt; &lt;a href="https://example.com/a_(b)"&gt;paren&lt;/a&gt; &lt;a href="https://example.com" title="Single"&gt;single&lt;/a&gt;&lt;/p&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T38-->
+<p><a href="https://example.com" title="Title">text</a> <a href="https://example.com/a_(b)">paren</a> <a href="https://example.com" title="Single">single</a></p>
+<!--end T38-->
+<h3 id="t39-local-link-rewrite">T39 Local link rewrite</h3>
+<!--case T39 links-local-rewrite-->
+<p><code>./</code> and <code>../</code> targets ending in <code>.md</code> link to the rendered <code>.md.html</code>; a <code>README.md</code> target links to its directory; link text that is itself such a path is rewritten too. Bare and external targets are untouched.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">[doc](./notes.md) [up](../guide.md#part) [index](./README.md) [dir](../sub/README.md?x=1) [./other.md](./other.md) [ext](https://example.com/x.md) [bare](notes.md)
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;p&gt;&lt;a href="./notes.md.html"&gt;doc&lt;/a&gt; &lt;a href="../guide.md.html#part"&gt;up&lt;/a&gt; &lt;a href="./"&gt;index&lt;/a&gt; &lt;a href="../sub/?x=1"&gt;dir&lt;/a&gt; &lt;a href="./other.md.html"&gt;./other.md.html&lt;/a&gt; &lt;a href="https://example.com/x.md"&gt;ext&lt;/a&gt; &lt;a href="notes.md"&gt;bare&lt;/a&gt;&lt;/p&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T39-->
+<p><a href="./notes.md.html">doc</a> <a href="../guide.md.html#part">up</a> <a href="./">index</a> <a href="../sub/?x=1">dir</a> <a href="./other.md.html">./other.md.html</a> <a href="https://example.com/x.md">ext</a> <a href="notes.md">bare</a></p>
+<!--end T39-->
+<h3 id="t40-reference-links">T40 Reference links</h3>
+<!--case T40 links-reference-->
+<p>Full, collapsed and shortcut forms; labels match without regard to case, and a definition may follow its use. Local rewriting applies to reference targets.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">[full][ref1] [collapsed][] [shortcut] [missing]
+
+[ref1]: https://example.com/one "One"
+[collapsed]: ./c.md
+[Shortcut]: &lt;../s.md&gt;
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;p&gt;&lt;a href="https://example.com/one" title="One"&gt;full&lt;/a&gt; &lt;a href="./c.md.html"&gt;collapsed&lt;/a&gt; &lt;a href="../s.md.html"&gt;shortcut&lt;/a&gt; [missing]&lt;/p&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T40-->
+<p><a href="https://example.com/one" title="One">full</a> <a href="./c.md.html">collapsed</a> <a href="../s.md.html">shortcut</a> [missing]</p>
+<!--end T40-->
+<h3 id="t41-autolinks">T41 Autolinks</h3>
+<!--case T41 autolinks-->
+<p>Angle-bracket autolinks and email, plus bare <code>www.</code> and <code>https://</code> URLs; trailing punctuation and an unbalanced parenthesis stay outside the link.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">&lt;https://example.com&gt; &lt;user@example.com&gt; www.example.com
+https://example.com/path. (see https://example.com/a_(b)) and http://example.org/foo_bar_baz
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;p&gt;&lt;a href="https://example.com"&gt;https://example.com&lt;/a&gt; &lt;a href="mailto:user@example.com"&gt;user@example.com&lt;/a&gt; &lt;a href="http://www.example.com"&gt;www.example.com&lt;/a&gt;
+&lt;a href="https://example.com/path"&gt;https://example.com/path&lt;/a&gt;. (see &lt;a href="https://example.com/a_(b)"&gt;https://example.com/a_(b)&lt;/a&gt;) and &lt;a href="http://example.org/foo_bar_baz"&gt;http://example.org/foo_bar_baz&lt;/a&gt;&lt;/p&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T41-->
+<p><a href="https://example.com">https://example.com</a> <a href="mailto:user@example.com">user@example.com</a> <a href="http://www.example.com">www.example.com</a>
+<a href="https://example.com/path">https://example.com/path</a>. (see <a href="https://example.com/a_(b)">https://example.com/a_(b)</a>) and <a href="http://example.org/foo_bar_baz">http://example.org/foo_bar_baz</a></p>
+<!--end T41-->
+<h3 id="t42-image">T42 Image</h3>
+<!--case T42 image-->
+<p>The diagram by markdown image syntax, with a title.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">![Operations Framework](../know/Operations-Framework-0.5.png "Operations Framework 0.5")
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;p&gt;&lt;img src="../know/Operations-Framework-0.5.png" alt="Operations Framework" title="Operations Framework 0.5" /&gt;&lt;/p&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T42-->
+<p><img src="../know/Operations-Framework-0.5.png" alt="Operations Framework" title="Operations Framework 0.5" /></p>
+<!--end T42-->
+<h3 id="t43-linked-image">T43 Linked image</h3>
+<!--case T43 image-linked-->
+<p>An image inside link text, the badge pattern; alt text is the plain text of the image description.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">[![Operations *Framework*](../know/Operations-Framework-0.5.png)](../know/Operations-Framework-0.5.png)
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;p&gt;&lt;a href="../know/Operations-Framework-0.5.png"&gt;&lt;img src="../know/Operations-Framework-0.5.png" alt="Operations Framework" /&gt;&lt;/a&gt;&lt;/p&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T43-->
+<p><a href="../know/Operations-Framework-0.5.png"><img src="../know/Operations-Framework-0.5.png" alt="Operations Framework" /></a></p>
+<!--end T43-->
+<h3 id="t44-inline-html">T44 Inline HTML</h3>
+<!--case T44 inline-html-->
+<p>Self-closing, boolean, hyphenated, single-quoted and unquoted attributes pass through; a bare <code>&lt;</code> is escaped.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">line&lt;br /&gt;two &lt;kbd&gt;Ctrl&lt;/kbd&gt; &lt;span data-x="1" hidden&gt;h&lt;/span&gt; &lt;a href='#t44' class=x&gt;q&lt;/a&gt; 3 &lt; 4
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;p&gt;line&lt;br /&gt;two &lt;kbd&gt;Ctrl&lt;/kbd&gt; &lt;span data-x="1" hidden&gt;h&lt;/span&gt; &lt;a href='#t44' class=x&gt;q&lt;/a&gt; 3 &amp;lt; 4&lt;/p&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T44-->
+<p>line<br />two <kbd>Ctrl</kbd> <span data-x="1" hidden>h</span> <a href='#t44' class=x>q</a> 3 &lt; 4</p>
+<!--end T44-->
+<h3 id="t45-entities">T45 Entities</h3>
+<!--case T45 entities-->
+<p>Named, decimal and hex entities pass through; a bare <code>&amp;</code> is escaped.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">&amp;copy; &amp;#169; &amp;#xA9; AT&amp;T &amp;amp; &amp;bogus
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;p&gt;&amp;copy; &amp;#169; &amp;#xA9; AT&amp;amp;T &amp;amp; &amp;amp;bogus&lt;/p&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T45-->
+<p>&copy; &#169; &#xA9; AT&amp;T &amp; &amp;bogus</p>
+<!--end T45-->
+<h3 id="t46-inline-anchor">T46 Inline anchor</h3>
+<!--case T46 inline-anchor-->
+<p><code>{#id}</code> in running text is a zero-width link target.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">Jump target {#t46-target} in text.
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;p&gt;Jump target &lt;a id="t46-target"&gt;&lt;/a&gt; in text.&lt;/p&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T46-->
+<p>Jump target <a id="t46-target"></a> in text.</p>
+<!--end T46-->
+<h3 id="t47-footnotes">T47 Footnotes</h3>
+<!--case T47 footnotes-->
+<p>References render as their source text in a link; definitions collect at the end of the document in definition order. A label may be cited more than once.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">Text[^fa] and again[^fa], other[^fb].
+
+[^fa]: First note with *emphasis*.
+[^fb]: Second note.
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;p&gt;Text&lt;a href="#fn-fa" role="doc-noteref"&gt;&lt;span&gt;[^&lt;/span&gt;fa&lt;span&gt;]&lt;/span&gt;&lt;/a&gt; and again&lt;a href="#fn-fa" role="doc-noteref"&gt;&lt;span&gt;[^&lt;/span&gt;fa&lt;span&gt;]&lt;/span&gt;&lt;/a&gt;, other&lt;a href="#fn-fb" role="doc-noteref"&gt;&lt;span&gt;[^&lt;/span&gt;fb&lt;span&gt;]&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;
+&lt;section id="footnotes" role="doc-endnotes"&gt;
+&lt;hr /&gt;
+&lt;ol&gt;
+&lt;li id="fn-fa" role="doc-endnote"&gt;&lt;span&gt;[^fa]: &lt;/span&gt;&lt;p&gt;First note with &lt;em&gt;emphasis&lt;/em&gt;.&lt;/p&gt;&lt;/li&gt;
+&lt;li id="fn-fb" role="doc-endnote"&gt;&lt;span&gt;[^fb]: &lt;/span&gt;&lt;p&gt;Second note.&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/section&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T47-->
+<p>Text<a href="#fn-fa" role="doc-noteref"><span>[^</span>fa<span>]</span></a> and again<a href="#fn-fa" role="doc-noteref"><span>[^</span>fa<span>]</span></a>, other<a href="#fn-fb" role="doc-noteref"><span>[^</span>fb<span>]</span></a>.</p>
+<!--end T47-->
+<h3 id="t48-footnote-with-several-paragraphs">T48 Footnote with several paragraphs</h3>
+<!--case T48 footnote-blocks-->
+<p>A definition continues lazily, and takes further blocks indented four columns after a blank line.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">Ref[^fc].
+
+[^fc]: Para one
+continued lazily.
+
+    Para two indented.
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;p&gt;Ref&lt;a href="#fn-fc" role="doc-noteref"&gt;&lt;span&gt;[^&lt;/span&gt;fc&lt;span&gt;]&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;
+&lt;section id="footnotes" role="doc-endnotes"&gt;
+&lt;hr /&gt;
+&lt;ol&gt;
+&lt;li id="fn-fc" role="doc-endnote"&gt;&lt;span&gt;[^fc]: &lt;/span&gt;&lt;p&gt;Para one
+continued lazily.&lt;/p&gt;
+&lt;p&gt;Para two indented.&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/section&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T48-->
+<p>Ref<a href="#fn-fc" role="doc-noteref"><span>[^</span>fc<span>]</span></a>.</p>
+<!--end T48-->
+<h3 id="t49-consecutive-footnote-definitions">T49 Consecutive footnote definitions</h3>
+<!--case T49 footnotes-consecutive-->
+<p>Definitions need no blank lines between them, nor before the first.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">X[^fd] Y[^fe]
+[^fd]: one
+[^fe]: two
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;p&gt;X&lt;a href="#fn-fd" role="doc-noteref"&gt;&lt;span&gt;[^&lt;/span&gt;fd&lt;span&gt;]&lt;/span&gt;&lt;/a&gt; Y&lt;a href="#fn-fe" role="doc-noteref"&gt;&lt;span&gt;[^&lt;/span&gt;fe&lt;span&gt;]&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;section id="footnotes" role="doc-endnotes"&gt;
+&lt;hr /&gt;
+&lt;ol&gt;
+&lt;li id="fn-fd" role="doc-endnote"&gt;&lt;span&gt;[^fd]: &lt;/span&gt;&lt;p&gt;one&lt;/p&gt;&lt;/li&gt;
+&lt;li id="fn-fe" role="doc-endnote"&gt;&lt;span&gt;[^fe]: &lt;/span&gt;&lt;p&gt;two&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/section&gt;
+</code></pre>
+<p>Rendered:</p>
+<!--live T49-->
+<p>X<a href="#fn-fd" role="doc-noteref"><span>[^</span>fd<span>]</span></a> Y<a href="#fn-fe" role="doc-noteref"><span>[^</span>fe<span>]</span></a></p>
+<!--end T49-->
+<h3 id="t50-contents-with-heading-and-rule">T50 Contents with heading and rule</h3>
+<!--case T50 contents-pre-post nolive-->
+<p><code>pre</code> and <code>post</code> hold markdown rendered around the index, so the contents heading and closing rule stay inside the comment and out of GitHub's rendering. The heading is recorded before the index scope begins, so it indexes nothing of itself; <code># Title</code> falls outside the 2 to 3 window.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">&lt;!--contents 2 3 pre="## Contents" post="---"--&gt;
+
+# Title
+## Alpha
+### Beta *em*
+#### Gamma
+## Delta [link](./d.md)
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;h2 id="contents"&gt;Contents&lt;/h2&gt;
+&lt;nav&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="#alpha"&gt;Alpha&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="#beta-em"&gt;Beta &lt;em&gt;em&lt;/em&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="#delta-link"&gt;Delta link&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/nav&gt;
+&lt;hr /&gt;
+&lt;h1 id="title"&gt;Title&lt;/h1&gt;
+&lt;h2 id="alpha"&gt;Alpha&lt;/h2&gt;
+&lt;h3 id="beta-em"&gt;Beta &lt;em&gt;em&lt;/em&gt;&lt;/h3&gt;
+&lt;h4 id="gamma"&gt;Gamma&lt;/h4&gt;
+&lt;h2 id="delta-link"&gt;Delta &lt;a href="./d.md.html"&gt;link&lt;/a&gt;&lt;/h2&gt;
+</code></pre>
+<p>Not rendered live: this case depends on its position in a document.</p>
+<h3 id="t51-contents-default-window">T51 Contents default window</h3>
+<!--case T51 contents-default nolive-->
+<p>With no arguments the window is levels 1 to 3, and only headings after the directive are indexed.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">## Before
+&lt;!--contents--&gt;
+## After
+### Sub
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;h2 id="before"&gt;Before&lt;/h2&gt;
+&lt;nav&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="#after"&gt;After&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="#sub"&gt;Sub&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/nav&gt;
+&lt;h2 id="after"&gt;After&lt;/h2&gt;
+&lt;h3 id="sub"&gt;Sub&lt;/h3&gt;
+</code></pre>
+<p>Not rendered live: this case depends on its position in a document.</p>
+<h3 id="t52-contents-with-nothing-to-index">T52 Contents with nothing to index</h3>
+<!--case T52 contents-empty nolive-->
+<p>When no heading falls in the window, nothing is emitted, <code>pre</code> and <code>post</code> included. An unrecognized argument leaves an ordinary comment.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">&lt;!--contents 2 3 pre="## Contents" post="---"--&gt;
+&lt;!--contents bogus--&gt;
+# only h1
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;!--contents bogus--&gt;
+&lt;h1 id="only-h1"&gt;only h1&lt;/h1&gt;
+</code></pre>
+<p>Not rendered live: this case depends on its position in a document.</p>
+<h3 id="t53-front-matter">T53 Front matter</h3>
+<!--case T53 front-matter nolive-->
+<p>A leading <code>---</code> block whose first line reads as <code>key: value</code> is skipped.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">---
+title: x
+date: y
+---
+Body.
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;p&gt;Body.&lt;/p&gt;
+</code></pre>
+<p>Not rendered live: this case depends on its position in a document.</p>
+<h3 id="t54-metadata-block">T54 Metadata block</h3>
+<!--case T54 metadata-block nolive-->
+<p>A leading block of two or more <code>Key: value</code> lines is skipped.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">Title: Doc
+Author: Me
+
+Body.
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;p&gt;Body.&lt;/p&gt;
+</code></pre>
+<p>Not rendered live: this case depends on its position in a document.</p>
+<h3 id="t55-single-colon-line-is-content">T55 Single colon line is content</h3>
+<!--case T55 metadata-single-line nolive-->
+<p>One <code>Key: value</code> line is not metadata, so a first paragraph such as a note still renders.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">Note: this first line is content.
+
+Second para.
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;p&gt;Note: this first line is content.&lt;/p&gt;
+&lt;p&gt;Second para.&lt;/p&gt;
+</code></pre>
+<p>Not rendered live: this case depends on its position in a document.</p>
+<h3 id="t56-opening-rule-is-not-front-matter">T56 Opening rule is not front matter</h3>
+<!--case T56 hr-not-front-matter nolive-->
+<p>A document may open on a thematic break when the next line is not <code>key: value</code>.</p>
+<p>Source:</p>
+<pre><code class="language-markdown">---
+Not front matter.
+</code></pre>
+<p>Expected:</p>
+<pre><code class="language-html">&lt;hr /&gt;
+&lt;p&gt;Not front matter.&lt;/p&gt;
+</code></pre>
+<p>Not rendered live: this case depends on its position in a document.</p>
+<h2 id="source">Source</h2>
+<p>Functional source of this rewrite, whose behavior it preserves: <a href="https://github.com/georgalis/pub/blob/f3839048129555e0a624f3f807cad720ece74dff/sub/markdown.sh">georgalis/pub sub/markdown.sh at f3839048</a>, itself descended from knazarov/markdown.awk (BSD License).</p>
+<p>markdown.sh revision: org 6ac19d83 20261003 172747 PDT Sat --- container model rewrite, help corpus</p>
+<section id="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn-fa" role="doc-endnote"><span>[^fa]: </span><p>First note with <em>emphasis</em>.</p></li>
+<li id="fn-fb" role="doc-endnote"><span>[^fb]: </span><p>Second note.</p></li>
+<li id="fn-fc" role="doc-endnote"><span>[^fc]: </span><p>Para one
+continued lazily.</p>
+<p>Para two indented.</p></li>
+<li id="fn-fd" role="doc-endnote"><span>[^fd]: </span><p>one</p></li>
+<li id="fn-fe" role="doc-endnote"><span>[^fe]: </span><p>two</p></li>
+</ol>
+</section>
+</body>
+</html>
