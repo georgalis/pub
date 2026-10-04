@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+section[role="doc-endnotes"] ol { list-style: none; padding-left: 0; }
+li[role="doc-endnote"] > p:first-of-type { display: inline; margin: 0; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h3 id="pub"><a href="../">pub</a></h3>
+<h2 id="pubsrc"><a href="../">pub/src</a></h2>
+<h1 id="markdownsh"><a href="./">markdown.sh</a></h1>
+<p>One markdown file, read natively on GitHub and rendered by <code>markdown.sh</code> as standalone HTML for a static hosts. The script is the renderer; its help document is at once the feature reference, the command reference, and the regression corpus that holds the renderer to GitHub-flavored behavior.</p>
+<p><em>(c) 2026 George Georgalis <a href="mailto:george@iuxta.com">george@iuxta.com</a> Unlimited use with attribution.</em></p>
+<p>The help document is emitted by the script itself (<code>markdown.sh -H</code>), so the copy here is a convenience: regenerate it after any change and the two cannot drift.</p>
+<ul>
+<li><a href="./markdown.sh">markdown.sh</a> --- bash and POSIX awk renderer: GFM blocks and inline, footnotes in source form, <code>{#id}</code> anchors, local <code>.md</code> link rewriting, a contents directive, and the built-in corpus.</li>
+<li><a href="./markdown-help.md.html">markdown-help.md</a> --- usage, output conventions, features, divergences from GitHub, and 56 regression cases.</li>
+</ul>
+<h2 id="quick-reference">Quick reference</h2>
+<pre><code>usage: markdown.sh input.md        render to input.md.html, print its realpath
+       markdown.sh -f input.md     print the HTML fragment to stdout (- reads stdin)
+       markdown.sh -H              print markdown-help.md (usage, features, corpus)
+       markdown.sh -c [corpus.md]  run the regression corpus (default: built in)
+       markdown.sh -h              print this usage
+</code></pre>
+<ul>
+<li><code>markdown.sh README.md</code> writes <code>index.html</code>, the page a static host serves for the bare directory; links to <code>./README.md</code> become <code>./</code>.</li>
+<li><code>markdown.sh -H &gt; markdown-help.md &amp;&amp; markdown.sh markdown-help.md</code> renders the help as its own test output.</li>
+<li><code>markdown.sh -c</code> exits 1 on any failure; a new case starts as a scratch file checked with <code>-f</code>, then joins the corpus.</li>
+<li>A table of contents (stays invisible on GitHub): <code>&lt;!--contents 2 3 pre="## Contents" post="---"--&gt;</code>.</li>
+</ul>
+</body>
+</html>

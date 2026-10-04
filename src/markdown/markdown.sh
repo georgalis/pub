@@ -3098,6 +3098,10 @@ Not rendered live: this case depends on its position in a document.
 ## Source
 
 Functional source of this rewrite, whose behavior it preserves: [georgalis/pub sub/markdown.sh at f3839048](https://github.com/georgalis/pub/blob/f3839048129555e0a624f3f807cad720ece74dff/sub/markdown.sh), itself descended from knazarov/markdown.awk (BSD License).
+
+markdown.sh revision: org 6ac19d83 20261003 172747 PDT Sat --- container model rewrite, help corpus
+
+<https://github.com/georgalis/pub/tree/main/src/markdown>
 MARKDOWN_HELP
 }
 

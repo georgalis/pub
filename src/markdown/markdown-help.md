@@ -1962,3 +1962,4 @@ Functional source of this rewrite, whose behavior it preserves: [georgalis/pub s
 
 markdown.sh revision: org 6ac19d83 20261003 172747 PDT Sat --- container model rewrite, help corpus
 
+<https://github.com/georgalis/pub/tree/main/src/markdown>
