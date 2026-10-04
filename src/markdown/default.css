@@ -32,7 +32,7 @@ body {
     padding: 1.55em 1.5em;
     padding-bottom: calc(50vh - 1em);
     margin: 2em auto 2em calc(3.4vw); /* top right bottom left */ 
-    max-width: 48em;
+    max-width: 45em;
     border-radius: 0.75em; /* round the column corners against the viewport */
     line-height: 1.6;
     font-family: "B612", Varidian, sans-serif;

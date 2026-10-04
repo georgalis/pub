@@ -1,5 +1,4 @@
-### [pub](../../)
-## [pub/src](../)
+## [src](../)
 # [Markdown](./)
 
 One markdown file, read natively on GitHub and rendered by `markdown.sh` as standalone HTML for a static hosts. The script is the renderer; its help document is at once the feature reference, the command reference, and the regression corpus that holds the renderer to GitHub-flavored behavior.
