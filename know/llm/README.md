@@ -52,14 +52,14 @@ _(c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution._
   sounds, and for reading an existing composition to find what its sound
   is carrying. --->
 * [Open Training Constraints: Economics, Architecture, and Nemotron 3 Super](./69d6-open-training-economics-architecture.md) <!-- 69d65753 -->
-* The Transmission Layer [Catalog](./6a77/cf23/),
-  [Essay](./6a77/cf23/transmission_layer-essay.md),
-  [Ontology](./6a77/cf23/transmission_layer-ontology.md),
-  [Roster](./6a77/cf23/transmission_layer-roster.md)
-  * Skills: [Transmission](./6a77/cf23/transmission-SKILL.md),
-    [Load](./6a77/cf23/transmission-load-SKILL.md),
-    [Land](./6a77/cf23/transmission-land-SKILL.md),
-    [Vantage](./6a77/cf23/transmission-vantage-SKILL.md)
+* The Transmission Layer [Catalog](./6a/77cf23/),
+  [Essay](./6a/77cf23/transmission_layer-essay.md),
+  [Ontology](./6a/77cf23/transmission_layer-ontology.md),
+  [Roster](./6a/77cf23/transmission_layer-roster.md)
+  * Skills: [Transmission](./6a/77cf23/transmission-SKILL.md),
+    [Load](./6a/77cf23/transmission-load-SKILL.md),
+    [Land](./6a/77cf23/transmission-land-SKILL.md),
+    [Vantage](./6a/77cf23/transmission-vantage-SKILL.md)
 * [Patina](./6aaf/e9a4/) affiliates prose to community
 
 [^*]: Revision forthcoming
