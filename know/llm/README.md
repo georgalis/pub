@@ -60,7 +60,7 @@ _(c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution._
     [Load](./6a/77cf23/transmission-load-SKILL.md),
     [Land](./6a/77cf23/transmission-land-SKILL.md),
     [Vantage](./6a/77cf23/transmission-vantage-SKILL.md)
-* [Patina](./6aaf/e9a4/) affiliates prose to community
+* [Patina](./6a/afe9a4/) affiliates prose to community
 
 [^*]: Revision forthcoming
 
