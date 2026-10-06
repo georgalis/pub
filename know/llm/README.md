@@ -61,6 +61,7 @@ _(c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution._
     [Land](./6a/77cf23/transmission-land-SKILL.md),
     [Vantage](./6a/77cf23/transmission-vantage-SKILL.md)
 * [Patina](./6a/afe9a4/) affiliates prose to community
+* [Parabolic Syllogism](./6a/c48ca7/) pushes past the obvious toward new conclusions
 
 [^*]: Revision forthcoming
 
