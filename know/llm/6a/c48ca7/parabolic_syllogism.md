@@ -32,7 +32,7 @@ written.
   (2026-10-05); a regular style skill, invoked only by exact name.
   Appendix B carries a verbatim snapshot of that revision so this record
   remains self-sufficient.
-- `./review.md` --- this record, revision `6ac4927f` (2026-10-05).
+- `./parabolic_syllogism.md` --- this record, revision `6ac4927f` (2026-10-05).
 - Companion skills it was designed alongside, not dependent on:
   `hyper-analytical-solution-engine` (divergent synthesis by parallel
   analytic streams), `max-density` (format precedent for a regular style
