@@ -658,7 +658,7 @@ _yt_json_txt () { # create f2rb2mp3 staging data from youtube info.json
     printf ' ss= to= f2rb2mp3 $_f ooo,${_a}-Trak_Title-${_r}\n%s\n\n' "$duration"
     printf -- "--- chapters "
     printf -- "\n%s\n\n" "$chapters" \
-      | sed -e 's/: /=/' -e 's/\.0$//' -e "s/'//g" -e 's/ /_/g' -e '/^---$/d' \
+      | sed -e 's/: /=/' -e 's/\.0$//' -e "s/[',!]//g" -e 's/ /_/g' -e 's/_-_/-/g' -e '/^---$/d' \
             -e 's/^ooo=/f2rb2mp3 $_f ooo,${_a}-/' -e '/^f2rb/s/$/-${_r}/' -e 's/\&/and/g' \
       | tr -d '()[].;:`"' \
       | awk -v xs="$xs" '{ gsub(/ ooo,/, sprintf(" p%s%03x,", xs, NR)); print }'
