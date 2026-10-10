@@ -797,14 +797,14 @@ EOF
     } # help
   $verb "f2rb2mp3 $1 $2"
   $verb ss=$ss to=$to t=$t p=$p f=$f c=$c F=$F CF=$CF off=$off tp=$tp lra=$lra i=$i cmp=$cmp v=$v
-  [    "$1" ] || { f2rb2mp3 help ; return 1 ;}
   [ -f "$1" ] || { f2rb2mp3 help ; chkerr "no input flle '$1' (6542c99c)" ; return 1 ;}
+  local infile="${1##*/}" # basename
+  local inpath= ; read -r inpath < <(realpath "$1") ; inpath="${inpath%/*}" # input dirname
+  local infilep="$inpath/$infile"
+chkwrn ??? cd "$inpath" # then realpath _f correctly... we are calling this from eval of the automation, so the cd must come before...
   local  verb="${verb:=chkwrn}"
   local verb2="${verb2:=devnul}"
   local verb3="${verb3:=devnul}"
-  local infile="${1##*/}" # basename
-  expr "$1" : ".*/" >/dev/null && inpath="${1%/*}" || inpath="." # input dirname
-  local infilep="$(cd "${inpath}" ; pwd -P)/${infile}" # full filepath
   local prependt="$2"
   [ "${prependt}" ] || prependt=00,
   [ "$t" -o "$p" ] && { [ "$c" ] || local c=5 ;} || true # "Crispness"
@@ -2037,7 +2037,7 @@ auto_dgst () { #0> auto create digest (_/dgst), _/dgst-sha3-384, _/dgst-ckstatsu
     ) ;}
 
 which stemwords >/dev/null 2>&1 && { # create stemwords wrappers, stemray and stempar
-stemray() { # take args or stdin, return brackeded sorted comma separated words, and novel unstemmed in comments
+ stemray() { # take args or stdin, return brackeded sorted comma separated words, and novel unstemmed in comments
     local w= wi="$*" wu=() ws=() # w{word} wi{input words} wu{arr uniq words input} ws{arr stemmed wu}
     # read stdin if null args
     [ "$wi" ] || read -d '' wi < <(cat) || true
@@ -2067,7 +2067,7 @@ stemray() { # take args or stdin, return brackeded sorted comma separated words,
 #   Reassembly:
 #      - Remove all newlines from the intermediate format.
 #      - Convert special characters (ASCII 128) back to newlines (\n).
-stempar() { # take args or stdin, return stemwords text
+ stempar() { # take args or stdin, return stemwords text
   _dsy() { # disassemble text
     iconv -f utf-8 -t ascii//TRANSLIT -c | tr '\n' '\200' | LC_ALL=C awk '
       { for (i = 1; i <= length; i++)
