@@ -1,7 +1,10 @@
-# ff
+## [src](../)
+# [ff](./)
 
 Functional find: NetBSD find(1) semantics where they matter, one letter per
 switch, the same behavior on Linux and Darwin.
+
+_(c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution._
 
 ```
 ff . -t f -n '*.c'               C sources
@@ -23,10 +26,38 @@ scheme:
   request it exits 2 and names the binary. Load it with `. ff.fn.bash`; its
   body runs in a subshell, so only `ff` enters the caller's namespace.
 
-The same model as cksh: `-h` and
-`--help` are compiled in, the man page is generated from `--help`, and the
+A brief usage is provided with `-h`,
+the man page is generated from `--help`.
+```
+    Usage: ff [-EIHLDSXZV] [--] [path ...] [expression]
+      options  -E ERE for -r  -I ignore case  -H/-L follow symlinks
+               -D post-order  -S sorted  -X one filesystem  -Z NUL output
+               -V show the native find command (ff.fn.bash)
+      tests    -n glob  -p glob  -r re  -t fdlpsbc  -d [+-]N  -s [+-]N[ckMGT]
+               -m -a -c -b [+-]N[smhdw]  -w [+-][ ]([.][.]/file|HEX)  -k [+-]mode
+               -u user  -g group  -l [+-]N  -i [+-]HEX  -y file (same node)  -e
+               -z (prune)  -0 (true)  -1 (false)
+      actions  -f print  -v cksh line  -x cmd {} ;|+  (in entry's dir)
+               -j cmd {} ;|+  (full path)  -delete  -q quit
+      logic    ( )  ! or -not  juxtaposition = and  -o or
+      -h this summary, --help the manual
+```
+The
 test suite runs its cases through both implementations and checks them
 against each other.
+
+<!--contents 2 3 pre="## Contents" post="---"-->
+
+## Files
+
+<https://github.com/georgalis/pub/tree/main/src/ff>
+- **[ff.c](./ff.c)** --- the program: C99 source for the `ff` binary, including the usage text and the manual source.
+- **[ff.fn.bash](./ff.fn.bash)** --- the bash function `ff`: translates the same switches into the host's native `find` argument list; carries help text generated from the binary.
+- **[makefile](./makefile)** --- builds `ff`, regenerates the help text in `ff.fn.bash` after the build, and runs `make test`.
+
+- **[README.md](./README.md)** --- this file: introduction, grammar, build, translator limits, verified state, and history.
+- **[PLAN.md](./PLAN.md)** --- design decisions and their rationale, recorded by revision.
+- **[test.sh](./test.sh)** --- the full suite, run twice (C binary, then bash function), with a byte-for-byte parity check between the two; host-dependent cases are skipped by named probe.
 
 ## Build
 
@@ -346,7 +377,3 @@ org 6ab7fec8 20260926 102008 PDT Sat 10:20 AM 26 Sep 2026
     bash translator ff.fn.bash for the native find
 ```
 
-## Copyright
-
-(c) 2026 George Georgalis <george@iuxta.com>
-Unlimited use with attribution.
