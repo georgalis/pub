@@ -4,7 +4,7 @@ _(c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution._
 
 <!-- 6ac4927f 20261005 231735 PDT Mon 11:17 PM initial basis record; references live-verified; three corrections recorded -->
 
-The basis record for the [parabolic-syllogism skill](./SKILL.md): its
+The basis record for the [parabolic syllogism skill](./parabolic_syllogism-SKILL.md): its
 source, the reading of intent that shaped it, the precedent it stands on,
 the synthesis it adds, the decisions and corrections made along the way,
 and the open agenda for its next revision. The skill file is the
@@ -28,11 +28,11 @@ written.
 
 ## Record at a glance
 
-- [./SKILL.md](./SKILL.md) --- the live skill, revision `6ac48ca7`
+- [`./parabolic_syllogism-SKILL.md`](./parabolic_syllogism-SKILL.md) --- the live skill, revision `6ac48ca7`
   (2026-10-05); a regular style skill, invoked only by exact name.
   Appendix B carries a verbatim snapshot of that revision so this record
   remains self-sufficient.
-- `./parabolic_syllogism.md` --- this record, revision `6ac4927f` (2026-10-05).
+- [`./parabolic_syllogism.md`](parabolic_syllogism.md) --- this record, revision `6ac4927f` (2026-10-05).
 - Companion skills it was designed alongside, not dependent on:
   `hyper-analytical-solution-engine` (divergent synthesis by parallel
   analytic streams), `max-density` (format precedent for a regular style
@@ -269,7 +269,8 @@ Open work for the next revision, in priority order.
 ## What the Record Withholds
 
 A skill that teaches withholding needs a record that withholds nothing.
-The two files divide the work the way the form divides it. In SKILL.md
+The two files divide the work the way the form divides it. In
+[parabolic syllogism skill](./parabolic_syllogism-SKILL.md)
 the key is kept off the curve. Here every key is stated: the reading of
 intent, the precedent, the synthesis, the three errors and their repair.
 A later reviser who has only the skill holds a parable. A later reviser
@@ -308,9 +309,11 @@ strategy:
   Breadcrumb architectures: Sequential inferences building toward revelation
 ```
 
-## Appendix B: SKILL.md snapshot at revision 6ac48ca7
+## Appendix B: parabolic_syllogism-SKILL.md snapshot at revision 6ac48ca7
 
-The live [SKILL.md](./SKILL.md) is authoritative for use; this snapshot is
+The live
+[`./parabolic_syllogism-SKILL.md`](./parabolic_syllogism-SKILL.md)
+is authoritative for use; this snapshot is
 authoritative for audit of what revision `6ac48ca7` said.
 
 ```markdown
