@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+section[role="doc-endnotes"] ol { list-style: none; padding-left: 0; }
+li[role="doc-endnote"] > p:first-of-type { display: inline; margin: 0; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h1 id="mp3loop-usage-and-manual-rev-6acd6600-20261012_155808">mp3loop usage and manual (rev 6acd6600-20261012_155808)</h1>
+<h2 id="-h">-h</h2>
+<pre><code>mp3loop --- play a directory of mp3 files as a continuous loop
+usage: mp3loop [-m] [-v VOL] [-s WHEN] [-n [N]] [-p [N]] [-e|-r] [TARGET]
+  -m          memory only: no state or log files, survives hangup
+  -v VOL      volume 1-100; 0 stops at the end of the current track
+  -s WHEN     no track starts after WHEN: hex unix seconds
+              (6ace = 6ace0000), or +N[smhdw] from now (m default);
+              0 clears
+  -n [N]      skip N tracks after the current one (default 1);
+              with -e, from the current one; N may be negative
+  -p [N]      preview the next N tracks before each play (default 10)
+  -e          remote: apply now; alone, stop the current play
+  -r          remote: apply after the current track (default)
+  -h, --help  this summary, or the full manual
+TARGET  DIR | FILE | PATH/FRAG | FRAG (in the last played directory)
+A call made while a loop is playing is a remote: it reprograms
+the playing loop, prints the resulting plan, and returns.
+</code></pre>
+<h2 id="--help">--help</h2>
+<pre><code>NAME
+  mp3loop --- directory mp3 loop player with remote control
+
+SYNOPSIS
+  mp3loop [-m] [-v VOL] [-s WHEN] [-n [N]] [-p [N]] [-e|-r] [--] [TARGET]
+  mp3loop -h | --help
+
+DESCRIPTION
+  mp3loop plays the mp3 files of one directory in sequence order,
+  wrapping to the first track after the last, until a stop
+  condition. Invoked while a loop is playing, or with -r, it acts
+  as a remote: it rewrites the state the loop runs on, signals the
+  loop, prints the resulting plan, and returns.
+
+  The player reads its state at each track boundary. A setting
+  changed by a remote, or by editing a state file directly, takes
+  effect when the current track ends; -e moves the boundary to now.
+
+  mp3loop drives either a local workstation or a headless
+  network-attached player: a host with music storage, wired to an
+  amplifier and speakers, and commanded from a workstation over
+  ssh, for example: ssh player mp3loop -v 40
+  Amplifier standby/on relay control is a planned feature.
+
+OPTIONS
+  -m       Memory only; see MEMORY ONLY.
+  -v VOL   Volume 1-100. 0 stops the loop at the next boundary.
+  -s WHEN  Latest time a track may start, checked at each boundary.
+             HEX    absolute unix seconds, 1-8 hex digits, right-
+                    padded with 0: 6ace and 6ace0000 are equal
+             +N[u]  N from now, integer, unit s m h d w (m default)
+             0      clear the stop time
+           A time already past is an error.
+  -n [N]   Skip N tracks (default 1); N may be negative.
+           After the current track: -n skips the next track, -n0
+           continues normally, -n -1 replays the current track.
+           With -e, counting starts at the current track: -n plays
+           the next track now, -n0 restarts the current one, -n -1
+           plays the previous one. With a TARGET: TARGET plus N.
+           Each remote -n replaces the previous one; -n0 revokes it.
+  -p [N]   Preview N tracks before each play (default 10; 0 off).
+           As a remote, also prints the queue and directory in
+           this terminal.
+  -e       Apply now: end the current play. With no other option
+           or TARGET, the loop stops. Otherwise the loop resumes at
+           once under the new state; a settings-only change
+           restarts the current track.
+  -r       Apply after the current track. Implied for any remote
+           call. With no loop playing, records the state for the
+           next start without playing.
+  -h       Usage summary.
+  --help   This manual.
+  Values attach or follow: -v55, -v 55. An integer following -n
+  (negative too) or -p is taken as its value; put -- before a
+  numeric TARGET there: mp3loop -n 1 -- 5
+
+TARGET
+  DIR         first track of DIR
+  FILE        that file, by relative or absolute path
+  PATH/FRAG   first track sorting at or after FRAG in PATH
+  FRAG        as PATH/FRAG, in the last played directory
+  (none)      start: resume at the last played track, or at a
+              request still pending when the loop stopped
+              remote: keep the current sequence
+  An existing file always wins over a FRAG with the same name.
+
+PRECEDENCE
+  A command line option wins. Otherwise a setting comes from its
+  state file, and only then from its default:
+    volume    88 when the file is missing or invalid; a stored 0
+              refuses the start until -v is given
+    stop      none
+    preview   0 (off)
+    position  a start with no TARGET and no stored position is a
+              usage error
+
+ORDER
+  Names sort in the C locale. The sequence id is the alphanumeric
+  prefix that ends at the first comma; tracks with equal ids play
+  in name order. A name without an id draws a warning and sorts by
+  its whole name. Names that begin with 0 or y are not played.
+
+DISPLAY
+  Before each play, from top to bottom:
+    the preview, furthest track first, next track last
+    name warnings
+    the realpath of the directory
+    the current track, its duration and volume
+
+NAME SAFETY
+  warn, play:   space, and any character outside [A-Za-z0-9._,+^-]
+                that is not in the error class
+  error, skip:  ' " ` ( ) { } [ ] ; # $ @ ! % * ? &amp; | &lt; &gt; \
+                non-printable characters (CR, TAB, LF ...), non-ASCII
+  Both classes are logged to ~/0/v/mp3loop_err, one line per name,
+  with error characters replaced by X and spaces by _:
+    6ace01f3-20261012_140000 warn /abs/dir/a14,blue_moon.mp3
+    6ace01f3-20261012_140000 error /abs/dir/a15,rock_X_roll.mp3
+  A directory path in the error class is logged the same way and
+  stops with status 2.
+
+MEMORY ONLY (-m)
+  For a player on removable flash media, or any read-only mount.
+  The player keeps all state in memory: it reads and writes no
+  state file and no log, needs a TARGET, and takes -v -s -p from
+  the command line or their defaults. It ignores hangup, so it
+  keeps playing after an ssh session ends; its messages go to the
+  terminal, or to /dev/null once the terminal is gone. A remote
+  call can then only signal it: -e stops it, -n -e plays the next
+  track now; any other request is refused with status 2. The
+  remote reports what ps shows: pid, current track and volume.
+
+REMOTE OUTPUT
+  playing: pid 4242 /abs/dir/a12,foo.mp3
+  after: vol 40; next a15,bar.mp3; stop 6ace0000 (date)
+  The second line begins "now:" when -e applies. For a memory
+  only player:
+  playing: pid 4242 memory /abs/dir/a12,foo.mp3 (vol 40)
+  now: next
+
+STATE (~/0/v)
+  mp3loop_pos      current track, written at each play; another
+                   path, or a second line (a remote writes request),
+                   is a request to play from there
+  mp3loop_vol      volume; 0 stops at the boundary
+  mp3loop_stop     latest track start, 8 hex digits; empty or 0
+                   means none, and a stop resets it to 0
+  mp3loop_stopped  time and cause of the last stop
+  mp3loop_preview  preview count
+  mp3loop_list     sorted list, rewritten when the directory changes
+  mp3loop_pid      player pid and start time, checked before any
+                   signal is sent, then the current track
+  mp3loop_err      log of names in the warn and error classes
+  The files hold the current or programmed state, or the state at
+  the last stop. None is read or written with -m.
+
+SIGNALS
+  USR1  reload state now (sent by -e with options or TARGET);
+        a memory only player plays the next track
+  TERM  stop now (sent by -e alone)
+  INT   Ctrl-C in the player terminal: stop now
+  HUP   the player terminal closed: stop now; ignored with -m
+
+EXIT STATUS
+  0    stopped by volume 0, stop time, or -e; or remote success
+  1    player error
+  2    usage error, unsafe directory path, stored volume 0
+       without -v, or a request a memory only player cannot take
+  3    no playable track
+  129  hangup (HUP)
+  130  interrupted (INT)
+
+DEPENDENCIES
+  ffplay and ffprobe, looked up through PATH when the function
+  runs. An alias (for example ffplay8) takes effect only when it is
+  defined before mp3loop is sourced, and never in a non-interactive
+  ssh call; on a headless player use a PATH entry or a symlink
+  named ffplay instead. Also awk, sed, stat (GNU or BSD), ps.
+
+EXAMPLES
+  mp3loop ~/music/set1      start at the first track
+  mp3loop -v 40             remote: volume 40 after this track
+  mp3loop -v 40 -e          remote: restart this track at 40
+  mp3loop -n -e             remote: next track now
+  mp3loop -n -2 -e          remote: previous track now
+  mp3loop -s +90            remote: start no track after 90 minutes
+  mp3loop -e                remote: stop now
+  mp3loop -r -s 6ace        not playing: when next started, start no
+                            track after 6ace0000
+  ssh player 'mp3loop -m ~/music/set1 &gt;/dev/null 2&gt;&amp;1 &amp;'
+                            headless start, no writes, survives logout
+</code></pre>
+</body>
+</html>

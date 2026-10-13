@@ -718,14 +718,12 @@ span2ssto () { # start (arg1) span (arg2) and remaining args to f2rb2mp3
     } # span2ssto 20220519
 hms2sec () { # passthrough seconds or convert hh:mm:ss to seconds
     # must provide ss which may be ss.nn, hh: and hh:mm: are optional
-    # a number must proceed every colon
-  { # remove trailing 0 from seconds decimal
+    # a number must proceed every colon; awk replaces dc, same interface
+    # (up to 6 decimals), and the error now returns 1 outside the pipeline
   [[ $1 == *:*:*:* ]] && { chkerr "too many ':' in '$1' (6542c9ba)" ; return 1 ;}
-  [[ $1 == *:*:* ]] && { echo $1 | sed -e 's/:/ 0/g' \
-        | awk '{print "3 k "$1" 60 60 * * "$2" 60 * "$3" + + p"}' | dc && return 0 ;}
-  [[ $1 == *:* ]] && echo $1 | sed -e 's/:/ 0/g' \
-        | awk '{print "3 k "$1" 60 * "$2" + p"}' | dc
-  [[ $1 == *:* ]] || echo $1
+  { [[ $1 == *:* ]] \
+      && echo $1 | awk -F: '{ s = 0 ; for (i = 1 ; i <= NF ; i++) s = s * 60 + $i ; printf "%.6f\n", s }' \
+      || echo $1
   } | sed -e '/\./s/[0]*$//' -e 's/\.$//' ;} # hms2sec
 prependf () {
   local basefp="$1"
@@ -1701,80 +1699,6 @@ mp3atimelex () { # list mp3 in dir (arg1) by lex, starting from oldest atime, sa
         | sed -e '/^$/d' -e 's=./==' -e '/^0/d' -e '/^y/d' -e "s:^:${dir}/:" \
         | tee "$mp3atimelex_file"
     } # mp3atimeplayff 6581ff2d-20231219_123755
-
-mp3loop () { # genai developed doc from code, manual revised doc, genai code from doc flops, but helps...
-#   mp3loop requirement:
-#   play a loop of mp3 files in a directory starting from a lexicographic position
-#   take a -v option to store the volume (1-100)
-#   if the stored value is not between 1-100, a default volume should be stored
-#   store the mp3 file list to loop
-#   skip files starting with 0 or y
-#   input of an existing filename in current or relative directory, should be taken as starting point in that directory
-#   if no slash (eg ./) is in the input, the stored playff directory should be used to locate mp3 files for the loop
-#   input of filename fragment represents the lexicographic position of the anchored fragment within the identified directory
-#
-#   primitive environment:
-#   playffr function is provided and plays a list of mp3 files read from stdin
-#   playffr will read a stored volume before playing each mp3
-#   if the stored value is 0 playffr will stop with signal 0
-#   playffr will store the input file and PWD prior to playing each mp3
-#
-#   environment specification:
-#   mp3loop will store generated mp3 list in HOME/0/v/mp3loop
-#   playffr will store the input, followed by space, folowed by PWD in $HOME/0/v/playff
-#   playffr reads the vol from $HOME/0/v/playff_vol
-    local mp3loop_file="$HOME/0/v/mp3loop" playff_file="$HOME/0/v/playff";
-    local playff_vol_file="${playff_file}_vol"
-    local dir='' mark='' vol=''
-    local verbb=devnul
-    mkdir -p "${playff_file%/*}" "${mp3loop_file%/*}";
-    [ "$1" = '-v' -a $# -ge 2 ] && { vol="$2"; shift 2 ;}
-    [ "$vol" ] || vol="$(< "$playff_vol_file")"
-    [ "$vol" -a "$vol" -eq "$vol" ] || { chkwrn "$FUNCNAME : invalid volume '$vol' using '88' (6546998d)"; vol=88 ;}
-    echo "$vol" >"$playff_vol_file"
-    [ -d "$1" ] && { $verbb 'If input is a dir, use it with default mark'
-        dir="$(cd "$1" && pwd -P)" ; $verbb "dir='$dir'" ;}
-    [ -f "$1" ] && { $verbb 'If input is a file, use as start point, determine dir and mark'
-        dir="$(cd "${1%/*}" ; pwd -P)" mark="${1##*/}" ; $verbb "dir='$dir' mark='$mark'" ;}
-    [ "$1" ] && { $verbb 'there is arg1 input, continue logic'
-        [[ "$1" =~ / ]] \
-          && { $verbb 'input has slash, use realpath dir and arg1 mark'
-                dir="$(cd "${1%/*}" ; pwd -P)" mark="${1##*/}" ; $verbb "dir='$dir' mark='$mark'" ;} \
-          || { $verbb 'input has no slash, use realpath playff data and arg1 mark'
-              [ "$1" = '-n' ] && { $verbb 'input is next flag (-n), determin next from playff data' ;
-                    $verbb "section incomplete!" ; return 3 ;} \
-                || { $verbb 'use realpath playff data and arg1 mark'
-                    [ -f "$playff_file" ] && { read playff_data <"$playff_file" ; $verbb "load playff_data" ;} && \
-                      dir="$( cd "${playff_data##* }" ; dir="${playff_data% *}" ; cd "${dir%/*}" ; pwd -P)"
-                      mark="$1" ;}
-              }
-        } || { $verbb 'arg1 is not set, algo over' ;}
-    $verbb "arg/data parsed dir='$dir' mark='$mark'"
-    [ -z "$dir" -o -z "$mark" ] && { $verbb "dir or mark is null, load playff_file data"
-      [ -f "$playff_file" ] && { read playff_data <"$playff_file" ; $verbb "load playff_data" ;}
-      $verbb "default dir and mark, per realpath construction of playff data"
-      set $( cd "${playff_data##* }" # second element, dir
-          dir="${playff_data% *}" # first element, file name
-          cd "${dir%/*}" ; pwd -P # full path to dirname of first element
-          echo "${dir##*/}" )     # basename first element
-                                  $verbb "playff_data defaults dir='$dir' mark='$mark'"
-      [ "$dir" ] || dir="$1"
-      [ "$mark" ] || mark="$2"
-      }
-      $verbb "per algo and arg,    dir='$dir' mark='$mark'"
-    mark="${mark%,*}" ; $verbb 'always reduce mark to seq data (least mark data contain regex data)'
-    # put a mark in the file list, sort, check for and skip the mark (next),
-    # buffer the lines before the mark (!p), #print lines after (p),
-    # print buffer (END); fixup so the list is fullpath sans (0|y) files
-    ( cd "$dir"; echo "./$mark"; find . -mindepth 1 -maxdepth 1 -name \*mp3 ) \
-        | sort | awk -v mark="${mark}" '
-            $0 ~ "./"mark && !p {p=1;next}
-                              p {print}
-                             !p {b=b $0 ORS}
-                            END {print b}' \
-        | sed -e '/^$/d' -e 's=./==' -e '/^0/d' -e '/^y/d' -e "s:^:${dir}/:" \
-        | tee "$mp3loop_file" | playffr
-} # mp3loop 64e3caf9-20230821_133703
 
 playffr () { # for files (args or stdin), continuously repeat invocations of ffplay, without display
     local playff_file="$HOME/0/v/playff"
