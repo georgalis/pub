@@ -518,7 +518,8 @@ eof
     [ "$mem" ] && { trap '' HUP PIPE ; [ -t 1 ] && tty1=1 ; [ -t 2 ] && tty2=1
             ( exec -a mp3loop_memory sleep 2147483647 ) </dev/null >/dev/null 2>&1 & beacon=$! ;} \
       || { trap 'sig=HUP ; [ "$child" ] && kill "$child" 2>/dev/null' HUP
-            read -r lstart < <(ps -o lstart= -p "$BASHPID") ;}
+            me=$BASHPID # expand here: inside <( ) BASHPID is that subshell, not the player
+            read -r lstart < <(ps -o lstart= -p "$me") ;}
     while : ; do sig='' adv=''
         # -m: once the terminal is gone, messages go to /dev/null
         [ "$mem" ] && { [ "$tty1" ] && ! [ -t 1 ] && { exec >/dev/null ; tty1='' ;}
