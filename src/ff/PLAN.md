@@ -358,3 +358,22 @@ Where the build departs from or fills a gap in the plan above:
   `..` difference above no longer reaches the native find and its probe
   is retired. Tests carry `-d 0` on every root case, so a broken refusal
   could only attempt rmdir on `/`.
+- r9 (rev 6adcb748): `-mode` and `-k[r][N]`. The permission query
+  moves from `-k` to `-mode`, a long primary like `-delete`, semantics
+  unchanged; messages read `-mode: ...` under the same tags (6ab7ff11,
+  6ab7ff46). `-k[r][N]` sorts printed records by cksh field N, as `-v`
+  lays it out: 1 inode, 2 links, 3 hash, 4 size, 5 mdate, 6 name; bare
+  `-k` is 6, `r` reverses. It is global like the options, the last one
+  wins, and N is attached, so in `-k 5` the 5 is a word, not N; `-k0`,
+  `-k7`, `-kx` are usage errors (tag 6ab7ff4c). Every record (`-f`,
+  `-v`, default print) is keyed by its node's stat, so `-v` is not
+  needed to sort by mtime or size. Values compare numerically (mdate
+  signed), names bytewise; ties go to the following fields, then walk
+  order. Records are held until the walk ends, terminators kept;
+  `-x`/`-j` output is not sorted. The hash is always `.`, so `-k3`
+  passes walk order through with nothing held. Methods: ff.c passes
+  output through one writer that can hold records, each carrying its
+  stat keys and walk sequence, sorted and written once the walk ends;
+  ff.fn.bash stats each record from the native find into decimal keys
+  and orders them with `sort -z -s -t TAB`, each key carrying its own
+  `n` and `r`; a sort without `-z -s` exits 2 (tag 6ab7ff4d).

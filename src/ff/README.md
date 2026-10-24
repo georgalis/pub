@@ -10,7 +10,7 @@ _(c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution._
 ff . -t f -n '*.c'               C sources
 ff -E src -r '\.(c|h)$'          the same by regex (unanchored)
 ff . -n .git -z -o -t f -f       files, skipping .git trees
-ff . -t f -m -1 -v | sort -k5    changed today, cksh lines sorted by mtime
+ff -k5 . -t f -m -1              changed within a day, oldest first
 ff . -t f -x grep -l TODO {} +   grep per directory, race safe
 ff . -n '*.o' -delete            remove objects
 ```
@@ -29,14 +29,15 @@ scheme:
 A brief usage is provided with `-h`,
 the man page is generated from `--help`.
 ```
-    Usage: ff [-EIHLDSXZV] [--] [path ...] [expression]
+    Usage: ff [-EIHLDSXZV] [-k[r][N]] [--] [path ...] [expression]
       options  -E ERE for -r  -I ignore case  -H/-L follow symlinks
                -D post-order  -S sorted  -X one filesystem  -Z NUL output
                -V show the native find command (ff.fn.bash)
+               -k[r][N] sort by cksh field N, default 6 name, r reverse
       tests    -n glob  -p glob  -r re  -t fdlpsbc  -d [+-]N  -s [+-]N[ckMGT]
-               -m -a -c -b [+-]N[smhdw]  -w [+-][ ]([.][.]/file|HEX)  -k [+-]mode
+               -m -a -c -b [+-]N[smhdw]  -w [+-][ ]([.][.]/file|HEX)
                -u user  -g group  -l [+-]N  -i [+-]HEX  -y file (same node)  -e
-               -z (prune)  -0 (true)  -1 (false)
+               -mode [+-]bits  -z (prune)  -0 (true)  -1 (false)
       actions  -f print  -v cksh line  -x cmd {} ;|+  (in entry's dir)
                -j cmd {} ;|+  (full path)  -delete  -q quit
       logic    ( )  ! or -not  juxtaposition = and  -o or
@@ -86,8 +87,9 @@ Linking by platform:
 ## Grammar
 
 `ff [options] [path ...] [expression]`, default path `.`, default action
-print. Options are uppercase and global, and may appear anywhere outside a
-primary's argument. Primaries are lowercase, or the digits 0 and 1.
+print. Options are uppercase, and `-k`, and global, and may appear anywhere
+outside a primary's argument. Primaries are lowercase, the digits 0 and 1,
+or `-mode` and `-delete`.
 
 | option | find | |
 |--------|------|-|
@@ -99,6 +101,7 @@ primary's argument. Primaries are lowercase, or the digits 0 and 1.
 | `-X` | `-x` / `-xdev` | one filesystem |
 | `-Z` | `-print0` | NUL-terminated names |
 | `-V` | | bash function: print the native find command to stderr |
+| `-k[r][N]` | `\| sort` | sort output by cksh field N; see below |
 
 | primary | find | ff semantics |
 |---------|------|--------------|
@@ -111,7 +114,7 @@ primary's argument. Primaries are lowercase, or the digits 0 and 1.
 | `-m -a -c -b [+-]N[smhdw]` | `-mtime` ... `-Btime` | age in seconds; default unit d |
 | `-w [+-][ ]([.][.]/file\|HEX)` | `-newer` | when: after, before or at; see below |
 | `-y file` | `-samefile` | same device and inode |
-| `-k [+-]mode` | `-perm` | a query, see below |
+| `-mode [+-]bits` | `-perm` | a query, see below |
 | `-u` `-g` | `-user` `-group` | |
 | `-l [+-]N` | `-links` | |
 | `-i [+-]HEX` | `-inum` | hex, as `-v` prints it |
@@ -141,7 +144,7 @@ word after a lone sign takes no sign of its own.
 
 The primaries `-0` and `-1` are read as true and false.
 
-`-k` asks about permission bits rather than doing chmod arithmetic, and
+`-mode` asks about permission bits rather than doing chmod arithmetic, and
 its `+` and `-` keep ff's sense of more and less:
 
 - Octal: `0755` exactly; `+0755` at least (every bit, maybe more, find
@@ -151,14 +154,32 @@ its `+` and `-` keep ff's sense of more and less:
   clause; with no class, `+x` means someone may execute and `-x` no one
   may. `X` is execute that only a directory satisfies, `s` setuid (`u`) or
   setgid (`g`), `t` the sticky bit. With no class, each class is tested
-  with only the bits it can hold, so `-k +rs` holds for a 0644 file
-  (other has `r` and can hold no `s`); `-k u+rs` needs both in one class.
+  with only the bits it can hold, so `-mode +rs` holds for a 0644 file
+  (other has `r` and can hold no `s`); `-mode u+rs` needs both in one
+  class.
 
 ```
-ff . -t f -k o+w        world-writable files
-ff . -k +s              setuid or setgid
-ff . -not -k go-w       group or other may write
-ff . -k o-X             directories others may not search
+ff . -t f -mode o+w     world-writable files
+ff . -mode +s           setuid or setgid
+ff . -not -mode go-w    group or other may write
+ff . -mode o-X          directories others may not search
+```
+
+`-k[r][N]` sorts what ff prints by cksh field N, the layout of `-v`:
+1 inode, 2 links, 3 hash, 4 size, 5 mdate, 6 name. Bare `-k` is `-k6`,
+and `r` reverses. Every record, from `-f`, `-v` or the default print, is
+keyed by its node's stat, so `-v` is not needed to sort by mtime or size.
+Numbers compare by value (mdate signed), names bytewise; ties go to the
+following fields, then walk order. Records are held until the walk ends
+and written with their own terminators (`-Z` NUL); `-x` and `-j` output
+is not sorted, and after `-q` the records printed so far are. The hash is
+always `.` in ff, so `-k3` and `-kr3` keep walk order and hold nothing.
+`-k` is global like the options; N is attached, so in `-k 5` the 5 is a
+path. `-k0`, `-k7` and `-kx` are usage errors (tag 6ab7ff4c).
+
+```
+ff -k5 . -t f -m -1     changed within a day, oldest first
+ff -kr4 . -t f -v       cksh lines, largest first
 ```
 
 `-x` or `-j`: `-j` passes the full path, and the child looks every
@@ -264,6 +285,8 @@ Each of these exits 2 and names the binary:
 - `-r` back-references under `-E` (the translator wraps the pattern in a
   group to make it unanchored);
 - `-v` combined with `-f`, `-x`, `-j` or `-delete`;
+- `-k` where `sort` lacks `-z` or `-s` (records are sorted by
+  `sort -z -s -t TAB` on decimal stat keys);
 - `-S` combined with `-x`, `-j`, `-delete` or `-q` on GNU find, which has
   no sorted walk. Plain `-S` output is emulated there by sorting each
   operand's paths with `/` as the lowest byte.
@@ -354,6 +377,10 @@ See `PLAN.md` for the design record and the decisions log.
 ## History
 
 ```
+rev 6adcb748 20261024 064856 PDT Sat 06:48 AM 24 Oct 2026
+    -mode is the permission query, was -k; -k[r][N] sorts output by cksh
+    field N (1 inode 2 links 4 size 5 mdate 6 name, default 6), keyed by
+    node stat, no -v needed; -k3 passes walk order through, unbuffered
 rev 6abc5da8 20260929 175400 PDT Tue 05:54 PM 29 Sep 2026
     -0 true and -1 false replace -true -false; -Z NUL output (was -0);
     -y replaces -same; -w [+-][ ]([.][.]/file|HEX): the sign may stand

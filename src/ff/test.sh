@@ -2,6 +2,9 @@
 # test.sh --- regression suite for ff (C binary) and ff.fn.bash (translator)
 # (c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution.
 #
+# rev 6adcb748 20261024 064856 PDT Sat 06:48 AM 24 Oct 2026
+#     -mode cases (were -k); -k[r][N] sort against ff -v | sort, both passes,
+#     parity and diagnostics
 # rev 6abc5da8 20260929 175400 PDT Tue 05:54 PM 29 Sep 2026
 #     -0 -1 (were -true -false), -Z (was -0), -y (was -same), -w sign apart;
 #     physical work dir (Darwin /tmp is /private/tmp); bare -execdir names;
@@ -34,7 +37,7 @@ B="$here/ff"
 F="$here/ff.fn.bash"
 [ -x "$B" ] || { echo "test.sh: build ./ff first" >&2; exit 1; }
 w=`mktemp -d "${TMPDIR:-/tmp}/ff-test.XXXXXX"` || exit 1
-trap 'chmod -R u+rwx "$w" 2>/dev/null; rm -rf "$w/t" "$w/km" "$w/wt" "$w/deep" "$w/del" "$w/race" "$w/o"* ; rmdir "$w" 2>/dev/null' 0 1 2 15
+trap 'chmod -R u+rwx "$w" 2>/dev/null; rm -rf "$w/t" "$w/km" "$w/wt" "$w/kt" "$w/deep" "$w/del" "$w/race" "$w/o"* ; rmdir "$w" 2>/dev/null' 0 1 2 15
 pass=0 fail=0 skip=0 impl=
 p0=0 f0=0 s0=0
 
@@ -108,7 +111,7 @@ mkdir -p t/d/s/a t/d/s/a0; printf z > t/d/s/a/b; printf z > t/d/s/a-
 e1=`printf '\001'`; e2=`printf '\002'`
 ino=`ls -id t/a | awk '{print $1}'`
 
-# -k fixtures: setgid needs the file's group among the user's; where it still fails, drop f2755
+# -mode fixtures: setgid needs the file's group among the user's; where it still fails, drop f2755
 mkdir -p km; for m in 0755 0644 0600 0666 4755 2755 0000; do
   : > km/f$m; chgrp "`id -g`" km/f$m 2>/dev/null; chmod $m km/f$m 2>/dev/null; done
 nosgid=; [ -g km/f2755 ] || { rm -f km/f2755; nosgid=1; sk "setgid on km/f2755 (not permitted here)"; }
@@ -120,6 +123,14 @@ touch -t 202001010000.00 wt/old wt/-x; touch -t 202101010000.00 wt/ref; touch -t
 touch -r wt/ref wt/same wt/cafe; ln wt/new wt/hard
 R=`"$B" wt/ref -v | awk '{print $5}'`
 
+# -k fixtures: sizes and mdates that tie in pairs, so each tie breaks on the
+# following field; kt/h is a hard link of kt/c, tying it through the mdate;
+# kt/m is 10 bytes, so a size compared as text would sort before kt/a
+mkdir -p kt; printf aaaa > kt/b; printf aa > kt/a; printf cc > kt/c; : > kt/z
+printf 0123456789 > kt/m; touch -t 201901010000.00 kt/m
+touch -t 202001010000.00 kt/b; touch -t 202201010000.00 kt/a
+touch -t 202101010000.00 kt/c kt/z; ln kt/c kt/h
+
 # deep tree: more levels than descriptors
 p=deep; i=0; while [ $i -lt 90 ]; do p=$p/x; i=`expr $i + 1`; done; mkdir -p $p; : > $p/leaf
 
@@ -129,8 +140,8 @@ for pair in \
   "t|t" "t -t f|t -type f" "t -t d|t -type d" "t -t l|t -type l" "t -t p|t -type p" \
   "t -t fl|t ( -type f -o -type l )" "t -n *.c|t -name *.c" "t -n *|t -name *" \
   "t -p */d/*|t -path */d/*" "t -e|t -empty" "t -l +1|t -links +1" \
-  "t -k 755|t -perm 755" "t -k +755|t -perm -755" "t -k u+x -t f|t -perm -u+x -type f" "t -k 0|t -perm 0" \
-  "t -k 600|t -perm 600" "t -w +./t/a|t -newer t/a" "t -w + ./t/a|t -newer t/a" "t -0|t -true" "t -1|t -false" "t -y t/a|t -samefile t/a" "t -n .h -z -o -t f -f|t -name .h -prune -o -type f -print" \
+  "t -mode 755|t -perm 755" "t -mode +755|t -perm -755" "t -mode u+x -t f|t -perm -u+x -type f" "t -mode 0|t -perm 0" \
+  "t -mode 600|t -perm 600" "t -w +./t/a|t -newer t/a" "t -w + ./t/a|t -newer t/a" "t -0|t -true" "t -1|t -false" "t -y t/a|t -samefile t/a" "t -n .h -z -o -t f -f|t -name .h -prune -o -type f -print" \
   "t ( -n a -o -n em ) -t f|t ( -name a -o -name em ) -type f" "t ! -t d|t ! -type d" \
   "t -d 0|t -maxdepth 0" "t -d -2|t -maxdepth 1" "t -d +0|t -mindepth 1" "t -d 1|t -mindepth 1 -maxdepth 1" \
   "t -d +1 -d -3|t -mindepth 2 -maxdepth 2" "-H t/ld|-H t/ld" "t/ld|t/ld" \
@@ -175,7 +186,7 @@ eq "-v indicators" "t/d/ t/l@ t/p|" "`X t/d t/l t/p -d 0 -v | awk '{print $6}' |
 eq "-Z NUL" "`find t -name 'n*' -print0 | od -c`" "`X -Z t -n 'n*' | od -c`"
 eq "-Z with -f" "`find t -name 'n*' -print0 | od -c`" "`X -Z t -n 'n*' -f | od -c`"
 
-# --- -k: octal exact, +superset, -subset; symbolic query, + has, - lacks (--help -k) ---
+# --- -mode: octal exact, +superset, -subset; symbolic query, + has, - lacks (--help -mode) ---
 kq () { "$RUN" km -d 1 "$@" 2>/dev/null | sed 's,^km/,,' | LC_ALL=C sort | tr '\n' ' ' | sed 's/ $//'; }
 for pair in \
   "0755|f0755" "+0755|d1777 f0755 f2755 f4755" "-0755|d0700 d0711 f0000 f0600 f0644 f0755" \
@@ -186,17 +197,45 @@ for pair in \
   "+s|f2755 f4755" "+t|d1777" "u+rwx,u-s|d0700 d0711 d1777 f0755 f2755" "-7777|`ls km | tr '\n' ' ' | sed 's/ $//'`"
 do
   exp=${pair#*|}; [ -n "$nosgid" ] && exp=`echo "$exp" | sed 's/ *f2755//; s/^ //'`
-  eq "-k ${pair%%|*}" "$exp" "`kq -k "${pair%%|*}"`"
+  eq "-mode ${pair%%|*}" "$exp" "`kq -mode "${pair%%|*}"`"
 done
-eq "-not -k go-w" "d1777 f0666" "`kq -not -k go-w`"
-# no class: each class tested with the bits it can hold; o holds no s (--help -k)
-eq "-k +rs through other" 1 "`kq -k +rs | tr ' ' '\n' | grep -cx f0644`"
-eq "-k u+rs one class" "f4755" "`kq -k u+rs`"
-eq "-not is !" "`kq ! -k go-w`" "`kq -not -k go-w`"
-eq "-k u+r -o -k u+x" "`kq -k u+r`" "`kq -k u+r -o -k u+x`"
-eq "-k X never a file" "" "`X km -t f -k X`"
-for o in u=rwx o+s u+t g+t u+q u+ , x, 99 -8; do eq "-k reject [$o]" "rc=1" "`r km -k "$o" | tail -1`"; done
-eq "-k s/t class tag" ">>> ff : -k: s is for u or g, t is for o, not 'o+s' (6ab7ff46)" "`X km -k o+s 2>&1`"
+eq "-not -mode go-w" "d1777 f0666" "`kq -not -mode go-w`"
+# no class: each class tested with the bits it can hold; o holds no s (--help -mode)
+eq "-mode +rs through other" 1 "`kq -mode +rs | tr ' ' '\n' | grep -cx f0644`"
+eq "-mode u+rs one class" "f4755" "`kq -mode u+rs`"
+eq "-not is !" "`kq ! -mode go-w`" "`kq -not -mode go-w`"
+eq "-mode u+r -o -mode u+x" "`kq -mode u+r`" "`kq -mode u+r -o -mode u+x`"
+eq "-mode X never a file" "" "`X km -t f -mode X`"
+for o in u=rwx o+s u+t g+t u+q u+ , x, 99 -8; do eq "-mode reject [$o]" "rc=1" "`r km -mode "$o" | tail -1`"; done
+eq "-mode s/t class tag" ">>> ff : -mode: s is for u or g, t is for o, not 'o+s' (6ab7ff46)" "`X km -mode o+s 2>&1`"
+
+# --- -k[r][N]: sort by cksh field N, ties to the following fields (--help -k) ---
+kk () { "$RUN" "$@" 2>/dev/null | sed 's,^kt/,,' | tr '\n' ' ' | sed 's/ $//'; }
+for pair in "-k|a b c h m z" "-k6|a b c h m z" "-kr|z m h c b a" "-kr6|z m h c b a" \
+  "-k4|z c h a b m" "-kr4|m b a h c z" "-k5|m b c h z a" "-kr5|a z h c b m" "-k2|z a b m c h" "-kr2|h c m b a z"
+do
+  eq "sort [${pair%%|*}]" "${pair#*|}" "`kk ${pair%%|*} kt -t f`"
+done
+eq "-k5 with -v" "kt/m kt/b kt/c kt/h kt/z kt/a" "`X -k5 kt -t f -v | awk '{print $6}' | tr '\n' ' ' | sed 's/ $//'`"
+# inodes from -v, zero padded so a bytewise sort is by value
+kino () { awk '{ printf "%16s\n", $1 }' | tr ' ' 0; }
+eq "-k1 inode order" "`X kt -t f -v | kino | LC_ALL=C sort`" "`X -k1 kt -t f -v | kino`"
+eq "-k1 inode tie to the name" "c h" "`kk -k1 kt -n c -o -n h`"
+eq "-k3 walk order" "`X t`" "`X -k3 t`"
+eq "-kr3 walk order" "`X t -v`" "`X -kr3 t -v`"
+eq "-k anywhere" "z c h a b m" "`kk kt -t f -k4`"
+eq "-k last wins" "a b c h m z" "`kk -k4 kt -t f -k`"
+eq "-k with -f" "m b c h z a" "`kk -k5 kt -t f -f`"
+eq "-k with -o" "b c h a" "`kk -k5 kt -n b -f -o -n a -f -o -n '[ch]' -f`"
+eq "-k -Z" "kt/a kt/b kt/c kt/h kt/m kt/z " "`X -Z -k kt -t f | tr '\000' ' '`"
+eq "-k -q" 1 "`X -k kt -t f -f -q | wc -l | tr -d ' '`"
+eq "-k word as an argument" "rc=0" "`r kt -n -k5`"
+bo "-v with -f on one node (the translator refuses -v with other actions)" && {
+  eq "-k full tie, walk order" "v kt/a" "`X -k kt -n a -v -f | awk '{print (NF == 1 ? $1 : "v")}' | tr '\n' ' ' | sed 's/ $//'`"
+  eq "-kr full tie, walk order" "v kt/a" "`X -kr kt -n a -v -f | awk '{print (NF == 1 ? $1 : "v")}' | tr '\n' ' ' | sed 's/ $//'`"
+}
+for o in -k0 -k7 -kx -krr -k12 -kr0 -k5r; do eq "-k reject [$o]" "rc=1" "`r $o kt | tail -1`"; done
+eq "-k reject tag" ">>> ff : -k: sort key is [r][1-6], not '-k7' (6ab7ff4c)" "`X kt -k7 2>&1`"
 
 # --- -w when [+-][ ]([.][.]/file|HEX), -y, -0/-1, -i hex, -V (--help PRIMARIES) ---
 wq () { "$RUN" wt -t f "$@" 2>/dev/null | sed 's,^wt/,,' | LC_ALL=C sort | tr '\n' ' ' | sed 's/ $//'; }
@@ -337,8 +376,8 @@ else sk "${impl:+$impl: }tty escaping (no script)"; fi
 eq "pipe raw ESC" "$esc" "`X t -n 'x*'`"
 
 # --- grammar: [options] [path ...] [expression] ---
-for o in "-q t" "t -n" "t -t q" "t -t ''" "t -d x" "t -s 1q" "t -s 1kk" "t -m 1y" "t -k 999" \
-    "t -k u+q" "t -u nosuchuser_ff" "t -g nosuchgroup_ff" "t -u -root" "t -u a:b" "t -u ''" "t -l x" "t -w t/nope" "t -w ./nope" "t (" "t ( )" \
+for o in "-q t" "t -n" "t -t q" "t -t ''" "t -d x" "t -s 1q" "t -s 1kk" "t -m 1y" "t -mode 999" \
+    "t -mode u+q" "t -u nosuchuser_ff" "t -g nosuchgroup_ff" "t -u -root" "t -u a:b" "t -u ''" "t -l x" "t -w t/nope" "t -w ./nope" "t (" "t ( )" \
     "t )" "t -o -f" "t -n a -o" "t !" "t -r [" "t -x echo {}" "t -x {} ;" "t -x ;" \
     "t -x echo a{} ;" "t -j echo {} {} +" "t -x ./x ;" "t -y" "t -yy" "t -true" "-0 t" "t -w +" "t -w + -./t/a" "--nope" "t -n a b"
 do
@@ -375,8 +414,8 @@ tally ff.fn.bash
 impl=parity
 if [ -n "$have_bash" ]; then
   for o in "t" "t -t f" "t -t fl" "t -n *.c" "t -p */d/*" "t -e" "t -s 3" "t -s -1k" "t -m +365" \
-      "t -m -1h -t f" "t -k +755" "t -k 755" "km -k -0755" "km -k x" "km -k -x" "km -k o-X" \
-      "km -k go-w" "km -not -k go-w" "km -k +s" "km -k +t" "km -k u+rwx,u-s" "km -k w" "km -k -7777" "km -k u+r -o -k u+x" "km -k +rs" "km -k u+rs" \
+      "t -m -1h -t f" "t -mode +755" "t -mode 755" "km -mode -0755" "km -mode x" "km -mode -x" "km -mode o-X" \
+      "km -mode go-w" "km -not -mode go-w" "km -mode +s" "km -mode +t" "km -mode u+rwx,u-s" "km -mode w" "km -mode -7777" "km -mode u+r -o -mode u+x" "km -mode +rs" "km -mode u+rs" \
       "t -n .h -z -o -t f -f" "t ( -n a -o -n em ) -t f" \
       "t -d -2" "t -d 1" "t -d +1 -d -3" "-D t" "-E t -r \.(c|C)$" "t -r d/e" "t -r ^t/d/e$" \
       "-I t -n *.C" "-I t -r \.c$" "t -n f.c -x echo {} ;" "t -n f.c -j echo {} ;" "-Z t -n n*" \
@@ -384,7 +423,9 @@ if [ -n "$have_bash" ]; then
       "wt -t f -w +./wt/ref" "wt -t f -w -./wt/ref" "wt -t f -w ./wt/ref" "wt -t f -w +$R" "wt -t f -w -$R" "wt -t f -w $R" \
       "wt -t f -w + ./wt/ref" "wt -t f -w - $R" "wt -t f -w - $w/wt/ref" "wt -w .../wt/ref" \
       "wt -y wt/new" "wt -0" "wt -1" "wt -n wt -1 -o -t f" "wt -i 0" "t/a -x echo {} ;" "t -n f.c -x echo a {} b ;" \
-      "-q t" "t -n" "t (" "t ( )" "t -o -f" "t -k 999" "t -x ./x ;" "-L t -delete" "t -u nosuchuser_ff"
+      "-q t" "t -n" "t (" "t ( )" "t -o -f" "t -mode 999" "t -x ./x ;" "-L t -delete" "t -u nosuchuser_ff" \
+      "-k t" "-kr t" "-k1 t" "-k2 t" "-k4 t" "-k5 t" "-kr5 t" "-k3 t" "-kr3 t -v" "-k1 t -v" "-kr4 kt -v" \
+      "-k5 kt -t f" "t -t f -k4" "-Z -k5 t -t f" "-k5 kt -t f -f -q" "-k -S t/d" "-k -D t" "-k0 t" "t -kx"
   do
     set -f; eq "bash parity [$o]" "`c $o | od -c`" "`TZ=UTC0 b $o | od -c`"; set +f
   done
@@ -395,9 +436,9 @@ if [ -n "$have_bash" ]; then
   else sk "bash -L loop status (native find does not report the loop)"; fi
   # usage diagnostics are identical, message and tag
   for o in "-q t" "t -n" "t -t q" "t (" "t ( )" "t )" "t -o -f" "t !" "t -d x" "t -s 1q" "t -m 1y" \
-      "t -k 999" "t -k u=rwx" "t -k o+s" "t -k u+t" "t -l x" "t -i x" "t -i 12g" "t -y nope" "t -w ./nope" "t -w -nope" "t -w cafe/x" "t -a 1y" "t -b x" "t -x {} ;" "t -w t/nope" "t -u nosuchuser_ff" "t -g nosuchgroup_ff" "t -y" "t -yy" "t -true" "-0 t" "t -w +" "t -w + -./wt/ref" "t -w - cafe/x" "t -w + 8000000000000000" "t -w .../x" "t -n a b" \
+      "t -mode 999" "t -mode u=rwx" "t -mode o+s" "t -mode u+t" "t -l x" "t -i x" "t -i 12g" "t -y nope" "t -w ./nope" "t -w -nope" "t -w cafe/x" "t -a 1y" "t -b x" "t -x {} ;" "t -w t/nope" "t -u nosuchuser_ff" "t -g nosuchgroup_ff" "t -y" "t -yy" "t -true" "-0 t" "t -w +" "t -w + -./wt/ref" "t -w - cafe/x" "t -w + 8000000000000000" "t -w .../x" "t -n a b" \
       "t -x echo {}" "t -x {} ;" "t -x ;" "t -x echo a{} ;" "t -j echo {} {} +" "t -x ./x ;" "-L t -delete" \
-      "/ -d 0 -delete" ".. -d 0 -delete" "/. -d 0 -delete"
+      "/ -d 0 -delete" ".. -d 0 -delete" "/. -d 0 -delete" "-k0 t" "t -k7" "t -kx" "-krr t" "t -mode o+s"
   do
     set -f; eq "bash diagnostics [$o]" "`"$B" $o 2>&1 >/dev/null`" "`be -c '. "$0"; ff "$@"' "$F" $o 2>&1 >/dev/null`"; set +f
   done

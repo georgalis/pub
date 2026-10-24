@@ -1,6 +1,8 @@
 # makefile --- build, test and install ff
 # (c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution.
 #
+# rev 6adcb748 20261024 064856 PDT Sat 06:48 AM 24 Oct 2026
+#     -mode (was -k), -k[r][N] output sort; recipes unchanged
 # rev 6abc5da8 20260929 175400 PDT Tue 05:54 PM 29 Sep 2026
 #     -0 -1 true false, -Z NUL, -y same node, -w sign apart; recipes unchanged
 # rev 6abb42b9 20260928 214649 PDT Mon 09:46 PM 28 Sep 2026
