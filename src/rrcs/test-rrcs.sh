@@ -78,10 +78,12 @@ printf 'c\n' > c2 ; rrcs -q -i c2 ; printf 'X\n' > c2.new ; touch -r c2 c2.new ;
 [ "$(rrcs -S c2)" = "M c2" ] && ok "-S finds same-mtime change" || no "-S same-mtime: $(rrcs -S c2)"
 rrcs -q t ; [ "$(rrcs -s t)" = "C t" ] && ok "touched file syncs" || no "touched sync: $(rrcs -s t)"
 
-# ------------------------------------------------ untracked needs -i; -i on tracked fails
-fresh ; printf 'a\n' > a ; printf 'n\n' > n ; rrcs -q -i a
+# ------------------------------------------------ one path is deliberate; several need -i; -i on tracked fails
+fresh ; printf 'a\n' > a ; printf 'n\n' > n ; printf 'p\n' > p ; printf 'q\n' > q
+out=$(rrcs a 2>&1) ; [ -f a,v ] && [ "$out" = "a 1.1" ] && ok "single untracked path starts tracking" || no "single path: $out"
 out=$(rrcs a n 2>&1) ; rc=$?
-[ $rc = 0 ] && [ ! -f n,v ] && printf '%s' "$out" | grep -q 'add it with -i' && ok "untracked skipped with warning" || no "untracked: rc=$rc $out"
+[ $rc = 0 ] && [ ! -f n,v ] && printf '%s' "$out" | grep -q 'add it with -i' && ok "untracked skipped among several paths" || no "untracked: rc=$rc $out"
+rrcs -q -i p q ; [ -f p,v ] && [ -f q,v ] && ok "-i tracks several paths" || no "-i several"
 rrcs -q -i a 2>/dev/null ; [ $? = 1 ] && ok "-i on tracked fails" || no "-i on tracked"
 
 # ------------------------------------------------ names

@@ -39,7 +39,7 @@ and a `makefile` (`make`, `make test`, `make probe`,
 ## Interface
 
 ```
-rrcs [-q] [-m msg]... [-e] [-i] [--] path ...   check in tracked paths (-i: add untracked)
+rrcs [-q] [-m msg]... [-e] [-i] [--] path ...   check in (one path, or -i: also untracked)
 rrcs -R [-q] [-m msg]... [--] old new           rename a working file and its ,v together
 rrcs -s [--] path ...                           status: mtime first, rcsdiff where they differ
 rrcs -S [--] path ...                           status: rcsdiff on every tracked file
@@ -51,7 +51,7 @@ rrcs --help [ci|co|rlog|rcsdiff|more]           extended usage, paged when stdou
 |--------|--------|
 | `-m msg` | Message lines added after the log header; may be repeated |
 | `-e` | Write the message in `${VISUAL:-${EDITOR:-vi}}`; requires a terminal; any `-m` text starts the message |
-| `-i` | Initial check-in: create a `,v` for an untracked file; an error if one already exists |
+| `-i` | Initial check-in: create a `,v` for every untracked path given, however many; an error if one already exists. A single path needs no `-i` |
 | `-q` | Suppress the per-file result lines |
 
 With neither `-m` nor `-e`, the log is the header line alone. No
@@ -70,9 +70,9 @@ the temp-cleanup `EXIT` trap are private to each call.
 ## Resolving arguments
 
 Every argument is turned into a pair: a working file and its `,v`. The
-user may name either one, so a glob such as `rrcs -s * RCS/*,v` can mix
-working files, `,v` files and untracked files. All of them resolve to
-the same pairs.
+user may name either one, so a status glob such as `rrcs -s * RCS/*,v`
+can mix working files, `,v` files and untracked files. All of them
+resolve to the same pairs.
 
 1. **A `,v` path names its working file.** `dir/RCS/x,v` means
    `dir/x`, and `dir/x,v` means `dir/x`.
@@ -91,10 +91,12 @@ the same pairs.
      `rrcs *` stays readable.
 5. **What a check-in does with each class:**
    - tracked files are checked in;
-   - untracked files are checked in only with `-i`; without it, each
-     one gets a warning that names `-i`. This lets `rrcs *` over a
-     mixed directory commit only what is already tracked, while
-     `rrcs -i newfile` starts tracking a new file on purpose;
+   - an untracked file named alone (`rrcs newfile`) is checked in:
+     a single path is taken as deliberate. With more than one path,
+     untracked files are checked in only with `-i`; without it, each
+     gets a warning naming `-i`. A shell expands a glob before `rrcs`
+     runs, so the argument count is the only signal available: `rrcs *`
+     over a mixed directory then commits only what is already tracked;
    - orphans get a warning.
 
 **File names.** A name outside the portable set `[A-Za-z0-9._,+@%:=/-]`
@@ -305,7 +307,7 @@ only replays edit scripts and never rewrites text. The refusal that
 | `,v` mtime set to the file's | Equal mtimes suggest concurrency; `-s` reads it cheaply | Tools that select by mtime alone miss new revisions (accepted) |
 | `-s` checks mtime, then content where they differ | Speed in proportion to what changed; `T` separates touched from edited | Equal mtimes with changed content go unseen without `-S` |
 | `,v` arguments resolve to working files | Globs over mixed directories just work | `RCSINIT -x` suffixes are not honored |
-| Untracked files need `-i` | `rrcs *` cannot start tracking stray files | Adding a file takes one extra flag |
+| One path is deliberate; several need `-i` for untracked files | `rrcs newfile` just works, as `mrcs` did; `rrcs *` cannot start tracking stray files | A glob that happens to match exactly one untracked file starts tracking it |
 | Editor only with `-e` | No surprise editor; scripts never block | Composing a long message takes one extra flag |
 | Rename only when status is `C` or `T`, recorded with `ci -f` | History shows each name; edits never ride along with a rename | One extra revision per rename |
 | Unsafe names warn, control characters refuse | Real-world names still work; output stays one line per file | Names containing newlines cannot be tracked |
@@ -348,7 +350,8 @@ multiple users.
    - every status mark, over a glob mixing working files, `,v` files,
      untracked files and an orphan, with duplicates removed;
    - `-s` trusting equal mtimes, and `-S` finding a same-mtime change;
-   - the `-i` gate in both directions;
+   - one untracked path tracked without `-i`, several skipped with a
+     warning, `-i` tracking several, and `-i` on a tracked file failing;
    - names: spaces warn, a leading `-` works, control characters are
      refused, symlinks are skipped;
    - rename: refused while modified, moves the file and `,v` into a
@@ -359,11 +362,12 @@ multiple users.
    - `-e`: refused without a terminal; under a pseudo-terminal, the
      message is kept with `#` lines removed, and an empty message
      aborts.
-   **Under the emulation (no RCS binaries in the build workspace), all
-   73 checks pass.** The keep link's move-back path was also exercised
-   with a `ci` that replaces the working file: inode and mode `0604`
-   were kept. The suite still has to run on the host against
-   OpenRCS 4.5, and against GNU RCS 5.9.4 where it is available.
+   **The suite passes on the Darwin host against OpenRCS 4.5, and with
+   `RRCS_EMULATE=1` under the host's awk, two-way check included.** In
+   the build workspace (no RCS binaries) all 75 checks pass under the
+   emulation. The keep link's move-back path was also exercised with a
+   `ci` that replaces the working file: inode and mode `0604` were kept.
+   GNU RCS 5.9.4 is still to be run where it is available.
 3. **The emulation**, tested both ways by `test-rrcs.sh` wherever real
    RCS is installed: `,v` files written by the emulation must read
    correctly with the real `rlog` and `co -p`, and `,v` files written

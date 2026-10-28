@@ -427,8 +427,10 @@ ARGUMENTS
   that mix tracked, untracked and ,v files work:
       rrcs -s * RCS/*,v
   The ,v is dir/RCS/x,v when dir/RCS exists, else dir/x,v; RCSINIT -x
-  suffixes are not honored. Untracked files are skipped with a warning
-  unless -i is given. Symlinks, directories and special files are
+  suffixes are not honored. A single path is taken as deliberate: an
+  untracked file named alone is checked in, its ,v created. With more
+  than one path (a glob, say), untracked files are skipped with a
+  warning unless -i is given. Symlinks, directories and special files are
   skipped with a warning; an RCS directory is skipped quietly. Names
   outside [A-Za-z0-9._,+@%:=/-] warn but are processed; names with
   control characters (newlines, tabs) are refused.
@@ -439,8 +441,8 @@ OPTIONS
           terminal. Lines starting with # and everything below the
           scissors line are dropped; an empty message aborts the call
           and commits nothing. Any -m text starts the message.
-  -i      initial check-in: start tracking untracked files; an error
-          for files already tracked
+  -i      initial check-in: start tracking every untracked path given,
+          however many; an error for files already tracked
   -q      no per-file result lines
   -R      rrcs -R old new: move the working file and its ,v, then
           record the rename with a forced revision. Refused unless old
@@ -468,7 +470,8 @@ STATUS MARKS
   kept an old mtime); -S catches it at one checkout per file.
 
 EXAMPLES
-  rrcs -i -m 'baseline' notes.txt    start tracking notes.txt
+  rrcs -m 'baseline' notes.txt       start tracking notes.txt (one path)
+  rrcs -i *.conf                     start tracking several files at once
   rrcs -m 'fix totals' notes.txt     record a change
   rrcs -e notes.txt                  write the message in the editor
   rrcs *                             record every tracked file that changed
@@ -812,7 +815,8 @@ __RRCS_HELP_MORE__
            1) P+=($i) PI[i]= ;;
            *) chkerr "rrcs: rcsdiff failed for '${W[i]}'" ; rc=1 ;;
          esac ;;
-      u) [ $init = 1 ] && { P+=($i) ; PI[i]=1 ;} || chkwrn "rrcs: '${W[i]}' is untracked; add it with -i" ;;
+      u) { [ $init = 1 ] || [ $# = 1 ] ;} && { P+=($i) ; PI[i]=1 ;} \
+           || chkwrn "rrcs: '${W[i]}' is untracked; add it with -i, or name it alone" ;;
       o) chkwrn "rrcs: '${V[i]}' has no working file" ;;
     esac
   done
