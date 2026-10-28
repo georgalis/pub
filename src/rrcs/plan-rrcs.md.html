@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+section[role="doc-endnotes"] ol { list-style: none; padding-left: 0; }
+li[role="doc-endnote"] > p:first-of-type { display: inline; margin: 0; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h1 id="rrcs-----plan-of-record">rrcs --- plan of record</h1>
+<!-- rev 6ae1747d 20261027 210517 PDT Tue 09:05 PM 27 Oct 2026 initial release -->
+<!-- org 668d8a0d 20240709 120549 PDT Tue 12:05 PM 09 Jul 2024 _rcs in sub/fn.bash, https://github.com/georgalis/pub/commit/73f56ac9fe309ab6aac250d78079ab9bba2e9531 -->
+<h2 id="contents">Contents</h2>
+<nav>
+<ul>
+<li><a href="#objective-and-scope">Objective and scope</a></li>
+<li><a href="#interface">Interface</a></li>
+<li><a href="#resolving-arguments">Resolving arguments</a></li>
+<li><a href="#check-in-sequence">Check-in sequence</a></li>
+<li><a href="#rename">Rename</a></li>
+<li><a href="#commit-status">Commit status</a></li>
+<li><a href="#help">Help</a></li>
+<li><a href="#emulation-of-the-binaries">Emulation of the binaries</a></li>
+<li><a href="#decisions-and-consequences">Decisions and consequences</a></li>
+<li><a href="#excluded">Excluded</a></li>
+<li><a href="#verification">Verification</a></li>
+<li><a href="#three-abstentions-one-clock">Three abstentions, one clock</a></li>
+</ul>
+</nav>
+<hr />
+<h2 id="objective-and-scope">Objective and scope</h2>
+<p><code>rrcs</code> (re-rcs) records revisions of files without leaving any change
+on the files being recorded. Each working file gets its original inode
+back after <code>ci</code>, and with it the owner, mode, mtime, ACLs, extended
+attributes and security label. The only file that keeps a change is
+the <code>,v</code> file. Its mtime is then set to the working file's mtime, so
+that equal mtimes suggest the file and its <code>,v</code> are concurrent. This
+status check is meant for one person keeping their own account of
+their files; it is not an integrity control.</p>
+<p>The build has two parts, delivered in one file, <code>rrcs.fn.bash</code>:</p>
+<ol>
+<li><strong>rrcs</strong> --- the wrapper, running on the installed RCS binaries.
+Two implementations are targeted, both packaged in pkgsrc:
+OpenRCS 4.5, the OpenBSD project's RCS clone (<code>devel/openrcs</code>),
+installed on the Darwin host and verified there; and GNU RCS 5.9.4
+(<code>devel/rcs</code>), still to be verified.</li>
+<li><strong>The emulation</strong> --- bash functions named <code>ci</code>, <code>co</code>, <code>rlog</code> and
+<code>rcsdiff</code>, defined only when the binaries are missing. They
+implement the trunk-only subset that <code>rrcs</code> needs and write <code>,v</code>
+files that real RCS can read.</li>
+</ol>
+<p><code>rrcs</code> descends from <code>_rcs</code> in <code>sub/fn.bash</code> (9 Jul 2024)<a href="#fn-4" role="doc-noteref"><span>[^</span>4<span>]</span></a>, later
+<code>mrcs</code>. Alongside the function file: <code>test-rrcs.sh</code> (the regression
+suite), <code>probe-rrcs.sh</code> (the keep-link probe for a given RCS build),
+and a <code>makefile</code> (<code>make</code>, <code>make test</code>, <code>make probe</code>,
+<code>make install [PREFIX=dir]</code>). The makefile installs
+<code>share/rrcs/rrcs.fn.bash</code> and an <code>rrcs.1</code> man page derived from
+<code>rrcs --help</code>, so the two cannot disagree.</p>
+<h2 id="interface">Interface</h2>
+<pre><code>rrcs [-q] [-m msg]... [-e] [-i] [--] path ...   check in tracked paths (-i: add untracked)
+rrcs -R [-q] [-m msg]... [--] old new           rename a working file and its ,v together
+rrcs -s [--] path ...                           status: mtime first, rcsdiff where they differ
+rrcs -S [--] path ...                           status: rcsdiff on every tracked file
+rrcs -h                                         brief usage
+rrcs --help [ci|co|rlog|rcsdiff|more]           extended usage, paged when stdout is a tty
+</code></pre>
+<table>
+<thead>
+<tr><th>Option</th><th>Effect</th></tr>
+</thead>
+<tbody>
+<tr><td><code>-m msg</code></td><td>Message lines added after the log header; may be repeated</td></tr>
+<tr><td><code>-e</code></td><td>Write the message in <code>${VISUAL:-${EDITOR:-vi}}</code>; requires a terminal; any <code>-m</code> text starts the message</td></tr>
+<tr><td><code>-i</code></td><td>Initial check-in: create a <code>,v</code> for an untracked file; an error if one already exists</td></tr>
+<tr><td><code>-q</code></td><td>Suppress the per-file result lines</td></tr>
+</tbody>
+</table>
+<p>With neither <code>-m</code> nor <code>-e</code>, the log is the header line alone. No
+editor ever opens unless <code>-e</code> is given.</p>
+<p><strong>Exit status:</strong> <code>0</code> when every operation succeeded, <code>1</code> when any
+check-in, rename or status read failed, <code>2</code> for a usage error.
+Skipped arguments (see below) produce warnings but do not count as
+failures. Result lines go to stdout; warnings and errors go to stderr
+through <code>chkwrn</code> and <code>chkerr</code>, defined inside the function together
+with <code>stderr</code> and <code>chkstd</code>.</p>
+<p>The body is a subshell, <code>rrcs () ( ... )</code>. The helpers, <code>OPTIND</code> and
+the temp-cleanup <code>EXIT</code> trap are private to each call.</p>
+<h2 id="resolving-arguments">Resolving arguments</h2>
+<p>Every argument is turned into a pair: a working file and its <code>,v</code>. The
+user may name either one, so a glob such as <code>rrcs -s * RCS/*,v</code> can mix
+working files, <code>,v</code> files and untracked files. All of them resolve to
+the same pairs.</p>
+<ol>
+<li><strong>A <code>,v</code> path names its working file.</strong> <code>dir/RCS/x,v</code> means
+<code>dir/x</code>, and <code>dir/x,v</code> means <code>dir/x</code>.</li>
+<li><strong>A working-file path finds its <code>,v</code>.</strong> That is <code>dir/RCS/x,v</code> if
+<code>dir/RCS</code> exists, otherwise <code>dir/x,v</code>. A suffix set through
+<code>RCSINIT -x</code> is not honored.</li>
+<li><strong>Duplicates collapse.</strong> <code>x</code> and <code>RCS/x,v</code> given together are
+handled once, in the order first given.</li>
+<li><strong>Each pair is classified:</strong>
+<ul>
+<li><strong>tracked</strong> --- the <code>,v</code> exists;</li>
+<li><strong>untracked</strong> --- a regular file with no <code>,v</code>;</li>
+<li><strong>orphan</strong> --- a <code>,v</code> whose working file is missing;</li>
+<li><strong>skipped</strong> --- anything else: directories, symlinks, special
+files, the <code>.rrcs.*</code> scratch directories. Each gets a warning,
+except an <code>RCS</code> directory, which is skipped quietly so that
+<code>rrcs *</code> stays readable.</li>
+</ul></li>
+<li><strong>What a check-in does with each class:</strong>
+<ul>
+<li>tracked files are checked in;</li>
+<li>untracked files are checked in only with <code>-i</code>; without it, each
+one gets a warning that names <code>-i</code>. This lets <code>rrcs *</code> over a
+mixed directory commit only what is already tracked, while
+<code>rrcs -i newfile</code> starts tracking a new file on purpose;</li>
+<li>orphans get a warning.</li>
+</ul></li>
+</ol>
+<p><strong>File names.</strong> A name outside the portable set <code>[A-Za-z0-9._,+@%:=/-]</code>
+(spaces, quotes, glob characters, non-ASCII) gets a warning and is
+still processed, since every expansion is quoted. A name containing a
+newline or another control character is refused, because it would
+break both the one-line-per-file output and the log header. A name
+beginning with <code>-</code> is passed to RCS as <code>./name</code>.</p>
+<h2 id="check-in-sequence">Check-in sequence</h2>
+<ol>
+<li><strong>Resolve and classify every argument</strong> before anything is
+committed. Usage errors and refused names stop the call here.</li>
+<li><strong>Skip unchanged files.</strong> If <code>rcsdiff -q</code> reports no difference,
+no revision is made and the <code>,v</code> mtime is updated to match the
+working file. Content that matches the latest revision counts as
+committed.</li>
+<li><strong>Build the message once</strong> for the whole call:
+<ul>
+<li>the header <code>rrcs &lt;path as given&gt;[ (sudo:$SUDO_USER)]</code>, one per
+pair;</li>
+<li>the <code>-m</code> lines;</li>
+<li>or the <code>-e</code> editor text, with <code>#</code> lines and everything below
+the scissors line removed. An empty <code>-e</code> message aborts the
+call with exit <code>1</code> and commits nothing.</li>
+</ul></li>
+<li><strong>Hold the original with a keep link, then check in normally:</strong>
+<ul>
+<li><code>mktemp "$dir/.rrcs.XXXXXX"</code> in the working file's directory
+serves as the time reference (<code>touch -r work</code>), and the mode is
+saved; then <code>ln -f -- work "$dir/.rrcs.$id.k"</code> makes the keep
+link, a second name for the original inode in the same directory,
+so it is always on the same filesystem;</li>
+<li><code>( cd "$dir" &amp;&amp; ci -l -q [-t-rrcs] -m"$log" ./base ) &lt;/dev/null</code>,
+an ordinary check-in with the ordinary <code>,v</code> lookup, so it works
+with <code>,v</code> under <code>RCS/</code> or beside the file, and with both RCS
+implementations; the <code>./</code> prefix keeps a name such as <code>-x</code> from
+reading as an option;</li>
+<li>if the working file now has a different inode, <code>mv -f</code> the keep
+link back over it; if it has the same inode (an implementation
+that rewrites in place, or the emulation, which does not touch
+it), remove the keep link and restore mtime and mode from the
+reference. This runs on success, on failure, and from the <code>EXIT</code>
+trap on an interrupt.
+The keep link means the original inode never loses its last name.
+<code>ci</code> replaces the working file with a new one; the <code>mv</code> puts the
+original back. Its owner, mode, mtime, ACLs, extended attributes,
+security label and other hard links return together, because they
+are all properties of that inode. Only its ctime changes, because
+adding and removing a link counts as an inode change. If the
+filesystem refuses hard links, <code>rrcs</code> warns and uses the same
+mtime-and-mode restoration, which keeps those two but not the inode.</li>
+</ul></li>
+<li><strong>After the first check-in only</strong>, run <code>rcs -q -ko</code> on the new
+<code>,v</code>, so that <code>co</code> always returns the stored text exactly.</li>
+<li><strong>Remove scratch files</strong> by their literal class name:
+<code>rm -f -- "$dir/.rrcs.$id"</code>, in the <code>EXIT</code> trap as well.</li>
+<li><strong>Copy the time:</strong> <code>touch -c -r work "$vfile"</code>.<a href="#fn-3" role="doc-noteref"><span>[^</span>3<span>]</span></a> The <code>-c</code> flag
+matters: without it, <code>touch -r</code> creates an empty <code>,v</code> when the
+check-in failed, and RCS later reports that file as corrupt.</li>
+<li><strong>Limit who can read the <code>,v</code> to who can read the working file.</strong>
+OpenRCS creates <code>,v</code> files with mode <code>0444</code> whatever the working
+file's mode is: a <code>0640</code> file got a world-readable history in the
+probe. And <code>ci</code> writes a new <code>,v</code> on every check-in, so its group
+is whatever the platform assigns new files: the directory's group
+on BSD and Darwin, or the creator's primary group on Linux unless
+the directory is setgid. After every check-in, <code>rrcs</code> does three
+things:
+<ul>
+<li><strong>Group.</strong> <code>chgrp</code> the <code>,v</code> to the working file's numeric gid,
+taken from <code>ls -ln</code>.</li>
+<li><strong>Mode.</strong> Clear every permission bit on the <code>,v</code>, then add back
+read and execute for other exactly where the working file has
+them. The owner always keeps read, which RCS needs, plus execute
+where the working file has it. Execute bits are carried because
+RCS sets a checked-out file's execute bits from its <code>,v</code>.</li>
+<li><strong>Group bits.</strong> Add group read and execute (as the working file
+has them) only when the <code>chgrp</code> succeeded. When <code>rrcs</code> cannot set
+the group (the user is not a member of it), the <code>,v</code> keeps
+whatever group it got and that group has no permissions at all.
+A warning names the file and both gids.
+The ids and read bits come from <code>ls -ln</code>, so no platform-specific
+<code>stat</code> is needed. The same rule applies to every file <code>rrcs</code> or the
+emulation creates.</li>
+</ul></li>
+<li><strong>Always feed <code>ci</code> from <code>/dev/null</code>.</strong> If <code>ci</code> ever wants input,
+such as a description or a log message, the check-in fails visibly
+instead of hanging.</li>
+</ol>
+<h2 id="rename">Rename</h2>
+<p><code>rrcs -R old new</code> moves the working file and its <code>,v</code> together, and
+records the move in the history:</p>
+<ol>
+<li><strong>Refusals.</strong>
+<ul>
+<li><code>old</code> must be tracked, and its status must be <code>C</code> or <code>T</code> (see the
+next section). Uncommitted changes must be checked in first, so a
+rename never carries edits into history under a rename message.</li>
+<li>Neither <code>new</code> nor <code>new</code>'s <code>,v</code> may already exist.</li>
+<li>If <code>new</code> is an existing directory, the base name of <code>old</code> is
+appended.</li>
+</ul></li>
+<li><strong>Move.</strong> <code>mv</code> the working file, then <code>mv</code> its <code>,v</code> to where <code>new</code>
+resolves it (<code>newdir/RCS/</code> if that exists, otherwise beside
+<code>new</code>). If the second move fails, the first is reversed.</li>
+<li><strong>Record.</strong> A forced keep-link check-in (<code>ci -f</code>) logs
+<code>rrcs -R &lt;old&gt; &lt;new&gt;</code>, plus any <code>-m</code> lines, so <code>rlog</code> shows the name
+change. Then <code>touch -c -r new "$newvfile"</code>.</li>
+</ol>
+<p>On one filesystem, <code>mv</code> is a rename, so the working file keeps its
+inode and mtime: the original is still untouched. Across filesystems
+it is a copy, and <code>rrcs</code> warns.</p>
+<h2 id="commit-status">Commit status</h2>
+<p><code>-s</code> uses mtime as a fast first test and <code>rcsdiff</code> to confirm wherever
+the times disagree. <code>-S</code> runs <code>rcsdiff</code> on every tracked file. Output
+is one line per pair, a mark followed by the working path, so <code>grep</code> and
+<code>awk</code> can select from it:</p>
+<table>
+<thead>
+<tr><th>Mark</th><th>Meaning</th><th>How it is decided</th></tr>
+</thead>
+<tbody>
+<tr><td><code>C</code></td><td>committed</td><td>mtimes are equal (<code>-S</code>: content also matches)</td></tr>
+<tr><td><code>M</code></td><td>modified since the last check-in</td><td>content differs, and the file is newer</td></tr>
+<tr><td><code>!</code></td><td>differs, and the file is older than its <code>,v</code></td><td>content differs; the file was likely restored or copied in</td></tr>
+<tr><td><code>T</code></td><td>touched only</td><td>mtimes differ, content matches; <code>rrcs file</code> syncs the time</td></tr>
+<tr><td><code>?</code></td><td>untracked</td><td>no <code>,v</code></td></tr>
+<tr><td><code>-</code></td><td>orphan</td><td>a <code>,v</code> with no working file</td></tr>
+<tr><td><code>E</code></td><td>error</td><td><code>rcsdiff</code> failed; counts toward exit <code>1</code></td></tr>
+</tbody>
+</table>
+<p><code>-s</code> checks content only where the mtimes differ, so its cost grows
+with what has changed rather than with the number of files. Its one
+blind spot is content that changed while the mtime stayed equal: an
+edit in the same second on a filesystem with one-second resolution, or
+a copy that preserved an old mtime. <code>-S</code> closes that gap at the cost of
+one checkout per file. Examples in <code>--help</code>:</p>
+<pre><code>rrcs -s * RCS/*,v          # one line per pair; working files and ,v files both resolve
+rrcs -s * | grep -v '^?'   # tracked files only
+rrcs -S *                  # full content check
+</code></pre>
+<h2 id="help">Help</h2>
+<ul>
+<li><strong><code>-h</code></strong> prints the synopsis and the option table.</li>
+<li><strong><code>--help [topic]</code></strong> opens by expanding the name: rrcs stands for
+re-rcs. It explains the untouched-original model, mtime status and
+rename. The topics <code>ci</code>, <code>co</code>, <code>rlog</code> and <code>rcsdiff</code> each give
+explanations, usage and examples, and state which options the
+emulation supports; <code>more</code> covers the rest of the suite. Output goes
+through <code>${PAGER:-less}</code> when stdout is a terminal, falls back to
+<code>more</code>, then to <code>cat</code>, and is printed directly otherwise.</li>
+<li><strong>Upstream:</strong> <a href="http://www.cs.purdue.edu/homes/trinkle/RCS/">http://www.cs.purdue.edu/homes/trinkle/RCS/</a> <a href="#fn-2" role="doc-noteref"><span>[^</span>2<span>]</span></a>, with
+the GNU RCS manual as the option reference.<a href="#fn-1" role="doc-noteref"><span>[^</span>1<span>]</span></a></li>
+<li><strong>Keywords:</strong> RCS keywords (<code>$Id$</code>, <code>$Log$</code> and the rest) are not
+supported; text is stored and returned exactly as written.</li>
+<li><strong>Corrections from <code>mrcs</code>:</strong> <code>rlog -l</code> (who holds a lock) and <code>-w</code>
+(author) are described correctly, as is <code>ci -k</code> (reads keyword
+values from the working file). <code>rcsbind</code>, <code>rcsinfo</code>, <code>rcsparse</code> and
+<code>rcsrev</code> are removed, since they are not part of the suite.</li>
+<li>Each help topic is its own single-quoted here-document with its own
+<code>__RRCS_HELP_&lt;TOPIC&gt;__</code> delimiter.</li>
+</ul>
+<h2 id="emulation-of-the-binaries">Emulation of the binaries</h2>
+<p><strong>Guard.</strong> <code>command -v ci</code> is checked once, when the file is sourced.
+If <code>ci</code> is missing, or <code>RRCS_EMULATE=1</code> is set, the emulation
+functions <code>ci</code>, <code>co</code>, <code>rlog</code>, <code>rcsdiff</code> and <code>rcs</code> are defined, and
+every message they print starts with <code>rrcs-emu:</code>. <code>rrcs</code> itself is
+defined after them, so it works the same over either implementation.
+<code>RRCS_EMULATE=1</code> is how the test suite runs the emulation beside real
+RCS for the two-way check. The emulation stores only text it can
+reproduce exactly: a working file must be empty or end with a newline,
+and must contain no NUL bytes; anything else is refused with an error.
+<code>RRCS_EMU_FULLDELTA=1</code> forces the full-replacement delta, for testing.</p>
+<p><strong>Subset.</strong></p>
+<table>
+<thead>
+<tr><th>Function</th><th>Supported</th><th>Refused, with an error</th></tr>
+</thead>
+<tbody>
+<tr><td><code>ci</code></td><td><code>-l</code> <code>-u</code> <code>-q</code> <code>-f</code> <code>-i</code> <code>-m</code> <code>-t-</code> <code>-tfile</code>, trunk only, <code>RCS/</code> lookup; never rewrites the working file</td><td>branches, <code>-r</code>, <code>-d</code>, <code>-k</code>, <code>-n</code>, <code>-N</code>, <code>-s</code>, <code>-w</code></td></tr>
+<tr><td><code>co</code></td><td><code>-p</code> <code>-q</code> <code>-r</code> (trunk)</td><td>writing a working file, locking</td></tr>
+<tr><td><code>rlog</code></td><td>header and revision list, <code>-h</code>, <code>-R</code>, <code>-r</code></td><td><code>-d</code>, <code>-s</code>, <code>-w</code>, <code>-l</code>, branches</td></tr>
+<tr><td><code>rcsdiff</code></td><td><code>[-q] [-r a [-r b]]</code> plus diff options: <code>co -p</code> piped into <code>diff</code></td><td>as for <code>co</code></td></tr>
+<tr><td><code>rcs</code></td><td><code>-q -ko</code> only (the emulation always writes <code>expand @o@</code>)</td><td>everything else</td></tr>
+</tbody>
+</table>
+<p><strong>Format contract.</strong> Files are written in the RCS <code>,v</code> format:</p>
+<ul>
+<li>the admin header: <code>head</code>, <code>access</code>, <code>symbols</code>, a <code>locks</code> entry with
+the user and <code>strict</code>, <code>comment</code>, and <code>expand @o@</code>;</li>
+<li>one delta node per revision, dated <code>YYYY.MM.DD.HH.MM.SS</code> in UTC;</li>
+<li><code>desc</code>;</li>
+<li>delta texts, with every <code>@</code> inside a string doubled.</li>
+</ul>
+<p>The newest revision is stored as full text, and each older revision
+as a reverse edit script. The emulation produces that script with
+<code>diff -n</code>, falling back to a delete-everything, add-everything script.
+That fallback is still a valid RCS delta and always correct, just
+larger. <code>co</code> applies the scripts with a short awk routine. When reading
+a <code>,v</code> that contains branches or anything outside the subset, the
+emulation refuses rather than guessing. <code>,v</code> files are written with the
+shell skill's temp-file trio, so every write is an atomic rename.</p>
+<p><strong>Why keywords make this tractable.</strong> Without keyword expansion, <code>co</code>
+only replays edit scripts and never rewrites text. The refusal that
+<code>--help</code> announces is the same one that keeps the emulation small.</p>
+<h2 id="decisions-and-consequences">Decisions and consequences</h2>
+<table>
+<thead>
+<tr><th>Decision</th><th>Gains</th><th>Costs</th></tr>
+</thead>
+<tbody>
+<tr><td>Keep link around an ordinary <code>ci</code></td><td>The original inode returns with every attribute; <code>ci</code> runs as RCS expects in either layout and either implementation</td><td>ctime changes; a filesystem without hard links falls back to restoring only mtime and mode</td></tr>
+<tr><td><code>rcs -ko</code>, no keywords</td><td>Text comes back exactly as stored; the emulation stays tractable</td><td><code>$Id$</code> habits stop working, as stated in <code>--help</code></td></tr>
+<tr><td><code>,v</code> mtime set to the file's</td><td>Equal mtimes suggest concurrency; <code>-s</code> reads it cheaply</td><td>Tools that select by mtime alone miss new revisions (accepted)</td></tr>
+<tr><td><code>-s</code> checks mtime, then content where they differ</td><td>Speed in proportion to what changed; <code>T</code> separates touched from edited</td><td>Equal mtimes with changed content go unseen without <code>-S</code></td></tr>
+<tr><td><code>,v</code> arguments resolve to working files</td><td>Globs over mixed directories just work</td><td><code>RCSINIT -x</code> suffixes are not honored</td></tr>
+<tr><td>Untracked files need <code>-i</code></td><td><code>rrcs *</code> cannot start tracking stray files</td><td>Adding a file takes one extra flag</td></tr>
+<tr><td>Editor only with <code>-e</code></td><td>No surprise editor; scripts never block</td><td>Composing a long message takes one extra flag</td></tr>
+<tr><td>Rename only when status is <code>C</code> or <code>T</code>, recorded with <code>ci -f</code></td><td>History shows each name; edits never ride along with a rename</td><td>One extra revision per rename</td></tr>
+<tr><td>Unsafe names warn, control characters refuse</td><td>Real-world names still work; output stays one line per file</td><td>Names containing newlines cannot be tracked</td></tr>
+<tr><td><code>touch -c</code> after every check-in</td><td>A failed check-in never leaves an empty <code>,v</code> behind</td><td>None</td></tr>
+<tr><td><code>,v</code> group, read and execute bits follow the working file; a group <code>rrcs</code> cannot set gets no bits</td><td>History is never readable by more people than the file it records; execute survives a later <code>co</code></td><td>One <code>chgrp</code> and one <code>chmod</code> per check-in; a non-member's history is readable only by its owner</td></tr>
+<tr><td>An emulation subset that fails loudly</td><td>Works without RCS installed; <code>,v</code> files are readable both ways</td><td>Branches, merges and admin options need the real suite</td></tr>
+</tbody>
+</table>
+<h2 id="excluded">Excluded</h2>
+<p>Branches, symbolic names, states, <code>rcsmerge</code>, <code>merge</code>, <code>ident</code>,
+<code>rcsclean</code>, <code>rcsfreeze</code>, keyword expansion, <code>RCSINIT -x</code> suffixes,
+creating the <code>RCS/</code> directory automatically, and locking among
+multiple users.</p>
+<h2 id="verification">Verification</h2>
+<ol>
+<li><strong>Keep-link mechanism.</strong> <code>probe-rrcs.sh</code> runs against each RCS
+implementation (OpenRCS 4.5 and GNU RCS 5.9.4). It tests both
+layouts (<code>,v</code> under <code>RCS/</code>, and <code>,v</code> beside the file), and checks:
+<ul>
+<li>initial, second and forced check-ins;</li>
+<li><code>rcs -ko</code>;</li>
+<li><code>rcsdiff -q</code> exit codes;</li>
+<li><code>co -p -r</code>;</li>
+<li><code>rlog -R</code>;</li>
+<li>that the working file keeps its inode, its mode and its mtime,
+and that its mtime equals the <code>,v</code> mtime;</li>
+<li>whether <code>ci</code> replaced the working file or rewrote it in place;</li>
+<li>that no scratch file is left behind.
+<strong>OpenRCS 4.5 passed every check in both layouts</strong>, and <code>ci</code>
+replaced the working file each time, as the keep link assumes. GNU
+RCS 5.9.4 is still to be run on a host that has it. If it rewrites
+the working file in place, it takes the restoration fallback.</li>
+</ul></li>
+<li><strong><code>rrcs</code></strong>, tested by <code>test-rrcs.sh</code> over whichever <code>ci</code> is
+active. The suite covers:
+<ul>
+<li>both layouts: inode, mode and mtime kept, <code>,v</code> mtime equal, the
+<code>,v</code> mode and group following the file, <code>rcs -ko</code> set, and the
+log header and messages;</li>
+<li>execute bits carried to the <code>,v</code>;</li>
+<li>that when <code>chgrp</code> is refused, the <code>,v</code> group has no bits;</li>
+<li>every status mark, over a glob mixing working files, <code>,v</code> files,
+untracked files and an orphan, with duplicates removed;</li>
+<li><code>-s</code> trusting equal mtimes, and <code>-S</code> finding a same-mtime change;</li>
+<li>the <code>-i</code> gate in both directions;</li>
+<li>names: spaces warn, a leading <code>-</code> works, control characters are
+refused, symlinks are skipped;</li>
+<li>rename: refused while modified, moves the file and <code>,v</code> into a
+directory, keeps the inode, records the move, refuses to
+overwrite;</li>
+<li><code>-h</code>, every <code>--help</code> topic, an unknown topic, an unknown option,
+no arguments;</li>
+<li><code>-e</code>: refused without a terminal; under a pseudo-terminal, the
+message is kept with <code>#</code> lines removed, and an empty message
+aborts.
+<strong>Under the emulation (no RCS binaries in the build workspace), all
+73 checks pass.</strong> The keep link's move-back path was also exercised
+with a <code>ci</code> that replaces the working file: inode and mode <code>0604</code>
+were kept. The suite still has to run on the host against
+OpenRCS 4.5, and against GNU RCS 5.9.4 where it is available.</li>
+</ul></li>
+<li><strong>The emulation</strong>, tested both ways by <code>test-rrcs.sh</code> wherever real
+RCS is installed: <code>,v</code> files written by the emulation must read
+correctly with the real <code>rlog</code> and <code>co -p</code>, and <code>,v</code> files written
+by the real <code>ci</code> must read correctly with the emulated <code>co -p</code>. A
+round trip of six revisions, including <code>@</code> characters, passes here
+under both the <code>diff -n</code> and the full-replacement delta.</li>
+<li><strong>Shell-skill review:</strong>
+<ul>
+<li>every <code>rm</code> names a literal class;</li>
+<li>every here-document delimiter is unique and quoted;</li>
+<li>every <code>touch</code> of a <code>,v</code> uses <code>-c</code>;</li>
+<li>every <code>ci</code> reads from <code>/dev/null</code>.</li>
+</ul></li>
+</ol>
+<h2 id="three-abstentions-one-clock">Three abstentions, one clock</h2>
+<p>The design rests on three things <code>rrcs</code> declines to do:</p>
+<ul>
+<li><strong>It does not let <code>ci</code> keep the original.</strong> The keep link holds the
+inode while <code>ci</code> works, then puts it back, so no attribute needs
+restoring one by one.</li>
+<li><strong>It does not expand keywords</strong>, so stored text is returned exactly
+as written, and the emulation only has to replay edits.</li>
+<li><strong>It does not branch</strong>, so history is a single line that bash can
+write correctly.</li>
+</ul>
+<p>The same restraint carries into the new features. A rename moves the
+file but does not edit it. The status check reads times and opens
+content only where the times disagree. The one thing <code>rrcs</code> does write
+is the <code>,v</code> mtime, and it copies that from the original instead of
+inventing a new one. When the two times agree, the file and its
+history are concurrent.</p>
+<section id="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn-1" role="doc-endnote"><span>[^1]: </span><p>GNU RCS manual: <code>ci</code>, <code>co</code>, <code>rlog</code>, <code>rcsdiff</code>, <code>rcs -ko</code>, and the
+<code>,v</code> file format. <a href="https://www.gnu.org/software/rcs/manual/">https://www.gnu.org/software/rcs/manual/</a></p></li>
+<li id="fn-2" role="doc-endnote"><span>[^2]: </span><p>RCS upstream, Walter F. Tichy, Purdue University. <a href="http://www.cs.purdue.edu/homes/trinkle/RCS/">http://www.cs.purdue.edu/homes/trinkle/RCS/</a></p></li>
+<li id="fn-3" role="doc-endnote"><span>[^3]: </span><p>POSIX <code>touch</code>, options <code>-c</code> and <code>-r</code>. <a href="https://pubs.opengroup.org/onlinepubs/9699919799/utilities/touch.html">https://pubs.opengroup.org/onlinepubs/9699919799/utilities/touch.html</a></p></li>
+<li id="fn-4" role="doc-endnote"><span>[^4]: </span><p>Origin: <code>_rcs</code>, "init _rcs and rev lacktone", sub/fn.bash. <a href="https://github.com/georgalis/pub/commit/73f56ac9fe309ab6aac250d78079ab9bba2e9531">https://github.com/georgalis/pub/commit/73f56ac9fe309ab6aac250d78079ab9bba2e9531</a></p></li>
+</ol>
+</section>
+</body>
+</html>
