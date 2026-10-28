@@ -1,6 +1,6 @@
 # ~/.profile
 
-# (c) 2004-2025 George Georgalis unlimited use with this notice
+# (c) 2004-2026 George Georgalis <george@iuxta.com> Unlimited use with attribution.
 #
 # For Bourne-compatible shells (bash,ksh,sh)
 #
@@ -8,7 +8,8 @@
 
 # for interactive sessions only
 #/usr/bin/tty -s || return
-test -t 0 && test -t 1 && test -t 2 || return 0
+#test -t 0 && test -t 1 && test -t 2 || return 0
+case $- in *i*) ;; *) return 0 ;; esac
 
 export EDITOR="vi"
 export PAGER='less --jump-target=3'
@@ -125,6 +126,7 @@ logerr() {  [ "$*" ] && { logger -s ">>> $*" ; return 1  ;} || true ;} #:> err s
 chktrue() { [ "$*" ] && { stderr    "><> $*" ; true      ;} || return 2 ;} #:> err stderr args exit 1, noop if null
 chkexit() { [ "$*" ] && { stderr    ">>> $*" ; exit 1    ;} || true ;} #:> err stderr args exit 1, noop if null
 logexit() { [ "$*" ] && { logger -s ">>> $*" ; exit 1    ;} || true ;} #:> err stderr+log args exit 1, noop if null
+
 siffx() { local verb="${verb:-devnul}" s="$1" f='' b=''
     [ "$s" = "-n" -o "$s" = "--no-source" ] && { f="$2" b="$3" ;} || { f="$1" b="$2" ;}
     test -e "$f" || { chkwrn "${b} siffx: no file '$f'" && return 0 || return $? ;}
@@ -135,18 +137,56 @@ siffx() { local verb="${verb:-devnul}" s="$1" f='' b=''
     && { ${verb} "$b siffx: export '${f}'" ;} \
     || { chkerr  "$b siffx: export signal $? in '$f'" ; return 1 ;} \
     } #:> source arg1 if exists , on err recall args for backtrace
+siffx () { # source file (unless -n), export the functions it defined and its set column-0 variables
+#
+# rev 6ae17ace 20261027 213214 PDT Tue 09:32 PM 27 Oct 2026
+#     functions chosen by source attribution (extdebug declare -F), not by
+#     grep; variables kept textual but only when set; private local names
+#
+# siffx [-n|--no-source] file [backtrace-label]
+# Requires chkwrn chkerr and the $verb reporter (default devnul), as before.
+  local _sx_verb=${verb:-devnul} _sx_f _sx_b _sx_c= _sx_n _sx_l _sx_dbg=0
+  local -a _sx_all=() _sx_fn=() _sx_vn=()
+  case $1 in -n|--no-source) _sx_f=$2 _sx_b=$3 ;; *) _sx_f=$1 _sx_b=$2 ;; esac
+  [ -e "$_sx_f" ] || { chkwrn "$_sx_b siffx: no file '$_sx_f'" ; return 0 ;}
+  case $1 in -n|--no-source) ;; *) . "$_sx_f" || { chkerr "$_sx_b siffx: source signal $? in '$_sx_f'" ; return 1 ;} ;; esac
+  # functions: bash records each function's defining file; with extdebug, declare -F name prints "name line file"
+  while read -r _ _ _sx_n ; do _sx_all+=("$_sx_n") ; done < <(declare -F)
+  shopt -q extdebug && _sx_dbg=1 ; shopt -s extdebug
+  [ ${#_sx_all[@]} = 0 ] || while read -r _sx_n _ _sx_l ; do
+    [ "$_sx_l" = "$_sx_f" ] && { _sx_fn+=("$_sx_n") ; continue ;}
+    [ "${_sx_l##*/}" = "${_sx_f##*/}" ] || continue                     # same name, other spelling: compare canonical paths
+    [ -n "$_sx_c" ] || _sx_c=$(cd -P -- "$(dirname -- "$_sx_f")" 2>/dev/null && printf '%s/%s' "$PWD" "${_sx_f##*/}")
+    [ "$(cd -P -- "$(dirname -- "$_sx_l")" 2>/dev/null && printf '%s/%s' "$PWD" "${_sx_l##*/}")" = "$_sx_c" ] && _sx_fn+=("$_sx_n")
+  done < <(declare -F "${_sx_all[@]}")
+  [ $_sx_dbg = 1 ] || shopt -u extdebug
+  # variables: column-0 assignments in the text, exported only when the name is actually set
+  while read -r _sx_n ; do [ -z "${!_sx_n+x}" ] || _sx_vn+=("$_sx_n") ; done \
+    < <(sed -n 's/^\([_[:alpha:]][_[:alnum:]]*\)=.*/\1/p' "$_sx_f" | sort -u)
+  { [ ${#_sx_fn[@]} = 0 ] || export -f "${_sx_fn[@]}" ;} && { [ ${#_sx_vn[@]} = 0 ] || export "${_sx_vn[@]}" ;} \
+    && { $_sx_verb "$_sx_b siffx: export '$_sx_f' (${#_sx_fn[@]} functions, ${#_sx_vn[@]} variables)" ;} \
+    || { chkerr "$_sx_b siffx: export signal $? in '$_sx_f'" ; return 1 ;} \
+    } #:> source arg1 if exists, export what it defined; on err recall args for backtrace
 
 # verbosity, typically set in ~/.profile.local to devnul, chkwrn, or chkerr
 #verb="${verb:=devnul}"
 #verb2="${verb2:=devnul}"
 #verb3="${verb3:=devnul}"
 
-path_append() { # append $1 if not already in path
- echo "$PATH" | grep -E "(:$1$|^$1$|^$1:|:$1:)" 2>&1 >/dev/null \
-  || export PATH="${PATH}:${1}" ;}
-path_prepend() { # prepend $1 if not already in path
- echo "$PATH" | grep -E "(^$1:|^$1$)" 2>&1 >/dev/null \
-  || export PATH="${1}:${PATH}" ;}
+_path_dir () { # normalize $1 into PD: absolute, no colon, no trailing slash; 1 = malformed
+  PD=$1 ; [ "$PD" = / ] || PD=${PD%/}
+  case $PD in /*) ;; *) return 1 ;; esac ; case $PD in *:*) return 1 ;; esac ;}
+path_append () { # append directory $1 to PATH unless present; missing directories are skipped
+  local PD ; _path_dir "$1" || { chkerr "path_append: not an absolute directory '$1'" ; return 1 ;}
+  [ -d "$PD" ] || return 0
+  case :$PATH: in *:"$PD":*) return 0 ;; esac
+  export PATH=${PATH:+$PATH:}$PD ;}
+path_prepend () { # put directory $1 first in PATH, dropping later copies; missing directories are skipped
+  local PD p ; _path_dir "$1" || { chkerr "path_prepend: not an absolute directory '$1'" ; return 1 ;}
+  [ -d "$PD" ] || return 0
+  p=:$PATH: ; while [[ $p == *":$PD:"* ]] ; do p=${p/":$PD:"/:} ; done
+  p=${p#:} ; p=${p%:} ; export PATH=$PD${p:+:$p} ;}
+
 
 ascii_filter() { while IFS= read a ; do echo "$a" | strings -e s ; done ;}
 
@@ -210,19 +250,11 @@ case "$SHELL" in
     export HISTCONTROL=erasedups
     export HISTFILE="${HOME}/.bash_history" HISTFILESIZE=9600 HISTSIZE=2600
     # Remove @ (/etc/hosts) and = (pwd files) from tab expansion
-    #export COMP_WORDBREAKS="${COMP_WORDBREAKS//@}" # Remove @ (/etc/hosts) from tab expansion
-    #export COMP_WORDBREAKS="${COMP_WORDBREAKS//=}" # Remove = (pwd files) from tab expansion
-    #read -d '' COMP_WORDBREAKS < <(tr -d '@=' <<<"$COMP_WORDBREAKS")
-    #read -d '' < <(tr -d '@=' <<<"$COMP_WORDBREAKS") ; export COMP_WORDBREAKS="$REPLY"
-    #REPLY=${COMP_WORDBREAKS//[=@]} ; export COMP_WORDBREAKS="$REPLY"
-    REPLY=${COMP_WORDBREAKS//[=@]}
-    #declare -p REPLY
-    export COMP_WORDBREAKS="$REPLY"
-    #declare -p COMP_WORDBREAKS
-    #sed -e 's/^/REPLY           X/' -e 's/$/X/' <<<"$REPLY"
-    #sed -e 's/^/COMP_WORDBREAKS X/' -e 's/$/X/' <<<"$COMP_WORDBREAKS"
-   #complete -r # remove completion specification
-   #shopt -u progcomp # disable programable completion feature
+    # completion: @ and = are ordinary filename characters (interactive bash; not exported, bash resets it)
+    shopt -u hostcomplete                      # no hostname completion; bash drops @ from COMP_WORDBREAKS itself
+    COMP_WORDBREAKS=${COMP_WORDBREAKS//=}      # = no longer splits a word
+    # complete -r # remove completion specification
+    # shopt -u progcomp # disable programable completion feature
     set -o ignoreeof # disable ctrl-d exit
     set -o errtrace  # any trap on ERR is inherited by shell functions
     set -o functrace # traps on DEBUG and RETURN are inherited by shell functions

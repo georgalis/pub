@@ -105,6 +105,17 @@ uptime
 
 [ "$BASH_VERSION" = '3.2.57(1)-release' ] && { chkerr "Darwin bash fails validation, cannot load functions, install newer bash" ; return 1 ;}
 
+fnhash () { # gen vfn data from env and fn names in file (arg1), for repo commit comments
+    # search for expected hash from repo log and find matching function revision
+    local f="$1" a=''
+    test -e "$f" || { chkwrn "${FUNCNAME}: no file '$f' (6542c8b8)" && return 0 || return $? ;}
+    # no fn match no fail...
+    # helpful for 'git commit -m "bugfix $(fnhash file)" file'
+    printf "\n\n%s\n" "# $(git rev-parse --show-prefix "$f" | tr -d '\n' ; echo)"
+    grep '^[_[:alpha:]][_[:alnum:]]*[ ]*() ' "$f" | sed 's/() .*//' \
+        | sort -u | while read a ; do vfn "$a" ; done
+    } #:> source arg1 if exists , on err recall args for backtrace
+
 validex () { #:> validate executable, compare unit hash vs operation env hash
     [ "$1" ] || {
       cat 1>&2 <<-EOF
@@ -136,36 +147,37 @@ validex () { #:> validate executable, compare unit hash vs operation env hash
     return 1 ;}
     } # validex 64399fcb 20230414 1147 Fri 14 Apr PDT
 
-validfn () { #:> validate function, compare unit hash vs operation env hash
-    # DEPRECATED, use vfn below instead
-    [ "$1" ] || {
-      cat 1>&2 <<-EOF
-		#:: $FUNCNAME {function}        ; returns {function-name} {hash}
-		#:: $FUNCNAME {function} {hash} ; return no error, if hash match
-		#:: the former is intended to provide data for the latter
-		#:: env hashfn= to set the hashing function, "%08x %8x %s\n" cksum program
-		EOF
-      return 1 ;}
-    ps | grep "^[ ]*$$ " | grep bash >/dev/null 2>&1 || { echo ">>> $0 : Not bash shell (62af847c) <<<" >&2 ; return 1 ;}
-    local _hashfn=''
-    [ "$hashfn" ] || { _hashfn () { declare -f "$1" | printf "%s %08x %08x\n" "$1" $(cksum) ;} && _hashfn="_hashfn" ;}
-    [ "$_hashfn" ] || _hashfn="$hashfn" # for env sanity... use crypto hash for security...
-    local fn="$(sed  -e 's/#.*//' -e 's/^[ ]*//' -e 's/[ ]*$//' -e '/^$/d' <<<"$1")"
-    [ "$fn" ] || return 0 # drop comments
-    shift || true
-    local sum="$fn $*"
-    local check="$( "$_hashfn" "$fn" )"
-    [ "$*" ] || { echo "$check" ; return 0 ;} # provide hash data if none given to check
-    [ "$sum" = "$check" ] || { # report hash data discrepancies on failed check
-    cat 1>&2 <<-EOF
-		>>>---
-		$FUNCNAME error :
-		 unit:'$sum'
-		  env:'$check'
-		<<<---
-		EOF
-    return 1 ;}
-    } # validfn
+#0 validfn () { #:> validate function, compare unit hash vs operation env hash
+#0     # DEPRECATED, use vfn below instead
+#0     [ "$1" ] || {
+#0       cat 1>&2 <<-EOF
+#0 		#:: $FUNCNAME {function}        ; returns {function-name} {hash}
+#0 		#:: $FUNCNAME {function} {hash} ; return no error, if hash match
+#0 		#:: the former is intended to provide data for the latter
+#0 		#:: env hashfn= to set the hashing function, "%08x %8x %s\n" cksum program
+#0 		EOF
+#0       return 1 ;}
+#0     ps | grep "^[ ]*$$ " | grep bash >/dev/null 2>&1 || { echo ">>> $0 : Not bash shell (62af847c) <<<" >&2 ; return 1 ;}
+#0     local _hashfn=''
+#0     [ "$hashfn" ] || { _hashfn () { declare -f "$1" | printf "%s %08x %08x\n" "$1" $(cksum) ;} && _hashfn="_hashfn" ;}
+#0     [ "$_hashfn" ] || _hashfn="$hashfn" # for env sanity... use crypto hash for security...
+#0     local fn="$(sed  -e 's/#.*//' -e 's/^[ ]*//' -e 's/[ ]*$//' -e '/^$/d' <<<"$1")"
+#0     [ "$fn" ] || return 0 # drop comments
+#0     shift || true
+#0     local sum="$fn $*"
+#0     local check="$( "$_hashfn" "$fn" )"
+#0     [ "$*" ] || { echo "$check" ; return 0 ;} # provide hash data if none given to check
+#0     [ "$sum" = "$check" ] || { # report hash data discrepancies on failed check
+#0     cat 1>&2 <<-EOF
+#0 		>>>---
+#0 		$FUNCNAME error :
+#0 		 unit:'$sum'
+#0 		  env:'$check'
+#0 		<<<---
+#0 		EOF
+#0     return 1 ;}
+#0     } # validfn
+    
 # only use vfn the openssl based validfn replacement
 # #
 # # Now that validfn is defined, run the framework on expected functions...
@@ -246,21 +258,25 @@ logwrn   1775beeee82daa381b314944b9a1963381c9291bbc9884ef27ce99cb762a80a7bb8f5c0
 chkerr   50195549cedb329654b8cd279d5e471a536488ebfd3045b4589d05e20c0072faecf4b89566df11144369f437821a27d5
 logerr   8420e3638ccde6b2c86820d4460e059edcfcb00e2f3ba065e5270bf57e66abce058c88ea95168f3345539ea536abad79
 chktrue  6053b8cfa998834844f9dd687af4753b96d2f2e14cf6c51c22dac7165daaf2405e4637bd82096c81165e54728d1d5d3b
-siffx    faf13db46a77326a019ca42325f2d1b4ab3c410c39bc36f3294baf2da85d53f11af2a1738d055eaaaee78333654a8c3e
 vfn      1fb48802cdc5f8b8965a549bc7b893bcbeb36e609f4807aa444a94494b281b468b95d55a359333db0800f1b37ab815cc
-validfn  78e0807ecc00ee5789ee0a6b8e33890a30205983ccb265debe04f52737f782d93d7f75424a08c330a5d8d8071f3c80c7
+siffx    b421cc5a4d2b7fe7979d3055343343494c18a3dd4584c30358dd7d8349ac7151
+_mksymdir  f850ab8f5f4b777588b481c0746c0a4c77c3d14567c32b9ce56940737cd074f6
+cmdloc     728b39896a6da4d746efec02682df0a452ee921ca790a865b3cbcb438531f001
+ct         ef984f3ab2172ea882a24d2c9602a9ee22e287ec6dd3150c943e8a978b40cabc
+ctt        b77b78adef032e96763d182e63112731250538fe8c722443adb67fd6b119f3d2
+gcfg       4b7f1c82cb590ad8c03696a67736d197a18a5af0dc8b2d5d0e61971e07daacc4
+gst        7c40c2ec9d787dd8fe1a2fcb8e8a6b98b0f0218f168219b20feea647162b200a
+gsta       7cc85e940567ac399ed30f8b016fe2d8b6d7a5d272ee9890017295cf4511c20d
+gstat      614375abc2ff7b6e1247fd0d35d1d0f0b7a857a6c8eaafea873319d3c1b050cd
+hms2sec    4e425e7e84236f0e99133852de1ebff77623af29ac1685a1ae869d401e431a17
+kwds       f08d8ba4f347ec69be783c60c671a0a3403912884b88f1b2985ea8c6e09c42f1
+tmu        ddcce32febd0caac35ec36c2ca170bcd7a7498cabe710ca2e47f5f2adcc2d4d2
+ts         cc793072511ee8359d03f7e9b3c85958fe828a4d8d0822ecbde1857d99827510
+tss        f231c47eb5931e1442588fa58fe278a7707656d535a123f8bc3945808bdd9784
+validex    e028155d7edd20c6b3b8a7fc64fc2c01889b7de2144455a277253486266b8ea7
+vfn        1fb48802cdc5f8b8965a549bc7b893bcbeb36e609f4807aa444a94494b281b46
+fnhash     89e451dccc9d826ac885314e3213e08dd7fd1547f629c78c94f57690378fbb51
 EOF
-
-fnhash () { # gen validfn data from env and fn names in file (arg1), for repo commit comments
-    # search for expected hash from repo log and find matching function revision
-    local f="$1" a=''
-    test -e "$f" || { chkwrn "${FUNCNAME}: no file '$f' (6542c8b8)" && return 0 || return $? ;}
-    # no fn match no fail...
-    # helpful for 'git commit -m "bugfix $(fnhash file)" file'
-    printf "\n\n%s\n" "# $(git rev-parse --show-prefix "$f" | tr -d '\n' ; echo)"
-    grep '^[_[:alpha:]][_[:alnum:]]*[ ]*() ' "$f" | sed 's/() .*//' \
-        | sort -u | while read a ; do validfn "$a" ; done
-    } #:> source arg1 if exists , on err recall args for backtrace
 
 # fortify the shell with git alias
 alias   gstatus='git status --short'
