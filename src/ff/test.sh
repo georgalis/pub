@@ -2,6 +2,9 @@
 # test.sh --- regression suite for ff (C binary) and ff.fn.bash (translator)
 # (c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution.
 #
+# rev 6ae4ea00 20261030 120328 PDT Fri 12:03 PM 30 Oct 2026
+#     -r always ERE: rx fixtures for ERE operators and BRE escapes, -n -p
+#     still glob, -E retired; --help through PAGER on a tty; PAGER passed in
 # rev 6adcb748 20261024 064856 PDT Sat 06:48 AM 24 Oct 2026
 #     -mode cases (were -k); -k[r][N] sort against ff -v | sort, both passes,
 #     parity and diagnostics
@@ -37,7 +40,7 @@ B="$here/ff"
 F="$here/ff.fn.bash"
 [ -x "$B" ] || { echo "test.sh: build ./ff first" >&2; exit 1; }
 w=`mktemp -d "${TMPDIR:-/tmp}/ff-test.XXXXXX"` || exit 1
-trap 'chmod -R u+rwx "$w" 2>/dev/null; rm -rf "$w/t" "$w/km" "$w/wt" "$w/kt" "$w/deep" "$w/del" "$w/race" "$w/o"* ; rmdir "$w" 2>/dev/null' 0 1 2 15
+trap 'chmod -R u+rwx "$w" 2>/dev/null; rm -rf "$w/t" "$w/rx" "$w/km" "$w/wt" "$w/kt" "$w/deep" "$w/del" "$w/race" "$w/o"* ; rmdir "$w" 2>/dev/null' 0 1 2 15
 pass=0 fail=0 skip=0 impl=
 p0=0 f0=0 s0=0
 
@@ -71,7 +74,7 @@ pr_unr () { ! find o.unr 2>/dev/null | grep -q .; }
 # parity references: c the binary, b the function, same contract as r
 c () { "$B" "$@" 2>/dev/null; echo "rc=$?"; }
 # bash in a clean environment: no exported functions (such as a prior ff) leak in
-be () { env -i PATH="$PATH" HOME="${HOME:-/}" TMPDIR="${TMPDIR:-/tmp}" TZ=UTC0 \
+be () { env -i PATH="$PATH" HOME="${HOME:-/}" TMPDIR="${TMPDIR:-/tmp}" TZ=UTC0 PAGER="${PAGER:-}" \
   FF_NO_SAMEFILE="${FF_NO_SAMEFILE:-}" FF_NO_NEWERMT="${FF_NO_NEWERMT:-}" \
   FF_BARE_EXECDIR="${FF_BARE_EXECDIR:-}" bash "$@"; }
 b () { be -c '. "$0"; ff "$@"' "$F" "$@" 2>/dev/null; echo "rc=$?"; }
@@ -90,12 +93,12 @@ w=`pwd -P`
 # the function as a command, for RUN and for script(1); its path comes from
 # the environment, so no name is written into the wrapper
 FFT_FN=$F; export FFT_FN
-cat > o.ffbash <<'eof'
+cat > o.ffbash <<'__FFT_WRAPPER__'
 #!/bin/sh
-exec env -i PATH="$PATH" HOME="${HOME:-/}" TMPDIR="${TMPDIR:-/tmp}" TZ=UTC0 \
+exec env -i PATH="$PATH" HOME="${HOME:-/}" TMPDIR="${TMPDIR:-/tmp}" TZ=UTC0 PAGER="${PAGER:-}" \
   FF_NO_SAMEFILE="${FF_NO_SAMEFILE:-}" FF_NO_NEWERMT="${FF_NO_NEWERMT:-}" \
   FF_BARE_EXECDIR="${FF_BARE_EXECDIR:-}" bash -c '. "$0"; ff "$@"' "$FFT_FN" "$@"
-eof
+__FFT_WRAPPER__
 chmod 755 o.ffbash
 mkdir -p t/d/e t/.h t/emd
 printf abc > t/a; : > t/em; ln -s a t/l; ln -s nope t/dang; ln -s d t/ld
@@ -110,6 +113,9 @@ ln -s .. t/d/up
 mkdir -p t/d/s/a t/d/s/a0; printf z > t/d/s/a/b; printf z > t/d/s/a-
 e1=`printf '\001'`; e2=`printf '\002'`
 ino=`ls -id t/a | awk '{print $1}'`
+
+# -r fixtures: names holding ERE operators, so ERE and BRE readings differ
+mkdir -p rx; for n in aab ab 'a+b' 'a(b)' 'a{2}b'; do printf r > "rx/$n"; done
 
 # -mode fixtures: setgid needs the file's group among the user's; where it still fails, drop f2755
 mkdir -p km; for m in 0755 0644 0600 0666 4755 2755 0000; do
@@ -160,13 +166,26 @@ eq "-i inode, hex" "t/a" "`X t -i \`printf %x $ino\``"
 # --- deliberate departures (--help DIFFERENCES) ---
 eq "-r unanchored" "t/d/e t/d/e/f.c" "`cs t -r 'd/e' | tr '\n' ' ' | sed 's/ $//'`"
 eq "-r anchored by ^\$" "t/d/e" "`X t -r '^t/d/e$'`"
-eq "-E ERE" "t/d/e/f.c t/d/g.C" "`cs -E t -r '\.(c|C)$' | tr '\n' ' ' | sed 's/ $//'`"
+# -r is always ERE (--help -r); the BRE escapes \( \{ match the characters
+eq "-r ERE group" "t/d/e/f.c t/d/g.C" "`cs t -r '\.(c|C)$' | tr '\n' ' ' | sed 's/ $//'`"
+eq "-r ERE alternation" "t/d/e/f.c t/d/g.C" "`cs t -r 'e/f|g\.C' | tr '\n' ' ' | sed 's/ $//'`"
+eq "-r ERE +" "rx/aab rx/ab" "`cs rx -r '/a+b$' | tr '\n' ' ' | sed 's/ $//'`"
+eq "-r ERE interval" "rx/aab" "`X rx -r '/a{2}b$'`"
+eq "-r \\+ literal" "rx/a+b" "`X rx -r 'a\+b'`"
+eq "-r \\( \\) literal" "rx/a(b)" "`X rx -r 'a\(b\)'`"
+eq "-r \\{ literal, } alone literal" "rx/a{2}b" "`X rx -r 'a\{2}'`"
+eq "-r . matches /" "t/d/e" "`X t -r 'd.e$'`"
+eq "-n stays glob" "rx/a+b" "`X rx -n 'a+b'`"
+eq "-p stays glob" "rx/a(b)" "`X rx -p 'rx/a(b)'`"
+# -E is retired: an unknown option wherever it stands, alone or in a cluster
+eq "-E retired" "rc=1" "`r -E t | tail -1`"
+eq "-E retired after -r" "rc=1" "`r t -r x -E | tail -1`"
+eq "-E retired in a cluster" "rc=1" "`r -IE t | tail -1`"
+eq "-E retired tag" ">>> ff : unknown option '-E' (6ab7ff01)" "`X -E t 2>&1`"
 # options are global: one after the primary it changes still applies (--help DESCRIPTION)
-eq "-E after -r" "t/d/e/f.c t/d/g.C" "`cs t -r '\.(c|C)$' -E | tr '\n' ' ' | sed 's/ $//'`"
-eq "-E after -r, alternation" "t/d/e/f.c t/d/g.C" "`cs t -r 'e/f|g\.C' -E | tr '\n' ' ' | sed 's/ $//'`"
 eq "-I after -r" "t/d/e/f.c t/d/g.C" "`cs t -r '\.c$' -I | tr '\n' ' ' | sed 's/ $//'`"
-eq "BRE default: ( literal" "" "`X t -r '\.(c|C)$'`"
 eq "-I -n" "t/d/e/f.c t/d/g.C" "`cs -I t -n '*.c' | tr '\n' ' ' | sed 's/ $//'`"
+eq "-I -p" "t/d/g.C" "`X -I t -p '*/G.c'`"
 eq "-I -r" "t/d/e/f.c t/d/g.C" "`cs -I t -r '\.c$' | tr '\n' ' ' | sed 's/ $//'`"
 eq "options anywhere" "`cs -I t -n '*.c'`" "`cs t -n '*.c' -I`"
 eq "-s bytes exact" "t/a" "`X t -t f -s 3`"
@@ -277,7 +296,7 @@ eq "-true retired" "rc=1" "`r wt -true | tail -1`"
 bo "-V note (ff.fn.bash prints the native command instead; see bash -V)" && {
   eq "-V binary note" "^^^ ff : -V: the native find command is printed by ff.fn.bash (6ab7ff47)" "`X -V wt -d 0 2>&1 >/dev/null`"; }
 eq "-V walks" "wt rc=0" "`r -V wt -d 0 | tr '\n' ' ' | sed 's/ $//'`"
-eq "prune example" "`cs t -t f ! -n '*,v' ! -n '*~'`" "`cs t \( -n .git -o -n tmp \) -z -t f -o -t f -not -E -r ',v$|~$'`"
+eq "prune example" "`cs t -t f ! -n '*,v' ! -n '*~'`" "`cs t \( -n .git -o -n tmp \) -z -t f -o -t f -not -r ',v$|~$'`"
 
 # --- walk order: -S bytewise per directory, / sorts lowest; -D post-order ---
 exp=`find t/d 2>/dev/null | tr / '\001' | LC_ALL=C sort | tr '\001' /`
@@ -372,6 +391,13 @@ if [ -n "$have_script" ]; then
   eq "tty escapes ESC" 't/x\033[31my' "`st "'$RUN' t -n 'x*'" | tr -d '\r'`"
   eq "tty escapes newline" 't/n\012l' "`st "'$RUN' t -n 'n*'" | tr -d '\r'`"
   eq "tty -Z raw" 1 "`st "'$RUN' -Z t -n 'x*'" | od -c | grep -c 033`"
+  # --help through PAGER on a tty (--help NOTES); a pipe is not paged
+  m=`X --help | wc -l | tr -d ' '`
+  eq "tty --help paged" "$m" "`st "PAGER='wc -l' '$RUN' --help" | tr -d ' \r'`"
+  eq "tty --help pager quits early" "rc=0" "`st "PAGER='head -1' '$RUN' --help; echo rc=\$?" | tr -d '\r' | tail -1`"
+  eq "tty --help pager fails, manual direct" "$m" "`st "PAGER=/nonexistent/ff-pager '$RUN' --help 2>/dev/null" | tr -d '\r' | wc -l | tr -d ' '`"
+  eq "tty --help pager fails, warned" 1 "`st "PAGER=/nonexistent/ff-pager '$RUN' --help" | tr -d '\r' | grep -Fcx "^^^ ff : --help: cannot run pager '/nonexistent/ff-pager' (6ab7ff4e)"`"
+  eq "tty -h not paged" "`X -h`" "`st "PAGER='wc -l' '$RUN' -h" | tr -d '\r'`"
 else sk "${impl:+$impl: }tty escaping (no script)"; fi
 eq "pipe raw ESC" "$esc" "`X t -n 'x*'`"
 
@@ -390,7 +416,7 @@ eq "default path ." "`cd t && find . | LC_ALL=C sort`" "`cd t && X | LC_ALL=C so
 # --- help: -h short, --help manual, man page source ---
 eq "-h rc" 0 "`X -h >/dev/null; echo $?`"
 eq "--help rc" 0 "`X --help >/dev/null; echo $?`"
-eq "--help sections" 14 "`X --help | grep -c '^[A-Z][A-Z ]*$'`"
+eq "--help sections" 15 "`X --help | grep -c '^[A-Z][A-Z ]*$'`"
 
 # --- diagnostics: chkerr (>>>) and chkwrn (^^^) format, hex tag naming the message ---
 eq "usage format" ">>> ff : -t: types are f d l p s b c, not 'q' (6ab7ff0a)" "`X t -t q 2>&1 >/dev/null`"
@@ -417,7 +443,8 @@ if [ -n "$have_bash" ]; then
       "t -m -1h -t f" "t -mode +755" "t -mode 755" "km -mode -0755" "km -mode x" "km -mode -x" "km -mode o-X" \
       "km -mode go-w" "km -not -mode go-w" "km -mode +s" "km -mode +t" "km -mode u+rwx,u-s" "km -mode w" "km -mode -7777" "km -mode u+r -o -mode u+x" "km -mode +rs" "km -mode u+rs" \
       "t -n .h -z -o -t f -f" "t ( -n a -o -n em ) -t f" \
-      "t -d -2" "t -d 1" "t -d +1 -d -3" "-D t" "-E t -r \.(c|C)$" "t -r d/e" "t -r ^t/d/e$" \
+      "t -d -2" "t -d 1" "t -d +1 -d -3" "-D t" "t -r \.(c|C)$" "t -r d/e" "t -r ^t/d/e$" "t -r e/f|g\.C" \
+      "rx -r /a+b$" "rx -r /a{2}b$" "rx -r a\+b" "rx -r a\(b\)" "rx -r a\{2}" "t -r d.e$" "rx -n a+b" "-I rx -r A\(B" "t -r a{" \
       "-I t -n *.C" "-I t -r \.c$" "t -n f.c -x echo {} ;" "t -n f.c -j echo {} ;" "-Z t -n n*" \
       "t -q" "t -f -q" "t/a t/em -v" "-S t/d" "-SD t/d" "t -w +./t/a" "t -l +1" "t/nope" \
       "wt -t f -w +./wt/ref" "wt -t f -w -./wt/ref" "wt -t f -w ./wt/ref" "wt -t f -w +$R" "wt -t f -w -$R" "wt -t f -w $R" \
@@ -437,6 +464,7 @@ if [ -n "$have_bash" ]; then
   # usage diagnostics are identical, message and tag
   for o in "-q t" "t -n" "t -t q" "t (" "t ( )" "t )" "t -o -f" "t !" "t -d x" "t -s 1q" "t -m 1y" \
       "t -mode 999" "t -mode u=rwx" "t -mode o+s" "t -mode u+t" "t -l x" "t -i x" "t -i 12g" "t -y nope" "t -w ./nope" "t -w -nope" "t -w cafe/x" "t -a 1y" "t -b x" "t -x {} ;" "t -w t/nope" "t -u nosuchuser_ff" "t -g nosuchgroup_ff" "t -y" "t -yy" "t -true" "-0 t" "t -w +" "t -w + -./wt/ref" "t -w - cafe/x" "t -w + 8000000000000000" "t -w .../x" "t -n a b" \
+      "-E t" "t -r x -E" "-IE t" \
       "t -x echo {}" "t -x {} ;" "t -x ;" "t -x echo a{} ;" "t -j echo {} {} +" "t -x ./x ;" "-L t -delete" \
       "/ -d 0 -delete" ".. -d 0 -delete" "/. -d 0 -delete" "-k0 t" "t -k7" "t -kx" "-krr t" "t -mode o+s"
   do
@@ -444,7 +472,9 @@ if [ -n "$have_bash" ]; then
   done
   # a bad -r is the same usage error; only the binary adds the regcomp reason
   eq "bash -r bad regex" "`"$B" t -r '[' 2>&1 >/dev/null | sed "s/': .* (/' (/"`" \
-    "`be -c '. "$0"; ff t -r "[" -E' "$F" 2>&1 >/dev/null`"
+    "`be -c '. "$0"; ff t -r "["' "$F" 2>&1 >/dev/null`"
+  # the translator groups -r, renumbering its groups: back-references need the binary
+  eq "bash -r backreference" "rc=2" "`b t -r '(a)\1' | tail -1`"
   eq "bash -y inum fallback" "`c wt -y wt/new | sort`" "`FF_NO_SAMEFILE=1 b wt -y wt/new | sort`"
   eq "bash -V stderr" "find wt -maxdepth 0 -print" "`be -c '. "$0"; ff -V wt -d 0' "$F" 2>&1 >/dev/null`"
   eq "bash -V stdout unchanged" "`c wt -t f -w +./wt/ref`" "`b -V wt -t f -w +./wt/ref 2>/dev/null`"
@@ -453,6 +483,11 @@ if [ -n "$have_bash" ]; then
     eq "bash -w refs [$o]" "`c wt -t f -w $o`" "`FF_NO_NEWERMT=1 b wt -t f -w $o`"
   done
   eq "bash -w refs removed" "" "`FF_NO_NEWERMT=1 be -c '. "$0"; ff -V wt -w +$1 2>&1 >/dev/null | sed -n "s/^# reference files under \(.*\) are removed.*/\1/p" | while read d; do ls -d "$d" 2>/dev/null; done' "$F" $R`"
+  # here-documents: every delimiter quoted, unique to its block, and no
+  # line inside any block equal to one (shell standard)
+  hd=`sed -n "s/.*<<'\(__FF[A-Z_]*__\)'\$/\1/p" "$F" "$here/test.sh"`; hr=
+  for d in $hd; do [ "`cat "$F" "$here/test.sh" | grep -cx "$d"`" = 1 ] || hr="$hr $d"; done
+  eq "here-document delimiters" "3 " "`echo "$hd" | grep -c .` $hr"
   # namespace: only ff is defined in the caller's shell
   eq "bash namespace" "declare -f ff" "`be -c '. "$0"; declare -F' "$F"`"
   eq "bash + sets" "`"$B" t -t f -x echo {} + | tr ' ' '\n' | LC_ALL=C sort`" \

@@ -1,6 +1,8 @@
 # makefile --- build, test and install ff
 # (c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution.
 #
+# rev 6ae4ea00 20261030 120328 PDT Fri 12:03 PM 30 Oct 2026
+#     -r always ERE (-E retired), --help paged on a tty; recipes unchanged
 # rev 6adcb748 20261024 064856 PDT Sat 06:48 AM 24 Oct 2026
 #     -mode (was -k), -k[r][N] output sort; recipes unchanged
 # rev 6abc5da8 20260929 175400 PDT Tue 05:54 PM 29 Sep 2026

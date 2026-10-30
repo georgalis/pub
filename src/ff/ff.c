@@ -2,6 +2,9 @@
  * ff.c --- functional find: NetBSD find(1) semantics, one letter per switch
  * (c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution.
  *
+ * rev 6ae4ea00 20261030 120328 PDT Fri 12:03 PM 30 Oct 2026
+ *     -r is always ERE; the -E option is retired (unknown option, 1);
+ *     --help runs through $PAGER (default more) when stdout is a terminal
  * rev 6adcb748 20261024 064856 PDT Sat 06:48 AM 24 Oct 2026
  *     -mode is the permission query (was -k); -k[r][N] sorts printed records
  *     by cksh field N, keyed by node stat, held until the walk ends; -k3
@@ -32,7 +35,7 @@
  * descriptor for the same reason. Static on Linux and NetBSD; Darwin links
  * libSystem only.
  *
- * Deliberate departures from find: -r is unanchored; -s counts bytes with
+ * Deliberate departures from find: -r is unanchored ERE; -s counts bytes with
  * exact comparison; time primaries compare age in seconds; -d is a global
  * walk bound; {} substitutes only as a whole argument; names printed to a
  * terminal have control bytes escaped. See --help, DIFFERENCES.
@@ -60,6 +63,7 @@
 #include <pwd.h>
 #endif
 #include <regex.h>
+#include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -91,7 +95,7 @@ static const char *prog = "ff";
 static int status;
 
 /* options */
-static int opt_E, opt_I, opt_H, opt_L, opt_D, opt_S, opt_X, opt_Z, opt_V;
+static int opt_I, opt_H, opt_L, opt_D, opt_S, opt_X, opt_Z, opt_V;
 static long mindepth = 0, maxdepth = LONG_MAX;
 
 static time_t now;
@@ -288,6 +292,9 @@ struct node {
 static struct node *nd;
 static int nnd;
 static char **tok;		/* expression tokens */
+/* path operands; file scope, as tok, so the array stays reachable when
+ * bad() or die() exits from inside the parser (LeakSanitizer reported it) */
+static char **paths;
 static int ntok, ti;
 static int root = -1;
 static size_t argmax;		/* bytes for one exec argument list */
@@ -600,7 +607,8 @@ primary(void)
 	case 'r':
 		n = mk(N_REGEX, -1, -1);
 		a = arg1();
-		fl = REG_NOSUB | (opt_E ? REG_EXTENDED : 0) | (opt_I ? REG_ICASE : 0);
+		/* always ERE (r10): -E retired; -n and -p stay glob */
+		fl = REG_NOSUB | REG_EXTENDED | (opt_I ? REG_ICASE : 0);
 		if ((i = regcomp(&nd[n].re, a, fl)) != 0) {
 			char m[128];
 
@@ -1614,12 +1622,12 @@ walk_operand(const char *path)
 /* ------------------------------------------------------------------ help */
 
 static const char usage_text[] =
-"Usage: ff [-EIHLDSXZV] [-k[r][N]] [--] [path ...] [expression]\n"
-"  options  -E ERE for -r  -I ignore case  -H/-L follow symlinks\n"
+"Usage: ff [-IHLDSXZV] [-k[r][N]] [--] [path ...] [expression]\n"
+"  options  -I ignore case for -n -p -r  -H/-L follow symlinks\n"
 "           -D post-order  -S sorted  -X one filesystem  -Z NUL output\n"
 "           -V show the native find command (ff.fn.bash)\n"
 "           -k[r][N] sort by cksh field N, default 6 name, r reverse\n"
-"  tests    -n glob  -p glob  -r re  -t fdlpsbc  -d [+-]N  -s [+-]N[ckMGT]\n"
+"  tests    -n glob  -p glob  -r ERE  -t fdlpsbc  -d [+-]N  -s [+-]N[ckMGT]\n"
 "           -m -a -c -b [+-]N[smhdw]  -w [+-][ ]([.][.]/file|HEX)\n"
 "           -u user  -g group  -l [+-]N  -i [+-]HEX  -y file (same node)  -e\n"
 "           -mode [+-]bits  -z (prune)  -0 (true)  -1 (false)\n"
@@ -1634,7 +1642,7 @@ static const char *const manual[] = {
 "  ff - functional find: walk file trees, one letter per switch\n"
 "\n"
 "SYNOPSIS\n"
-"  ff [-EIHLDSXZV] [-k[r][N]] [--] [path ...] [expression]\n"
+"  ff [-IHLDSXZV] [-k[r][N]] [--] [path ...] [expression]\n"
 "  ff -h | --help\n"
 "\n"
 "DESCRIPTION\n"
@@ -1656,7 +1664,6 @@ static const char *const manual[] = {
 "  between listing and opening is reported and skipped.\n"
 "\n"
 "OPTIONS\n"
-"  -E     extended regular expressions (ERE) for -r; default basic (BRE)\n"
 "  -I     case-insensitive -n, -p and -r\n"
 "  -H     follow symlinks named as path operands\n"
 "  -L     follow all symlinks; loops are reported, not followed\n"
@@ -1678,7 +1685,8 @@ static const char *const manual[] = {
 "  -V     ff.fn.bash only: print the native find command to stderr\n"
 "         before running it; helpful to extend a command to an OS find\n"
 "         specific implementation. The binary notes this and runs.\n"
-"  -h     short usage;  --help  this manual\n"
+"  -h     short usage;  --help  this manual, through $PAGER on a\n"
+"         terminal (see NOTES)\n"
 "\n"
 "PRIMARIES\n"
 "  N           decimal: +N more than N, -N less than N, N exactly.\n"
@@ -1689,7 +1697,8 @@ static const char *const manual[] = {
 "              used, and \\ makes the next one literal. A leading . is\n"
 "              not special, and in -p * and ? also match /. Quote the\n"
 "              pattern so the shell does not expand it first.\n"
-"  -r re       path contains a match for re: unanchored, add ^ and $\n"
+"  -r ere      path contains a match for the extended regular expression\n"
+"              ere; unanchored, add ^ and $. See REGULAR EXPRESSIONS.\n"
 "  -t types    type is any of: f file, d directory, l symlink, p fifo,\n"
 "              s socket, b block, c character device; -t fl is f or l\n"
 "  -d N        walk bound, global wherever it appears; operands are\n"
@@ -1782,11 +1791,46 @@ static const char *const manual[] = {
 "  expression is true. Once any action appears (-f -v -x -j -delete\n"
 "  -q), only actions print. Prune directories by name and print the\n"
 "  files that are not RCS (,v) or backup (~) files:\n"
-"    ff . \\( -n .git -o -n tmp \\) -z -t f -o -t f -not -E -r ',v$|~$'\n"
+"    ff . \\( -n .git -o -n tmp \\) -z -t f -o -t f -not -r ',v$|~$'\n"
 "  -z is true, so the -t f after it makes that side false for the\n"
-"  pruned directories; -z -1 does the same. Options such as -E\n"
+"  pruned directories; -z -1 does the same. Options such as -I\n"
 "  may appear anywhere, even after -not.\n"
-"\n"
+"\n",
+"REGULAR EXPRESSIONS\n"
+"  -r takes a POSIX extended regular expression (ERE), the dialect of\n"
+"  grep -E and find -E, compiled by the C library's regcomp(3) and\n"
+"  matched anywhere in the path; anchor it with ^ and $. -I ignores case.\n"
+"    c            a character not listed below matches itself\n"
+"    .            any one character, / included: d.e matches d/e\n"
+"    [abc]        one of a b c; [a-z] a range; [^abc] none of them;\n"
+"                 ] first and - last are literal, and \\ is literal inside\n"
+"    [[:digit:]]  a class, inside brackets: alpha digit alnum upper lower\n"
+"                 space punct xdigit; [[:digit:]_] adds _\n"
+"    ^  $         start and end of the path\n"
+"    x*  x+  x?   zero or more, one or more, zero or one of x\n"
+"    x{n}         n of x;  x{n,}  n or more;  x{n,m}  n to m\n"
+"    (re)         group, for a repeat or an alternation\n"
+"    re|re        either side; lowest precedence: ^a|b$ is (^a)|(b$)\n"
+"    \\c           c itself, for c any of . [ ( ) { * + ? | ^ $ \\\n"
+"                 (] and } alone are already literal)\n"
+"  \\ before any other character is undefined in ERE: \\d \\w \\s are not\n"
+"  portable, so write [[:digit:]] [[:alnum:]_] [[:space:]].\n"
+"  Differences from basic regular expressions (BRE: find -regex, grep,\n"
+"  sed), read as ERE here:\n"
+"    ERE          BRE          meaning in ERE\n"
+"    (re)         \\(re\\)       group\n"
+"    x{n,m}       x\\{n,m\\}     interval\n"
+"    + ? |        none         one or more, zero or one, alternation\n"
+"    \\( \\) \\{     ( ) {        the characters themselves\n"
+"    \\1           \\1           back-reference: defined for BRE only; in\n"
+"                              ERE a C library extension that varies by\n"
+"                              platform, refused by ff.fn.bash (2)\n"
+"  Glob, for -n and -p, is a different language: glob * and ? are .*\n"
+"  and . here, and a glob must match the whole name, not a part of it.\n"
+"    ff . -r '\\.(c|h)$'                   C sources and headers\n"
+"    ff . -r '/[0-9]{4}-[0-9]{2}-[^/]*$'  names that begin YYYY-MM-\n"
+"    ff -I . -r '/readme(\\.md)?$'         readme, README.md, any case\n"
+"\n",
 "EXEC\n"
 "  Commands run by fork and exec, never through a shell. {} is replaced\n"
 "  only when it is a whole argument. With +, {} must be last and appear\n"
@@ -1813,7 +1857,8 @@ static const char *const manual[] = {
 "  each ending in a hex tag naming the message.\n"
 "\n"
 "DIFFERENCES\n"
-"  From NetBSD find: one-letter switches; -r is unanchored; -s is bytes\n"
+"  From NetBSD find: one-letter switches; -r is always ERE, as find -E\n"
+"  -regex, with no option to choose BRE, and unanchored; -s is bytes\n"
 "  with no rounding; times compare seconds, not rounded days; -d is a\n"
 "  global bound; {} is never replaced inside a larger word; names are\n"
 "  escaped on a terminal; -I replaces -iname, -ipath and -iregex;\n"
@@ -1831,7 +1876,6 @@ static const char *const manual[] = {
 "    ff -H lib -d 0 -v                   the directory a lib symlink names\n"
 "    ff -X / -d -2 -t d                  top directories, root filesystem\n"
 "    ff -I . -n '*.jpg'                  .jpg .JPG .Jpg\n"
-"    ff -E . -r '/(src|lib)/[^/]*\\.c$'   C files directly in src or lib\n"
 "    ff -D src                           each directory after its contents\n"
 "    ff -Z . -t f -s +1M | xargs -0 ls -l   large files, any names\n"
 "    ff -k5 . -t f -m -1                 changed within a day, oldest first\n"
@@ -1841,6 +1885,7 @@ static const char *const manual[] = {
 "    ff . -n '[A-Z]*.[ch]'               capitalized C sources and headers\n"
 "    ff . -p '*/test/*' -t f             files below any test directory\n"
 "    ff . -r '\\.orig$' -o -r '\\.rej$'    patch leftovers\n"
+"    ff . -r '/(src|lib)/[^/]*\\.c$'      C files directly in src or lib\n"
 "    ff . -t lp                          symlinks and fifos\n",
 "    ff . -d 1 -t d                      subdirectories, one level\n"
 "    ff . -t f -s +100M                  files over 100 MiB\n"
@@ -1880,7 +1925,7 @@ static const char *const manual[] = {
 "    ff . -t f \\( -j grep -q TODO {} \\; -j echo todo: {} \\; -o -0 \\) -f\n"
 "                                        every file, TODO files marked first\n"
 "    ff . -t f -not -mode u+w -f -o -t d -e -f\n"
-"                                        read-only files and empty directories\n"
+"                                        read-only files and empty directories\n",
 "NOTES\n"
 "  -u and -g resolve names on Linux by running getent from /usr/bin or\n"
 "  /bin, so a static binary sees the same users as the host; without\n"
@@ -1888,8 +1933,16 @@ static const char *const manual[] = {
 "  platforms use the C library.\n"
 "  Names are compared as bytes: no Unicode normalization, so on Darwin\n"
 "  HFS+ a precomposed pattern does not match a decomposed name.\n"
+"  --help on a terminal writes the manual to $PAGER, or more when\n"
+"  PAGER is unset or empty, run by /bin/sh -c as man(1) runs it; a\n"
+"  pager that cannot run (126, 127) is warned of and the manual is\n"
+"  written directly. -h and output to a pipe or file are not paged.\n"
 "\n"
 "HISTORY\n"
+"  rev 6ae4ea00 20261030 120328 PDT Fri 12:03 PM 30 Oct 2026\n"
+"      -r is always ERE, with a REGULAR EXPRESSIONS section; -E is\n"
+"      retired. -I is named for -n -p -r in the usage. --help runs\n"
+"      through $PAGER, default more, on a terminal.\n"
 "  rev 6adcb748 20261024 064856 PDT Sat 06:48 AM 24 Oct 2026\n"
 "      -mode is the permission query, was -k; -k[r][N] sorts output by\n"
 "      cksh field N (1 inode 2 links 4 size 5 mdate 6 name, default 6),\n"
@@ -1921,16 +1974,47 @@ static const char *const manual[] = {
 "  Unlimited use with attribution.\n"
 };
 
+/*
+ * -h writes the usage; --help the manual, through $PAGER (default more, as
+ * POSIX man) when stdout is a terminal. popen(3) runs the pager by /bin/sh
+ * -c, as man(1) does: PAGER is the user's own configuration, unlike -x and
+ * -j words, which never pass through a shell. SIGPIPE is ignored so a
+ * pager quit early ends the write quietly; a pager that cannot run (shell
+ * status 126 or 127, or popen failing) is warned of and the manual is
+ * written directly, so --help never ends with nothing shown.
+ */
 static void
 put_help(int full)
 {
+	const char *pg = NULL;
+	FILE *f = NULL;
 	size_t i;
+	int st;
 
-	if (!full)
+	if (!full) {
 		(void)fputs(usage_text, stdout);
-	else
+		xflush();
+		exit(0);
+	}
+	if (isatty(1)) {
+		if ((pg = getenv("PAGER")) == NULL || *pg == '\0')
+			pg = "more";
+		xflush();
+		(void)signal(SIGPIPE, SIG_IGN);
+		if ((f = popen(pg, "w")) == NULL)
+			WRN("--help: cannot run pager", pg, strerror(errno), "6ab7ff4e");
+	}
+	if (f != NULL) {
 		for (i = 0; i < sizeof manual / sizeof *manual; i++)
-			(void)fputs(manual[i], stdout);
+			(void)fputs(manual[i], f);
+		st = pclose(f);
+		if (st == -1 || !WIFEXITED(st) ||
+		    (WEXITSTATUS(st) != 126 && WEXITSTATUS(st) != 127))
+			exit(0);	/* the pager ran; its own status is its own */
+		WRN("--help: cannot run pager", pg, NULL, "6ab7ff4e");
+	}
+	for (i = 0; i < sizeof manual / sizeof *manual; i++)
+		(void)fputs(manual[i], stdout);
 	xflush();
 	exit(0);
 }
@@ -1940,7 +2024,7 @@ put_help(int full)
 static int
 is_optword(const char *s)
 {
-	return s[0] == '-' && s[1] != '\0' && strspn(s + 1, "EIHLDSXZV") == strlen(s + 1);
+	return s[0] == '-' && s[1] != '\0' && strspn(s + 1, "IHLDSXZV") == strlen(s + 1);
 }
 
 static int
@@ -1960,7 +2044,6 @@ has_action(int i)
 int
 main(int argc, char **argv)
 {
-	char **paths;
 	int i, npaths = 0, endopt = 0, inexpr = 0, useenv = 0;
 
 	const char *a, *p;
@@ -1989,7 +2072,6 @@ main(int argc, char **argv)
 		if (!endopt && is_optword(a)) {
 			for (p = a + 1; *p; p++)
 				switch (*p) {
-				case 'E': opt_E = 1; break;
 				case 'I': opt_I = 1; break;
 				case 'H': opt_H = 1; opt_L = 0; break;
 				case 'L': opt_L = 1; opt_H = 0; break;

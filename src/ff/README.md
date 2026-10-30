@@ -8,7 +8,7 @@ _(c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution._
 
 ```
 ff . -t f -n '*.c'               C sources
-ff -E src -r '\.(c|h)$'          the same by regex (unanchored)
+ff src -r '\.(c|h)$'             the same by ERE (unanchored)
 ff . -n .git -z -o -t f -f       files, skipping .git trees
 ff -k5 . -t f -m -1              changed within a day, oldest first
 ff . -t f -x grep -l TODO {} +   grep per directory, race safe
@@ -26,15 +26,16 @@ scheme:
   request it exits 2 and names the binary. Load it with `. ff.fn.bash`; its
   body runs in a subshell, so only `ff` enters the caller's namespace.
 
-A brief usage is provided with `-h`,
-the man page is generated from `--help`.
+A brief usage is provided with `-h`; `--help` prints the manual, through
+`$PAGER` (default `more`) when stdout is a terminal, and the man page is
+generated from it.
 ```
-    Usage: ff [-EIHLDSXZV] [-k[r][N]] [--] [path ...] [expression]
-      options  -E ERE for -r  -I ignore case  -H/-L follow symlinks
+    Usage: ff [-IHLDSXZV] [-k[r][N]] [--] [path ...] [expression]
+      options  -I ignore case for -n -p -r  -H/-L follow symlinks
                -D post-order  -S sorted  -X one filesystem  -Z NUL output
                -V show the native find command (ff.fn.bash)
                -k[r][N] sort by cksh field N, default 6 name, r reverse
-      tests    -n glob  -p glob  -r re  -t fdlpsbc  -d [+-]N  -s [+-]N[ckMGT]
+      tests    -n glob  -p glob  -r ERE  -t fdlpsbc  -d [+-]N  -s [+-]N[ckMGT]
                -m -a -c -b [+-]N[smhdw]  -w [+-][ ]([.][.]/file|HEX)
                -u user  -g group  -l [+-]N  -i [+-]HEX  -y file (same node)  -e
                -mode [+-]bits  -z (prune)  -0 (true)  -1 (false)
@@ -54,7 +55,7 @@ against each other.
 <https://github.com/georgalis/pub/tree/main/src/ff>
 - **[ff.c](./ff.c)** --- the program: C99 source for the `ff` binary, including the usage text and the manual source.
 - **[ff.fn.bash](./ff.fn.bash)** --- the bash function `ff`: translates the same switches into the host's native `find` argument list; carries help text generated from the binary.
-- **[makefile](./makefile)** --- builds `ff`, regenerates the help text in `ff.fn.bash` after the build, and runs `make test`.
+- **[makefile](./makefile)** --- builds `ff` and `ff.1`, runs `make test`, and installs. The `-h` and `--help` text in `ff.fn.bash` is copied from the binary's output, and `make test` checks the two are identical.
 
 - **[README.md](./README.md)** --- this file: introduction, grammar, build, translator limits, verified state, and history.
 - **[PLAN.md](./PLAN.md)** --- design decisions and their rationale, recorded by revision.
@@ -93,7 +94,6 @@ or `-mode` and `-delete`.
 
 | option | find | |
 |--------|------|-|
-| `-E` | `-E` | ERE for `-r` (default BRE) |
 | `-I` | `-iname` `-ipath` `-iregex` | case-insensitive `-n -p -r` |
 | `-H` `-L` | `-H` `-L` | symlink policy |
 | `-D` | `-d` / `-depth` | post-order |
@@ -107,7 +107,7 @@ or `-mode` and `-delete`.
 |---------|------|--------------|
 | `-n glob` | `-name` | |
 | `-p glob` | `-path` | |
-| `-r re` | `-regex` | **unanchored**; add `^` `$` |
+| `-r ere` | `-E -regex` | **always ERE, unanchored**; add `^` `$` |
 | `-t fdlpsbc` | `-type` | several letters mean or |
 | `-d [+-]N` | `-mindepth` `-maxdepth` | global walk bound |
 | `-s [+-]N[ckMGT]` | `-size` | bytes, exact, no rounding |
@@ -141,6 +141,14 @@ must be hex, so no word is both: a file named `cafe` or `6abb2e78` is
 `./cafe`, `./6abb2e78`. The sign may stand apart as its own word, so
 `-w + ./ref` is `-w +./ref` and `-w - 6abb2e78` is `-w -6abb2e78`; the
 word after a lone sign takes no sign of its own.
+
+`-r` is always a POSIX extended regular expression (ERE, as `grep -E`),
+matched anywhere in the path; `-n` and `-p` are glob; `-I` makes all three
+case-insensitive. There is no BRE option, and `-E` is an unknown option.
+ERE reads `( ) { } + ? |` as operators and `\( \) \{` as the characters
+themselves, the reverse of BRE. The manual's REGULAR EXPRESSIONS section
+lists the syntax, the BRE differences, and the portable escapes
+(`[[:digit:]]`, not `\d`).
 
 The primaries `-0` and `-1` are read as true and false.
 
@@ -196,6 +204,16 @@ root is found by device and inode, not by spelling. find refuses only
 the node and still empties it; ff reports status 4 and leaves it whole.
 An operand `.` keeps find's meaning: its contents are walked and it is
 kept.
+
+## Help and pager
+
+`--help` writes the manual to `$PAGER` when stdout is a terminal, or to
+`more` when `PAGER` is unset or empty, as POSIX `man` does. The pager runs
+by `/bin/sh -c`, as `man` runs it: `PAGER` is the user's own setting, and
+unlike `-x` and `-j` words it is meant to be a shell command (`less -R`).
+A pager that cannot run (status 126 or 127) is warned of, tag 6ab7ff4e,
+and the manual is written directly. A pager quit early is not an error.
+`-h`, and `--help` to a pipe or file (the `ff.1` build), are not paged.
 
 ## Output safety
 
@@ -270,8 +288,10 @@ it, and it gives no per-open verification.
   `-x` or `-j` can.
 - BSD file flags, xattrs and ACLs (`UF_HIDDEN`, `com.apple.quarantine`) are
   not yet primaries.
-- Regex: plain POSIX `regcomp`. Darwin's `REG_ENHANCED` is not used, to
-  keep Linux and Darwin identical.
+- Regex: plain POSIX `regcomp` with `REG_EXTENDED`. Darwin's `REG_ENHANCED`
+  is not used, to keep Linux and Darwin identical. Back-references, empty
+  alternatives (`(a)\1`, `a||b`) and escapes such as `\d` are outside
+  POSIX ERE and vary by C library; portable patterns avoid them.
 - Darwin's native find (FreeBSD-derived) is BSD dialect for the bash
   function. It has `-E`, `-Bmin`, `-quit` and `-s`.
 
@@ -282,8 +302,8 @@ Each of these exits 2 and names the binary:
 - `-b` on GNU find (no birth time primary);
 - `-m -a -c` counted in seconds that are not whole minutes (the native
   find counts minutes);
-- `-r` back-references under `-E` (the translator wraps the pattern in a
-  group to make it unanchored);
+- `-r` back-references (the translator wraps the pattern in a group to
+  make it unanchored, which renumbers its groups);
 - `-v` combined with `-f`, `-x`, `-j` or `-delete`;
 - `-k` where `sort` lacks `-z` or `-s` (records are sorted by
   `sort -z -s -t TAB` on decimal stat keys);
@@ -292,6 +312,10 @@ Each of these exits 2 and names the binary:
   operand's paths with `/` as the lowest byte.
 
 A path operand beginning with `-` also exits 2.
+
+`-r` runs as BSD `find -E -regex` or GNU `-regextype posix-extended
+-regex`, wrapped `.*(re).*`, so `-V` shows the native `-E` even though ff
+has no such option.
 
 Where the native find itself differs, the function passes the difference
 through rather than emulate a walk it does not own. BSD find (seen on
@@ -351,9 +375,10 @@ find . \( -name \*.h -newer ./Makefile \) -print
   path operand beginning with `-`; walk diagnostics in chkerr form (the
   native find writes its own).
 - It passes under GNU make on Linux (glibc 2.39, GNU find 4.9, bash 5.2):
-  613 cases non-root, 609 as root, which skips the unreadable-directory
-  cases; with gcc and clang, and a gcc build with ASan and UBSan; again
-  with `TMPDIR` behind a symlink, as Darwin's `/tmp` is. gcc and clang
+  at rev 6ae4ea00, 742 cases as root, which skips the unreadable-directory
+  cases, and 746 non-root; with gcc and clang; with a gcc build under
+  ASan, UBSan and LeakSanitizer, clean; and with `TMPDIR` behind a
+  symlink, as Darwin's `/tmp` is. gcc and clang
   compile ff.c clean under `-Werror -Wpedantic`.
 - The walk matches GNU find 4.9 on each primary it shares.
 - Darwin (arm64, Apple clang): builds clean. The `make test` of rev
@@ -367,8 +392,14 @@ find . \( -name \*.h -newer ./Makefile \) -print
   in the binary pass (224 cases, `/dev/full` absent) and the parity pass,
   including the `./` wrapper on real BSD `-execdir`. Its bash pass failed
   3 cases, each a BSD find difference listed under Bash translator
-  limits; they are now probed and skipped there, and the Darwin re-run of
-  that change is pending.
+  limits; they are now probed and skipped there. The `make test` of rev
+  6adcb748 on Darwin passed whole: 694 cases, 0 failed, 12 skipped, each
+  a named probe or group, the three BSD find differences among them. A
+  first build of rev 6ae4ea00 (ERE `-r` and the pager, before the REGULAR
+  EXPRESSIONS section, the leak fix and the here-document delimiters were
+  folded in) passed `make all test install` on Darwin: 735 cases, 0
+  failed, 12 skipped, the pager cases through BSD `script`. The test of
+  Darwin rev 6ae4ea00 is 0 failed, remaining passed or skipped.
 - Not yet run under bmake or on NetBSD. The makefile avoids every
   construct bmake rejects, but it is unverified there.
 
@@ -377,6 +408,11 @@ See `PLAN.md` for the design record and the decisions log.
 ## History
 
 ```
+rev 6ae4ea00 20261030 120328 PDT Fri 12:03 PM 30 Oct 2026
+    -r is always ERE, with a REGULAR EXPRESSIONS manual section; -E is
+    retired, an unknown option (1); -n -p stay glob, -I covers all three;
+    --help through $PAGER (default more) when stdout is a terminal;
+    ff.fn.bash help blocks under unique quoted delimiters
 rev 6adcb748 20261024 064856 PDT Sat 06:48 AM 24 Oct 2026
     -mode is the permission query, was -k; -k[r][N] sorts output by cksh
     field N (1 inode 2 links 4 size 5 mdate 6 name, default 6), keyed by

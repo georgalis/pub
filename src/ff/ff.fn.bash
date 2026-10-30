@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
 ff () ( # functional find: ff grammar run by the host's native find; companion ff.c
+  # rev 6ae4ea00 20261030 120328 PDT Fri 12:03 PM 30 Oct 2026
+  #     -r always ERE (-E retired): BSD -E, GNU -regextype posix-extended, the
+  #     pattern grouped to unanchor it; --help through ${PAGER:-more} on a tty;
+  #     help blocks under unique quoted delimiters, read with IFS= read -r -d 
   # rev 6adcb748 20261024 064856 PDT Sat 06:48 AM 24 Oct 2026
   #     -mode (was -k); -k[r][N] sorts held records with sort -z -s -t TAB,
   #     decimal stat keys, each key with its own n and r; -k3 passes through
@@ -95,9 +99,9 @@ ff () ( # functional find: ff grammar run by the host's native find; companion f
     local a= e= x= i= p=
     while (($#)); do
       a="$1" ; shift
-      [ -z "$e" ] && [[ "$a" =~ ^-[EIHLDSXZV]+$ ]] && {
+      [ -z "$e" ] && [[ "$a" =~ ^-[IHLDSXZV]+$ ]] && {
         for ((i=1; i<${#a}; i++)); do case "${a:i:1}" in
-          E) E=1 ;; I) I=1 ;; H) H=1 L= ;; L) L=1 H= ;; D) D=1 ;; S) S=1 ;; X) X=1 ;; Z) Z=1 ;; V) V=1 ;;
+          I) I=1 ;; H) H=1 L= ;; L) L=1 H= ;; D) D=1 ;; S) S=1 ;; X) X=1 ;; Z) Z=1 ;; V) V=1 ;;
         esac ; done ; continue ;} || :
       [ -z "$e$x" ] && [ "$a" = "--" ] && { e=1 ; continue ;} || :
       _ff_tok "$a" && x=1 || continue
@@ -237,318 +241,376 @@ ff () ( # functional find: ff grammar run by the host's native find; companion f
     } # _ffesc
 
   _ff_usage () { # ff -h, identical to ff.c usage_text
-	cat <<-'eof'
-	Usage: ff [-EIHLDSXZV] [-k[r][N]] [--] [path ...] [expression]
-	  options  -E ERE for -r  -I ignore case  -H/-L follow symlinks
-	           -D post-order  -S sorted  -X one filesystem  -Z NUL output
-	           -V show the native find command (ff.fn.bash)
-	           -k[r][N] sort by cksh field N, default 6 name, r reverse
-	  tests    -n glob  -p glob  -r re  -t fdlpsbc  -d [+-]N  -s [+-]N[ckMGT]
-	           -m -a -c -b [+-]N[smhdw]  -w [+-][ ]([.][.]/file|HEX)
-	           -u user  -g group  -l [+-]N  -i [+-]HEX  -y file (same node)  -e
-	           -mode [+-]bits  -z (prune)  -0 (true)  -1 (false)
-	  actions  -f print  -v cksh line  -x cmd {} ;|+  (in entry's dir)
-	           -j cmd {} ;|+  (full path)  -delete  -q quit
-	  logic    ( )  ! or -not  juxtaposition = and  -o or
-	  -h this summary, --help the manual
-	eof
+    local u= ; { IFS= read -r -d '' u || : ;} <<'__FF_USAGE__'
+Usage: ff [-IHLDSXZV] [-k[r][N]] [--] [path ...] [expression]
+  options  -I ignore case for -n -p -r  -H/-L follow symlinks
+           -D post-order  -S sorted  -X one filesystem  -Z NUL output
+           -V show the native find command (ff.fn.bash)
+           -k[r][N] sort by cksh field N, default 6 name, r reverse
+  tests    -n glob  -p glob  -r ERE  -t fdlpsbc  -d [+-]N  -s [+-]N[ckMGT]
+           -m -a -c -b [+-]N[smhdw]  -w [+-][ ]([.][.]/file|HEX)
+           -u user  -g group  -l [+-]N  -i [+-]HEX  -y file (same node)  -e
+           -mode [+-]bits  -z (prune)  -0 (true)  -1 (false)
+  actions  -f print  -v cksh line  -x cmd {} ;|+  (in entry's dir)
+           -j cmd {} ;|+  (full path)  -delete  -q quit
+  logic    ( )  ! or -not  juxtaposition = and  -o or
+  -h this summary, --help the manual
+__FF_USAGE__
+    printf '%s' "$u"
     } # _ff_usage
 
+  _ff_page () { # --help through ${PAGER:-more} when stdout is a terminal, as ff.c
+    # put_help: /bin/sh -c as man(1); a pager that cannot run (126, 127) is
+    # warned of and the manual written directly
+    local s= pg="${PAGER:-more}" n=
+    [ -t 1 ] || { _ff_manual ; return 0 ;}
+    _ff_manual | /bin/sh -c "$pg" ; s=${PIPESTATUS[1]}
+    ((s==126 || s==127)) || return 0
+    [ -t 2 ] && n=$(_ffesc "$pg") || n="$pg"
+    chkwrn "ff : --help: cannot run pager '$n' (6ab7ff4e)" ; _ff_manual
+    } # _ff_page
+
   _ff_manual () { # ff --help, identical to ff.c manual
-	cat <<-'eof'
-	NAME
-	  ff - functional find: walk file trees, one letter per switch
+    local m= ; { IFS= read -r -d '' m || : ;} <<'__FF_MANUAL__'
+NAME
+  ff - functional find: walk file trees, one letter per switch
 
-	SYNOPSIS
-	  ff [-EIHLDSXZV] [-k[r][N]] [--] [path ...] [expression]
-	  ff -h | --help
+SYNOPSIS
+  ff [-IHLDSXZV] [-k[r][N]] [--] [path ...] [expression]
+  ff -h | --help
 
-	DESCRIPTION
-	  ff walks each path (default .) and evaluates the expression for every
-	  node, as find(1) does, with one letter per switch. Options are
-	  uppercase, and -k, and global; they may appear anywhere except as
-	  the argument of a primary. Primaries are lowercase, the digits 0 and
-	  1, or -mode and -delete. With no action in the expression, each node
-	  for which it is true is printed.
+DESCRIPTION
+  ff walks each path (default .) and evaluates the expression for every
+  node, as find(1) does, with one letter per switch. Options are
+  uppercase, and -k, and global; they may appear anywhere except as
+  the argument of a primary. Primaries are lowercase, the digits 0 and
+  1, or -mode and -delete. With no action in the expression, each node
+  for which it is true is printed.
 
-	  Printed paths are the operand, then / and each name below it. Output
-	  is raw bytes when stdout is not a terminal or -Z is given. On a
-	  terminal, C0 and C1 control characters, DEL and bytes that are not
-	  valid UTF-8 print as \ooo octal escapes, so a crafted name cannot
-	  drive the terminal; names in diagnostics follow the same rule.
+  Printed paths are the operand, then / and each name below it. Output
+  is raw bytes when stdout is not a terminal or -Z is given. On a
+  terminal, C0 and C1 control characters, DEL and bytes that are not
+  valid UTF-8 print as \ooo octal escapes, so a crafted name cannot
+  drive the terminal; names in diagnostics follow the same rule.
 
-	  Directories are opened relative to their verified parent descriptor,
-	  never by re-resolving a path; a directory swapped for another node
-	  between listing and opening is reported and skipped.
+  Directories are opened relative to their verified parent descriptor,
+  never by re-resolving a path; a directory swapped for another node
+  between listing and opening is reported and skipped.
 
-	OPTIONS
-	  -E     extended regular expressions (ERE) for -r; default basic (BRE)
-	  -I     case-insensitive -n, -p and -r
-	  -H     follow symlinks named as path operands
-	  -L     follow all symlinks; loops are reported, not followed
-	  -D     post-order: a directory is tested after its contents
-	  -S     sorted walk: each directory's names in bytewise order
-	  -X     do not descend into directories on other filesystems
-	  -Z     end names from -f and the default print with NUL, not newline
-	  -k[r][N]
-	         sort what ff prints by cksh field N, as -v lays it out:
-	         1 inode, 2 links, 3 hash, 4 size, 5 mdate, 6 name; -k is
-	         -k6, r reverses. Each record, from -f, -v or the default
-	         print, is keyed by its node, so -k5 orders names by mtime
-	         without -v. Numbers compare by value, names bytewise; ties go
-	         to the following fields, then walk order. Records are held
-	         until the walk ends; -x and -j output is not sorted. The hash
-	         is always ., so -k3 keeps walk order and holds nothing.
-	  --     end of options: following words are paths, even with a
-	         leading -, until a primary or operator
-	  -V     ff.fn.bash only: print the native find command to stderr
-	         before running it; helpful to extend a command to an OS find
-	         specific implementation. The binary notes this and runs.
-	  -h     short usage;  --help  this manual
+OPTIONS
+  -I     case-insensitive -n, -p and -r
+  -H     follow symlinks named as path operands
+  -L     follow all symlinks; loops are reported, not followed
+  -D     post-order: a directory is tested after its contents
+  -S     sorted walk: each directory's names in bytewise order
+  -X     do not descend into directories on other filesystems
+  -Z     end names from -f and the default print with NUL, not newline
+  -k[r][N]
+         sort what ff prints by cksh field N, as -v lays it out:
+         1 inode, 2 links, 3 hash, 4 size, 5 mdate, 6 name; -k is
+         -k6, r reverses. Each record, from -f, -v or the default
+         print, is keyed by its node, so -k5 orders names by mtime
+         without -v. Numbers compare by value, names bytewise; ties go
+         to the following fields, then walk order. Records are held
+         until the walk ends; -x and -j output is not sorted. The hash
+         is always ., so -k3 keeps walk order and holds nothing.
+  --     end of options: following words are paths, even with a
+         leading -, until a primary or operator
+  -V     ff.fn.bash only: print the native find command to stderr
+         before running it; helpful to extend a command to an OS find
+         specific implementation. The binary notes this and runs.
+  -h     short usage;  --help  this manual, through $PAGER on a
+         terminal (see NOTES)
 
-	PRIMARIES
-	  N           decimal: +N more than N, -N less than N, N exactly.
-	  HEX         hexadecimal without 0x, as ff -v prints it.
-	  -n glob     last component of the examined pathname matches glob
-	  -p glob     examined pathname matches glob
-	              The special shell pattern characters [ ] * and ? may be
-	              used, and \ makes the next one literal. A leading . is
-	              not special, and in -p * and ? also match /. Quote the
-	              pattern so the shell does not expand it first.
-	  -r re       path contains a match for re: unanchored, add ^ and $
-	  -t types    type is any of: f file, d directory, l symlink, p fifo,
-	              s socket, b block, c character device; -t fl is f or l
-	  -d N        walk bound, global wherever it appears; operands are
-	              depth 0.  -d -2: operands and their entries;
-	              -d +0: everything below the operands; -d 1: entries only
-	  -s N[ckMGT] size in bytes compared exactly; k M G T are 1024-based
-	  -m N[smhdw] modified: age in seconds against N units, default d.
-	              -m -2h under 2 hours; -m +7 over 7 days; -m 7 from 7 up
-	              to 8 days
-	  -a -c -b    the same for access, status change and birth time;
-	              -b is false where the filesystem records no birth time
-	  -w [+-][ ]([.][.]/file|HEX)
-	              when: modified after (+), before (-) or at the same time
-	              as file's mtime, or as HEX epoch seconds (the -v mdate).
-	              A file begins with ./ ../ or /, so no word is both a file
-	              and a time. A file compares the full timestamp, HEX
-	              whole seconds. The sign may stand apart as its own word:
-	              -w + ./file is -w +./file. find -newer file is -w +./file.
-	  -y file     the same node as file: same device and inode
-	  -mode bits  permission bits. Octal, all twelve bits:
-	                0755     exactly 0755
-	                +0755    at least 0755: every bit of it, maybe more
-	                -0755    at most 0755: no bit outside it, maybe fewer
-	              Symbolic, clauses [ugoa][+-][rwxXst] joined by commas,
-	              all of which must hold. + has, - lacks; a clause with
-	              no sign means +. u owner, g group, o other, a all
-	              three; each named class must satisfy the clause. With
-	              no class, + holds when some class has the bits and -
-	              when no class has any of them.
-	              X is x that only a directory satisfies (search); a
-	              clause with X is false for anything else. s is setuid
-	              with u, setgid with g, either with no class, both with
-	              a; t is the sticky (/tmp) bit, alone or with o.
-	              With no class, each class is tested with only the bits
-	              it can hold, so -mode +rs holds when other has r,
-	              since other has no s; name the class to need both:
-	              -mode u+rs.
-	                -mode u+x        owner may execute
-	                -mode x          someone may execute (same as +x)
-	                -mode -x         no one may execute
-	                -mode o-X        directories others may not search
-	                -mode o-r        others may not read
-	                -mode w          someone may write
-	                -mode o+w        world writable
-	                -mode go-w       neither group nor other may write
-	                -not -mode go-w  group or other may write
-	                -mode u+s        setuid
-	                -mode g+s        setgid
-	                -mode +s         setuid or setgid
-	                -mode +t         sticky
-	              Either of two bits in one class: -mode u+r -o -mode u+x
-	  -u user     owner, name or number;  -g group  group, name or number
-	  -l [+-]N    link count
-	  -i [+-]HEX  inode number, hex as ff -v prints it
-	  -e          empty regular file or directory
-	  -z          prune: do not descend into this directory; true
-	  -0          always true;  -1  always false
+PRIMARIES
+  N           decimal: +N more than N, -N less than N, N exactly.
+  HEX         hexadecimal without 0x, as ff -v prints it.
+  -n glob     last component of the examined pathname matches glob
+  -p glob     examined pathname matches glob
+              The special shell pattern characters [ ] * and ? may be
+              used, and \ makes the next one literal. A leading . is
+              not special, and in -p * and ? also match /. Quote the
+              pattern so the shell does not expand it first.
+  -r ere      path contains a match for the extended regular expression
+              ere; unanchored, add ^ and $. See REGULAR EXPRESSIONS.
+  -t types    type is any of: f file, d directory, l symlink, p fifo,
+              s socket, b block, c character device; -t fl is f or l
+  -d N        walk bound, global wherever it appears; operands are
+              depth 0.  -d -2: operands and their entries;
+              -d +0: everything below the operands; -d 1: entries only
+  -s N[ckMGT] size in bytes compared exactly; k M G T are 1024-based
+  -m N[smhdw] modified: age in seconds against N units, default d.
+              -m -2h under 2 hours; -m +7 over 7 days; -m 7 from 7 up
+              to 8 days
+  -a -c -b    the same for access, status change and birth time;
+              -b is false where the filesystem records no birth time
+  -w [+-][ ]([.][.]/file|HEX)
+              when: modified after (+), before (-) or at the same time
+              as file's mtime, or as HEX epoch seconds (the -v mdate).
+              A file begins with ./ ../ or /, so no word is both a file
+              and a time. A file compares the full timestamp, HEX
+              whole seconds. The sign may stand apart as its own word:
+              -w + ./file is -w +./file. find -newer file is -w +./file.
+  -y file     the same node as file: same device and inode
+  -mode bits  permission bits. Octal, all twelve bits:
+                0755     exactly 0755
+                +0755    at least 0755: every bit of it, maybe more
+                -0755    at most 0755: no bit outside it, maybe fewer
+              Symbolic, clauses [ugoa][+-][rwxXst] joined by commas,
+              all of which must hold. + has, - lacks; a clause with
+              no sign means +. u owner, g group, o other, a all
+              three; each named class must satisfy the clause. With
+              no class, + holds when some class has the bits and -
+              when no class has any of them.
+              X is x that only a directory satisfies (search); a
+              clause with X is false for anything else. s is setuid
+              with u, setgid with g, either with no class, both with
+              a; t is the sticky (/tmp) bit, alone or with o.
+              With no class, each class is tested with only the bits
+              it can hold, so -mode +rs holds when other has r,
+              since other has no s; name the class to need both:
+              -mode u+rs.
+                -mode u+x        owner may execute
+                -mode x          someone may execute (same as +x)
+                -mode -x         no one may execute
+                -mode o-X        directories others may not search
+                -mode o-r        others may not read
+                -mode w          someone may write
+                -mode o+w        world writable
+                -mode go-w       neither group nor other may write
+                -not -mode go-w  group or other may write
+                -mode u+s        setuid
+                -mode g+s        setgid
+                -mode +s         setuid or setgid
+                -mode +t         sticky
+              Either of two bits in one class: -mode u+r -o -mode u+x
+  -u user     owner, name or number;  -g group  group, name or number
+  -l [+-]N    link count
+  -i [+-]HEX  inode number, hex as ff -v prints it
+  -e          empty regular file or directory
+  -z          prune: do not descend into this directory; true
+  -0          always true;  -1  always false
 
-	ACTIONS
-	  -f          print the path; explicit form for use with -o
-	  -v          print a cksh line: inode links . size mdate name, hex,
-	              the same as cksh -n0 -x0 on that name
-	  -x cmd ... ;       run cmd inside the directory holding the node, {}
-	                     as ./name; true when cmd exits 0
-	  -x cmd ... {} +    the same, many names per run, per directory
-	  -j cmd ... ;       run cmd from the current directory, {} as the path
-	  -j cmd ... {} +    the same, many paths per run
-	  -delete     remove the node; implies -D; refused with -L. An operand
-	              ending in .., or that is the root directory (/, /., or .
-	              run from /), is refused whole and not walked (4); an
-	              operand . is walked and kept itself, as find does
-	  -q          stop the walk; pending + batches still run
+ACTIONS
+  -f          print the path; explicit form for use with -o
+  -v          print a cksh line: inode links . size mdate name, hex,
+              the same as cksh -n0 -x0 on that name
+  -x cmd ... ;       run cmd inside the directory holding the node, {}
+                     as ./name; true when cmd exits 0
+  -x cmd ... {} +    the same, many names per run, per directory
+  -j cmd ... ;       run cmd from the current directory, {} as the path
+  -j cmd ... {} +    the same, many paths per run
+  -delete     remove the node; implies -D; refused with -L. An operand
+              ending in .., or that is the root directory (/, /., or .
+              run from /), is refused whole and not walked (4); an
+              operand . is walked and kept itself, as find does
+  -q          stop the walk; pending + batches still run
 
 
-	OPERATORS
-	  expr expr       and: the right side is evaluated only when the
-	                  left is true
-	  expr -o expr    or: the right side is evaluated only when the left
-	                  is false, so its actions see only nodes the left
-	                  rejected
-	  ! expr          not; -not expr is the same
-	  ( expr )        grouping
-	  -not binds tightest, then and, then -o.
-	  The shell treats ( ) ; * and sometimes ! as its own syntax, so
-	  escape them with a backslash or quote them: \( \) \; '*.c'.
-	    ff . -n '*.c' -o -n '*.h' -t f          .c of any type, or .h files
-	    ff . \( -n '*.c' -o -n '*.h' \) -t f    .c and .h files only
-	    ff . -mode u+r -o -mode u+x             owner may read or execute
-	  With no action in the expression, a node is printed when the whole
-	  expression is true. Once any action appears (-f -v -x -j -delete
-	  -q), only actions print. Prune directories by name and print the
-	  files that are not RCS (,v) or backup (~) files:
-	    ff . \( -n .git -o -n tmp \) -z -t f -o -t f -not -E -r ',v$|~$'
-	  -z is true, so the -t f after it makes that side false for the
-	  pruned directories; -z -1 does the same. Options such as -E
-	  may appear anywhere, even after -not.
+OPERATORS
+  expr expr       and: the right side is evaluated only when the
+                  left is true
+  expr -o expr    or: the right side is evaluated only when the left
+                  is false, so its actions see only nodes the left
+                  rejected
+  ! expr          not; -not expr is the same
+  ( expr )        grouping
+  -not binds tightest, then and, then -o.
+  The shell treats ( ) ; * and sometimes ! as its own syntax, so
+  escape them with a backslash or quote them: \( \) \; '*.c'.
+    ff . -n '*.c' -o -n '*.h' -t f          .c of any type, or .h files
+    ff . \( -n '*.c' -o -n '*.h' \) -t f    .c and .h files only
+    ff . -mode u+r -o -mode u+x             owner may read or execute
+  With no action in the expression, a node is printed when the whole
+  expression is true. Once any action appears (-f -v -x -j -delete
+  -q), only actions print. Prune directories by name and print the
+  files that are not RCS (,v) or backup (~) files:
+    ff . \( -n .git -o -n tmp \) -z -t f -o -t f -not -r ',v$|~$'
+  -z is true, so the -t f after it makes that side false for the
+  pruned directories; -z -1 does the same. Options such as -I
+  may appear anywhere, even after -not.
 
-	EXEC
-	  Commands run by fork and exec, never through a shell. {} is replaced
-	  only when it is a whole argument. With +, {} must be last and appear
-	  once. -x changes into the node's directory through the descriptor the
-	  walk verified, so the path above the node cannot be swapped between
-	  test and use; -x refuses to run when PATH holds a relative or empty
-	  element, since a file planted in the walked directory would run.
-	  -j passes the full path, which is exposed to that race, as find
-	  -exec is; use it when the command needs whole paths.
+REGULAR EXPRESSIONS
+  -r takes a POSIX extended regular expression (ERE), the dialect of
+  grep -E and find -E, compiled by the C library's regcomp(3) and
+  matched anywhere in the path; anchor it with ^ and $. -I ignores case.
+    c            a character not listed below matches itself
+    .            any one character, / included: d.e matches d/e
+    [abc]        one of a b c; [a-z] a range; [^abc] none of them;
+                 ] first and - last are literal, and \ is literal inside
+    [[:digit:]]  a class, inside brackets: alpha digit alnum upper lower
+                 space punct xdigit; [[:digit:]_] adds _
+    ^  $         start and end of the path
+    x*  x+  x?   zero or more, one or more, zero or one of x
+    x{n}         n of x;  x{n,}  n or more;  x{n,m}  n to m
+    (re)         group, for a repeat or an alternation
+    re|re        either side; lowest precedence: ^a|b$ is (^a)|(b$)
+    \c           c itself, for c any of . [ ( ) { * + ? | ^ $ \
+                 (] and } alone are already literal)
+  \ before any other character is undefined in ERE: \d \w \s are not
+  portable, so write [[:digit:]] [[:alnum:]_] [[:space:]].
+  Differences from basic regular expressions (BRE: find -regex, grep,
+  sed), read as ERE here:
+    ERE          BRE          meaning in ERE
+    (re)         \(re\)       group
+    x{n,m}       x\{n,m\}     interval
+    + ? |        none         one or more, zero or one, alternation
+    \( \) \{     ( ) {        the characters themselves
+    \1           \1           back-reference: defined for BRE only; in
+                              ERE a C library extension that varies by
+                              platform, refused by ff.fn.bash (2)
+  Glob, for -n and -p, is a different language: glob * and ? are .*
+  and . here, and a glob must match the whole name, not a part of it.
+    ff . -r '\.(c|h)$'                   C sources and headers
+    ff . -r '/[0-9]{4}-[0-9]{2}-[^/]*$'  names that begin YYYY-MM-
+    ff -I . -r '/readme(\.md)?$'         readme, README.md, any case
 
-	EXIT STATUS
-	  A bitmask. 1 and 2 are fatal; the others accumulate as the walk
-	  continues.
-	     0  success
-	     1  invalid option or expression
-	     2  environment: memory, stdout, fork, unsafe PATH for -x
-	     4  cannot stat, open, read or delete a node; subtree skipped
-	     8  a command could not run, or a + batch exited nonzero
-	    16  filesystem or symlink loop
-	    32  node changed between listing and opening; skipped
-	  A -x or -j ... ; command that exits nonzero is only false.
+EXEC
+  Commands run by fork and exec, never through a shell. {} is replaced
+  only when it is a whole argument. With +, {} must be last and appear
+  once. -x changes into the node's directory through the descriptor the
+  walk verified, so the path above the node cannot be swapped between
+  test and use; -x refuses to run when PATH holds a relative or empty
+  element, since a file planted in the walked directory would run.
+  -j passes the full path, which is exposed to that race, as find
+  -exec is; use it when the command needs whole paths.
 
-	  On stderr, errors as '>>> ff : ...' and warnings as '^^^ ff : ...',
-	  each ending in a hex tag naming the message.
+EXIT STATUS
+  A bitmask. 1 and 2 are fatal; the others accumulate as the walk
+  continues.
+     0  success
+     1  invalid option or expression
+     2  environment: memory, stdout, fork, unsafe PATH for -x
+     4  cannot stat, open, read or delete a node; subtree skipped
+     8  a command could not run, or a + batch exited nonzero
+    16  filesystem or symlink loop
+    32  node changed between listing and opening; skipped
+  A -x or -j ... ; command that exits nonzero is only false.
 
-	DIFFERENCES
-	  From NetBSD find: one-letter switches; -r is unanchored; -s is bytes
-	  with no rounding; times compare seconds, not rounded days; -d is a
-	  global bound; {} is never replaced inside a larger word; names are
-	  escaped on a terminal; -I replaces -iname, -ipath and -iregex;
-	  -w is when, before, after or at (find -newer is -w +./file); -i
-	  reads hex, as ff -v prints the inode; -0 -1 -y are find -true
-	  -false -samefile, and -Z is -print0;
-	  -mode is not find -perm: symbolic modes are queries, not chmod
-	  arithmetic, and octal +N (at least) and -N (at most) read the
-	  opposite way to find -perm -N; -k sorts what find leaves to sort(1).
+  On stderr, errors as '>>> ff : ...' and warnings as '^^^ ff : ...',
+  each ending in a hex tag naming the message.
 
-	EXAMPLES
-	  Options
-	    ff -S src -t f                      files in sorted walk order
-	    ff -L . -t d                        directories, following symlinks
-	    ff -H lib -d 0 -v                   the directory a lib symlink names
-	    ff -X / -d -2 -t d                  top directories, root filesystem
-	    ff -I . -n '*.jpg'                  .jpg .JPG .Jpg
-	    ff -E . -r '/(src|lib)/[^/]*\.c$'   C files directly in src or lib
-	    ff -D src                           each directory after its contents
-	    ff -Z . -t f -s +1M | xargs -0 ls -l   large files, any names
-	    ff -k5 . -t f -m -1                 changed within a day, oldest first
-	    ff -kr4 . -t f -v                   cksh lines, largest first
-	    ff -V . -n '*.h'                    ff.fn.bash: show the find command
-	  Primaries
-	    ff . -n '[A-Z]*.[ch]'               capitalized C sources and headers
-	    ff . -p '*/test/*' -t f             files below any test directory
-	    ff . -r '\.orig$' -o -r '\.rej$'    patch leftovers
-	    ff . -t lp                          symlinks and fifos
-	    ff . -d 1 -t d                      subdirectories, one level
-	    ff . -t f -s +100M                  files over 100 MiB
-	    ff . -t f -m -30m                   modified in the last 30 minutes
-	    ff . -t f -a +365                   not read for a year
-	    ff . -t f -c -1 -o -b -1            changed or born within a day
-	    ff . -w +./Makefile -n '*.c'        sources newer than Makefile
-	    ff . -w -6abb2e78                   modified before that second
-	    ff . -w - ./Makefile -n '*.c'       sources older, the sign apart
-	    ff . -t f -mode o+w                 world-writable files
-	    ff / -X -t f -mode +s               setuid or setgid files
-	    ff . -u root -o -g 0                owned by root or by group 0
-	    ff . -t f -l +1 -v                  hard-linked files, with inodes
-	    ff . -i 1cc01d                      the node -v showed as 1cc01d
-	    ff . -y notes.txt                   notes.txt and its hard links
-	    ff . -e                             empty files and directories
-	  Actions
-	    ff -k5 . -t f -v                    cksh lines, oldest first
-	    ff . -n core -t f -f -q             the first core file, then stop
-	    ff . -n '*.o' -delete               remove objects
-	    ff build -d +0 -t d -e -delete      remove empty directories below
-	                                        build, and those left empty
-	  Exec
-	    ff . -n '*.sh' -x sh -n {} \;       syntax-check each script
-	    ff . -t f -x grep -l TODO {} +      grep per directory, race safe
-	    ff . -t f -j wc -l {} +             line counts with full paths
-	    ff . -t f -j grep -q TODO {} \; -f  a command as a test
-	    ff . -n '*.log' -x sh -c 'f="$1"; gzip -- "$f" && echo "$f.gz"' - {} \;
-	                                        compress each log, name the result
-	    ff . -t f -j sh -c 'for f; do wc -c <"$f"; done' - {} +
-	                                        one shell for many paths
-	  Operators
-	    ff . \( -n '*.c' -o -n '*.h' \) -not -p '*/vendor/*'
-	                                        C files outside vendor trees
-	    ff . \( -n .git -o -n tmp \) -z -1 -o -t f
-	                                        files, pruning two directory names
-	    ff . -t f \( -j grep -q TODO {} \; -j echo todo: {} \; -o -0 \) -f
-	                                        every file, TODO files marked first
-	    ff . -t f -not -mode u+w -f -o -t d -e -f
-	                                        read-only files and empty directories
-	NOTES
-	  -u and -g resolve names on Linux by running getent from /usr/bin or
-	  /bin, so a static binary sees the same users as the host; without
-	  getent a name is an error (2) and a numeric id still works. Other
-	  platforms use the C library.
-	  Names are compared as bytes: no Unicode normalization, so on Darwin
-	  HFS+ a precomposed pattern does not match a decomposed name.
+DIFFERENCES
+  From NetBSD find: one-letter switches; -r is always ERE, as find -E
+  -regex, with no option to choose BRE, and unanchored; -s is bytes
+  with no rounding; times compare seconds, not rounded days; -d is a
+  global bound; {} is never replaced inside a larger word; names are
+  escaped on a terminal; -I replaces -iname, -ipath and -iregex;
+  -w is when, before, after or at (find -newer is -w +./file); -i
+  reads hex, as ff -v prints the inode; -0 -1 -y are find -true
+  -false -samefile, and -Z is -print0;
+  -mode is not find -perm: symbolic modes are queries, not chmod
+  arithmetic, and octal +N (at least) and -N (at most) read the
+  opposite way to find -perm -N; -k sorts what find leaves to sort(1).
 
-	HISTORY
-	  rev 6adcb748 20261024 064856 PDT Sat 06:48 AM 24 Oct 2026
-	      -mode is the permission query, was -k; -k[r][N] sorts output by
-	      cksh field N (1 inode 2 links 4 size 5 mdate 6 name, default 6),
-	      keyed by node stat, no -v needed; -k3 passes walk order through.
-	  rev 6abc5da8 20260929 175400 PDT Tue 05:54 PM 29 Sep 2026
-	      -0 true and -1 false replace -true and -false; -Z is NUL output
-	      (was -0); -y replaces -same; -w [+-][ ]: the sign may stand
-	      apart; -delete is a long switch to confirm. ff.fn.bash gives -x
-	      ./name where BSD find -execdir passes a bare name. -delete
-	      refuses an operand ending in .., or the root directory, whole.
-	  rev 6abb42b9 20260928 214649 PDT Mon 09:46 PM 28 Sep 2026
-	      -w is when: [+-]([.][.]/file|HEX), before, after or at a file's
-	      mtime or a hex epoch second; a file takes ./ ../ or /; bare
-	      -w file was newer, now -w +./file. -same, -true, -false; -i
-	      reads hex; -V shows the native find command (ff.fn.bash), which
-	      uses reference files where find lacks -newermt; grouped examples.
-	  rev 6ab89f43 20260926 214451 PDT Sat 09:44 PM 26 Sep 2026
-	      -k is a permission query: octal exact, +mode at least, -mode
-	      at most; symbolic clauses + has, - lacks, with X s t. -not.
-	      Diagnostics that state a rule end in "not" before the value.
-	  org 6ab7fec8 20260926 102008 PDT Sat 10:20 AM 26 Sep 2026
-	      owned openat walker with dev/ino verification; one-letter
-	      grammar; -x execdir, -j exec, -delete through the verified parent;
-	      getent ids on Linux; tty escaping; status bitmask; chkerr/chkwrn
-	      diagnostics; bash translator ff.fn.bash for the native find.
+EXAMPLES
+  Options
+    ff -S src -t f                      files in sorted walk order
+    ff -L . -t d                        directories, following symlinks
+    ff -H lib -d 0 -v                   the directory a lib symlink names
+    ff -X / -d -2 -t d                  top directories, root filesystem
+    ff -I . -n '*.jpg'                  .jpg .JPG .Jpg
+    ff -D src                           each directory after its contents
+    ff -Z . -t f -s +1M | xargs -0 ls -l   large files, any names
+    ff -k5 . -t f -m -1                 changed within a day, oldest first
+    ff -kr4 . -t f -v                   cksh lines, largest first
+    ff -V . -n '*.h'                    ff.fn.bash: show the find command
+  Primaries
+    ff . -n '[A-Z]*.[ch]'               capitalized C sources and headers
+    ff . -p '*/test/*' -t f             files below any test directory
+    ff . -r '\.orig$' -o -r '\.rej$'    patch leftovers
+    ff . -r '/(src|lib)/[^/]*\.c$'      C files directly in src or lib
+    ff . -t lp                          symlinks and fifos
+    ff . -d 1 -t d                      subdirectories, one level
+    ff . -t f -s +100M                  files over 100 MiB
+    ff . -t f -m -30m                   modified in the last 30 minutes
+    ff . -t f -a +365                   not read for a year
+    ff . -t f -c -1 -o -b -1            changed or born within a day
+    ff . -w +./Makefile -n '*.c'        sources newer than Makefile
+    ff . -w -6abb2e78                   modified before that second
+    ff . -w - ./Makefile -n '*.c'       sources older, the sign apart
+    ff . -t f -mode o+w                 world-writable files
+    ff / -X -t f -mode +s               setuid or setgid files
+    ff . -u root -o -g 0                owned by root or by group 0
+    ff . -t f -l +1 -v                  hard-linked files, with inodes
+    ff . -i 1cc01d                      the node -v showed as 1cc01d
+    ff . -y notes.txt                   notes.txt and its hard links
+    ff . -e                             empty files and directories
+  Actions
+    ff -k5 . -t f -v                    cksh lines, oldest first
+    ff . -n core -t f -f -q             the first core file, then stop
+    ff . -n '*.o' -delete               remove objects
+    ff build -d +0 -t d -e -delete      remove empty directories below
+                                        build, and those left empty
+  Exec
+    ff . -n '*.sh' -x sh -n {} \;       syntax-check each script
+    ff . -t f -x grep -l TODO {} +      grep per directory, race safe
+    ff . -t f -j wc -l {} +             line counts with full paths
+    ff . -t f -j grep -q TODO {} \; -f  a command as a test
+    ff . -n '*.log' -x sh -c 'f="$1"; gzip -- "$f" && echo "$f.gz"' - {} \;
+                                        compress each log, name the result
+    ff . -t f -j sh -c 'for f; do wc -c <"$f"; done' - {} +
+                                        one shell for many paths
+  Operators
+    ff . \( -n '*.c' -o -n '*.h' \) -not -p '*/vendor/*'
+                                        C files outside vendor trees
+    ff . \( -n .git -o -n tmp \) -z -1 -o -t f
+                                        files, pruning two directory names
+    ff . -t f \( -j grep -q TODO {} \; -j echo todo: {} \; -o -0 \) -f
+                                        every file, TODO files marked first
+    ff . -t f -not -mode u+w -f -o -t d -e -f
+                                        read-only files and empty directories
+NOTES
+  -u and -g resolve names on Linux by running getent from /usr/bin or
+  /bin, so a static binary sees the same users as the host; without
+  getent a name is an error (2) and a numeric id still works. Other
+  platforms use the C library.
+  Names are compared as bytes: no Unicode normalization, so on Darwin
+  HFS+ a precomposed pattern does not match a decomposed name.
+  --help on a terminal writes the manual to $PAGER, or more when
+  PAGER is unset or empty, run by /bin/sh -c as man(1) runs it; a
+  pager that cannot run (126, 127) is warned of and the manual is
+  written directly. -h and output to a pipe or file are not paged.
 
-	COPYRIGHT
-	  (c) 2026 George Georgalis <george@iuxta.com>
-	  Unlimited use with attribution.
-	eof
+HISTORY
+  rev 6ae4ea00 20261030 120328 PDT Fri 12:03 PM 30 Oct 2026
+      -r is always ERE, with a REGULAR EXPRESSIONS section; -E is
+      retired. -I is named for -n -p -r in the usage. --help runs
+      through $PAGER, default more, on a terminal.
+  rev 6adcb748 20261024 064856 PDT Sat 06:48 AM 24 Oct 2026
+      -mode is the permission query, was -k; -k[r][N] sorts output by
+      cksh field N (1 inode 2 links 4 size 5 mdate 6 name, default 6),
+      keyed by node stat, no -v needed; -k3 passes walk order through.
+  rev 6abc5da8 20260929 175400 PDT Tue 05:54 PM 29 Sep 2026
+      -0 true and -1 false replace -true and -false; -Z is NUL output
+      (was -0); -y replaces -same; -w [+-][ ]: the sign may stand
+      apart; -delete is a long switch to confirm. ff.fn.bash gives -x
+      ./name where BSD find -execdir passes a bare name. -delete
+      refuses an operand ending in .., or the root directory, whole.
+  rev 6abb42b9 20260928 214649 PDT Mon 09:46 PM 28 Sep 2026
+      -w is when: [+-]([.][.]/file|HEX), before, after or at a file's
+      mtime or a hex epoch second; a file takes ./ ../ or /; bare
+      -w file was newer, now -w +./file. -same, -true, -false; -i
+      reads hex; -V shows the native find command (ff.fn.bash), which
+      uses reference files where find lacks -newermt; grouped examples.
+  rev 6ab89f43 20260926 214451 PDT Sat 09:44 PM 26 Sep 2026
+      -k is a permission query: octal exact, +mode at least, -mode
+      at most; symbolic clauses + has, - lacks, with X s t. -not.
+      Diagnostics that state a rule end in "not" before the value.
+  org 6ab7fec8 20260926 102008 PDT Sat 10:20 AM 26 Sep 2026
+      owned openat walker with dev/ino verification; one-letter
+      grammar; -x execdir, -j exec, -delete through the verified parent;
+      getent ids on Linux; tty escaping; status bitmask; chkerr/chkwrn
+      diagnostics; bash translator ff.fn.bash for the native find.
+
+COPYRIGHT
+  (c) 2026 George Georgalis <george@iuxta.com>
+  Unlimited use with attribution.
+__FF_MANUAL__
+    printf '%s' "$m"
     } # _ff_manual
   local a= b= c= i= n= v= v2= u= s= k= dia= gs=e gd=0 prev= endopt= inexpr= act= ls= xd= rc=0 sk= sr=
-  local E= I= H= L= D= S= X= Z= V= lo=0 hi= re= ro= reader= f= t= wd= rf= nref=0 xb= xm=
+  local I= H= L= D= S= X= Z= V= lo=0 hi= re= ro= reader= f= t= wd= rf= nref=0 xb= xm=
   local -a paths=() opt=() pre=() ex=() xw=() kp=() kr=()
   # -x where -execdir passes a bare name (BSD): words stay arguments, never
   # evaluated; names ($1 marks {} words with 1, and every + name) gain ./
@@ -560,14 +622,14 @@ ff () ( # functional find: ff grammar run by the host's native find; companion f
   _ff_opts "$@"
   while (($#)); do
     a="$1" ; shift
-    [ -z "$endopt" ] && [[ "$a" =~ ^-[EIHLDSXZV]+$ ]] && continue || :
+    [ -z "$endopt" ] && [[ "$a" =~ ^-[IHLDSXZV]+$ ]] && continue || :
     # -k[r][N], global and last wins; the hash (3) is always ., so -k3 holds nothing
     [ -z "$endopt" ] && [[ "$a" == -k* ]] && {
       [[ "$a" =~ ^-k(r?)([1-6]?)$ ]] || { _ffbad "-k: sort key is [r][1-6], not" 6ab7ff4c "$a" ; return 1 ;}
       sr="${BASH_REMATCH[1]}" ; sk="${BASH_REMATCH[2]:-6}" ; [ "$sk" = 3 ] && sk= || : ; continue ;} || :
     [ -z "$endopt$inexpr" ] && [ "$a" = "--" ] && { endopt=1 ; continue ;} || :
     [ -z "$endopt$inexpr" ] && [ "$a" = "-h" ] && { _ff_usage ; return 0 ;} || :
-    [ -z "$endopt$inexpr" ] && [ "$a" = "--help" ] && { _ff_manual ; return 0 ;} || :
+    [ -z "$endopt$inexpr" ] && [ "$a" = "--help" ] && { _ff_page ; return 0 ;} || :
     [ -z "$inexpr" ] && ! _ff_tok "$a" && {
       [[ "$a" =~ ^- ]] && [ -z "$endopt" ] && { _ffbad "unknown option" 6ab7ff01 "$a" ; return 1 ;} || :
       paths+=("$a") ; continue ;} || :
@@ -591,19 +653,15 @@ ff () ( # functional find: ff grammar run by the host's native find; companion f
       -n) gs=t ; [ -n "$I" ] && ex+=(-iname "$v") || ex+=(-name "$v") ;;
       -p) gs=t ; [ -n "$I" ] && ex+=(-ipath "$v") || ex+=(-path "$v") ;;
       -r) gs=t ; re=1 ; ro="$v"
-          # ff -r is unanchored; native -regex matches the whole path
-          [ -n "$E" ] && {
-            [[ "$v" =~ \\[1-9] ]] && { chkerr "ff : -r backreference under -E needs ff.c (6ab7ff40)" ; return 2 ;}
-            v=".*($v).*" ;} || {
-            [[ "$v" =~ ^\^ ]] && v="${v#^}" || v=".*$v"
-            [[ "$v" =~ [^\\]\$$|^\$$ ]] && v="${v%\$}" || v="$v.*" ;}
+          # ff -r is unanchored ERE; native -regex matches the whole path, so the
+          # pattern is grouped between .* and .*, which renumbers its groups
+          [[ "$v" =~ \\[1-9] ]] && { chkerr "ff : -r backreference needs ff.c (6ab7ff40)" ; return 2 ;} || :
+          v=".*($v).*"
           # a bad expression is a usage error before any walk, as ff.c regcomp;
           # the native find compiles it, and only the binary adds the reason
-          { case "$dia$E" in
-              bsd1) command find -E /dev/null -maxdepth 0 -regex "$v" ;;
-              bsd) command find /dev/null -maxdepth 0 -regex "$v" ;;
-              gnu1) command find /dev/null -maxdepth 0 -regextype posix-extended -regex "$v" ;;
-              *) command find /dev/null -maxdepth 0 -regextype posix-basic -regex "$v" ;;
+          { case "$dia" in
+              bsd) command find -E /dev/null -maxdepth 0 -regex "$v" ;;
+              *) command find /dev/null -maxdepth 0 -regextype posix-extended -regex "$v" ;;
             esac ;} >/dev/null 2>&1 || { _ffbad "-r: bad regular expression" 6ab7ff09 "$ro" ; return 1 ;}
           [ -n "$I" ] && ex+=(-iregex "$v") || ex+=(-regex "$v") ;;
       -t) gs=t ; [[ "$v" =~ ^[fdlpsbc]+$ ]] || { _ffbad "-t: types are f d l p s b c, not" 6ab7ff0a "$v" ; return 1 ;}
@@ -719,8 +777,7 @@ ff () ( # functional find: ff grammar run by the host's native find; companion f
   [ -n "$hi" ] && ((hi<lo)) && return 0 || :   # no depth satisfies -d
   # options before paths, global primaries first in the expression
   [ -n "$H" ] && opt+=(-H) || : ; [ -n "$L" ] && opt+=(-L) || :
-  [ -n "$re" ] && { [ "$dia" = bsd ] && { [ -n "$E" ] && opt+=(-E) || : ;} \
-    || { [ -n "$E" ] && pre+=(-regextype posix-extended) || pre+=(-regextype posix-basic) ;} ;} || :
+  [ -n "$re" ] && { [ "$dia" = bsd ] && opt+=(-E) || pre+=(-regextype posix-extended) ;} || :
   [ -n "$S" ] && [ "$dia" = bsd ] && opt+=(-s) || :
   [ -n "$D" ] && pre+=(-depth) || : ; [ -n "$X" ] && pre+=(-xdev) || :
   ((lo)) && pre+=(-mindepth "$lo") || : ; [ -n "$hi" ] && pre+=(-maxdepth "$hi") || :

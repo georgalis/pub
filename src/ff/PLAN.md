@@ -1,7 +1,6 @@
 # ff --- functional find: plan r2 (approved 20260926)
 
-(c) 2026 George Georgalis <george@iuxta.com>
-Unlimited use with attribution.
+(c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution.
 
 <!-- org 6ab7fec8 20260926 102008 PDT Sat 10:20 AM 26 Sep 2026; model: cksh (cksh.c + cksh.fn.bash + makefile + test.sh) -->
 
@@ -73,14 +72,14 @@ Options (before paths)
 
 | ff | NetBSD find | note |
 |----|-------------|------|
-| -E | -E | ERE for `-r`; critical |
+| ~~-E~~ | -E | retired r10: `-r` is always ERE; `-E` is an unknown option |
 | -I | (-iname/-iregex) | case-insensitive for every `-n -p -r` |
 | -H / -L | -H / -L | symlink policy; -P default |
 | -D | -d | depth-first (post-order) |
 | -S | -s | sorted traversal |
 | -X | -x / -xdev | stay on one filesystem |
 | -Z | -print0 | NUL-terminated output (r8; was -0) |
-| -h / --help | | usage / manual |
+| -h / --help | | usage / manual; `--help` through `$PAGER` on a tty (r10) |
 
 Primaries (after paths); `!` not, `-o` or, juxtaposition and, `(` `)` group
 
@@ -88,7 +87,7 @@ Primaries (after paths); `!` not, `-o` or, juxtaposition and, `(` `)` group
 |----|------|-----------|
 | -n glob | -name | fnmatch on basename, no FNM_PERIOD |
 | -p glob | -path | fnmatch on whole path |
-| -r re | -regex | regexec on whole path; **unanchored** (grep-like, add `^$`); decided r1, documented deviation |
+| -r ere | -E -regex | regexec on whole path; **unanchored** (grep-like, add `^$`); decided r1, documented deviation; always ERE (r10) |
 | -t fdlpsbc | -type | multiple letters = or: `-t fl` |
 | -d [+-]N | -depth n / min/maxdepth | walker bound: `-d -3` prunes below depth 3 |
 | -s [+-]N[ckMG] | -size | bytes default; decided r1 |
@@ -172,7 +171,8 @@ Excluded phase 1: `-ok`, `-fprint`, `-printf` (GNU only anyway), `-flags`,
   ff never opens regular files (only `-e` on dirs, `-x` children).
 - **BSD flags / xattrs / ACLs** (`UF_HIDDEN`, `com.apple.quarantine`): not
   phase 1; candidate `-f flag` later.
-- **Regex**: Darwin `REG_ENHANCED` avoided for parity; plain POSIX only.
+- **Regex**: Darwin `REG_ENHANCED` avoided for parity; plain POSIX only,
+  `REG_EXTENDED` since r10.
 - **Linking**: no static libSystem; stated in README, as cksh does.
 - **Native find for the bash companion**: Darwin find is FreeBSD-derived
   (`-E`, `-depth n`, time units, `-Bmin`) while NetBSD lacks some of these;
@@ -377,3 +377,77 @@ Where the build departs from or fills a gap in the plan above:
   ff.fn.bash stats each record from the native find into decimal keys
   and orders them with `sort -z -s -t TAB`, each key carrying its own
   `n` and `r`; a sort without `-z -s` exits 2 (tag 6ab7ff4d).
+- r10 (rev 6ae4ea00): regular expressions, help paging, hygiene.
+  Requirement: `-r` is always ERE; `-n` and `-p` stay glob; `-I` makes
+  all three case-insensitive (it already did: `FNM_CASEFOLD`, `REG_ICASE`,
+  find `-iname -ipath -iregex`; the usage line now names them). Reverses
+  r1, which kept find's BRE default with `-E` to choose ERE. Factors: one
+  regex dialect is one thing to learn, and ERE is the dialect of
+  `grep -E`, `find -E` and most current tools; a choice between dialects
+  served compatibility with find, which ff's one-letter grammar does not
+  keep elsewhere. ff.c compiles every `-r` with `REG_EXTENDED`;
+  ff.fn.bash always gives BSD find `-E` and GNU find `-regextype
+  posix-extended` and wraps the pattern `.*(re).*`, so the BRE path that
+  stripped `^` and `$` is gone, and back-references are refused (2, tag
+  6ab7ff40) on every `-r`, since the wrapping group renumbers them.
+  `-E` fails loudly, as `-0` did at r8: an unknown option (1, tag
+  6ab7ff01) before the expression, an unknown primary (6ab7ff03) inside
+  it, `-IE` unknown whole. A silent no-op was declined: it would let a
+  reader believe `-E` still chose something. No other switch reads
+  regex, so `-E` reaches nothing else; the native `-E` that `-V` shows on
+  BSD is find's. Factors weighed and accepted: a BRE pattern carried
+  over changes meaning without an error (`( ) { } + ? |` operators,
+  `\( \) \{` literal), some become errors (`a{`, a leading `*`), and
+  ERE leaves back-references, empty alternatives and escapes such as
+  `\d` to the C library, so what compiles is less uniform across glibc,
+  Darwin and NetBSD than under BRE; documented, not guarded.
+  Requirement: the manual describes the current implementation; the
+  rationale and the history of a decision live here. So `--help` gains a
+  REGULAR EXPRESSIONS section (the ERE syntax, the escapes POSIX
+  defines, `.` matching `/`, bracket rules, classes, a BRE difference
+  table, glob contrasted, three examples) and its HISTORY lines stay
+  one-line summaries. Escapes are documented as POSIX defines them,
+  `\` before `. [ ( ) { * + ? | ^ $ \`, with `]` and `}` alone already
+  literal; the test that used `\}` now uses `a\{2}`.
+  Requirement: `--help` runs through `$PAGER`, `more` when unset or
+  empty (POSIX man's default), when stdout is a terminal; `-h` is one
+  screen and is not paged. Factors: PAGER is the user's configuration,
+  commonly with arguments (`less -R`), which an argv split could not
+  honor, so it runs by `/bin/sh -c` (popen in ff.c), as man(1) runs it;
+  `-x`/`-j` words still never meet a shell. SIGPIPE is ignored in ff.c,
+  so a pager quit early ends quietly with status 0. A pager that cannot
+  run (126, 127) is warned of (`^^^`, tag 6ab7ff4e) and the manual
+  written directly, so `--help` never shows nothing.
+  Hygiene: LeakSanitizer reported one allocation, `main`'s `paths`
+  array, whenever `bad()` or `die()` exited from inside the parser with
+  the pointer held only in a register: argc words, once per run, freed by
+  exit, never proportional to the walk. It moves to file scope beside
+  `tok`, so it stays reachable; `make test` under ASan, UBSan and LSan is
+  now clean with leak detection on, where before 132 cases failed on the
+  sanitizer's exit status. ff.fn.bash follows the shell standard for
+  here-documents: `__FF_USAGE__` and `__FF_MANUAL__`, quoted, read with
+  `IFS= read -r -d ''` and printed with `printf '%s'`, no `<<-` tabs;
+  test.sh's wrapper uses `__FFT_WRAPPER__`, and a parity case checks each
+  delimiter is quoted and occurs once as a line. The help blocks are
+  copied from the binary's `-h` and `--help`; the makefile does not
+  regenerate them, and README no longer says it does.
+  Tests: fixtures `rx/` (`aab ab a+b a(b) a{2}b`) separate the ERE and
+  BRE readings in both passes and parity, with `-I -p`, `.` across `/`,
+  and the `-E` retirements; the pager runs under script(1) with
+  `PAGER='wc -l'`, `head -1` and a missing path, and the clean-environment
+  wrappers pass `PAGER`. A first build of this rev, before the manual
+  section, the leak fix and the delimiters, passed on Darwin (735, 0
+  failed, 12 skipped); the final run of this rev is to follow.
+
+## Compatibility
+
+Stated requirement (r10): the grammar is still settling toward a stable
+requirement set and build, and incompatible changes are accepted until
+then: `-k` to `-mode` (r9), `-0` to `-Z` (r8), BRE to ERE and `-E`
+retired (r10). Once the stable release is declared, backward
+compatibility is maintained. The changes so far mostly fail loudly: `-E`
+and `-0` before a path are usage errors (status 1), and an old `-k`
+mode argument is now read as a path that cannot be stat'ed (status 4).
+The BRE-to-ERE change is the one that can change meaning without any
+error, which is why the manual's REGULAR EXPRESSIONS section carries the
+BRE difference table.
