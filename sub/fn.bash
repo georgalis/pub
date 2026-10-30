@@ -23,7 +23,7 @@ cmdloc () { # report fn definition line/file and/or which -a matches
     [ "$path" = "$first" ] && continue
     printf 'script: %s\n' "$path"
     found=1
-    done < <(which -a "$1" 2>/dev/null)
+    done < <(type -P -a "$1" 2>/dev/null)
   [ "$found" -eq 1 ] || { printf 'cmdloc: %s: not found\n' "$1" >&2; return 1 ;}
   } # 6aa5b01c
 
