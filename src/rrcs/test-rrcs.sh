@@ -78,6 +78,16 @@ printf 'c\n' > c2 ; rrcs -q -i c2 ; printf 'X\n' > c2.new ; touch -r c2 c2.new ;
 [ "$(rrcs -S c2)" = "M c2" ] && ok "-S finds same-mtime change" || no "-S same-mtime: $(rrcs -S c2)"
 rrcs -q t ; [ "$(rrcs -s t)" = "C t" ] && ok "touched file syncs" || no "touched sync: $(rrcs -s t)"
 
+# ------------------------------------------------ comparison never uses rcsdiff (OpenRCS may call a text file binary)
+fresh ; printf 'caf\303\251 \342\200\224 text\n' > u8 ; rrcs -q u8 ; printf 'more\n' >> u8 ; touch -t 203001010000 u8
+out=$( rcsdiff () { return 2 ;} ; rrcs -s u8 2>&1 ) ; [ "$out" = "M u8" ] && ok "status independent of rcsdiff" || no "status with failing rcsdiff: $out"
+out=$( rcsdiff () { return 2 ;} ; rrcs u8 2>&1 ) ; [ "$out" = "u8 1.2" ] && ok "check-in independent of rcsdiff" || no "check-in with failing rcsdiff: $out"
+awk 'BEGIN { for (i = 0 ; i < 40000 ; i++) print "line " i }' > big ; rrcs -q big
+{ echo changed ; cat big ;} > big.t ; cat big.t > big ; rm -f big.t ; touch -t 203001010000 big
+[ "$(rrcs -s big 2>&1)" = "M big" ] && ok "early difference in a large file is M, not E" || no "large file: $(rrcs -s big 2>&1)"
+mkdir -p RCS ; printf 'x\n' > bad ; printf 'junk' > RCS/bad,v
+out=$(rrcs -S bad 2>&1) ; printf '%s' "$out" | grep -q '^E bad' && printf '%s' "$out" | grep -q 'cannot compare' && ok "damaged ,v reports E with a reason" || no "damaged ,v: $out"
+
 # ------------------------------------------------ one path is deliberate; several need -i; -i on tracked fails
 fresh ; printf 'a\n' > a ; printf 'n\n' > n ; printf 'p\n' > p ; printf 'q\n' > q
 out=$(rrcs a 2>&1) ; [ -f a,v ] && [ "$out" = "a 1.1" ] && ok "single untracked path starts tracking" || no "single path: $out"

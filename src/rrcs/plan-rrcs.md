@@ -110,8 +110,10 @@ beginning with `-` is passed to RCS as `./name`.
 
 1. **Resolve and classify every argument** before anything is
    committed. Usage errors and refused names stop the call here.
-2. **Skip unchanged files.** If `rcsdiff -q` reports no difference,
-   no revision is made and the `,v` mtime is updated to match the
+2. **Skip unchanged files.** The latest revision is compared with the
+   working file byte for byte, `co -p` piped to `cmp` (see Commit
+   status for why not `rcsdiff`). If they match, no revision is made
+   and the `,v` mtime is updated to match the
    working file. Content that matches the latest revision counts as
    committed.
 3. **Build the message once** for the whole call:
@@ -205,8 +207,14 @@ it is a copy, and `rrcs` warns.
 
 ## Commit status
 
-`-s` uses mtime as a fast first test and `rcsdiff` to confirm wherever
-the times disagree. `-S` runs `rcsdiff` on every tracked file. Output
+`-s` uses mtime as a fast first test and a content comparison to
+confirm wherever the times disagree. `-S` compares the content of every
+tracked file. Content is compared byte for byte: `co -p` piped to
+`cmp`, with whatever `cmp` leaves unread drained so `co` never sees a
+closed pipe. `rcsdiff` is not used, because its exit status depends on
+its diff: OpenRCS 4.5 returned `2`, with no message, on a changed text
+file, and no difference shown. `cmp` makes no judgment about text or
+binary, so the result is the same under every implementation. Output
 is one line per pair, a mark followed by the working path, so `grep` and
 `awk` can select from it:
 
@@ -218,7 +226,7 @@ is one line per pair, a mark followed by the working path, so `grep` and
 | `T` | touched only | mtimes differ, content matches; `rrcs file` syncs the time |
 | `?` | untracked | no `,v` |
 | `-` | orphan | a `,v` with no working file |
-| `E` | error | `rcsdiff` failed; counts toward exit `1` |
+| `E` | error | `co` or `cmp` failed; the message gives the first error line and which `co` ran; counts toward exit `1` |
 
 `-s` checks content only where the mtimes differ, so its cost grows
 with what has changed rather than with the number of files. Its one
@@ -306,6 +314,7 @@ only replays edit scripts and never rewrites text. The refusal that
 | `rcs -ko`, no keywords | Text comes back exactly as stored; the emulation stays tractable | `$Id$` habits stop working, as stated in `--help` |
 | `,v` mtime set to the file's | Equal mtimes suggest concurrency; `-s` reads it cheaply | Tools that select by mtime alone miss new revisions (accepted) |
 | `-s` checks mtime, then content where they differ | Speed in proportion to what changed; `T` separates touched from edited | Equal mtimes with changed content go unseen without `-S` |
+| Content compared by `co -p` piped to `cmp`, never `rcsdiff` | One answer under every RCS implementation; no text-or-binary guess | A full checkout per compared file |
 | `,v` arguments resolve to working files | Globs over mixed directories just work | `RCSINIT -x` suffixes are not honored |
 | One path is deliberate; several need `-i` for untracked files | `rrcs newfile` just works, as `mrcs` did; `rrcs *` cannot start tracking stray files | A glob that happens to match exactly one untracked file starts tracking it |
 | Editor only with `-e` | No surprise editor; scripts never block | Composing a long message takes one extra flag |
@@ -347,6 +356,10 @@ multiple users.
      log header and messages;
    - execute bits carried to the `,v`;
    - that when `chgrp` is refused, the `,v` group has no bits;
+   - comparison independent of `rcsdiff` (a stand-in `rcsdiff` that
+     always exits 2 changes nothing), a non-ASCII text file, an
+     early difference in a large file reported as `M`, and a damaged
+     `,v` reported as `E` with its reason;
    - every status mark, over a glob mixing working files, `,v` files,
      untracked files and an orphan, with duplicates removed;
    - `-s` trusting equal mtimes, and `-S` finding a same-mtime change;
@@ -364,7 +377,7 @@ multiple users.
      aborts.
    **The suite passes on the Darwin host against OpenRCS 4.5, and with
    `RRCS_EMULATE=1` under the host's awk, two-way check included.** In
-   the build workspace (no RCS binaries) all 75 checks pass under the
+   the build workspace (no RCS binaries) all 79 checks pass under the
    emulation. The keep link's move-back path was also exercised with a
    `ci` that replaces the working file: inode and mode `0604` were kept.
    GNU RCS 5.9.4 is still to be run where it is available.

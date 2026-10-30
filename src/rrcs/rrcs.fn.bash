@@ -365,7 +365,7 @@ rrcs () ( # re-rcs: check in, then return the working file to the state it had
   chkwrn() {  [ "$*" ] && { stderr    "^^^ $*" ; return $? ;} || true ;} #:> wrn stderr args return 0, noop if null
   chkerr() {  [ "$*" ] && { stderr    ">>> $*" ; return 1  ;} || true ;} #:> err stderr args return 1, noop if null
   LC_COLLATE=C
-  local act=ci quiet=0 edit=0 init=0 msg= rc=0 n=0 i a x
+  local act=ci quiet=0 edit=0 init=0 msg= rc=0 n=0 i a x RD= RE= RS=
   local -a G=() W=() V=() C=() P=() PI=()
   local tmp_dir= tmp_id= keep=0 wmode= cur_w= msg_id= msg_db=
   local scissors='# ------------------------ >8 ------------------------'
@@ -447,8 +447,8 @@ OPTIONS
   -R      rrcs -R old new: move the working file and its ,v, then
           record the rename with a forced revision. Refused unless old
           is C or T, or when new or its ,v exists. new may be a directory.
-  -s      status: compare mtimes; run rcsdiff only where they differ
-  -S      status: run rcsdiff on every tracked file
+  -s      status: compare mtimes; compare content only where they differ
+  -S      status: compare content of every tracked file
   -h      brief usage
 
 STATUS MARKS
@@ -459,7 +459,7 @@ STATUS MARKS
   T  touched: mtimes differ, content matches; rrcs <file> syncs them
   ?  untracked: no ,v
   -  orphan: a ,v without its working file
-  E  rcsdiff failed
+  E  the comparison failed (co could not read the ,v, say)
 
   rrcs -s * RCS/*,v            one line per pair
   rrcs -s * | grep -v '^?'     tracked files only
@@ -468,6 +468,9 @@ STATUS MARKS
   -s misses content that changed while the mtime stayed equal (an edit
   within the same second on a one-second filesystem, or a copy that
   kept an old mtime); -S catches it at one checkout per file.
+  Content is compared byte for byte, co -p piped to cmp, not with
+  rcsdiff, whose status depends on its diff: OpenRCS has been seen to
+  exit 2 without a message on a changed text file.
 
 EXAMPLES
   rrcs -m 'baseline' notes.txt       start tracking notes.txt (one path)
@@ -681,11 +684,22 @@ __RRCS_HELP_MORE__
     chkwrn "rrcs: skipping '$a': no such file" ; return 1 ;}
   _names () { [[ $1 =~ $cre ]] && { chkerr "rrcs: refusing a name with control characters: $(printf '%q' "$1")" ; return 2 ;}
     [[ $1 =~ $pre ]] || chkwrn "rrcs: unusual characters in '$1'" ; return 0 ;}
-  _st () { local i=$1 full=$2 w=${W[$1]} v=${V[$1]} d
+  # latest revision against the working file, byte for byte: co -p piped to cmp, never rcsdiff,
+  # whose diff may judge a text file binary (OpenRCS: status 2, no message) and show nothing.
+  # cat drains what cmp leaves, so co never sees a closed pipe. RD 0 same, 1 differs, 2 trouble; RE first error
+  _rd () { local x ; _db "$1"
+    x=$( cd -- "$D" 2>&1 || { printf '\n2 2' ; exit ;} ; exec 3>&1
+         co -p -q "./$B" </dev/null 2>&3 | { cmp -s -- - "./$B" 2>&3 ; r=$? ; cat >/dev/null ; exit $r ;}
+         printf '\n%s %s' "${PIPESTATUS[0]}" "${PIPESTATUS[1]}" )
+    RS=${x##*$'\n'} ; RE=${x%$'\n'*} ; RE=${RE%%$'\n'*}
+    case $RS in "0 0") RD=0 ;; "0 1"|"141 1") RD=1 ;; *) RD=2 ;; esac ;}
+  _rde () { local k ; case $(type -t co) in file) k=$(type -P co) ;; *) k='the emulated function (RCS was not on PATH when rrcs.fn.bash was sourced)' ;; esac
+    chkerr "rrcs: cannot compare '$1' with its latest revision (co, cmp status ${RS:-?}${RE:+: $RE}; co is $k)" ;}
+  _st () { local i=$1 full=$2 w=${W[$1]} v=${V[$1]}
     case ${C[$i]} in u) ST='?' ; return ;; o) ST=- ; return ;; esac
     [ "$full" = 0 ] && _eqt "$w" "$v" && { ST=C ; return ;}
-    _in "$w" rcsdiff -q >/dev/null 2>&1 ; d=$?
-    case $d in
+    _rd "$w"
+    case $RD in
       0) _eqt "$w" "$v" && ST=C || ST=T ;;
       1) [ "$v" -nt "$w" ] && ST='!' || ST=M ;;
       *) ST=E ;;
@@ -775,7 +789,8 @@ __RRCS_HELP_MORE__
     _pair "$old" || exit 1 ; ow=$PW ov=$PV
     [ "$PC" = t ] || { chkerr "rrcs: '$old' is not tracked (-R)" ; exit 1 ;}
     W[0]=$ow V[0]=$ov C[0]=t ; _st 0 0
-    case $ST in C|T) ;; *) chkerr "rrcs: '$ow' has status $ST; check it in before renaming" ; exit 1 ;; esac
+    case $ST in C|T) ;; E) _rde "$ow" ; chkerr "rrcs: '$ow' not renamed; nothing was changed" ; exit 1 ;;
+      *) chkerr "rrcs: '$ow' has status $ST; check it in before renaming" ; exit 1 ;; esac
     [ -d "$new" ] && new=${new%/}/${ow##*/}
     _names "$new" || exit 2
     { [ -e "$new" ] || [ -L "$new" ] ;} && { chkerr "rrcs: '$new' exists" ; exit 1 ;}
@@ -801,7 +816,7 @@ __RRCS_HELP_MORE__
   [ "$act" = s ] || [ "$act" = S ] && {
     for ((i = 0 ; i < n ; i++)) ; do
       _st $i $([ "$act" = S ] && echo 1 || echo 0)
-      [ "$ST" = E ] && { rc=1 ; chkerr "rrcs: rcsdiff failed for '${W[i]}'" ;}
+      [ "$ST" = E ] && { rc=1 ; _rde "${W[i]}" ;}
       printf '%s %s\n' "$ST" "${W[i]}"
     done ; exit $rc ;}
 
@@ -809,11 +824,11 @@ __RRCS_HELP_MORE__
   for ((i = 0 ; i < n ; i++)) ; do
     case ${C[i]} in
       t) [ $init = 0 ] || { chkerr "rrcs: '${W[i]}' is already tracked (-i)" ; rc=1 ; continue ;}
-         _in "${W[i]}" rcsdiff -q >/dev/null 2>&1 ; x=$?
-         case $x in
+         _rd "${W[i]}"
+         case $RD in
            0) _vfix "${W[i]}" "${V[i]}" || rc=1 ; [ $quiet = 1 ] || chkstd "${W[i]} unchanged" ;;
            1) P+=($i) PI[i]= ;;
-           *) chkerr "rrcs: rcsdiff failed for '${W[i]}'" ; rc=1 ;;
+           *) _rde "${W[i]}" ; rc=1 ;;
          esac ;;
       u) { [ $init = 1 ] || [ $# = 1 ] ;} && { P+=($i) ; PI[i]=1 ;} \
            || chkwrn "rrcs: '${W[i]}' is untracked; add it with -i, or name it alone" ;;

@@ -63,7 +63,7 @@ and a <code>makefile</code> (<code>make</code>, <code>make test</code>, <code>ma
 <code>share/rrcs/rrcs.fn.bash</code> and an <code>rrcs.1</code> man page derived from
 <code>rrcs --help</code>, so the two cannot disagree.</p>
 <h2 id="interface">Interface</h2>
-<pre><code>rrcs [-q] [-m msg]... [-e] [-i] [--] path ...   check in tracked paths (-i: add untracked)
+<pre><code>rrcs [-q] [-m msg]... [-e] [-i] [--] path ...   check in (one path, or -i: also untracked)
 rrcs -R [-q] [-m msg]... [--] old new           rename a working file and its ,v together
 rrcs -s [--] path ...                           status: mtime first, rcsdiff where they differ
 rrcs -S [--] path ...                           status: rcsdiff on every tracked file
@@ -77,7 +77,7 @@ rrcs --help [ci|co|rlog|rcsdiff|more]           extended usage, paged when stdou
 <tbody>
 <tr><td><code>-m msg</code></td><td>Message lines added after the log header; may be repeated</td></tr>
 <tr><td><code>-e</code></td><td>Write the message in <code>${VISUAL:-${EDITOR:-vi}}</code>; requires a terminal; any <code>-m</code> text starts the message</td></tr>
-<tr><td><code>-i</code></td><td>Initial check-in: create a <code>,v</code> for an untracked file; an error if one already exists</td></tr>
+<tr><td><code>-i</code></td><td>Initial check-in: create a <code>,v</code> for every untracked path given, however many; an error if one already exists. A single path needs no <code>-i</code></td></tr>
 <tr><td><code>-q</code></td><td>Suppress the per-file result lines</td></tr>
 </tbody>
 </table>
@@ -93,9 +93,9 @@ with <code>stderr</code> and <code>chkstd</code>.</p>
 the temp-cleanup <code>EXIT</code> trap are private to each call.</p>
 <h2 id="resolving-arguments">Resolving arguments</h2>
 <p>Every argument is turned into a pair: a working file and its <code>,v</code>. The
-user may name either one, so a glob such as <code>rrcs -s * RCS/*,v</code> can mix
-working files, <code>,v</code> files and untracked files. All of them resolve to
-the same pairs.</p>
+user may name either one, so a status glob such as <code>rrcs -s * RCS/*,v</code>
+can mix working files, <code>,v</code> files and untracked files. All of them
+resolve to the same pairs.</p>
 <ol>
 <li><strong>A <code>,v</code> path names its working file.</strong> <code>dir/RCS/x,v</code> means
 <code>dir/x</code>, and <code>dir/x,v</code> means <code>dir/x</code>.</li>
@@ -117,10 +117,12 @@ except an <code>RCS</code> directory, which is skipped quietly so that
 <li><strong>What a check-in does with each class:</strong>
 <ul>
 <li>tracked files are checked in;</li>
-<li>untracked files are checked in only with <code>-i</code>; without it, each
-one gets a warning that names <code>-i</code>. This lets <code>rrcs *</code> over a
-mixed directory commit only what is already tracked, while
-<code>rrcs -i newfile</code> starts tracking a new file on purpose;</li>
+<li>an untracked file named alone (<code>rrcs newfile</code>) is checked in:
+a single path is taken as deliberate. With more than one path,
+untracked files are checked in only with <code>-i</code>; without it, each
+gets a warning naming <code>-i</code>. A shell expands a glob before <code>rrcs</code>
+runs, so the argument count is the only signal available: <code>rrcs *</code>
+over a mixed directory then commits only what is already tracked;</li>
 <li>orphans get a warning.</li>
 </ul></li>
 </ol>
@@ -134,8 +136,10 @@ beginning with <code>-</code> is passed to RCS as <code>./name</code>.</p>
 <ol>
 <li><strong>Resolve and classify every argument</strong> before anything is
 committed. Usage errors and refused names stop the call here.</li>
-<li><strong>Skip unchanged files.</strong> If <code>rcsdiff -q</code> reports no difference,
-no revision is made and the <code>,v</code> mtime is updated to match the
+<li><strong>Skip unchanged files.</strong> The latest revision is compared with the
+working file byte for byte, <code>co -p</code> piped to <code>cmp</code> (see Commit
+status for why not <code>rcsdiff</code>). If they match, no revision is made
+and the <code>,v</code> mtime is updated to match the
 working file. Content that matches the latest revision counts as
 committed.</li>
 <li><strong>Build the message once</strong> for the whole call:
@@ -234,8 +238,14 @@ change. Then <code>touch -c -r new "$newvfile"</code>.</li>
 inode and mtime: the original is still untouched. Across filesystems
 it is a copy, and <code>rrcs</code> warns.</p>
 <h2 id="commit-status">Commit status</h2>
-<p><code>-s</code> uses mtime as a fast first test and <code>rcsdiff</code> to confirm wherever
-the times disagree. <code>-S</code> runs <code>rcsdiff</code> on every tracked file. Output
+<p><code>-s</code> uses mtime as a fast first test and a content comparison to
+confirm wherever the times disagree. <code>-S</code> compares the content of every
+tracked file. Content is compared byte for byte: <code>co -p</code> piped to
+<code>cmp</code>, with whatever <code>cmp</code> leaves unread drained so <code>co</code> never sees a
+closed pipe. <code>rcsdiff</code> is not used, because its exit status depends on
+its diff: OpenRCS 4.5 returned <code>2</code>, with no message, on a changed text
+file, and no difference shown. <code>cmp</code> makes no judgment about text or
+binary, so the result is the same under every implementation. Output
 is one line per pair, a mark followed by the working path, so <code>grep</code> and
 <code>awk</code> can select from it:</p>
 <table>
@@ -249,7 +259,7 @@ is one line per pair, a mark followed by the working path, so <code>grep</code> 
 <tr><td><code>T</code></td><td>touched only</td><td>mtimes differ, content matches; <code>rrcs file</code> syncs the time</td></tr>
 <tr><td><code>?</code></td><td>untracked</td><td>no <code>,v</code></td></tr>
 <tr><td><code>-</code></td><td>orphan</td><td>a <code>,v</code> with no working file</td></tr>
-<tr><td><code>E</code></td><td>error</td><td><code>rcsdiff</code> failed; counts toward exit <code>1</code></td></tr>
+<tr><td><code>E</code></td><td>error</td><td><code>co</code> or <code>cmp</code> failed; the message gives the first error line and which <code>co</code> ran; counts toward exit <code>1</code></td></tr>
 </tbody>
 </table>
 <p><code>-s</code> checks content only where the mtimes differ, so its cost grows
@@ -336,8 +346,9 @@ only replays edit scripts and never rewrites text. The refusal that
 <tr><td><code>rcs -ko</code>, no keywords</td><td>Text comes back exactly as stored; the emulation stays tractable</td><td><code>$Id$</code> habits stop working, as stated in <code>--help</code></td></tr>
 <tr><td><code>,v</code> mtime set to the file's</td><td>Equal mtimes suggest concurrency; <code>-s</code> reads it cheaply</td><td>Tools that select by mtime alone miss new revisions (accepted)</td></tr>
 <tr><td><code>-s</code> checks mtime, then content where they differ</td><td>Speed in proportion to what changed; <code>T</code> separates touched from edited</td><td>Equal mtimes with changed content go unseen without <code>-S</code></td></tr>
+<tr><td>Content compared by <code>co -p</code> piped to <code>cmp</code>, never <code>rcsdiff</code></td><td>One answer under every RCS implementation; no text-or-binary guess</td><td>A full checkout per compared file</td></tr>
 <tr><td><code>,v</code> arguments resolve to working files</td><td>Globs over mixed directories just work</td><td><code>RCSINIT -x</code> suffixes are not honored</td></tr>
-<tr><td>Untracked files need <code>-i</code></td><td><code>rrcs *</code> cannot start tracking stray files</td><td>Adding a file takes one extra flag</td></tr>
+<tr><td>One path is deliberate; several need <code>-i</code> for untracked files</td><td><code>rrcs newfile</code> just works, as <code>mrcs</code> did; <code>rrcs *</code> cannot start tracking stray files</td><td>A glob that happens to match exactly one untracked file starts tracking it</td></tr>
 <tr><td>Editor only with <code>-e</code></td><td>No surprise editor; scripts never block</td><td>Composing a long message takes one extra flag</td></tr>
 <tr><td>Rename only when status is <code>C</code> or <code>T</code>, recorded with <code>ci -f</code></td><td>History shows each name; edits never ride along with a rename</td><td>One extra revision per rename</td></tr>
 <tr><td>Unsafe names warn, control characters refuse</td><td>Real-world names still work; output stays one line per file</td><td>Names containing newlines cannot be tracked</td></tr>
@@ -379,10 +390,15 @@ active. The suite covers:
 log header and messages;</li>
 <li>execute bits carried to the <code>,v</code>;</li>
 <li>that when <code>chgrp</code> is refused, the <code>,v</code> group has no bits;</li>
+<li>comparison independent of <code>rcsdiff</code> (a stand-in <code>rcsdiff</code> that
+always exits 2 changes nothing), a non-ASCII text file, an
+early difference in a large file reported as <code>M</code>, and a damaged
+<code>,v</code> reported as <code>E</code> with its reason;</li>
 <li>every status mark, over a glob mixing working files, <code>,v</code> files,
 untracked files and an orphan, with duplicates removed;</li>
 <li><code>-s</code> trusting equal mtimes, and <code>-S</code> finding a same-mtime change;</li>
-<li>the <code>-i</code> gate in both directions;</li>
+<li>one untracked path tracked without <code>-i</code>, several skipped with a
+warning, <code>-i</code> tracking several, and <code>-i</code> on a tracked file failing;</li>
 <li>names: spaces warn, a leading <code>-</code> works, control characters are
 refused, symlinks are skipped;</li>
 <li>rename: refused while modified, moves the file and <code>,v</code> into a
@@ -393,11 +409,12 @@ no arguments;</li>
 <li><code>-e</code>: refused without a terminal; under a pseudo-terminal, the
 message is kept with <code>#</code> lines removed, and an empty message
 aborts.
-<strong>Under the emulation (no RCS binaries in the build workspace), all
-73 checks pass.</strong> The keep link's move-back path was also exercised
-with a <code>ci</code> that replaces the working file: inode and mode <code>0604</code>
-were kept. The suite still has to run on the host against
-OpenRCS 4.5, and against GNU RCS 5.9.4 where it is available.</li>
+<strong>The suite passes on the Darwin host against OpenRCS 4.5, and with
+<code>RRCS_EMULATE=1</code> under the host's awk, two-way check included.</strong> In
+the build workspace (no RCS binaries) all 79 checks pass under the
+emulation. The keep link's move-back path was also exercised with a
+<code>ci</code> that replaces the working file: inode and mode <code>0604</code> were kept.
+GNU RCS 5.9.4 is still to be run where it is available.</li>
 </ul></li>
 <li><strong>The emulation</strong>, tested both ways by <code>test-rrcs.sh</code> wherever real
 RCS is installed: <code>,v</code> files written by the emulation must read
