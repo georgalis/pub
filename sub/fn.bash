@@ -32,16 +32,15 @@ _help_skel() {
 >>>---
   eval "$(curl -fsSL --insecure \
     https://raw.githubusercontent.com/georgalis/pub/main/skel/.profile)"
-  export -f devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue siffx
+  export -f devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue sfx
 ---<<<
 eof
   }
 
 # one confusion at a time,
-# ~/.profile.local from ~/.profile eg
-#   fn.bash from ~/.profile.local
+# ~/.profile.local  from ~/.profile
 # ~/sub/sub/fn.bash from ~/.profile.local
-# siffx "$HOME/sub/fn.bash" "~/.profile.local (678007bd)" && chktrue "$_ $HOME/sub/fn.bash" || { return 2 ; exit 3 ;}
+# sfx "$HOME/sub/fn.bash" "(678007bd)" || { return 2 ; exit 3 ;}
 declare -f chktrue >/dev/null 2>&1 || { _help_skel ; return 2 ; exit 3 ;}
 
 [ "${SHELL##*/}" = "bash" ] && { # rev 67800555-20250109_092011
@@ -183,7 +182,7 @@ validex () { #:> validate executable, compare unit hash vs operation env hash
 # # Now that validfn is defined, run the framework on expected functions...
 # #
 # # eg first, generate hashes of known functions...
-# #   for f in devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue chkexit logexit siffx validfn ; do validfn $f ; done
+# #   for f in devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue chkexit logexit sfx validfn ; do validfn $f ; done
 # #
 # # then run validfn on that data to report if the functions have ever change
 # # print help if hash unit does not match hash from env --insecure
@@ -199,7 +198,7 @@ validex () { #:> validate executable, compare unit hash vs operation env hash
 # chkerr 4f18299d 0000005b
 # logerr 2db98372 0000005e
 # chktrue 1f11f91d 0000005c
-# siffx c20a9040 000002f7
+# sfx c20a9040 000002f7
 # validfn 6fcde5cc 0000046d
 # EOF
 
@@ -243,7 +242,7 @@ vfn () { #:> verify function against shake256 xoflen hash, or generate hash
 # Now that vfn is defined, qualify .profile baseline functions
 # against 384-bit reference hash (xoflen=48); raise help on error.
 # Gather reference hash data:
-#   for f in devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue siffx validfn vfn ; do xoflen=48 vfn $f ; done
+#   for f in devnul stderr chkstd chkwrn logwrn chkerr logerr chktrue sfx validfn vfn ; do xoflen=48 vfn $f ; done
 # then run vfn with xoflen=3 with against reference hash data, for a
 # lightweight 24-bit qualification of the functions, from the reference
 # hash data, ---for more frequent integrity checks, based on stronger
@@ -259,7 +258,7 @@ chkerr   50195549cedb329654b8cd279d5e471a536488ebfd3045b4589d05e20c0072faecf4b89
 logerr   8420e3638ccde6b2c86820d4460e059edcfcb00e2f3ba065e5270bf57e66abce058c88ea95168f3345539ea536abad79
 chktrue  6053b8cfa998834844f9dd687af4753b96d2f2e14cf6c51c22dac7165daaf2405e4637bd82096c81165e54728d1d5d3b
 vfn      1fb48802cdc5f8b8965a549bc7b893bcbeb36e609f4807aa444a94494b281b468b95d55a359333db0800f1b37ab815cc
-siffx    b421cc5a4d2b7fe7979d3055343343494c18a3dd4584c30358dd7d8349ac7151
+sfx 6c52207f04c5daa472c744d272a2595c0f9f3117ea50e67d540a21cb8837abba
 EOF
 
 # fortify the shell with git alias
