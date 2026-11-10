@@ -1,68 +1,34 @@
-# asciixlate 2.0
+# asciixlate
 
-UTF-8 to ASCII transliteration under a local rule file. Self-contained: no
-libiconv, no gconv modules, no runtime data. The transliteration table is
-generated once and compiled in, so the same input yields the same bytes on
-Darwin, Linux and NetBSD.
+<!-- (c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution. -->
+<!-- rev 6af37686 20261110 115446 PST Tue 11:54 AM 10 Nov 2026 2.1.0 introduction; build rationale moved to PLAN.md -->
 
-    make            # GNU make, bmake, or Apple make --- all three work
-    make check
-    make install
+UTF-8 to ASCII transliteration under a local rule file: `---` for an em
+dash, `??` for a character with no mapping, and every other choice
+adjustable in `~/.asciixlate`. One binary, libc only; the transliteration
+table is compiled in, so the same input yields the same bytes on Darwin,
+Linux and NetBSD.
 
-`asciixlate -h` is the one-screen option summary; `asciixlate --help` is the
-full manual, and `make install` derives the man page from it so the two
-cannot disagree.
+    make                 # GNU make, bmake or Apple make
+    make test
+    make install         # PREFIX defaults to /usr/local for root, else $HOME
 
-## Why the 1.0 build failed on Darwin
+## Use
 
-    ld: symbol(s) not found: _iconv, _iconv_open, _iconv_close
+    asciixlate notes.md > notes.ascii.md
+    asciixlate -i *.md                       # in place, atomic
+    asciixlate --report archive/*.md >> ~/.asciixlate
+    asciixlate -qs -n draft.md               # exit 2 if anything is unmapped
 
-macOS does not put `iconv` in libSystem. `cc foo.c` never resolves it; the
-1.0 header comment claiming otherwise was wrong. The immediate fix for 1.0
-is `cc -O2 -o asciixlate asciixlate.c -liconv`. With pkgsrc on the path
-there is a second failure mode behind it: pkgsrc GNU libiconv's header
-renames the symbols to `libiconv*`, so whichever `iconv.h` the include path
-finds first decides which symbol set the object file asks for, and the
-`-L` in effect decides which library answers. That is a link-order lottery
-on a machine with both.
+`asciixlate -h` is the one-screen option summary; `asciixlate --help` is
+the manual, and the installed man page is derived from it.
 
-2.0 removes the dependency, so neither failure can recur.
+With no file named, standard input is filtered in blocks, in bounded
+memory, unless it is a terminal:
 
-## Makefile portability
-
-The 2.0.0 Makefile used `ifeq` and `$(shell ...)`, which are GNU-make-only:
-`bmake` could not parse the file, and the `echo` it fed to `/bin/sh`
-carried unbalanced quotes and parentheses. Both are gone. There are now no
-conditionals and no `$(shell ...)` anywhere; the platform test happens in
-the recipe shell, where `$$` escapes a shell variable identically for GNU
-make, `bmake`, `pmake` and Apple's make:
-
-    asciixlate: asciixlate.c translit_table.h
-    	@case `uname -s` in \
-    	  Darwin) ld= ;; \
-    	  *)      ld=-static ;; \
-    	esac; \
-    	$(CC) $(CFLAGS) -o $@ asciixlate.c $$ld
-
-Nothing in the file is dialect-specific, so pkgsrc `bmake` on Darwin and
-`gmake` on RHEL read the same rules.
-
-## Static linking
-
-| Platform | `make` produces |
-|---|---|
-| Linux (glibc or musl) | fully static, no `.so` |
-| NetBSD | fully static |
-| Darwin | dynamic against `/usr/lib/libSystem.B.dylib` only |
-
-Apple does not ship a static libSystem and does not support `-static`; a
-fully static Mach-O executable is not achievable. Linking libSystem alone
-is the closest equivalent and needs no Homebrew or pkgsrc at run time.
-
-Note also that glibc's static linking and `iconv()` are a bad pair: gconv
-modules are `dlopen`ed at run time, so a `-static` binary that calls iconv
-can fail on a host with different gconv data. Owning the table avoids that
-entirely.
+    some-command | asciixlate | less
+    asciixlate -b 4k < big.txt > big.ascii.txt
+    :'<,'>!asciixlate                        # vi: filter the selected lines
 
 ## The rule file
 
@@ -70,32 +36,27 @@ entirely.
     U+00AD  ""              # soft hyphen: drop
     U+00A0  " "             # no-break space: one plain space
     \xC2\xA9  (c)           # by byte sequence
+    U+1F680 ""              # an emoji: deleted, and one space with it
     <paste>  ---            # or paste the character itself as the key
 
-Keys accept `U+XXXX`, `0xXXXX`, `\xHH...`, or literal UTF-8 pasted straight
-out of a vim buffer. Prefix with `=` to force a literal that would
-otherwise look like a code point. A literal key of more than one code point
-becomes a longest-match rule.
+Keys are `U+XXXX`, `0xXXXX`, `\xHH...`, or literal UTF-8; `=` forces a
+literal. A key of more than one code point is a longest-match rule.
+Values run to end of line, or sit in double quotes to hold spaces, a `#`,
+or nothing. `--report` prints an editable stub for every unmapped code
+point; `--list` prints the whole active table in the same grammar.
 
-Values run to end of line; a whitespace-preceded `#` starts a comment. Wrap
-in double quotes for an exact value --- that is how a replacement holds
-spaces, a `#`, or nothing. A bare empty value is an error; write `""` to
-delete a character.
+Deleting a pictograph takes the space that set it apart, so
+`Launch <rocket> today` becomes `Launch today`; deleting anything else
+never touches a space.
 
-## Building a rule file from real text
+## Files
 
-    asciixlate --report archive/*.md >> ~/.asciixlate
-
-`--report` converts nothing to disk and prints an editable stub for every
-unmapped code point, most frequent first. `--list` dumps the whole active
-table in the same grammar.
-
-## Table provenance
-
-`translit_table.h` is generated by `mktable.py` from three sources, in
-precedence order: Unicode NFKD folding (1065 entries), glibc
-`ascii//TRANSLIT` output captured at generation time (317), and a curated
-list in the generator (74). Regenerate with `make table` and diff to audit
-a Unicode upgrade.
-
-See `asciixlate --help` for everything else.
+| File | Role |
+|---|---|
+| `asciixlate.c` | the program, its usage and its manual |
+| `translit_table.h` | generated built-in table; the authority |
+| `mktable.py` | table generator, for auditing a Unicode upgrade |
+| `makefile` | build, test, install |
+| `test.sh` | regression suite |
+| `PLAN.md` | requirements, decisions, review findings, open questions |
+| `example.md`, `example.ascii.md` | a sample and its conversion |
