@@ -127,8 +127,20 @@ chktrue() { [ "$*" ] && { stderr    "><> $*" ; true      ;} || return 2 ;} #:> e
 chkexit() { [ "$*" ] && { stderr    ">>> $*" ; exit 1    ;} || true ;} #:> err stderr args exit 1, noop if null
 logexit() { [ "$*" ] && { logger -s ">>> $*" ; exit 1    ;} || true ;} #:> err stderr+log args exit 1, noop if null
 
-sfx () { # source file (unless -n), export the functions it defined and its set column-0 variables
+sfx () { # source file(s) (unless -n), export the functions each defined and its set column-0 variables
 #
+# rev 6aeeb8e9 20261106 213641 PST Fri 09:36 PM 06 Nov 2026
+#     source signals: an ERR trap returns from the source at the first
+#     unguarded nonzero command, at any depth of nested sourcing; what
+#     was defined before it still exports; chkerr prints the success line
+#     plus "source signal N at file:line" ("eof/return" for a final
+#     status), regardless of -q; a caller's errexit is held so reports
+#     print first; called as a condition (bash mutes the trap) warns once
+#     -l file names from stdin, read whole before any is sourced; each
+#     file sourced, trapped, exported and reported in turn, a failed file
+#     does not stop the list; a bare name is sourced as ./name, not PATH
+#     return policy: -k reports and returns 0, -e returns 1 on failure;
+#     default inherits a calling sfx's policy, else -e under set -e, else -k
 # rev 6ae622eb 20261031 101835 PDT Sat 10:18 AM 31 Oct 2026
 #     -v names fit the terminal: one line when they fit, else a margined
 #     block, columns filled downward by awk, wrapped lines end " \" for
@@ -144,80 +156,124 @@ sfx () { # source file (unless -n), export the functions it defined and its set 
 #     functions chosen by source attribution (extdebug declare -F)
 #
 # Requires chktrue chkwrn chkerr. See sfx -h.
-  local _sx_q=1 _sx_v=0 _sx_s=1 _sx_f= _sx_t= _sx_b= _sx_c= _sx_n= _sx_l= _sx_dbg=0 _sx_u= _sx_w=
+  local _sx_pi=${_sx_p:-}                                         # a calling sfx's return policy, seen by dynamic scope
+  local _sx_o= _sx_p= _sx_q=1 _sx_v=0 _sx_s=1 _sx_m=0 _sx_f= _sx_t= _sx_g= _sx_b= _sx_c= _sx_n= _sx_l= _sx_dbg=0 _sx_u= _sx_w=
+  local _sx_r=0 _sx_rc=0 _sx_x= _sx_e=0 _sx_k=0
+  local _sx_me=${FUNCNAME[0]}                                     # own frame name: the ERR trap returns only from frames below it
   [ ! -t 2 ] || _sx_q=0                                           # success line by default only on a terminal
   local _sx_cf=${BASH_SOURCE[1]:-$0} _sx_ln=${BASH_LINENO[0]}  # call site: file and line that invoked sfx
   local _sx_h=${HOME%/} ; [ -z "$_sx_h" ] || _sx_cf=${_sx_cf/#"$_sx_h"\//\~/}  # ~ only for a real HOME
-  local -a _sx_all=() _sx_fn=() _sx_vn=()
+  local -a _sx_ls=() _sx_all=() _sx_fn=() _sx_vn=()
   while : ; do case $1 in
     -h|--help) { IFS= read -r -d '' _sx_u || : ;} <<'__SFX_USAGE__'
-usage: sfx [-q|-v] [-n] [--] file [tag]
+usage: sfx [-q|-v] [-k|-e] [-n] [--] file [tag]
+       sfx [-q|-v] [-k|-e] [-n] -l [--] [tag] < list
   source file, then export the functions and variables it defines
   -q  quiet: no success line (default when stderr is not a terminal)
   -v  success line and the exported names, wrapped to the terminal;
       wrapped lines end " \" so a block copies as one shell line
   -n  no source: export what file defines that is already set
+  -l  list: file names from stdin, one per line, read whole before any
+      is sourced; each file sourced, exported and reported in turn
+  -k  keep going: failures are reported, return 0
+  -e  errexit-like: return 1 on any failure (stops a trapped caller)
+      default: a calling sfx's policy, else -e under set -e, else -k
   -h  this usage
   functions  those bash records as defined in file
   variables  column-0 NAME= in file, set now, shell-private names excluded
   tag        optional call label, eg a revision stamp
   success    ><> caller:line [tag] NN/NN:fn/var sfx file
-  missing file warns (return 0); source or export failure errors (return 1)
+  signal     the first unguarded nonzero command in file, or in a file it
+             sources, ends the source; guard intended signals with ||:
+             what was defined before it still exports; chkerr reports
+             caller:line [tag] NN/NN:fn/var sfx file source signal N at file:line
+             "at eof/return" is the file's final status, eg a trailing
+             a && b, or return N; a failed file does not stop a list
+  condition  called as a condition (if, ||, &&, !) bash mutes the trap:
+             one warning per call, files run through
+  return     0 under -k; under -e 1 if any file failed source or export,
+             reports first, so a set -e caller exits after them; usage
+             errors return 1 under either
+  missing file or empty list warns, the rest proceed
 __SFX_USAGE__
       printf '%s' "$_sx_u" ; return 0 ;;
-    -q|--quiet) _sx_q=1 _sx_v=0 ;; -v|--verbose) _sx_v=1 _sx_q=0 ;; -n|--no-source) _sx_s=0 ;;
+    -q|--quiet) _sx_q=1 _sx_v=0 ;; -v|--verbose) _sx_v=1 _sx_q=0 ;; -n|--no-source) _sx_s=0 ;; -l|--list) _sx_m=1 ;;
+    -k|--keep) _sx_o=k ;; -e|--errexit) _sx_o=e ;;
     --) shift ; break ;; -?*) chkerr "$_sx_cf:$_sx_ln sfx: unknown option '$1', see sfx -h" ; return 1 ;; *) break ;;
     esac ; shift ; done
-  _sx_f=$1 _sx_t=$1 ; [ -z "$_sx_h" ] || _sx_t=${1/#"$_sx_h"\//\~/}
-  _sx_b="$_sx_cf:$_sx_ln${2:+ $2} sfx"
-  [ -n "$_sx_f" ] || { chkerr "$_sx_b: no file argument, see sfx -h" ; return 1 ;}
-  [ -e "$_sx_f" ] || { chkwrn "$_sx_b: no file '$_sx_t'" ; return 0 ;}
-  [ $_sx_s = 0 ] || . "$_sx_f" || { chkerr "$_sx_b: source signal $? in '$_sx_t'" ; return 1 ;}
-  # functions: bash records each function's defining file; with extdebug, declare -F name prints "name line file"
-  while read -r _ _ _sx_n ; do _sx_all+=("$_sx_n") ; done < <(declare -F)
-  shopt -q extdebug && _sx_dbg=1 ; shopt -s extdebug
-  [ ${#_sx_all[@]} = 0 ] || while read -r _sx_n _ _sx_l ; do
-    [ "$_sx_l" = "$_sx_f" ] && { _sx_fn+=("$_sx_n") ; continue ;}
-    [ "${_sx_l##*/}" = "${_sx_f##*/}" ] || continue                     # same name, other spelling: compare canonical paths
-    [ -n "$_sx_c" ] || _sx_c=$(cd -P -- "$(dirname -- "$_sx_f")" 2>/dev/null && printf '%s/%s' "$PWD" "${_sx_f##*/}")
-    [ "$(cd -P -- "$(dirname -- "$_sx_l")" 2>/dev/null && printf '%s/%s' "$PWD" "${_sx_l##*/}")" = "$_sx_c" ] && _sx_fn+=("$_sx_n")
-  done < <(declare -F "${_sx_all[@]}")
-  [ $_sx_dbg = 1 ] || shopt -u extdebug
-  # variables: column-0 NAME= in the text and set now; shell-private specials stay unexported
-  while read -r _sx_n ; do case $_sx_n in
-      _|_sx_*|IFS|OPTIND|OPTARG|OPTERR|REPLY|PS[0-9]|PWD|OLDPWD|SHLVL|PPID|RANDOM|SRANDOM|SECONDS|LINENO|BASH*|HIST*|COMP*) continue ;;
-    esac ; [ -z "${!_sx_n+x}" ] || _sx_vn+=("$_sx_n") ; done \
-    < <(sed -n 's/^\([_[:alpha:]][_[:alnum:]]*\)=.*/\1/p' "$_sx_f" | sort -u)
-  { [ ${#_sx_fn[@]} = 0 ] || export -f "${_sx_fn[@]}" ;} && { [ ${#_sx_vn[@]} = 0 ] || export "${_sx_vn[@]}" ;} \
-    || { chkerr "$_sx_b: export signal $? in '$_sx_t'" ; return 1 ;}
-  # report: one line unless -q; -v adds the names
-  printf -v _sx_n '%02d/%02d:fn/var' ${#_sx_fn[@]} ${#_sx_vn[@]}       # counts padded, ahead of the word: targets align
-  [ $_sx_q = 1 ] || chktrue "${_sx_b% sfx} $_sx_n sfx $_sx_t"
-  [ $_sx_v = 0 ] && return 0
-  # -v names: one line when it fits, else count line and a block margined 2, wrapped lines closed " \"
-  _sx_w=${COLUMNS:-} ; [[ $_sx_w =~ ^[0-9]+$ ]] || { read -r _sx_w < <(tput cols 2>/dev/null) || : ;}
-  [[ $_sx_w =~ ^[0-9]+$ ]] && [ "$_sx_w" -ge 24 ] \
-    || { chkwrn "$_sx_b: terminal width '$_sx_w' unknown or < 24, names not wrapped" ; _sx_w= ;}
-  for _sx_l in fn var ; do
-    [ $_sx_l = fn ] && set -- "${_sx_fn[@]}" || set -- "${_sx_vn[@]}"
-    _sx_n="$_sx_b $_sx_l: ${*:--}"
-    [ -z "$_sx_w" ] || [ $(( ${#_sx_n} + 4 )) -le "$_sx_w" ] && { chktrue "$_sx_n" ; continue ;}   # 4: the "><> " reporter prefix
-    chktrue "$_sx_b $_sx_l: $#"
-    # columns filled downward (rs -tz order): fewest rows whose column widths plus 2-space gutters fit w
-    printf '%s\n' "$@" | awk -v w=$(( _sx_w - 4 )) '{ e[++n] = $0 }
-      END { for (r = 1 ; r <= n ; r++) { c = int((n + r - 1) / r) ; t = 2 * (c - 1)
-          for (j = 0 ; j < c ; j++) { m = 0
-            for (i = 1 ; i <= r ; i++) { k = j * r + i ; if (k <= n && length(e[k]) > m) m = length(e[k]) }
-            cw[j] = m ; t += m }
-          if (t <= w) break }
-        if (r > n) { r = n ; c = 1 }
-        for (i = 1 ; i <= r ; i++) { l = ""
-          for (j = 0 ; j < c ; j++) { k = j * r + i ; if (k > n) break
-            if (j > 0) l = l "  " ; l = l sprintf("%-" cw[j] "s", e[k]) }
-          print l } }' \
-      | sed -e 's/[[:blank:]]*$//' -e 's/^/  /' -e '$!s/$/ \\/' >&2
+  # return policy: option, else a calling sfx's, else the caller's errexit
+  _sx_p=$_sx_o ; [ -n "$_sx_p" ] || _sx_p=$_sx_pi
+  [ -n "$_sx_p" ] || { [[ $- == *e* ]] && _sx_p=e || _sx_p=k ;}
+  # files: one argument then tag, or with -l the lines of stdin, read whole so a sourced file cannot consume them
+  [ $_sx_m = 1 ] || { _sx_g=${2:-} ; [ -z "${1:-}" ] || _sx_ls=("$1") ;}
+  [ $_sx_m = 0 ] || { _sx_g=${1:-} ; mapfile -t _sx_ls ;}
+  _sx_b="$_sx_cf:$_sx_ln${_sx_g:+ $_sx_g} sfx"
+  [ ${#_sx_ls[@]} != 0 ] || { [ $_sx_m = 1 ] && { chkwrn "$_sx_b: empty list on stdin" ; return 0 ;}
+    chkerr "$_sx_b: no file argument, see sfx -h" ; return 1 ;}
+  # once per call: -v width, caller errexit held (restored before return), condition probe
+  [ $_sx_v = 0 ] || { _sx_w=${COLUMNS:-} ; [[ $_sx_w =~ ^[0-9]+$ ]] || { read -r _sx_w < <(tput cols 2>/dev/null) || : ;}
+    [[ $_sx_w =~ ^[0-9]+$ ]] && [ "$_sx_w" -ge 24 ] \
+      || { chkwrn "$_sx_b: terminal width '$_sx_w' unknown or < 24, names not wrapped" ; _sx_w= ;} ;}
+  [[ $- != *e* ]] || { _sx_e=1 ; set +e ;}
+  [ $_sx_s = 0 ] || { trap '_sx_k=1' ERR ; false ; trap - ERR     # probe: bash mutes ERR when sfx is called as a condition
+    _sx_n="${#_sx_ls[@]} listed files" ; [ $_sx_m = 1 ] || { _sx_n=${_sx_ls[0]} ; [ -z "$_sx_h" ] || _sx_n=${_sx_n/#"$_sx_h"\//\~/} ; _sx_n="'$_sx_n'" ;}
+    [ $_sx_k = 1 ] || chkwrn "$_sx_b: called as a condition (if, ||, &&, !), signals in $_sx_n not trapped" ;}
+  for _sx_f in "${_sx_ls[@]}" ; do
+    [ -n "$_sx_f" ] || continue                                   # blank list line
+    _sx_t=$_sx_f ; [ -z "$_sx_h" ] || _sx_t=${_sx_f/#"$_sx_h"\//\~/}
+    _sx_r=0 _sx_x= _sx_c= ; _sx_all=() _sx_fn=() _sx_vn=()
+    [ -e "$_sx_f" ] || { chkwrn "$_sx_b: no file '$_sx_t'" ; continue ;}
+    [[ $_sx_f == */* ]] || _sx_f=./$_sx_f                         # a bare name would be searched in PATH first
+    # source: an unguarded nonzero command below this frame returns its signal; the first file:line is kept
+    [ $_sx_s = 0 ] || { trap '_sx_r=$? ; [ "${FUNCNAME[0]}" = "$_sx_me" ] || { [ -n "$_sx_x" ] || _sx_x=${BASH_SOURCE[0]}:$LINENO ; return $_sx_r ;}' ERR
+      . "$_sx_f" ; _sx_r=$? ; trap - ERR ;}                       # not left of ||: that would disable the trap
+    # functions: bash records each function's defining file; with extdebug, declare -F name prints "name line file"
+    while read -r _ _ _sx_n ; do _sx_all+=("$_sx_n") ; done < <(declare -F)
+    shopt -q extdebug && _sx_dbg=1 ; shopt -s extdebug
+    [ ${#_sx_all[@]} = 0 ] || while read -r _sx_n _ _sx_l ; do
+      [ "$_sx_l" = "$_sx_f" ] && { _sx_fn+=("$_sx_n") ; continue ;}
+      [ "${_sx_l##*/}" = "${_sx_f##*/}" ] || continue                   # same name, other spelling: compare canonical paths
+      [ -n "$_sx_c" ] || _sx_c=$(cd -P -- "$(dirname -- "$_sx_f")" 2>/dev/null && printf '%s/%s' "$PWD" "${_sx_f##*/}")
+      [ "$(cd -P -- "$(dirname -- "$_sx_l")" 2>/dev/null && printf '%s/%s' "$PWD" "${_sx_l##*/}")" = "$_sx_c" ] && _sx_fn+=("$_sx_n")
+    done < <(declare -F "${_sx_all[@]}")
+    [ $_sx_dbg = 1 ] || shopt -u extdebug
+    # variables: column-0 NAME= in the text and set now; shell-private specials stay unexported
+    while read -r _sx_n ; do case $_sx_n in
+        _|_sx_*|IFS|OPTIND|OPTARG|OPTERR|REPLY|PS[0-9]|PWD|OLDPWD|SHLVL|PPID|RANDOM|SRANDOM|SECONDS|LINENO|BASH*|HIST*|COMP*) continue ;;
+      esac ; [ -z "${!_sx_n+x}" ] || _sx_vn+=("$_sx_n") ; done \
+      < <(sed -n 's/^\([_[:alpha:]][_[:alnum:]]*\)=.*/\1/p' "$_sx_f" | sort -u)
+    { [ ${#_sx_fn[@]} = 0 ] || export -f "${_sx_fn[@]}" ;} && { [ ${#_sx_vn[@]} = 0 ] || export "${_sx_vn[@]}" ;} \
+      || { chkerr "$_sx_b: export signal $? in '$_sx_t'" ; _sx_rc=1 ; continue ;}
+    # report: one line unless -q, or chkerr with the signal always; -v adds the names
+    printf -v _sx_n '%s %02d/%02d:fn/var sfx %s' "${_sx_b% sfx}" ${#_sx_fn[@]} ${#_sx_vn[@]} "$_sx_t"  # counts padded: targets align
+    [ $_sx_r = 0 ] || { _sx_x=${_sx_x:-eof/return} _sx_x=${_sx_x#./} ; [ -z "$_sx_h" ] || _sx_x=${_sx_x/#"$_sx_h"\//\~/}
+      chkerr "$_sx_n source signal $_sx_r at $_sx_x" ; _sx_rc=1 ;}
+    [ $_sx_r != 0 ] || [ $_sx_q = 1 ] || chktrue "$_sx_n"
+    [ $_sx_v = 0 ] && continue
+    # -v names: one line when it fits, else count line and a block margined 2, wrapped lines closed " \"
+    for _sx_l in fn var ; do
+      [ $_sx_l = fn ] && set -- "${_sx_fn[@]}" || set -- "${_sx_vn[@]}"
+      _sx_n="$_sx_b $_sx_l: ${*:--}"
+      [ -z "$_sx_w" ] || [ $(( ${#_sx_n} + 4 )) -le "$_sx_w" ] && { chktrue "$_sx_n" ; continue ;}   # 4: the "><> " reporter prefix
+      chktrue "$_sx_b $_sx_l: $#"
+      # columns filled downward (rs -tz order): fewest rows whose column widths plus 2-space gutters fit w
+      printf '%s\n' "$@" | awk -v w=$(( _sx_w - 4 )) '{ e[++n] = $0 }
+        END { for (r = 1 ; r <= n ; r++) { c = int((n + r - 1) / r) ; t = 2 * (c - 1)
+            for (j = 0 ; j < c ; j++) { m = 0
+              for (i = 1 ; i <= r ; i++) { k = j * r + i ; if (k <= n && length(e[k]) > m) m = length(e[k]) }
+              cw[j] = m ; t += m }
+            if (t <= w) break }
+          if (r > n) { r = n ; c = 1 }
+          for (i = 1 ; i <= r ; i++) { l = ""
+            for (j = 0 ; j < c ; j++) { k = j * r + i ; if (k > n) break
+              if (j > 0) l = l "  " ; l = l sprintf("%-" cw[j] "s", e[k]) }
+            print l } }' \
+        | sed -e 's/[[:blank:]]*$//' -e 's/^/  /' -e '$!s/$/ \\/' >&2
+    done
   done
-  return 0 ;} #:> source file if exists, export what it defined; report call site, target, counts
+  [ $_sx_e = 0 ] || set -e
+  [ $_sx_p = e ] || _sx_rc=0                                      # -k: failures were reported, the caller carries on
+  return $_sx_rc ;} #:> source file(s) if they exist, export what each defined; report call site, target, counts
 
 # verbosity, typically set in ~/.profile.local to devnul, chkwrn, or chkerr
 #verb="${verb:=devnul}"
@@ -383,9 +439,13 @@ rm $key_in ;}
 #	&& { printf "Logout: " && kill $2 && echo $(hostname) $0 [$4] killed ssh-agent $2 \
 #		|| { echo $(hostname) ssh-agent already died? 2>/dev/stderr ; exit 1 ;} ;}
 
-sfx "$HOME/.profile.local" "(63b8877f)" || { return 2 ; exit 3 ;}
+# If you want .profile to stop when .profile.local fails, the form that doesn't mute is to read the status on the next statement:
+sfx -e "$HOME/.profile.local" # "(63b8877f)"
+  _rc=$? ; [ $_rc = 0 ] || return $_rc # indented to avoid export
+
 # use -n to not source this file, just report it has been sourced, now that the end is reached
-sfx -n "$HOME/.profile"    "(642a7466)" || { return 2 ; exit 3 ;}
+sfx -n "$HOME/.profile" # "(642a7466)"
+
 # also be verbose about agent status
 tput dim
 echo "User ${USER}@${HOSTNAME}: "
