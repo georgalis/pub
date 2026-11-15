@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+section[role="doc-endnotes"] ol { list-style: none; padding-left: 0; }
+li[role="doc-endnote"] > p:first-of-type { display: inline; margin: 0; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h1 id="ff-functional-find">ff: functional find</h1>
+<p>ff walks file trees and tests each node against an expression, as
+find(1) does, with one letter per switch and the same behavior on
+Linux, Darwin and NetBSD. It prints names, or one cksh line per node,
+and sorts what it prints by column. It is a C99 binary, and a bash
+function for hosts without it.</p>
+<p><code>ff --help</code> is the manual and documents the current implementation.
+On a terminal it is shown as a man page, headings in bold, through
+the formatter of the host (mandoc, else nroff and a pager) without the
+page being installed; where there is no formatter, through the pager
+alone. <code>ff --man</code> writes the man page source.
+<a href="./plan-ff.md.html">./plan-ff.md.html</a> carries the requirements, the decisions behind them, the
+history, and the status of each revision.</p>
+<pre><code>revision 6af927be 20261114 193214 PST Sat --- r0.7
+revision 6ae4ea00 20261030 120328 PDT Fri --- r0.6
+revision 6adcb748 20261024 064856 PDT Sat --- r0.5
+revision 6abc5da8 20260929 175400 PDT Tue --- r0.4
+revision 6abb42b9 20260928 214649 PDT Mon --- r0.3
+revision 6ab89f43 20260926 214451 PDT Sat --- r0.2
+original 6ab7fec8 20260926 102008 PDT Sat --- r0.1
+</code></pre>
+<p><em>(c) 2026 George Georgalis <a href="mailto:george@iuxta.com">george@iuxta.com</a> Unlimited use with attribution.</em></p>
+<h2 id="contents">Contents</h2>
+<nav>
+<ul>
+<li><a href="#what-it-does">What it does</a></li>
+<li><a href="#files">Files</a></li>
+<li><a href="#build">Build</a></li>
+<li><a href="#grammar">Grammar</a></li>
+<li><a href="#help-and-manual">Help and manual</a></li>
+<li><a href="#output-safety">Output safety</a></li>
+<li><a href="#diagnostics-and-exit-status">Diagnostics and exit status</a></li>
+<li><a href="#the-walker">The walker</a></li>
+<li><a href="#darwin-considerations">Darwin considerations</a></li>
+<li><a href="#bash-translator-limits">Bash translator limits</a></li>
+<li><a href="#verified">Verified</a></li>
+</ul>
+</nav>
+<hr />
+<h2 id="what-it-does">What it does</h2>
+<pre><code>ff . -t f -n '*.c'               C sources
+ff src -r '\.(c|h)$'             the same by ERE (unanchored)
+ff . -n .git -z -o -t f -f       files, skipping .git trees
+ff -k5 . -t f -m -1              changed within a day, oldest first
+ff -k4r,6 . -t f -v              cksh lines, largest first, then by name
+ff . -t f -x grep -l TODO {} +   grep per directory, race safe
+ff . -n '*.o' -delete            remove objects
+</code></pre>
+<p>Two implementations share one grammar, one manual and one exit status
+scheme:</p>
+<ul>
+<li><code>ff</code> --- C99 binary, no dependency beyond libc, with its own directory
+walker (not fts).</li>
+<li><code>ff.fn.bash</code> --- bash function that translates the ff grammar into an
+argument array for the host's native find (BSD or GNU dialect, probed per
+call) and never uses <code>eval</code>. Where the native find cannot express a
+request it exits 2 and names the binary. Load it with <code>. ff.fn.bash</code>; it
+adds the one name <code>ff</code> to the calling shell. When a binary named <code>ff</code> is
+on <code>PATH</code> the function runs it; <code>--fn</code> keeps the function and <code>--bin</code>
+requires the binary.</li>
+</ul>
+<p><code>-h</code> is a one-screen usage:</p>
+<pre><code>    Usage: ff [-IHLDSXZV] [-k [col[r][,col[r]]...]] [--] [path ...] [expression]
+           ff -h | --help | --man | --version   (--fn | --bin: --help)
+      options  -I ignore case for -n -p -r  -H/-L follow symlinks
+               -D post-order  -S sorted  -X one filesystem  -Z NUL records
+               -V show the native find command (ff.fn.bash)
+      sort     -k5,4 by column 5, then 4, then the remaining columns in
+               order; columns as -v writes them: 1 inode 2 links 3 .
+               4 size 5 mdate 6 name; no -v needed.  -k alone: by name
+               -k5r  r reverses that column
+      tests    -n glob  -p glob  -r ERE  -t fdlpsbc  -d [+-]N  -s [+-]N[ckMGT]
+               -m -a -c -b [+-]N[smhdw]  -w [+-][ ]([.][.]/file|HEX)
+               -u user  -g group  -l [+-]N  -i [+-]HEX  -y file (same node)  -e
+               -mode [+-]bits  -z (prune)  -0 (true)  -1 (false)
+      actions  -f print  -v cksh line  -x cmd {} ;|+  (in entry's dir)
+               -j cmd {} ;|+  (full path)  -delete  -q quit
+      logic    ( )  ! or -not  juxtaposition = and  -o or
+      -h this summary, --help the manual
+</code></pre>
+<p>The test suite runs its cases through both implementations and checks
+them against each other.</p>
+<p>ff is one of three tools that share a record and a key grammar: ff
+finds files, <a href="../cksh/">cksh</a> lists them with a hash, <a href="../srt/">srt</a>
+sorts listings. The <code>-v</code> line of ff is the cksh line, and <code>-k</code> in each
+tool reads the same list.</p>
+<h2 id="files">Files</h2>
+<p><a href="https://github.com/georgalis/pub/tree/main/src/ff">https://github.com/georgalis/pub/tree/main/src/ff</a></p>
+<ul>
+<li><strong><a href="./ff.c">ff.c</a></strong> --- the program: C99 source for the <code>ff</code> binary, including the usage text and the manual source.</li>
+<li><strong><a href="./ff.fn.bash">ff.fn.bash</a></strong> --- the bash function <code>ff</code>: translates the same switches into the host's native <code>find</code> argument list; carries the usage and manual text, copied from the binary.</li>
+<li><strong><a href="./makefile">makefile</a></strong> --- targets <code>all ff man test install clean uninstall</code>. <code>ff.1</code> is the output of <code>ff --man</code>.</li>
+<li><strong><a href="./test-ff.sh">test-ff.sh</a></strong> --- the full suite, run twice (C binary, then bash function), with a byte-for-byte parity check between the two; host-dependent cases are skipped by named probe.</li>
+<li><strong><a href="./">README.md</a></strong> --- this file: introduction, grammar, build, translator limits, verified state.</li>
+<li><strong><a href="./plan-ff.md.html">plan-ff.md</a></strong> --- requirements, design decisions and their rationale, the history, and the status of each revision.</li>
+</ul>
+<h2 id="build">Build</h2>
+<pre><code>make            # ./ff and ./ff.1 (the output of ./ff --man)
+make test       # regression suite, test-ff.sh
+make install    # PREFIX defaults to /usr/local for root, else $HOME
+make uninstall  # remove exactly what install placed
+make CC=$LOCALBASE/bin/gcc
+</code></pre>
+<p>The makefile uses only the constructs shared by GNU make, bmake, and Apple
+make. It installs <code>bin/ff</code>, <code>man1/ff.1</code>, and <code>share/ff/ff.fn.bash</code>.</p>
+<p>Linking by platform:</p>
+<ul>
+<li>Linux and NetBSD: <code>-static</code>, falling back to dynamic linking when no
+static libc is installed. On Linux, <code>-u</code> and <code>-g</code> names are resolved by
+running the host's <code>getent</code> (<code>/usr/bin/getent</code> or <code>/bin/getent</code>, never
+looked up in <code>PATH</code>), not by <code>getpwnam</code>, which a static glibc binary
+cannot load NSS modules for. <code>/etc/passwd</code> is never read directly: under
+LDAP, sssd or systemd-homed it is not the user database. Without
+<code>getent</code>, a name exits 2 and a numeric id still works.</li>
+<li>Darwin: dynamic, against libSystem only. Apple ships no static libSystem,
+so this is as far as linking can go there.</li>
+</ul>
+<h2 id="grammar">Grammar</h2>
+<p><code>ff [options] [path ...] [expression]</code>, default path <code>.</code>, default action
+print. Options are uppercase, and <code>-k</code>, and global, and may appear anywhere
+outside a primary's argument. Primaries are lowercase, the digits 0 and 1,
+or <code>-mode</code> and <code>-delete</code>.</p>
+<table>
+<thead>
+<tr><th>option</th><th>find</th><th></th></tr>
+</thead>
+<tbody>
+<tr><td><code>-I</code></td><td><code>-iname</code> <code>-ipath</code> <code>-iregex</code></td><td>case-insensitive <code>-n -p -r</code></td></tr>
+<tr><td><code>-H</code> <code>-L</code></td><td><code>-H</code> <code>-L</code></td><td>symlink policy</td></tr>
+<tr><td><code>-D</code></td><td><code>-d</code> / <code>-depth</code></td><td>post-order</td></tr>
+<tr><td><code>-S</code></td><td><code>-s</code></td><td>sorted walk</td></tr>
+<tr><td><code>-X</code></td><td><code>-x</code> / <code>-xdev</code></td><td>one filesystem</td></tr>
+<tr><td><code>-Z</code></td><td><code>-print0</code></td><td>NUL-terminated records, <code>-v</code> lines too</td></tr>
+<tr><td><code>-V</code></td><td></td><td>bash function: print the native find command to stderr</td></tr>
+<tr><td><code>-k [list]</code></td><td><code>| sort</code></td><td>sort output by the columns of <code>-v</code>; see below</td></tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr><th>primary</th><th>find</th><th>ff semantics</th></tr>
+</thead>
+<tbody>
+<tr><td><code>-n glob</code></td><td><code>-name</code></td><td></td></tr>
+<tr><td><code>-p glob</code></td><td><code>-path</code></td><td></td></tr>
+<tr><td><code>-r ere</code></td><td><code>-E -regex</code></td><td><strong>always ERE, unanchored</strong>; add <code>^</code> <code>$</code></td></tr>
+<tr><td><code>-t fdlpsbc</code></td><td><code>-type</code></td><td>several letters mean or</td></tr>
+<tr><td><code>-d [+-]N</code></td><td><code>-mindepth</code> <code>-maxdepth</code></td><td>global walk bound</td></tr>
+<tr><td><code>-s [+-]N[ckMGT]</code></td><td><code>-size</code></td><td>bytes, exact, no rounding</td></tr>
+<tr><td><code>-m -a -c -b [+-]N[smhdw]</code></td><td><code>-mtime</code> ... <code>-Btime</code></td><td>age in seconds; default unit d</td></tr>
+<tr><td><code>-w [+-][ ]([.][.]/file|HEX)</code></td><td><code>-newer</code></td><td>when: after, before or at; see below</td></tr>
+<tr><td><code>-y file</code></td><td><code>-samefile</code></td><td>same device and inode</td></tr>
+<tr><td><code>-mode [+-]bits</code></td><td><code>-perm</code></td><td>a query, see below</td></tr>
+<tr><td><code>-u</code> <code>-g</code></td><td><code>-user</code> <code>-group</code></td><td></td></tr>
+<tr><td><code>-l [+-]N</code></td><td><code>-links</code></td><td></td></tr>
+<tr><td><code>-i [+-]HEX</code></td><td><code>-inum</code></td><td>hex, as <code>-v</code> prints it</td></tr>
+<tr><td><code>-e</code></td><td><code>-empty</code></td><td></td></tr>
+<tr><td><code>-z</code></td><td><code>-prune</code></td><td></td></tr>
+<tr><td><code>-0</code> <code>-1</code></td><td><code>-true</code> <code>-false</code></td><td></td></tr>
+<tr><td><code>-f</code></td><td><code>-print</code></td><td></td></tr>
+<tr><td><code>-v</code></td><td><code>-ls</code></td><td>cksh line, identical to <code>cksh -n0 -x0</code></td></tr>
+<tr><td><code>-x cmd ... ;</code> / <code>{} +</code></td><td><code>-execdir</code></td><td>runs in the node's verified directory</td></tr>
+<tr><td><code>-j cmd ... ;</code> / <code>{} +</code></td><td><code>-exec</code></td><td>full path, race exposed like find</td></tr>
+<tr><td><code>-delete</code></td><td><code>-delete</code></td><td>a long switch to confirm</td></tr>
+<tr><td><code>-q</code></td><td><code>-quit</code> / <code>-exit</code></td><td></td></tr>
+</tbody>
+</table>
+<p>Operators: <code>( )</code>, <code>!</code> or <code>-not</code>, juxtaposition for and, <code>-o</code>. The shell
+treats <code>( ) ; *</code> and sometimes <code>!</code> as its own syntax, so escape or quote
+them: <code>ff . \( -n .git -o -n node_modules \) -z -o -t f -f</code>.</p>
+<p><code>-w</code> is "when": <code>-w +./ref</code> modified after file <code>ref</code> (find <code>-newer</code>),
+<code>-w -./ref</code> before it, <code>-w ./ref</code> at the same time, comparing the full
+timestamp. With a hex epoch second, the mdate column of <code>ff -v</code>, the
+comparison is by whole seconds: <code>-w -6abb2e78</code> modified before that
+second. A file always begins with <code>./</code>, <code>../</code> or <code>/</code>, and anything else
+must be hex, so no word is both: a file named <code>cafe</code> or <code>6abb2e78</code> is
+<code>./cafe</code>, <code>./6abb2e78</code>. The sign may stand apart as its own word, so
+<code>-w + ./ref</code> is <code>-w +./ref</code> and <code>-w - 6abb2e78</code> is <code>-w -6abb2e78</code>; the
+word after a lone sign takes no sign of its own.</p>
+<p><code>-r</code> is always a POSIX extended regular expression (ERE, as <code>grep -E</code>),
+matched anywhere in the path; <code>-n</code> and <code>-p</code> are glob; <code>-I</code> makes all three
+case-insensitive. There is no BRE option, and <code>-E</code> is an unknown option.
+ERE reads <code>( ) { } + ? |</code> as operators and <code>\( \) \{</code> as the characters
+themselves, the reverse of BRE. The manual's REGULAR EXPRESSIONS section
+lists the syntax, the BRE differences, and the portable escapes
+(<code>[[:digit:]]</code>, not <code>\d</code>).</p>
+<p>The primaries <code>-0</code> and <code>-1</code> are read as true and false.</p>
+<p><code>-mode</code> asks about permission bits rather than doing chmod arithmetic, and
+its <code>+</code> and <code>-</code> keep ff's sense of more and less:</p>
+<ul>
+<li>Octal: <code>0755</code> exactly; <code>+0755</code> at least (every bit, maybe more, find
+<code>-perm -0755</code>); <code>-0755</code> at most (no bit outside it).</li>
+<li>Symbolic: clauses <code>[ugoa][+-][rwxXst]</code> joined by commas, all required;
+<code>+</code> has, <code>-</code> lacks, no sign means <code>+</code>. Named classes must each satisfy a
+clause; with no class, <code>+x</code> means someone may execute and <code>-x</code> no one
+may. <code>X</code> is execute that only a directory satisfies, <code>s</code> setuid (<code>u</code>) or
+setgid (<code>g</code>), <code>t</code> the sticky bit. With no class, each class is tested
+with only the bits it can hold, so <code>-mode +rs</code> holds for a 0644 file
+(other has <code>r</code> and can hold no <code>s</code>); <code>-mode u+rs</code> needs both in one
+class.</li>
+</ul>
+<pre><code>ff . -t f -mode o+w     world-writable files
+ff . -mode +s           setuid or setgid
+ff . -not -mode go-w    group or other may write
+ff . -mode o-X          directories others may not search
+</code></pre>
+<p><code>-k [col[r][,col[r]]...]</code> sorts what ff prints, by the columns of the
+<code>-v</code> line: 1 inode, 2 links, 3 a dot, 4 size, 5 mdate, 6 name. Columns
+are words, as <code>$1</code>, <code>$2</code> are in awk; widths are not significant, and
+the name begins at column 6 and runs to the end of the record. The
+named columns are compared in the order given, then the remaining
+columns left to right, then walk order: <code>-k5,4</code> compares 5,4,1,2,3,6.
+<code>-k</code> alone names no column and sorts by name. <code>-k5 -k4</code> is <code>-k5,4</code>.</p>
+<p>The columns need not be printed. Every record, from <code>-f</code>, <code>-v</code> or the
+default print, is keyed by its node's stat, so <code>ff -k5</code> orders bare
+names by time, as <code>ls -t</code> orders names without <code>-l</code>. ff knows the type
+of each column: inode, links, size and mdate compare by value (mdate
+signed), the name bytewise as it is printed. Column 3 is where cksh
+writes its hash, shake256-6 by default; ff reads no file and writes a
+dot there, a null column, so a key on it orders nothing and the next
+column decides.</p>
+<p><code>r</code> after a column reverses that column: <code>-k5r</code>. <code>x</code> is accepted on the
+numeric columns and changes nothing, so a list written for srt can be
+given to ff; any other letter is refused. <code>-krN</code> is retired for <code>-kNr</code>,
+and <code>-k-1</code> is not accepted. ff has no option that reverses every column,
+<code>-r</code> being the regular expression primary. The list may be joined to
+<code>-k</code> or be the next word, when that word reads as a list: <code>ff -k 5,4</code>
+sorts, <code>ff -k src</code> sorts <code>src</code> by name, and a path named like a list is
+written <code>./5</code>. <code>-k</code> may end a group of options: <code>-Sk5</code>.</p>
+<p>Records are held until the walk ends and written with their own
+terminators; <code>-x</code> and <code>-j</code> output is not sorted, and after <code>-q</code> the
+records printed so far are.</p>
+<pre><code>ff -k5 . -t f -m -1                    changed within a day, oldest first
+ff -k4r,6 . -t f -v                    cksh lines, largest first, then name
+ff . -t f -v | srt -k5x,4x,6,1x,2x,3   what ff -k5,4,6 . -t f -v writes
+ff . -t f | cksh -k5,4                 the same files, with their hashes
+ff -Z . -t f | cksh -Z | srt -Z -k5x,4x   NUL records end to end
+</code></pre>
+<p><code>-Z</code> (<code>--zero-terminated</code>) ends every record with NUL, the names from
+<code>-f</code> and the default print and the lines of <code>-v</code>, and writes names as
+they are. It is the <code>-Z</code> of cksh and srt.</p>
+<p><code>-x</code> or <code>-j</code>: <code>-j</code> passes the full path, and the child looks every
+component up again, so a directory swapped for a symlink after ff checked
+it redirects the command. That is the classic find <code>-exec</code> race. <code>-x</code>
+changes into the directory ff already opened and verified, then passes
+<code>./name</code>, so only the last component is resolved again. <code>-x</code> refuses to run
+when <code>PATH</code> holds a relative or empty element, since the working directory
+is the walked one. <code>-delete</code> removes through the same verified parent
+descriptor. It refuses an operand whole, walking nothing below it, when
+the operand ends in <code>..</code> or is the root directory itself: <code>/</code>, <code>//</code>,
+<code>/.</code>, <code>/usr/..</code>, <code>.</code> run from <code>/</code>, or under <code>-H</code> a symlink to <code>/</code>. The
+root is found by device and inode, not by spelling. find refuses only
+the node and still empties it; ff reports status 4 and leaves it whole.
+An operand <code>.</code> keeps find's meaning: its contents are walked and it is
+kept.</p>
+<h2 id="help-and-manual">Help and manual</h2>
+<p><code>--help</code> writes the manual. When stdout is a terminal it is shown as a
+man page, with its headings in bold, through the formatter of the host:
+mandoc, else nroff with a pager (<code>PAGER</code>, else less, else more). Where
+neither is found the text goes through the pager alone, and where no
+pager runs it is written directly, so <code>--help</code> never shows nothing. The
+formatter and pager run by <code>/bin/sh -c</code>, as <code>man</code> runs them: <code>PAGER</code> is
+the user's own setting, and unlike <code>-x</code> and <code>-j</code> words it is meant to
+be a shell command (<code>less -R</code>). A pager quit early is not an error.
+<code>-h</code>, and <code>--help</code> to a pipe or file, are plain. <code>--man</code> writes the man
+page source, which is <code>ff.1</code>; <code>--version</code> writes the revision.</p>
+<h2 id="output-safety">Output safety</h2>
+<p>Names go out as raw bytes to a pipe or with <code>-Z</code>. On a terminal, C0 and C1
+control characters, DEL and invalid UTF-8 print as <code>\ooo</code>, so a crafted file
+name cannot drive the terminal. Diagnostics on a terminal follow the same
+rule.</p>
+<h2 id="diagnostics-and-exit-status">Diagnostics and exit status</h2>
+<p>Messages go to stderr in the format of the shell <code>chkerr</code> and <code>chkwrn</code>
+functions, one line each, ending in a hex tag that names the message:</p>
+<pre><code>&gt;&gt;&gt; ff : cannot stat 't/nope': No such file or directory (6ab7ff32)
+&gt;&gt;&gt; ff : -t: types are f d l p s b c, not 'q' (6ab7ff0a)
+^^^ ff : filesystem loop, skipped 't/d/up' (6ab7ff3a)
+</code></pre>
+<p>Usage errors are identical, message and tag, from the binary and the bash
+function. Only the binary adds the system's reason, as after the colon
+above.</p>
+<p>The exit status is a bitmask. Statuses 1 and 2 are fatal. The others accumulate while the walk
+continues.</p>
+<table>
+<thead>
+<tr><th align="right">bit</th><th>meaning</th></tr>
+</thead>
+<tbody>
+<tr><td align="right">1</td><td>invalid option or expression</td></tr>
+<tr><td align="right">2</td><td>environment: memory, stdout, fork, unsafe <code>PATH</code> for <code>-x</code>; bash: request the native find cannot express</td></tr>
+<tr><td align="right">4</td><td>cannot stat, open, read or delete a node; subtree skipped</td></tr>
+<tr><td align="right">8</td><td>a command could not run, or a <code>+</code> batch exited nonzero</td></tr>
+<tr><td align="right">16</td><td>filesystem or symlink loop</td></tr>
+<tr><td align="right">32</td><td>node changed between listing and opening; skipped</td></tr>
+</tbody>
+</table>
+<p>The bash function sees only the native find's 0 or 1, and reports any
+native failure as 4.</p>
+<h2 id="the-walker">The walker</h2>
+<ul>
+<li>Every directory is opened with <code>openat(parent, name, O_DIRECTORY| O_NOFOLLOW)</code> and its <code>dev/ino</code> is compared with the <code>fstatat</code> taken while
+listing. A mismatch is status 32 and the subtree is skipped, not
+followed.</li>
+<li>At most 64 directory descriptors are held, fewer under a low
+<code>RLIMIT_NOFILE</code>. Deeper levels are reopened from the nearest held
+ancestor, one component at a time, with the same verification.</li>
+<li>A directory that is its own ancestor (a <code>-L</code> loop or a bind mount) is
+reported and skipped, as fts <code>FTS_DC</code> is in find.</li>
+<li><code>d_type</code> avoids a <code>stat</code> when the expression needs none. <code>DT_UNKNOWN</code>
+(xfs, nfs, some fuse) falls back to <code>fstatat</code>.</li>
+</ul>
+<p>fts(3) was not used: musl ships none, so a static musl build could not link
+it, and it gives no per-open verification.</p>
+<h2 id="darwin-considerations">Darwin considerations</h2>
+<ul>
+<li>Birth time <code>-b</code>: <code>st_birthtime</code> on Darwin and NetBSD, <code>statx</code> on Linux
+(glibc 2.28, musl 1.2.5). Where the filesystem records none, <code>-b</code> is
+false with one warning.</li>
+<li>APFS is case-insensitive by default: <code>-n foo</code> misses <code>Foo</code>, which the
+filesystem itself would open. Use <code>-I</code>.</li>
+<li>Unicode normalization: HFS+ stores names decomposed (NFD), while APFS
+keeps the form they were created with. ff compares bytes, so a
+precomposed pattern does not match a decomposed name.</li>
+<li>Sealed system volume and firmlinks: <code>/</code> and <code>/System/Volumes/Data</code> have
+different <code>st_dev</code>, so <code>-X</code> from <code>/</code> stops at the data volume.</li>
+<li>SIP and TCC deny some directories even to root (e.g. <code>~/Library/Mail</code>).
+These give status 4 with one warning, and the walk continues.</li>
+<li>Dataless files (iCloud): ff never opens regular files; only <code>-e</code> opens
+directories. Walking does not trigger downloads, but commands run by
+<code>-x</code> or <code>-j</code> can.</li>
+<li>BSD file flags, xattrs and ACLs (<code>UF_HIDDEN</code>, <code>com.apple.quarantine</code>) are
+not yet primaries.</li>
+<li>Regex: plain POSIX <code>regcomp</code> with <code>REG_EXTENDED</code>. Darwin's <code>REG_ENHANCED</code>
+is not used, to keep Linux and Darwin identical. Back-references, empty
+alternatives (<code>(a)\1</code>, <code>a||b</code>) and escapes such as <code>\d</code> are outside
+POSIX ERE and vary by C library; portable patterns avoid them.</li>
+<li>Darwin's native find (FreeBSD-derived) is BSD dialect for the bash
+function. It has <code>-E</code>, <code>-Bmin</code>, <code>-quit</code> and <code>-s</code>.</li>
+</ul>
+<h2 id="bash-translator-limits">Bash translator limits</h2>
+<p>Sourcing <code>ff.fn.bash</code> defines the function <code>ff</code> and nothing else. When
+a binary named <code>ff</code> is on <code>PATH</code> the function runs it with the same
+words. <code>--fn</code> allows only the function; <code>-V</code>, which only the function
+can answer, keeps it too. <code>--bin</code> allows only the binary: the function
+stops with status 2 when there is none, and the binary, given <code>--fn</code>,
+stops with status 1. The two together are a usage error.</p>
+<p>Each of these exits 2 and names the binary:</p>
+<ul>
+<li><code>-b</code> on GNU find (no birth time primary);</li>
+<li><code>-m -a -c</code> counted in seconds that are not whole minutes (the native
+find counts minutes);</li>
+<li><code>-r</code> back-references (the translator wraps the pattern in a group to
+make it unanchored, which renumbers its groups);</li>
+<li><code>-v</code> combined with <code>-f</code>, <code>-x</code>, <code>-j</code> or <code>-delete</code>;</li>
+<li><code>-k</code> where <code>sort</code> lacks <code>-z</code> or <code>-s</code> (records are sorted by
+<code>sort -z -s -t TAB</code> on decimal stat keys);</li>
+<li><code>-S</code> combined with <code>-x</code>, <code>-j</code>, <code>-delete</code> or <code>-q</code> on GNU find, which has
+no sorted walk. Plain <code>-S</code> output is emulated there by sorting each
+operand's paths with <code>/</code> as the lowest byte.</li>
+</ul>
+<p>A path operand beginning with <code>-</code> also exits 2.</p>
+<p><code>-r</code> runs as BSD <code>find -E -regex</code> or GNU <code>-regextype posix-extended -regex</code>, wrapped <code>.*(re).*</code>, so <code>-V</code> shows the native <code>-E</code> even though ff
+has no such option.</p>
+<p>Where the native find itself differs, the function passes the difference
+through rather than emulate a walk it does not own. BSD find (seen on
+Darwin):</p>
+<ul>
+<li><code>-delete</code> of a directory that is not empty is expected to be silent,
+status 0, where ff reports status 4 (FreeBSD ignores <code>ENOTEMPTY</code>; the
+test probes the host);</li>
+<li>under <code>-L</code>, a directory that closes a loop is tested, where ff and GNU
+find skip it;</li>
+<li>an unreadable directory named as an operand is not tested, where ff
+lists it, with status 4.</li>
+</ul>
+<p>test-ff.sh probes the host's find for each and skips that case in the bash
+pass only where the host behaves so.</p>
+<p><code>-w</code> uses <code>-newermt @S.N</code> where the native find takes it (GNU). Elsewhere
+(Darwin, BSD) it writes reference files at the needed instants with
+<code>touch -d YYYY-MM-DDThh:mm:ss.nnnnnnnnnZ</code> and compares with <code>-newer</code>,
+which every find has; they live in one temporary directory removed after
+the run, and <code>-V</code> names it. Sub-second file comparisons then depend on
+the native <code>-newer</code>; HEX forms are whole seconds either way. Where <code>date</code>,
+<code>touch -d</code> or a nanosecond <code>stat</code> is missing, those forms exit 2.</p>
+<p>Where the native find has no <code>-samefile</code> (NetBSD), <code>-y</code> uses the
+reference's inode number from <code>stat</code> as <code>-inum</code>. find has no primary for
+the device, so that is exact unless the walk crosses into another
+filesystem holding the same inode number; <code>-V</code> shows which form ran.</p>
+<p><code>-x</code> must hand each command <code>./name</code>, as the binary does, so a name such
+as <code>-rf</code> is never read as an option. GNU <code>-execdir</code> gives <code>./name</code>; BSD
+<code>-execdir</code> gives the bare name (seen on Darwin). The function probes which
+once per call. For bare names it runs the command through a fixed
+<code>/bin/sh -c</code> script that prefixes <code>./</code> to each <code>{}</code> name and every <code>+</code>
+name: the command and its words reach the script as arguments and are
+never evaluated, and the script ends in <code>exec</code>, so the status is the
+command's own. <code>-V</code> shows the wrapped form. <code>FF_BARE_EXECDIR=1</code> forces it,
+for testing on GNU.</p>
+<p><code>-V</code> prints the native command before running it, quoted to paste back
+into a shell, as a starting point for an OS-specific find command:</p>
+<pre><code>$ ff -V . -n '*.h' -w +./Makefile
+find . \( -name \*.h -newer ./Makefile \) -print
+</code></pre>
+<h2 id="verified">Verified</h2>
+<ul>
+<li><code>make test</code> runs every behavior case twice, once through the binary
+and once through the bash function, then a parity pass comparing the
+two byte for byte, with a tally for each. The function skips only the
+cases it cannot meet, in named groups: status bits 8, 16 and 32 and
+status 2 for a full stdout (the native find reports any failure as 1,
+read as 4); the binary's <code>-V</code> note; <code>-x</code> with an absolute command under
+a relative <code>PATH</code> (GNU find refuses <code>-execdir</code> whatever the command); a
+path operand beginning with <code>-</code>; walk diagnostics in chkerr form (the
+native find writes its own). The function is always run with <code>--fn</code>, so
+an <code>ff</code> installed on <code>PATH</code> is never the one tested.</li>
+<li>r0.7 passes under GNU make on Linux (glibc 2.39, GNU find 4.9, bash
+5.2): 922 passed, 0 failed, 9 skipped as root, which skips the
+unreadable-directory cases, and 926 passed, 7 skipped as an
+unprivileged user; with srt r0.6 and cksh r0.6 on <code>PATH</code> for the
+equivalence cases; with gcc and clang; and with a gcc build under ASan
+and UBSan, clean. gcc and clang compile ff.c without a warning under
+<code>-std=c99 -Wall -Wextra -Wpedantic</code>.</li>
+<li>The walk matches GNU find 4.9 on each primary it shares.</li>
+<li>Darwin (Apple clang, bash 3.2 as <code>/bin/sh</code>): the first r0.7 build
+passed 914 of 918 with 12 skipped, the terminal <code>--help</code> and signed
+mdate cases among those passed. The 4 failures were the suite's own:
+it called <code>cksh</code> by name, and found a cksh function exported into the
+shell before the binary. The suite now runs srt and cksh as files on
+<code>PATH</code>; that correction has been run on Linux only, under bash in
+POSIX mode with functions of both names exported.</li>
+<li>Not run on NetBSD or under bmake. The cases that depend on the host
+are the terminal <code>--help</code> cases (script(1) in either form), the
+signed mdate (a <code>touch</code> and file system that take 1960), and the srt
+and cksh equivalence (both on <code>PATH</code>); each skips itself and says so
+where the host cannot run it.</li>
+</ul>
+<p>See <a href="./plan-ff.md.html">plan-ff.md</a> for the design record, the decisions and
+the history.</p>
+</body>
+</html>

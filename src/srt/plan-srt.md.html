@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+section[role="doc-endnotes"] ol { list-style: none; padding-left: 0; }
+li[role="doc-endnote"] > p:first-of-type { display: inline; margin: 0; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h1 id="srt-plan">srt plan</h1>
+<p>srt: a sort for system operators. One interface on Linux, Darwin and
+NetBSD, delivered as C99 source (<code>srt.c</code>) and a bash function
+(<code>srt.fn.bash</code>).</p>
+<p>This plan drives the package revisions. It was written before any
+code, as the instrument for verifying intent, and it remains the
+record. Items marked <strong>V</strong> (section 2) began as ambiguities with a
+proposed default; nothing downstream of an unconfirmed V item was
+built until it was confirmed. Decisions are recorded in section 12,
+the affected sections are revised in place, and section 13 holds the
+status of each revision as built.</p>
+<pre><code>revision 6af8a908 20261114 103136 PST Sat --- r0.6: V19 built (-x); V20 last column; V21 -D duplicates; V22 bare -k, -k-N, reverse spellings; key grammar shared with the listing tools
+revision 6af889a5 20261114 081741 PST Sat --- r0.5.1: Darwin r0.5 report; -S with -u test corrected; V19 opened (-x hex numeric); title and header order
+revision 6af87ca7 20261114 072215 PST Sat --- r0.5: key encoding built; radix measured and declined; V18 decided and built; Darwin r0.4.2 verified
+revision 6af871c9 20261114 063553 PST Sat --- r0.4.2: owned IPv6 parser (V09 reversal) after Darwin report; V18 opened (--fn, --bin)
+revision 6af86b89 20261114 060913 PST Sat --- r0.4.1: srt.fn.bash is one enclosing function; nothing else is defined
+revision 6af82211 20261114 005545 PST Sat --- r0.4 built (srt.fn.bash); V01 as built; V17 function gap settled; Darwin r0.3 verified
+revision 6af81dc6 20261114 003726 PST Sat --- r0.3 built (-b outline sort); V03 points settled in build recorded; Darwin r0.2 verified
+revision 6af81a46 20261114 002230 PST Sat --- V04 replace rule confirmed; r0.2 built; section 7 revised (partition, single spill file); Darwin r0.1 verified
+revision 6af802ae 20261113 224150 PST Fri --- V03 derived rules, V09 amendment, V17 confirmed; r0.1 built, section 13 added
+revision 6af7fd44 20261113 221844 PST Fri --- V04-V16 decided; V03 indent identity; --mem suffixes; V09 amended (open); V17 -g -H (open); r0.N sequence
+revision 6af7f0fc 20261113 212620 PST Fri --- V01 V02 V03 V05 V07 decided; -i retained; V14 reopened; V16 added
+original 6af7ebdf 20261113 210431 PST Fri --- initial plan, pre-code
+</code></pre>
+<p><em>(c) 2026 George Georgalis <a href="mailto:george@iuxta.com">george@iuxta.com</a> Unlimited use with attribution.</em></p>
+<h2 id="contents">Contents</h2>
+<nav>
+<ul>
+<li><a href="#1-purpose-and-scope">1 Purpose and scope</a></li>
+<li><a href="#2-intent-verification">2 Intent verification</a>
+<ul>
+<li><a href="#key-grammar-shared-with-the-listing-tools">Key grammar shared with the listing tools</a></li>
+</ul></li>
+<li><a href="#3-interface">3 Interface</a></li>
+<li><a href="#4-standards-reconciliation">4 Standards reconciliation</a>
+<ul>
+<li><a href="#letters-whose-meaning-changes">Letters whose meaning changes</a></li>
+<li><a href="#eliminated">Eliminated</a></li>
+</ul></li>
+<li><a href="#5-comparison-semantics">5 Comparison semantics</a></li>
+<li><a href="#6-locale">6 Locale</a></li>
+<li><a href="#7-memory-and-spill">7 Memory and spill</a></li>
+<li><a href="#8---radixsort">8 --radixsort</a></li>
+<li><a href="#9-package-files">9 Package files</a></li>
+<li><a href="#10-verification">10 Verification</a></li>
+<li><a href="#11-revision-sequence">11 Revision sequence</a></li>
+<li><a href="#12-decision-log">12 Decision log</a></li>
+<li><a href="#13-revision-status">13 Revision status</a>
+<ul>
+<li><a href="#r01-6af8010b-20261113">r0.1 (6af8010b, 20261113)</a></li>
+<li><a href="#r02-6af81678-20261114">r0.2 (6af81678, 20261114)</a></li>
+<li><a href="#r03-6af81dc6-20261114">r0.3 (6af81dc6, 20261114)</a></li>
+<li><a href="#r04-6af82211-20261114">r0.4 (6af82211, 20261114)</a></li>
+<li><a href="#r041-6af86b89-20261114">r0.4.1 (6af86b89, 20261114)</a></li>
+<li><a href="#r042-6af871c9-20261114">r0.4.2 (6af871c9, 20261114)</a></li>
+<li><a href="#r05-6af87ca7-20261114">r0.5 (6af87ca7, 20261114)</a></li>
+<li><a href="#r051-6af889a5-20261114">r0.5.1 (6af889a5, 20261114)</a></li>
+<li><a href="#r06-6af8a908-20261114">r0.6 (6af8a908, 20261114)</a></li>
+</ul></li>
+<li><a href="#one-order-on-three-hosts">One order on three hosts</a></li>
+</ul>
+</nav>
+<hr />
+<h2 id="1-purpose-and-scope">1 Purpose and scope</h2>
+<p>srt replaces the three native sorts with one grammar whose ordinary
+case is the operator's ordinary case: column-ordered keys (<code>-k5,3</code>
+reads "column 5, then column 3, then the rest"), stable by default,
+byte-deterministic across hosts, and safe on inputs larger than
+memory.</p>
+<p>In scope: text records, column keys, the five ordering options, check
+mode, unique, shuffle, indentation-block sort, external spill.</p>
+<p>Out of scope, by requirement: character-offset sub-keys (<code>-k2.3</code>),
+key ranges (<code>-k2,4</code> as "fields 2 through 4"), and the obsolescent
+<code>+pos -pos</code> form.</p>
+<p>Not a drop-in for <code>sort(1)</code>. Several letters keep their name and change
+their meaning (section 4); a script written for native sort must not be
+pointed at srt unexamined.</p>
+<h2 id="2-intent-verification">2 Intent verification</h2>
+<p>Each item states the ambiguity, the readings, and the proposed default.</p>
+<p><strong>V01 Role of srt.fn.bash.</strong> DECIDED: (a) as proposed. Readings: (a) translator --- the same
+grammar executed through native <code>sort</code> and POSIX <code>awk</code> where the binary
+is absent, after the ff precedent; (b) thin wrapper that locates and
+calls the binary; (c) independent pure-bash implementation.
+Proposed: (a). Mechanism is decorate-sort-undecorate: awk emits the key
+columns in key order as a prefix, <code>LC_ALL=C sort -s</code> orders it, the
+prefix is cut. Consequences to accept: the function inherits native
+memory behavior; <code>-b</code> under reading V03(B) is binary-only (the function
+refuses it with a diagnostic rather than approximating); a function
+named <code>srt</code> shadows a binary named <code>srt</code> in the same shell, so the
+function either carries a distinct name or defers to the binary when
+one is on PATH. Proposed: defer to the binary when present.</p>
+<p>As built at r0.4 (20261114): the awk pass does more than reorder
+columns. It encodes every key --- bytes, <code>d</code>, <code>f</code>, <code>i</code>, <code>n</code>, <code>g</code>, <code>H</code>,
+<code>v</code> with all three refinements --- into a string whose byte order is
+srt order, and the native sort is asked only to compare bytes, stably,
+field by field (<code>sort -s -t ... -k N,N[r]</code>). No native ordering option
+is used, so the function owes nothing to which sort a host has; <code>-u</code>
+and <code>-c</code> are done in awk for the same reason. Records are padded to
+the widest column count so that a missing column and an empty one are
+the same key, as in the binary. Since r0.4.1 the file defines one name:
+everything else is inside <code>srt</code> (see section 13). <code>SRT_FN=1</code> keeps the function when a
+binary is on PATH. What the function declines is listed in <code>--help</code>,
+section BASH FUNCTION, which the binary and the function share.</p>
+<p><strong>V02 -c and -C polarity.</strong> DECIDED: POSIX convention --- <code>-c</code> checks
+and reports, <code>-C</code> checks silently.<a href="#fn-1" role="doc-noteref"><span>[^</span>1<span>]</span></a><a href="#fn-3" role="doc-noteref"><span>[^</span>3<span>]</span></a> This reverses the initial
+request (<code>-c</code> silent, <code>-C</code> verbose) and removes both letters from the
+changed-meaning table of section 4. The report's form is V14.</p>
+<p><strong>V03 -b, --respect-blanks.</strong> In every native, <code>-b</code> <em>ignores</em> leading
+blanks.<a href="#fn-1" role="doc-noteref"><span>[^</span>1<span>]</span></a><a href="#fn-3" role="doc-noteref"><span>[^</span>3<span>]</span></a> Here it means the reverse family. Readings:
+(A) leading blanks are significant bytes in comparison, nothing more;
+(B) outline sort --- a line owns the more-deeply-indented lines that
+follow it; siblings at each depth are sorted, each parent travels with
+its subtree, recursively;
+(C) each contiguous run of equally indented lines is sorted in place,
+runs never mix.
+DECIDED: (B), outline sort, with indent identity: an indent is the
+exact byte string of leading spaces and tabs. Spaces and tabs may be
+mixed freely, but they never correlate --- no tab expansion, no width;
+two indents are the same only when byte-identical. Blank lines attach
+to the preceding block.</p>
+<p>Derived from that decision (confirmed 20261113):</p>
+<ul>
+<li>Parentage: a line is the child of the nearest preceding line whose
+indent is a proper prefix of its own. A line with no such
+predecessor is top-level.</li>
+<li>Sibling group: children of one parent that share a byte-identical
+indent. Only a group is sorted. Children of one parent with
+different indents (a tab-indented child and a space-indented child)
+form separate groups, and groups keep their input order.</li>
+<li>Consequence: <code>&lt;TAB&gt;x</code> is not a child of <code>&lt;SP&gt;&lt;SP&gt;y</code>, whatever an
+editor displays.</li>
+</ul>
+<p>Settled while building r0.3 (20261114); each is the plan's reading of
+a point the decision left open, stated in <code>--help</code> and pinned by
+tests, and each can be amended:</p>
+<ul>
+<li>"Nearest preceding" is read with block closure: a line closes every
+open block whose indent it does not extend, and a closed block is
+not reopened. In <code>A</code>, <code>  z</code>, <code>&lt;TAB&gt;C</code>, <code>    D</code> the line <code>D</code> is a
+child of <code>A</code>, not of <code>z</code>, because <code>&lt;TAB&gt;C</code> closed <code>z</code>. The literal
+reading would lift <code>D</code> above <code>C</code> without any sort having asked.</li>
+<li>A group is all children of one parent with the same indent, whether
+or not other-indent siblings lie between them; groups are written in
+order of first appearance.</li>
+<li>Blank lines (empty, or only blanks) are not sorted. Each stays
+directly below the line it follows and moves with it; leading blank
+lines stay first.</li>
+<li><code>-u</code> under <code>-b</code> removes an equal sibling only when it is a leaf with
+no blank line after it. A line carrying a block is always kept, so
+<code>-u</code> never discards lines it did not compare.</li>
+<li><code>-c</code>/<code>-C</code> under <code>-b</code> require every group to be in order and report
+the first out-of-order line by input position.</li>
+<li>Several inputs form one outline, in operand order.</li>
+</ul>
+<p><strong>V04 -k grammar.</strong> DECIDED:</p>
+<ul>
+<li><code>-k5,3</code> and <code>-k5 -k3</code> are identical; keys accumulate left to right.</li>
+<li>Per-key options are letters appended to a column: <code>-k5n,3fr</code>.
+Permitted letters: <code>d f g H i n r v</code>.</li>
+<li>Letters on a column replace the global set for that column; they are
+never added to it. <code>-n -k1r</code> gives column 1 the set <code>{r}</code> alone, so
+it sorts as reversed text, and reversed numeric is <code>-k1nr</code>. This is
+the operator's original requirement and the rule of sort(1).
+Confirmed 20261114 after an additive alternative was put forward
+and declined; <code>--help</code> section GLOBAL AND KEY OPTIONS carries the
+explanation.</li>
+<li>A column named twice is an error (it is almost always native-sort
+habit, <code>-k2,2</code>, and silently accepting it hides the difference).</li>
+<li>Column 0 and non-numeric columns are errors.</li>
+<li>A line with fewer columns than a key names has an empty key there;
+empty sorts before non-empty.</li>
+<li>After the named columns, the remaining columns compare left to right
+in natural order under the global options. With six columns, <code>-k5,3</code>
+orders by 5,3,1,2,4,6 (amended by V20: as written this now holds for
+<code>-k5n,3</code>; with column 5 as text, 5 and 6 are one key).</li>
+</ul>
+<p><strong>V05 -u scope.</strong> Because the remaining columns always participate,
+two lines are "equal" only when every column compares equal under the
+options in force. <code>-u</code> therefore removes whole-line duplicates (modulo
+<code>-f</code>, <code>-d</code>, <code>-n</code> equivalence), keeping the first by input order. The
+native ability "one line per distinct key column" is lost. DECIDED:
+<code>-u</code> removes whole-line duplicates only. No <code>--unique-key</code> is planned.</p>
+<p><strong>V06 Default column separation.</strong> Without <code>-t</code>: POSIX splits at the
+blank-to-non-blank transition and keeps leading blanks inside the
+field; awk splits on blank runs and drops them. DECIDED: awk rule
+(space and tab only). With <code>-t char</code>: every occurrence separates and
+empty columns exist. <code>char</code> is one byte; <code>\t</code> and <code>\0</code> are accepted
+escapes; multi-byte separators are an error.</p>
+<p><strong>V07 -S and the memory control.</strong> <code>-S</code> here follows NetBSD ("don't use
+stable sort")<a href="#fn-1" role="doc-noteref"><span>[^</span>1<span>]</span></a>; in the GNU and FreeBSD-derived sorts <code>-S</code> is the
+memory size.<a href="#fn-2" role="doc-noteref"><span>[^</span>2<span>]</span></a><a href="#fn-3" role="doc-noteref"><span>[^</span>3<span>]</span></a> That leaves the memory budget without a letter.
+DECIDED: automatic budget (section 7) with override by environment
+variable <code>SRT_MEM</code> and long option <code>--mem size</code> only. <code>size</code> is an
+integer N with an optional suffix: <code>b</code> bytes (the default), <code>k</code>
+kibibytes, <code>m</code> mebibytes, <code>g</code> gibibytes; powers of 1024. Under <code>-S</code> the
+binary may choose a faster unstable algorithm; output order among
+equal lines is then unspecified.</p>
+<p><strong>V08 -R interplay.</strong> <code>-R</code> is a uniform shuffle of the output records,
+not the native "random hash of keys" that groups equal keys.<a href="#fn-3" role="doc-noteref"><span>[^</span>3<span>]</span></a>
+DECIDED: <code>-R</code> with any of <code>-k -d -f -g -H -i -n -r -v -b -c -C</code> is an
+error;
+<code>-R -u</code> removes byte-identical lines, then shuffles; <code>-t</code> is ignored.
+Entropy from <code>/dev/urandom</code> on all three platforms, one owned path.</p>
+<p><strong>V09 -v definition.</strong> Native version sort (<code>-V</code>) carries
+special cases for suffixes and <code>~</code>.<a href="#fn-3" role="doc-noteref"><span>[^</span>3<span>]</span></a> NetBSD has no version sort at
+all.<a href="#fn-1" role="doc-noteref"><span>[^</span>1<span>]</span></a> DECIDED in base: an owned natural order --- maximal digit
+runs compare by numeric value at any length (leading zeros ignored,
+then shorter run first), all other bytes compare bytewise.</p>
+<p>Requirement added 20261113: <code>-v</code> must sort IPv4, IPv6, networks, and
+versioned archives. Measured against that, the base rule alone:</p>
+<table>
+<thead>
+<tr><th>shape</th><th>base rule</th><th>verdict</th></tr>
+</thead>
+<tbody>
+<tr><td>IPv4 <code>9.255.0.1 10.2.0.1 10.10.0.1</code></td><td>octets numeric</td><td>correct</td></tr>
+<tr><td>CIDR <code>10.0.0.0 10.0.0.0/8 10.0.0.0/16</code></td><td>address, then length</td><td>correct</td></tr>
+<tr><td>hosts, interfaces <code>node2 node10</code>, <code>eth2 eth10</code></td><td>numeric runs</td><td>correct</td></tr>
+<tr><td>archives <code>foo-1.2.tar.gz foo-1.10.tar.gz</code></td><td>numeric runs</td><td>correct</td></tr>
+<tr><td>archives <code>foo-1.2.tar.gz</code> v <code>foo-1.2.1.tar.gz</code></td><td><code>1</code> sorts before <code>t</code></td><td>wrong: 1.2.1 lands first</td></tr>
+<tr><td>pre-release <code>1.0~rc1</code> v <code>1.0</code></td><td>shorter first</td><td>wrong: release lands first</td></tr>
+<tr><td>IPv6 <code>2001:db8::9 ::a ::10</code></td><td>hex groups are not digit runs</td><td>wrong: <code>10</code> before <code>a</code></td></tr>
+<tr><td>IPv6 <code>::</code> compression, <code>0db8</code> v <code>db8</code>, <code>DB8</code> v <code>db8</code></td><td>text differs, value equal</td><td>wrong</td></tr>
+</tbody>
+</table>
+<p>Proposed amendment, three owned refinements that repair every "wrong"
+row (DECIDED 20261113):</p>
+<ol>
+<li>
+<p>Suffix rule: a trailing sequence of <code>.</code>-plus-letter-initial
+alphanumeric components (<code>.tar.gz</code>, <code>.tgz</code>, <code>.rpm</code>) is set aside;
+stems compare first, whole keys break the tie.</p>
+</li>
+<li>
+<p>Tilde rule: <code>~</code> sorts before everything, including end of key.</p>
+</li>
+<li>
+<p>IPv6 class: a key that parses whole as an IPv6 address, with
+optional <code>/length</code>, compares by its 128-bit value, then by length.
+All such keys sort after all other keys. IPv4 stays in the natural
+class, where it is already correct and where a four-part version
+number is indistinguishable from an address.</p>
+<p>Reversed at r0.4.2: "parses" was first implemented with the C
+library's <code>inet_pton</code>. The Darwin and Linux libraries do not agree
+on what is an address, so one input got two orders --- the very
+thing section 6 exists to prevent, and a dependency the build
+discipline would have refused had it been sized first. The parser
+is now owned, in <code>srt.c</code> and in the function's awk alike: groups of
+1-4 hex digits; <code>::</code> at most once, standing for at least one group;
+an optional final dotted quad of decimal octets with no leading
+zero; no zone id; <code>/length</code> of 1-3 digits, at most 128. Anything
+else is ordinary text in the natural class.</p>
+</li>
+</ol>
+<p>Shapes that still differ from native <code>-V</code> after the amendment,
+documented and left alone:</p>
+<ul>
+<li><code>1.0a</code> v <code>1.0.1</code>: srt puts <code>1.0.1</code> first (<code>.</code> before letters);
+native puts <code>1.0a</code> first.</li>
+<li>Leading zeros <code>1.005 1.05 1.5</code>: srt orders by value then run
+length; native puts more zeros first. Decimal fractions are <code>-n</code>
+work in either tool.</li>
+<li>Package-manager grammar (epochs <code>1:2.0</code>, release fields) is not
+modeled; hex strings such as commit ids are not numbers.</li>
+<li>Mixed case (<code>RC1</code> v <code>rc1</code>) is bytewise unless <code>-f</code>.</li>
+<li>IPv6: zone ids (<code>%eth0</code>) do not parse and fall to the natural class.
+Native <code>-V</code> has no IPv6 handling at all; observed on GNU sort 9.4 it
+orders <code>::10</code> before <code>::a</code> and treats <code>0db8</code>, <code>DB8</code>, <code>db8</code> as
+different. Here srt is the more correct of the two.</li>
+</ul>
+<p><strong>V10 Locale posture.</strong> See section 6. DECIDED: locale environment is
+not consulted; order is bytewise.</p>
+<p><strong>V11 Eliminated options.</strong> Section 4 lists them. Proposed: every
+eliminated option is a usage error naming the option, with two
+exceptions accepted silently as no-ops because they already describe
+srt's behavior: <code>-s</code> (stable) and <code>-m</code> (multi-file input already sorts
+to one output). Alternative: reject those too, for a smaller grammar.
+DECIDED: as proposed (<code>-s</code> and <code>-m</code> accepted as no-ops, all other
+eliminated options are usage errors); <code>-i</code> is retained for POSIX
+compatibility and leaves the eliminated list.</p>
+<p><strong>V12 --help.</strong> DECIDED: the manual is compiled into the binary as
+text; <code>srt.1</code> is generated from it by <code>make man</code>, so the two cannot
+disagree. <code>--help</code> with stdout a terminal pipes that text through
+<code>$PAGER</code>, else <code>less</code>, else <code>more</code>, else writes it directly; with
+stdout not a terminal it writes directly. It does not call <code>man(1)</code>,
+so it works before <code>make install</code>. <code>-h</code> prints the one-screen usage.
+Alternative reading: <code>--help</code> execs <code>man srt</code>; rejected as proposed
+because it fails uninstalled.</p>
+<p><strong>V13 -n extent.</strong> DECIDED: optional leading blanks, optional <code>-</code>,
+digits, optional <code>.</code> and digits. No exponent, no thousands separator,
+no <code>+</code>. A key with no leading number compares as zero. Decimal point
+is always <code>.</code> (section 6).</p>
+<p><strong>V14 -c report format.</strong> Reopened by V02. The initial request had
+the verbose letter report every input on stdout; POSIX has <code>-c</code> write
+a diagnostic to stderr on disorder and nothing on stdout. DECIDED, to
+follow V02 through: <code>-c</code> writes to stderr one line per disordered
+input, <code>srt: name:line: disorder</code>, where <code>line</code> is the first record
+out of order and standard input is named <code>-</code>; sorted inputs produce
+nothing; stdout is never written in check mode. All inputs are checked
+(no stop at the first disorder), so the report is complete. Under
+<code>-u</code>, "sorted" means strictly ascending, so a duplicate is a disorder.
+Alternative, if the per-file stdout report was the point: keep
+<code>ok&lt;TAB&gt;name</code> / <code>disorder&lt;TAB&gt;name&lt;TAB&gt;line</code> on stdout under <code>-c</code>.</p>
+<p><strong>V16 Default spill directory.</strong> New. The first draft defaulted to
+<code>$TMPDIR</code>, then <code>/tmp</code>. On hosts where <code>/tmp</code> is memory-backed, spill
+there spends the memory the spill exists to save. The Darwin sort
+keeps its temporaries in <code>/var/tmp</code>. DECIDED: <code>-T dir</code>, else
+<code>$TMPDIR</code>, else <code>/var/tmp</code>.</p>
+<p><strong>V17 -g and human-numeric.</strong> New, from the operator's question.
+Both are small in the binary --- one parse routine and one comparator
+each, no new dependency.</p>
+<ul>
+<li><code>-g, --general-numeric</code>: the key is read by C <code>strtod</code>, so
+exponents, <code>inf</code>, <code>nan</code> and hex floats are accepted. srt never calls
+<code>setlocale</code>, so the decimal point is <code>.</code> on every host. Order:
+non-numbers, NaN, -inf, finite values, +inf. Cost: values are
+<code>double</code>, so integers above 2^53 lose exactness (use <code>-n</code>, which is
+exact at any length), and it is the slowest key type.</li>
+<li><code>-H, --human-numeric</code>: sign, digits, optional fraction, optional
+scale letter <code>K M G T P E Z Y</code> (either case). Order is by sign, then
+scale letter, then number. As in the natives, the scale is not
+multiplied out: <code>1023K</code> sorts before <code>1M</code>, and so does <code>2048K</code>. Fit
+for <code>du -h</code>, <code>df -h</code>, <code>ls -lh</code> output, where units are normalized.</li>
+<li>Letter choice: <code>-g</code> is free in srt and matches the natives. Native
+human-numeric is <code>-h</code>, which srt gives to usage. Proposed <code>-H</code>: same
+letter, upper case, and its only native claimant is an ignored
+legacy flag on NetBSD.<a href="#fn-1" role="doc-noteref"><span>[^</span>1<span>]</span></a></li>
+<li>Type letters <code>d g H n v</code> are mutually exclusive on one key.</li>
+<li>Function gap, surfaced at r0: NetBSD native sort has neither <code>-g</code>
+nor a human-numeric nor a version sort.<a href="#fn-1" role="doc-noteref"><span>[^</span>1<span>]</span></a> Settled at r0.4, and not
+by the refusal last proposed: the function encodes these keys in awk
+on every platform (V01, as built), so there is no per-platform
+behavior to refuse. The one remnant is hexadecimal floats under
+<code>-g</code>, which awk cannot read; the function declines them, exit 2.
+DECIDED: both adopted.</li>
+</ul>
+<p><strong>V15 Install layout.</strong> DECIDED: <code>PREFIX</code> default <code>/usr/local</code> for root and
+<code>$HOME</code> for anyone else (amended in r0.6 by the operator; <code>make install PREFIX=dir</code> overrides);
+<code>bin/srt</code>, <code>share/man/man1/srt.1</code>, <code>share/srt/srt.fn.bash</code>. Confirm the
+function's destination against the profile's function-file search.</p>
+<p><strong>V18 Choosing the function or the binary by option.</strong> New, from the
+operator, 20261114: an option, in place of or beside the <code>SRT_FN</code>
+environment variable, to force or allow only one form. DECIDED
+20261114 as proposed: <code>--fn</code> and <code>--bin</code>; <code>SRT_FN</code> removed. Built at
+r0.5.</p>
+<p>Proposed:</p>
+<ul>
+<li><code>--fn</code>: the bash function only. Given to the function, it
+translates and never hands over. Given to the binary, it is an
+error, exit 2 --- the binary cannot be the function, and saying so
+is what "only" means.</li>
+<li><code>--bin</code>: the binary only. Given to the function, it hands over to
+the binary on PATH, and if there is none it is an error, exit 2,
+rather than a quiet fall back to translation. Given to the binary,
+it is accepted and does nothing.</li>
+<li>Neither: as now. The function hands over when a binary is on PATH
+and translates otherwise.</li>
+<li>Both: usage error.</li>
+<li>Placement: anywhere among the options, like any other. The function
+must decide before it parses, so it makes one short pass over the
+arguments that knows which options take a value (<code>-k -t -o -T</code>,
+<code>--output --tmp-dir --separator --mem</code>) and stops at <code>--</code>; an
+argument such as <code>-o --fn</code> is then a file name, not the option.</li>
+<li>Names: long only. <code>--fn</code> matches the file name <code>srt.fn.bash</code>; no
+short letter is spent.</li>
+</ul>
+<p>Decided: the two names as proposed, and <code>SRT_FN</code> removed (reason given:
+yes --- an environment variable that silently changes which program
+runs is harder to see than an option on the command line; the suite
+uses <code>--fn</code>).</p>
+<p><strong>V19 Hexadecimal keys.</strong> New, from the operator, 20261114. Decided,
+built in r0.6.</p>
+<p>The case: a listing whose fourth column is a size in hexadecimal,
+right-aligned, and whose fifth is a hexadecimal time,
+<code>srt -k5,4</code>. Expected: by time, then by size. Got, within one time:
+<code>187c 1c40a 28f5 a3d bdc df4d</code>.</p>
+<p>Cause, reproduced on the build host: srt did what V06 says. Columns
+are split on runs of blanks and the blanks are dropped, so column 4
+is compared as the text <code>a3d</code>, <code>187c</code>, <code>1c40a</code>, and as text <code>1c40a</code>
+sorts before <code>28f5</code> and <code>a3d</code> after both. The native sort gives the
+wanted order only by accident of layout: its field keeps the leading
+blanks, and right-alignment pads the shorter numbers so that text
+order and numeric order coincide. With <code>-b</code> the native sort gives
+the same order srt does. No srt ordering option reads these keys as
+numbers: <code>-n</code> and <code>-g</code> stop at the first letter, and <code>-v</code> treats
+letters as text.</p>
+<p>Proposed: a hexadecimal numeric type.</p>
+<ul>
+<li><code>-x</code>, <code>--hex-numeric</code>, key letter <code>x</code>: compare as hexadecimal
+integers. Optional leading blanks, optional <code>-</code>, optional <code>0x</code> or
+<code>0X</code>, then hex digits in either case. Leading zeros do not count;
+comparison is exact at any length; a key with no hex digit is
+zero; what follows the digits is ignored. No fraction.</li>
+<li>The case above becomes <code>srt -k5x,4x</code>, or <code>srt -k5,4x</code> while the
+times stay the same width.</li>
+<li>One of the type letters, so exclusive with <code>d g H n v</code> on a key.
+<code>x</code> is unclaimed in all three native sorts.</li>
+<li>Cost: one parse routine in <code>srt.c</code> beside <code>-n</code>, the same encoding
+as <code>-n</code> with sixteen digits instead of ten, and the same in the
+function's awk; cases in sections 3, 14 and 15 of the suite.</li>
+<li>Caution for the manual: under <code>-x</code> a word spelled from <code>a</code>-<code>f</code> is a
+number (<code>bead</code>, <code>face</code>), so the letter belongs on the columns that
+hold hexadecimal, not given globally over mixed columns.</li>
+</ul>
+<p>Considered and not proposed:</p>
+<ul>
+<li>Length-then-text order (shorter key first, equal lengths as text).
+It would serve any right-aligned column in any base, but it reads
+<code>0a3d</code> and <code>a3d</code> as different numbers and depends on letter case.</li>
+<li>Keeping leading blanks inside columns, as the native sort does. It
+reverses V06, makes order depend on how the producer padded, and
+breaks as soon as a column is left-aligned.</li>
+</ul>
+<p>Decided 20261114 and built in r0.6, as proposed. Refinement from the
+operator: the hash column of a listing stays text. Within one run its
+width is fixed, so text order is value order; across runs with
+different digest lengths, text order keeps like prefixes adjacent,
+which is what is wanted there. <code>x</code> is for the size and time columns.</p>
+<p><strong>V20 The last column.</strong> New, from the operator, 20261114. Decided,
+built in r0.6.</p>
+<p>The driving use is sorting the columns of file listings, whose last
+column is a file name that may hold blanks. Columns are words in the
+awk sense (<code>$1</code>, <code>$2</code> ...) throughout; widths and padding carry no
+meaning. Rule, in the operator's words: the last column runs to the
+end of the record, unless <code>-D</code> is used; then <code>-k</code> is tested exactly,
+and with no <code>-k</code> whole lines are tested.</p>
+<p>As built:</p>
+<ul>
+<li>The highest-numbered column named in <code>-k</code> is the last one.</li>
+<li>Compared as text (no type letter, <code>d</code>, <code>v</code>): it runs to the end of
+the record, blanks included. <code>-k5x,4x,6</code> sorts by hex time, hex
+size, then the whole name.</li>
+<li>Compared as a number (<code>n g H x</code>): it is its word, and the rest of
+the record is one further column, compared last. <code>-k5x,4x</code> puts
+the name after every other column.</li>
+<li>Under <code>-D</code> (V21), and when any key counts from the end (V22), every
+named column is exactly one word.</li>
+<li>No part of a record is ever outside the comparison.</li>
+</ul>
+<p>Consequence, accepted by the operator: the example this plan began
+with, <code>-k5,3</code> on six columns giving 5,3,1,2,4,6, now holds as written
+only when column 5 is numeric (<code>-k5n,3</code>). With column 5 as text,
+columns 5 and 6 are one key, then 3,1,2,4. For six one-word columns
+the two orders differ only where records agree on column 5 and differ
+on 6. The suite pins both.</p>
+<p>Also accepted: two records that differ only in the blanks inside the
+last text column are different records there (<code>a b  c</code> and <code>a b c</code>
+under <code>-k2</code>); blank runs between earlier columns still do not count.</p>
+<p><strong>V21 Duplicates.</strong> New, from the operator, 20261114. Decided, built
+in r0.6. srt only.</p>
+<p><code>-D</code>, <code>--duplicates</code>: print every member of each group of two or more
+records that are equal on all the named columns; with no <code>-k</code>, equal
+as whole records. Output is in sorted order, so groups are adjacent.
+With <code>-u</code>, identical records collapse first, so a group must hold two
+distinct records to print. Refused with <code>-c</code>, <code>-C</code>, <code>-R</code>, <code>-b</code>.</p>
+<p>The conflict with V20 (a hash column extended to the end of the
+record would never repeat) is resolved by the operator's rule: under
+<code>-D</code> the named columns are words and nothing more. The rest of the
+record still orders the output, last.</p>
+<p>As built: a filter holding one record back at the final writer, in
+the in-memory path and in the last merge pass alike; spilled runs and
+intermediate passes are unfiltered, so a group split across runs is
+still found. In the function, the same filter in the awk stage that
+strips the keys.</p>
+<p>Limit, stated in the manual: under <code>-D</code> a last column holding blanks
+is tested by its first word (<code>My File</code> and <code>My Tune</code> agree on <code>My</code>).
+For names, split on the separator that cannot be confused: V22.</p>
+<p><strong>V22 Key grammar: bare <code>-k</code>, columns from the end, reverse.</strong> New,
+from the operator, 20261114. Decided, built in r0.6.</p>
+<ul>
+<li>Bare <code>-k</code> names no column: the whole record is the key, which is
+the default. The word after <code>-k</code> is a key list only when it reads
+as one (<code>^-?N[letters](,-?N[letters])*$</code>); any other word is left
+as an option or a file. A file named like a list is written <code>./5</code>
+or placed after <code>--</code>.</li>
+<li><code>-k-N</code> counts from the end: <code>-k-1</code> is the last column. This is the
+simple resolution for duplicate base names in different paths:
+<code>srt -t/ -D -k-1</code>. When any key counts from the end, every word is
+a column and none is extended (the count from the end must not
+depend on V20). A line with no separator is one column, so <code>-t/ -k-1</code> treats a bare name as its own base name.</li>
+<li>Reverse has two spellings and no third: <code>-kNr</code> for that column, <code>-r</code>
+for every column without letters of its own (<code>-rk5</code>). <code>-kr5</code> is
+retired; srt refuses it with a message naming <code>-k5r</code>.</li>
+</ul>
+<h3 id="key-grammar-shared-with-the-listing-tools">Key grammar shared with the listing tools</h3>
+<p>Recorded here because srt's <code>-k</code> was settled first, as the model for
+the next revisions of the two tools whose output it sorts. Their own
+plans govern; this is what was agreed in this one.</p>
+<ol>
+<li>Columns are words in the awk sense, counted from 1; widths and
+padding are not significant, and blanks may be squeezed.</li>
+<li>Sorting is asked for with <code>-k list</code>, <code>col[opts][,col[opts]]...</code>:
+the named columns in the order given, then the remaining columns
+left to right. Ties follow srt's order.</li>
+<li>A bare <code>-k</code> names no column. In the listing tools that means sort
+by file name; in srt, by whole record.</li>
+<li>Reverse is <code>-kNr</code> for one column or <code>-r</code> for all. <code>-krN</code> is not
+accepted anywhere.</li>
+<li>The listing tools know their own column types, so <code>-k5,4,6</code> there
+is <code>srt -k5x,4x,6</code> on their output: time and size by hexadecimal
+value, the hash as text.</li>
+<li>The name is the last column and runs to the end of the record.</li>
+<li>Option letters given up to make room: the checksum tool selects
+columns with <code>-n[0..5]</code> in place of <code>-0</code>..<code>-5</code>; the find tool keeps
+<code>-0</code> and <code>-1</code> and requires <code>-k</code> for sorting.</li>
+</ol>
+<h2 id="3-interface">3 Interface</h2>
+<pre><code>srt [-cCuDSbRz] [-dfgHinrvx] [-k [col[opts][,col[opts]]...]] [-t char]
+    [-o output] [-T dir] [--mem size] [file ...]
+srt -h | --help | -V | --version
+</code></pre>
+<table>
+<thead>
+<tr><th>option</th><th>long</th><th>meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>-c</code></td><td><code>--check</code></td><td>check; report disorder on stderr (V02, V14)</td></tr>
+<tr><td><code>-C</code></td><td></td><td>check; exit status only</td></tr>
+<tr><td><code>-o file</code></td><td><code>--output</code></td><td>write result to file; may name an input</td></tr>
+<tr><td><code>-T dir</code></td><td><code>--tmp-dir</code></td><td>directory for spill runs</td></tr>
+<tr><td><code>-u</code></td><td><code>--unique</code></td><td>drop lines equal to an earlier line (V05)</td></tr>
+<tr><td><code>-D</code></td><td><code>--duplicates</code></td><td>print only records whose named columns repeat (V21)</td></tr>
+<tr><td><code>-S</code></td><td></td><td>permit unstable sort (V07)</td></tr>
+<tr><td><code>-V</code></td><td><code>--version</code></td><td>print revision</td></tr>
+<tr><td><code>-h</code></td><td></td><td>usage</td></tr>
+<tr><td></td><td><code>--help</code></td><td>manual, paged on a terminal (V12)</td></tr>
+<tr><td><code>-b</code></td><td><code>--respect-blanks</code></td><td>sort per indentation block (V03)</td></tr>
+<tr><td><code>-R</code></td><td><code>--random</code></td><td>shuffle output (V08)</td></tr>
+<tr><td><code>-d</code></td><td><code>--dictionary</code></td><td>only blanks and alphanumerics compare</td></tr>
+<tr><td><code>-f</code></td><td><code>--fold-case</code></td><td>fold lower to upper</td></tr>
+<tr><td><code>-g</code></td><td><code>--general-numeric</code></td><td>floating value, exponents (V17)</td></tr>
+<tr><td><code>-H</code></td><td><code>--human-numeric</code></td><td>number with scale letter (V17)</td></tr>
+<tr><td><code>-i</code></td><td><code>--ignore-nonprinting</code></td><td>only printable bytes compare</td></tr>
+<tr><td><code>-n</code></td><td><code>--numeric</code></td><td>numeric value (V13)</td></tr>
+<tr><td><code>-r</code></td><td><code>--reverse</code></td><td>reverse the comparison</td></tr>
+<tr><td><code>-v</code></td><td><code>--version-sort</code></td><td>versions, archives, addresses, networks (V09)</td></tr>
+<tr><td><code>-x</code></td><td><code>--hex-numeric</code></td><td>hexadecimal integer value (V19)</td></tr>
+<tr><td><code>-k</code></td><td></td><td>column order and per-key options (V04); last column, bare form, <code>-k-N</code> (V20, V22)</td></tr>
+<tr><td><code>-t char</code></td><td><code>--separator</code></td><td>column separator (V06)</td></tr>
+<tr><td><code>-Z</code></td><td><code>--zero-terminated</code></td><td>records end in NUL, in and out; spelled <code>-Z</code> as in the listing tools, <code>-z</code> is refused (amended in r0.6)</td></tr>
+<tr><td></td><td><code>--mem N[bkmg]</code></td><td>memory budget (V07, section 7)</td></tr>
+</tbody>
+</table>
+<p>Operands: files, <code>-</code> for standard input, none meaning standard input.
+<code>--</code> ends options. Short options cluster (<code>-nr</code>); option arguments may
+be attached or separate; long options take <code>--opt value</code> or
+<code>--opt=value</code>. The parser is owned; <code>getopt_long</code> is not required.</p>
+<p>Without <code>-c</code> or <code>-C</code>, all inputs are sorted together to one output.
+With either, each input is checked independently; the exit status is 1
+if any input is out of order.</p>
+<p>Global and per-key options: an ordering option outside <code>-k</code> applies to
+every key, named or implicit. Options attached to a column replace the
+whole global set for that column, so <code>-r -k5n,3</code> sorts column 5
+numerically ascending, and column 3 and the remainder reversed.</p>
+<p>Mutual exclusions (usage error): more than one of <code>-d -g -H -n -v -x</code> on one
+key; <code>-c</code> or <code>-C</code> with <code>-o</code>; the <code>-R</code> set in V08; <code>-D</code> with <code>-c</code>, <code>-C</code>,
+<code>-R</code> or <code>-b</code>.</p>
+<p>Exit status: 0 success or sorted; 1 disorder under <code>-c</code>/<code>-C</code>; 2 error.</p>
+<h2 id="4-standards-reconciliation">4 Standards reconciliation</h2>
+<p>Sources: NetBSD sort(1)<a href="#fn-1" role="doc-noteref"><span>[^</span>1<span>]</span></a>, FreeBSD sort(1)<a href="#fn-2" role="doc-noteref"><span>[^</span>2<span>]</span></a>, GNU coreutils
+sort(1)<a href="#fn-3" role="doc-noteref"><span>[^</span>3<span>]</span></a>, the POSIX sort utility, and the Darwin sort manual as
+quoted by the operator on 20261113: POSIX.1-2008 compliant; flags
+<code>-ghRMSsTVz</code> and all long options are extensions; temporaries at
+<code>/var/tmp/.bsdsort.PID.*</code>. That extension set and temporary name agree
+with the FreeBSD manual, which is used here for Darwin option detail;
+the Darwin page itself was not read in this session.</p>
+<h3 id="letters-whose-meaning-changes">Letters whose meaning changes</h3>
+<table>
+<thead>
+<tr><th>letter</th><th>native meaning</th><th>srt meaning</th><th>hazard</th></tr>
+</thead>
+<tbody>
+<tr><td><code>-k a,b</code></td><td>fields a through b</td><td>column a, then b, then rest</td><td>high: silent reorder</td></tr>
+<tr><td><code>-b</code></td><td>ignore leading blanks</td><td>sort per indentation block</td><td>high</td></tr>
+<tr><td><code>-S</code></td><td>memory size (GNU, FreeBSD); unstable (NetBSD)</td><td>unstable</td><td>medium</td></tr>
+<tr><td><code>-R</code></td><td>hash-random (GNU, FreeBSD); record separator (NetBSD)</td><td>shuffle</td><td>medium</td></tr>
+<tr><td><code>-V</code></td><td>version sort (GNU, FreeBSD)</td><td>print version</td><td>medium</td></tr>
+<tr><td><code>-h</code></td><td>human-numeric (GNU, FreeBSD)</td><td>usage; human-numeric moves to <code>-H</code> (V17)</td><td>low</td></tr>
+<tr><td><code>-T</code> long</td><td><code>--temporary-directory</code></td><td><code>--tmp-dir</code></td><td>none</td></tr>
+<tr><td><code>-t</code> long</td><td><code>--field-separator</code></td><td><code>--separator</code></td><td>none</td></tr>
+<tr><td><code>-f</code> long</td><td><code>--ignore-case</code></td><td><code>--fold-case</code></td><td>none</td></tr>
+</tbody>
+</table>
+<p><code>-v</code> is unassigned in all three natives, so version sort lands there
+without collision.</p>
+<h3 id="eliminated">Eliminated</h3>
+<table>
+<thead>
+<tr><th>option</th><th>origin</th><th>reason</th></tr>
+</thead>
+<tbody>
+<tr><td><code>-k f.c</code>, <code>+pos -pos</code></td><td>POSIX, all</td><td>requirement: no character offsets</td></tr>
+<tr><td><code>-m</code></td><td>POSIX, all</td><td>multi-file input already sorts to one output (V11)</td></tr>
+<tr><td><code>-s</code></td><td>all</td><td>stable is the default (V11)</td></tr>
+<tr><td><code>-M</code></td><td>GNU, FreeBSD</td><td>absent from NetBSD; outside the stated set</td></tr>
+<tr><td><code>-l</code>, <code>-H</code></td><td>NetBSD</td><td>length sort; ignored legacy flag</td></tr>
+<tr><td><code>-R char</code></td><td>NetBSD</td><td>superseded by <code>-Z</code></td></tr>
+<tr><td><code>--parallel</code>, <code>--batch-size</code>, <code>--compress-program</code></td><td>GNU, FreeBSD</td><td>tuning surface; budget is automatic</td></tr>
+<tr><td><code>--files0-from</code>, <code>--debug</code>, <code>--random-source</code>, <code>--sort=</code></td><td>GNU, FreeBSD</td><td>not operator-frequent</td></tr>
+<tr><td><code>--qsort</code>, <code>--mergesort</code>, <code>--heapsort</code></td><td>FreeBSD</td><td>algorithm is srt's decision; <code>--radixsort</code> discussed in section 8</td></tr>
+</tbody>
+</table>
+<p><code>-c</code>, <code>-C</code> and <code>-i</code> keep their POSIX meanings (V02, V11). The
+remaining departures from POSIX are <code>-k</code> ranges and offsets, <code>-b</code>,
+and <code>-m</code>/<code>-s</code> as no-ops.</p>
+<h2 id="5-comparison-semantics">5 Comparison semantics</h2>
+<p>Record: bytes up to newline (NUL under <code>-Z</code>). A final record without a
+terminator is accepted and written with one. Embedded NUL bytes are
+data, never terminators, outside <code>-Z</code>.</p>
+<p>Comparison of two records proceeds key by key: named columns in order,
+then remaining columns left to right. Per key: select type (<code>n</code>, <code>g</code>,
+<code>H</code>, <code>v</code>, <code>d</code>, or bytes), apply <code>i</code> and <code>f</code>, compare, apply <code>r</code>. The first non-zero
+result decides. If every key is equal the records are equal: stable
+order (input order, files in operand order) decides, or nothing does
+under <code>-S</code>.</p>
+<p>With no <code>-k</code> and no <code>-t</code>, the whole record is one key and comparison
+is a single <code>memcmp</code> --- the fast path the common invocation takes.</p>
+<p><code>-b</code> (V03): parentage by proper-prefix indent, sibling groups by
+byte-identical indent. Within a group the comparator above orders
+siblings by their own line, with the indent removed before column
+splitting; each sibling is emitted with its whole subtree directly
+after it, and the subtree's own groups are sorted by the same rules.
+Groups under one parent keep input order.</p>
+<p><code>-o</code>: output is opened only after all input is read, written to a
+temporary sibling in the destination directory, synced, given the
+original's mode, and renamed. A destination that exists as a
+non-regular node is written through, not renamed over.</p>
+<h2 id="6-locale">6 Locale</h2>
+<p>Proposed posture: <code>LC_*</code> and <code>LANG</code> are not consulted. Order is by
+byte value, which for UTF-8 input is code point order.</p>
+<ul>
+<li><code>-f</code> folds ASCII <code>a-z</code> only.</li>
+<li><code>-d</code> keeps space, tab, ASCII alphanumerics, and every byte &gt;= 0x80
+(so UTF-8 letters survive as data).</li>
+<li><code>-i</code> keeps ASCII 0x20-0x7E and every byte &gt;= 0x80; ASCII control
+bytes and DEL are skipped.</li>
+<li>Blank is space and tab. Decimal point is <code>.</code>.</li>
+</ul>
+<p>Why this rather than <code>strcoll</code>: collation tables differ between glibc,
+Darwin's libc and NetBSD's, so a locale-honoring sort gives one input
+three orders, and <code>sort | comm</code>, <code>sort | join</code>, and <code>-c</code> against a file
+sorted elsewhere all fail quietly. The GNU manual carries a standing
+warning on exactly this and recommends <code>LC_ALL=C</code> for the traditional
+byte order.<a href="#fn-3" role="doc-noteref"><span>[^</span>3<span>]</span></a> srt makes the recommendation the behavior. It is also
+the precondition for <code>memcmp</code> keys and for radix (section 8), and it
+removes a host-variable library dependency.</p>
+<p>The honest cost: no language-correct alphabetical order (accented
+letters sort after <code>z</code>, case-fold is ASCII). Prevalence note: locale
+collation is the documented default everywhere, which reflects the
+standard's history more than operator need; operator pipelines
+overwhelmingly force C. If language order is wanted, the door is a
+later <code>--locale</code> option that switches the byte comparator to <code>strcoll</code>
+and disables radix --- an opt-in, never the default.</p>
+<h2 id="7-memory-and-spill">7 Memory and spill</h2>
+<p>Aim: when the input fits, pay nothing for the safety; when it does not,
+finish anyway.</p>
+<p><strong>Fits (the typical case).</strong> Input is read into large contiguous
+chunks (a chunk list, not one reallocating buffer, so growth never
+copies). A record index is built: pointer, length, and an 8-byte
+big-endian key prefix so most comparisons resolve on an integer
+compare without touching the record. One in-memory stable merge sort
+over the index; output written from the index. No temporary file is
+created, no budget arithmetic beyond one comparison per chunk.</p>
+<p><strong>Budget.</strong> Default: half of physical memory (<code>sysconf</code> page count and
+page size), reduced to any lower <code>RLIMIT_AS</code>/<code>RLIMIT_DATA</code>; fallback
+1 GiB when the query is unavailable. <code>SRT_MEM</code> or <code>--mem</code> overrides
+(<code>N[bkmg]</code>, V07); <code>--mem</code> outranks <code>SRT_MEM</code>. The budget is the primary mechanism because
+allocation failure is not a dependable signal: on hosts that
+overcommit, <code>malloc</code> succeeds and the process is killed later.
+Values below 64k are raised to 64k.</p>
+<p>Reversed at r0.2: the first draft said a failed allocation would
+trigger the spill path. As built, a failed allocation is a diagnosed
+exit 2 naming <code>--mem</code>. Recovering mid-structure from a failed <code>malloc</code>
+bought little once the budget was partitioned (below), since each part
+then has a ceiling and allocation failure means the budget itself was
+set above what the host allows.</p>
+<p><code>_SC_PHYS_PAGES</code> is hidden under strict POSIX on Darwin and NetBSD, so
+<code>srt.c</code> defines <code>_DARWIN_C_SOURCE</code> and <code>_NETBSD_SOURCE</code> for that one
+call and falls back to 1 GiB where the name is still absent. Whether
+the query succeeds on each platform is visible with <code>SRT_STATS=1</code> and
+is to be confirmed there, not assumed.</p>
+<p><strong>Partition (r0.2).</strong> The budget is divided so each part has a fixed
+ceiling: record bytes in chunks, one half; the index, one third; the
+scratch half-index of the stable sort, one sixth. Reaching either the
+chunk ceiling or the index ceiling with at least one record held
+triggers a spill. The test is made after every record, not after every
+read. Found by measurement: with short records the index (24 bytes a
+record) outweighs the data, and a single test per read let one read
+overrun a small budget.</p>
+<p><strong>Encoded keys (r0.5).</strong> For a keyed sort the keys of each batch are
+encoded before it is sorted (section 8, and <code>srt.c</code>, "key encoding").
+The encoded batch takes a quarter of the budget, and the chunk ceiling
+drops from a half to a quarter to pay for it, so runs are about half
+as long when keys are encoded. A batch whose encoded keys would pass
+their quarter is sorted by direct comparison instead. The merge of
+runs and <code>-c</code> always compare records directly: the widest column
+count, which the encoding pads to, is known for a batch but not across
+runs. <code>SRT_STATS</code> reports batches as <code>encoded=N compared=N</code>.</p>
+<p><strong>Does not fit.</strong> When a ceiling is reached: sort what is held, append
+it as a run to the spill file in <code>-T dir</code> (default per V16), release
+the chunks, continue reading. At end of input, k-way merge of the runs
+by a min-heap. Details:</p>
+<ul>
+<li>Reversed at r0.2: one spill file holds all runs as (offset, length)
+extents, read with <code>pread</code>, instead of one file per run. The file
+comes from <code>mkstemp</code> with a literal <code>srt.</code> template and is unlinked
+immediately, so no signal or crash leaves residue and no cleanup
+handler is needed. Open descriptors stay at two regardless of run
+count, so <code>RLIMIT_NOFILE</code> no longer bounds anything.</li>
+<li>Fan-in is bounded by memory instead: budget / 4096 - 1 runs can be
+buffered at once. More runs than that are merged in passes, groups of
+consecutive runs going to a second unlinked file, the two files
+swapping roles each pass. Disk need: about the input size, twice
+that when a pass is required.</li>
+<li>Stability across runs: equal records resolve to the lower run number,
+which is input order; consecutive grouping preserves this across
+passes.</li>
+<li><code>SRT_STATS=1</code> (added at r0.2, not in the first draft) writes
+<code>srt: stats: budget=N runs=N passes=N</code> to stderr. It exists so the
+multi-pass route can be tested and so an operator can see what a
+<code>--mem</code> setting did.</li>
+<li><code>-u</code> is applied within each run and again in the merge.</li>
+<li>Every write, flush and close is checked; a full <code>-T</code> filesystem is a
+diagnosed exit 2, never truncated output.</li>
+</ul>
+<p><strong>Modes outside the spill path.</strong></p>
+<ul>
+<li><code>-c</code>/<code>-C</code>: streaming, two records in memory, no budget concern.</li>
+<li><code>-R</code>: in memory, a Fisher-Yates shuffle. Over budget, each record
+carries a 64-bit random tag into its run and the tags are merged ---
+a uniform permutation by the same machinery (equal tags, about
+n^2 / 2^64 likely, fall back to input order).</li>
+<li><code>-R -u</code> (r0.2): the tag is a keyed hash of the record, the key drawn
+from <code>/dev/urandom</code> per invocation. Identical records get identical
+tags and meet, so the ordinary <code>-u</code> removes them; order is by tag,
+then bytes, so only identical records compare equal. One mechanism
+serves memory and spill.</li>
+<li><code>-b</code> over budget: exits 2 with a diagnostic naming
+<code>--mem</code>. Subtrees do not partition into independent runs, and an
+external outline sort is a separate design. Surfaced as a known gap,
+not hidden.</li>
+<li>One record larger than the budget: held anyway; the budget governs
+when to spill, not a record size limit.</li>
+</ul>
+<p>The bash function has no spill of its own; it relies on native sort's,
+and it stages a keyed copy of the input in the <code>-T</code> directory first.</p>
+<h2 id="8---radixsort">8 --radixsort</h2>
+<p>Standing among the natives: the FreeBSD-derived sort offers
+<code>--radixsort</code> as a request that applies only when the key
+specification allows<a href="#fn-2" role="doc-noteref"><span>[^</span>2<span>]</span></a>; NetBSD's implementation descends from the
+4.4BSD sort and names radixsort(3) among its references<a href="#fn-1" role="doc-noteref"><span>[^</span>1<span>]</span></a>; GNU has
+no such option.<a href="#fn-3" role="doc-noteref"><span>[^</span>3<span>]</span></a></p>
+<p>What radix needs is keys that order correctly as raw bytes. The
+section 6 posture supplies that for plain keys at no cost. The other
+types need an encoding step that turns each key into a byte string
+whose <code>memcmp</code> order equals the comparator's order:</p>
+<ul>
+<li><code>f</code>: fold while encoding. <code>d</code>: drop excluded bytes.</li>
+<li><code>r</code>: complement every byte of that key's encoding.</li>
+<li><code>n</code>: sign byte, digit-count, digits; negatives complemented.</li>
+<li><code>v</code>: each digit run prefixed by its length; <code>~</code> mapped lowest; stem
+before suffix; IPv6 as a class byte plus 16 value bytes and length.</li>
+<li><code>g</code>: the IEEE bit pattern with the sign bit flipped, negatives
+complemented. <code>H</code>: sign, scale rank, then the <code>n</code> encoding.</li>
+<li>key boundaries: a terminator byte lower than any data byte.</li>
+</ul>
+<p>Once encoded keys exist, three things follow together: MSD radix
+becomes possible, the 8-byte prefix of section 7 becomes exact for
+every key type rather than for plain keys only, and the spill merge
+compares encoded bytes. The encoding, not the radix pass, is the
+structural investment.</p>
+<p>Assessment:</p>
+<ul>
+<li>Gain is real for many short records with low-entropy leading bytes
+(hostnames, paths, timestamps): O(n x key bytes) against
+O(n log n) comparisons that each re-scan a common prefix.</li>
+<li>Gain is small or negative for few records, long distinct keys, or
+numeric keys of wide range; the prefix-cached merge sort already
+takes most of the available win there.</li>
+<li>Stability: MSD radix with an auxiliary array is stable and fits the
+default; the in-place variant is not and belongs under <code>-S</code>.</li>
+<li>Memory: encoded keys enlarge the index, pulling the spill threshold
+in.</li>
+</ul>
+<p>Proposal: do not ship <code>--radixsort</code> before r0.5. Build the
+comparator so that the encoding can be introduced behind it without
+grammar change; add <code>--radixsort</code> in a later revision as an explicit
+request, measured against the merge sort on operator-shaped inputs
+before any thought of making it automatic. If the option is accepted
+at all it follows the FreeBSD wording: used when the specification
+allows, silently the default algorithm otherwise.</p>
+<p>This recommendation is a design judgment, not a measurement; no
+benchmark has been run.</p>
+<p><strong>Evaluated at r0.5 (20261114), by measurement.</strong> Build host, 2,000,000
+records of four columns (86 MB), one run each, seconds:</p>
+<table>
+<thead>
+<tr><th>sort</th><th>r0.4.2</th><th>encoded keys</th><th>native sort, 2 threads</th></tr>
+</thead>
+<tbody>
+<tr><td>whole record, plain</td><td>1.04</td><td>1.07 (not encoded)</td><td>0.66</td></tr>
+<tr><td><code>-k3n</code></td><td>5.30</td><td>1.86</td><td>2.25</td></tr>
+<tr><td><code>-k3n,1</code></td><td>5.16</td><td>1.58</td><td></td></tr>
+<tr><td><code>-k2v</code></td><td>7.12</td><td>2.18</td><td>2.12 (<code>-V</code>)</td></tr>
+<tr><td><code>-k1v</code></td><td>7.82</td><td>2.14</td><td></td></tr>
+<tr><td><code>-n -k3</code></td><td>6.03</td><td>1.62</td><td></td></tr>
+<tr><td><code>-f</code></td><td>2.72</td><td>1.61</td><td>1.29</td></tr>
+<tr><td><code>-t. -k3</code></td><td>4.22</td><td>1.82</td><td></td></tr>
+<tr><td><code>-k4,1</code></td><td>5.38</td><td>1.80</td><td></td></tr>
+</tbody>
+</table>
+<p>Key encoding: viable, and a significant gain --- keyed sorts run 2.3
+to 3.7 times faster, which moves srt from about three times slower
+than the native sort to level with it, on one thread against two.
+Built at r0.5.</p>
+<p>Radix, tried on top of the encoded keys as a stable MSD pass with the
+merge sort for small buckets, same host, seconds, merge then radix:
+whole record 1.12 / 0.84; <code>-k3n</code> 1.79 / 1.88; <code>-k2v</code> 2.22 / 2.87;
+<code>-f</code> 1.47 / 1.10; shuffled integers plain 1.34 / 0.94 and <code>-n</code>
+2.84 / 1.82; path names plain 1.43 / 1.15 and <code>-f</code> 1.74 / 1.59. Output
+identical in every case.</p>
+<p>Radix: viable, not significant. It gains up to 1.5 times where keys
+are short and differ early, loses up to 1.3 times where encoded keys
+share long prefixes (a class byte, a length field), and it doubles
+the scratch memory, which would shrink every run under a budget. A
+gain of that size and sign does not pay for a second sort path and an
+option. Not built; <code>--radixsort</code> stays a refused option. What would
+change the verdict: a workload that is mostly short plain keys, or a
+radix pass restricted to the first eight bytes, which the index
+already holds.</p>
+<h2 id="9-package-files">9 Package files</h2>
+<p><strong>README.md</strong> --- what srt is, the hazard table of section 4 in brief,
+build and install per platform, the static-link ceiling (static on
+Linux and NetBSD; Darwin links libSystem only), pointer to <code>--help</code>.</p>
+<p><strong>makefile</strong> --- written to the intersection of GNU make, bmake and
+the Darwin make: no <code>ifeq</code>, no <code>$(shell)</code>; platform branches inside
+recipes via <code>case</code> on <code>uname -s</code>. Targets:</p>
+<table>
+<thead>
+<tr><th>target</th><th>action</th></tr>
+</thead>
+<tbody>
+<tr><td><code>all</code></td><td><code>srt</code> and <code>man</code></td></tr>
+<tr><td><code>srt</code></td><td>compile <code>srt.c</code>, <code>-std=c99 -Wall -Wextra -Wpedantic</code>, warnings fatal to review</td></tr>
+<tr><td><code>man</code></td><td>generate <code>srt.1</code> from <code>./srt --help</code></td></tr>
+<tr><td><code>test</code></td><td>run <code>test-srt.sh</code> against the built binary and the function</td></tr>
+<tr><td><code>install</code></td><td>binary, man page, function file under <code>PREFIX</code> (V15); <code>mkdir -p</code>, <code>cp</code>, <code>chmod</code></td></tr>
+<tr><td><code>clean</code></td><td>remove <code>srt</code>, <code>srt.1</code>, test scratch</td></tr>
+<tr><td><code>uninstall</code></td><td>remove exactly what <code>install</code> placed</td></tr>
+</tbody>
+</table>
+<p><strong>srt.c</strong> --- single file, C99, no library beyond libc. Feature-test
+macros only as the calls require. One fatal-diagnostic path. Manual
+and usage as string literals, chunked under the 4095-byte limit.</p>
+<p><strong>srt.fn.bash</strong> --- per V01, as built. Validates options with the same grammar
+and the same errors as the binary; <code>-h</code> and <code>--help</code> carry the same
+text, held as a copy that the suite compares. Sourced, so it sets
+nothing in the calling shell; the work is done in a subshell.</p>
+<p><strong>test-srt.sh</strong> --- section 10.</p>
+<h2 id="10-verification">10 Verification</h2>
+<p><code>test-srt.sh</code> runs every case against the binary and, where the
+function supports the option, against the function, requiring
+identical bytes. One case per promise in the manual, named beside it:</p>
+<ol>
+<li>Grammar: each option short and long, clustering, <code>--</code>, each usage
+error of section 3, each eliminated option of section 4.</li>
+<li><code>-k</code>: the six-column example as <code>-k5n,3</code>, and the text case beside
+it (V20); per-key override against a global option; short lines;
+duplicate column refused; the last column as text and as number;
+bare <code>-k</code> before a file, an option and a list; <code>-k-N</code>; <code>-D</code> by
+whole record, one column, several, with <code>-u</code>, across spilled runs.</li>
+<li>Types: <code>-n</code> negatives, decimals, non-numbers; <code>-d</code>, <code>-f</code>, <code>-i</code> over
+ASCII and UTF-8 bytes; <code>-g</code> exponents, inf, nan; <code>-H</code> scale order.
+<code>-v</code>: every row of the V09 table as a case --- IPv4, CIDR, hosts,
+archives with and without a third component, <code>~</code>, IPv6 compressed,
+zero-padded and mixed case, IPv4 and IPv6 mixed in one column.</li>
+<li>Stability: equal keys keep input and operand order; <code>-u</code> keeps the
+first.</li>
+<li>Check: sorted, unsorted, multiple inputs with one unsorted, stdin,
+<code>-u</code> strictness, <code>-c</code> stderr format, silence of <code>-C</code>, empty stdout
+in both.</li>
+<li><code>-R</code>: output is a permutation of input; two runs differ.</li>
+<li><code>-b</code>: nested outline, parent-child adjacency preserved; tab and
+space children of one parent stay separate groups in input order;
+a tab-indented line under a space-indented line is not its child.</li>
+<li><code>-Z</code>, <code>-t</code> with empty columns, final record without terminator.</li>
+<li><code>-o</code> naming an input; interrupted run leaves the original.</li>
+<li>Spill: <code>--mem</code> set small enough to force multiple runs and a
+multi-pass merge; output byte-identical to the in-memory result;
+<code>-T</code> unwritable is exit 2.</li>
+<li>Oracle: for the subset where meanings coincide (whole-line,
+<code>-n</code>, <code>-r</code>, <code>-f</code>, <code>-u</code>), agreement with <code>LC_ALL=C sort -s</code>.</li>
+<li>Locale independence: identical output under <code>LC_ALL=C</code> and a UTF-8
+locale.</li>
+<li>Self-consistency: <code>srt --help | srt -c</code> style round trips; the
+generated <code>srt.1</code> equals a fresh generation.</li>
+</ol>
+<p>A revision is complete only when the suite has passed under each make
+dialect on each of the three platforms. This session can build and run
+on Linux alone; Darwin and NetBSD results are the operator's to
+report, and the plan says so rather than implying coverage.</p>
+<h2 id="11-revision-sequence">11 Revision sequence</h2>
+<ul>
+<li><strong>r0</strong> this plan; V items answered; section 12 filled.</li>
+<li><strong>r0.1</strong> (built 20261113) <code>srt.c</code> in-memory path, full grammar, check, unique, <code>-R</code>,
+<code>--help</code>/<code>-h</code>/<code>-V</code>; makefile; tests 1-6, 8, 9, 11-13; README.</li>
+<li><strong>r0.2</strong> spill and merge, <code>--mem</code>, <code>-T</code>, streaming check; test 10. Built 20261114.</li>
+<li><strong>r0.3</strong> <code>-b</code> outline sort; test 7. Built 20261114.</li>
+<li><strong>r0.4</strong> <code>srt.fn.bash</code> translator and parity tests; V17 function gap settled here. Built 20261114.</li>
+<li><strong>r0.4.1</strong> <code>srt.fn.bash</code> as one enclosing function. Built 20261114.</li>
+<li><strong>r0.4.2</strong> owned IPv6 parser; one-name test made environment-independent. Built 20261114.</li>
+<li><strong>r0.5</strong> key encoding, built 20261114; <code>--radixsort</code> measured and declined (section 8); <code>--fn</code> and <code>--bin</code>.</li>
+<li><strong>r0.5.1</strong> test correction for <code>-S -u</code>; manual wording; headers and titles. Built 20261114.</li>
+<li><strong>r0.6</strong> <code>-x</code>; the last column; <code>-D</code>; bare <code>-k</code>; <code>-k-N</code>; <code>-kr5</code> retired. Built 20261114.</li>
+</ul>
+<p>r0.3 and r0.4 can move ahead of r0.2 if that suits; r0.2 precedes r0.5.
+The plan itself stays r0 and is revised in place; its header carries
+the dated revision lines.</p>
+<h2 id="12-decision-log">12 Decision log</h2>
+<table>
+<thead>
+<tr><th>item</th><th>decision</th><th>date</th></tr>
+</thead>
+<tbody>
+<tr><td>V01</td><td>fn.bash is a translator to native sort and awk; defers to the binary when on PATH</td><td>20261113</td></tr>
+<tr><td>V02</td><td>POSIX polarity: <code>-c</code> reports, <code>-C</code> silent; reverses the initial request</td><td>20261113</td></tr>
+<tr><td>V03</td><td><code>-b</code> is outline sort (reading B)</td><td>20261113</td></tr>
+<tr><td>V05</td><td><code>-u</code> removes whole-line duplicates only</td><td>20261113</td></tr>
+<tr><td>V07</td><td><code>-S</code> is unstable; memory by <code>--mem</code> and <code>SRT_MEM</code></td><td>20261113</td></tr>
+<tr><td>V11 (part)</td><td><code>-i</code> retained for POSIX compatibility</td><td>20261113</td></tr>
+<tr><td>V03 (indent)</td><td>indent is the exact byte string; tabs and spaces mix but never correlate</td><td>20261113</td></tr>
+<tr><td>V04, V06, V08, V10, V11, V12, V13, V15</td><td>as proposed</td><td>20261113</td></tr>
+<tr><td>V07 (suffix)</td><td><code>--mem N[bkmg]</code>, bytes default, powers of 1024</td><td>20261113</td></tr>
+<tr><td>V09 (base)</td><td>owned natural order; must cover IPv4, IPv6, networks, versioned archives</td><td>20261113</td></tr>
+<tr><td>V14</td><td><code>-c</code> reports disordered inputs on stderr; stdout unused in check mode</td><td>20261113</td></tr>
+<tr><td>V16</td><td>spill default <code>-T</code>, <code>$TMPDIR</code>, <code>/var/tmp</code></td><td>20261113</td></tr>
+<tr><td>sequence</td><td>revisions are r0, r0.1, r0.2, ...</td><td>20261113</td></tr>
+<tr><td>V03 (derived)</td><td>parentage by proper-prefix indent; sibling groups by identical indent</td><td>20261113</td></tr>
+<tr><td>V09 (amendment)</td><td>suffix rule, tilde rule, IPv6 class adopted</td><td>20261113</td></tr>
+<tr><td>V17</td><td><code>-g</code> and <code>-H</code> adopted</td><td>20261113</td></tr>
+<tr><td>V04 (override)</td><td>confirmed: letters on a key replace the global set; additive rule considered and declined; <code>--help</code> explains it</td><td>20261114</td></tr>
+<tr><td>section 7</td><td>r0.2: budget partition; one spill file with extents; fan-in by memory; failed allocation exits; <code>SRT_STATS</code></td><td>20261114</td></tr>
+<tr><td>V03 (build)</td><td>r0.3: block closure; groups by first appearance; blank lines stay with the line above; <code>-u</code> removes equal leaves only; <code>-c</code> checks every group</td><td>20261114</td></tr>
+<tr><td>V03 (closure)</td><td>operator: block closure accepted as more correct than the literal reading, though not always what is expected</td><td>20261114</td></tr>
+<tr><td>V01 (build)</td><td>r0.4: all keys encoded in awk, native sort compares bytes only; one behavior on all platforms; replaces the per-platform refusal proposed for V17</td><td>20261114</td></tr>
+<tr><td>V01 (one name)</td><td>operator: <code>srt.fn.bash</code> encloses a single <code>srt</code> function; all <code>_srt_*</code> and <code>_SRT_*</code> names are local to it</td><td>20261114</td></tr>
+<tr><td>V09 (parser)</td><td>r0.4.2: IPv6 recognition is owned; <code>inet_pton</code> removed after it gave Darwin and Linux different orders</td><td>20261114</td></tr>
+<tr><td>V18</td><td><code>--fn</code> and <code>--bin</code> adopted; <code>SRT_FN</code> removed</td><td>20261114</td></tr>
+<tr><td>r0.5</td><td>key encoding built (2.3-3.7x on keyed sorts, measured); radix measured and not built</td><td>20261114</td></tr>
+<tr><td>notice</td><td>every file but the manual text carries the copyright and attribution line</td><td>20261114</td></tr>
+<tr><td>headers</td><td>every file: title, front matter, revision block, copyright; README and plan then the contents marker; titles "srt: sort for operators" and "srt plan"</td><td>20261114</td></tr>
+<tr><td>V19</td><td><code>-x</code>, <code>--hex-numeric</code>, key letter <code>x</code> adopted and built; the hash column stays text</td><td>20261114</td></tr>
+<tr><td>V20</td><td>the highest named column runs to the end of the record when text; one word when numeric, the rest compared last; exact words under <code>-D</code> and with <code>-k-N</code></td><td>20261114</td></tr>
+<tr><td>V20 (consequence)</td><td>accepted: <code>-k5,3</code> on six columns is 5,3,1,2,4,6 only as <code>-k5n,3</code>; as text, 5 and 6 are one key</td><td>20261114</td></tr>
+<tr><td>V21</td><td><code>-D</code>, <code>--duplicates</code>: every member of a group equal on the named columns; <code>-u</code> first; refused with <code>-c -C -R -b</code>; srt only</td><td>20261114</td></tr>
+<tr><td>V22</td><td>bare <code>-k</code> is the whole record; a word after <code>-k</code> is a list only if it reads as one; <code>-k-N</code> counts from the end; reverse is <code>-kNr</code> or <code>-r</code>; <code>-kr5</code> retired</td><td>20261114</td></tr>
+<tr><td>grammar</td><td>key grammar shared with the listing tools recorded in section 2 (seven points)</td><td>20261114</td></tr>
+</tbody>
+</table>
+<h2 id="13-revision-status">13 Revision status</h2>
+<h3 id="r01-6af8010b-20261113">r0.1 (6af8010b, 20261113)</h3>
+<p>Delivered: <code>srt.c</code>, <code>makefile</code>, <code>test-srt.sh</code>, <code>README.md</code>.
+<code>srt.fn.bash</code> is r0.4; <code>make install</code> skips it while absent.</p>
+<p>Implemented: the full grammar of section 3; column keys with per-key
+options; types <code>d f g H i n r v</code> including the V09 refinements;
+<code>-c</code>/<code>-C</code>; <code>-u</code>; <code>-S</code>; <code>-R</code>; <code>-Z</code>; <code>-t</code>; atomic <code>-o</code>; <code>-h</code>, <code>--help</code>
+with pager, <code>-V</code>; the eliminated-option errors and the <code>-s</code>/<code>-m</code>
+no-ops.</p>
+<p>Departures from the plan in this revision, each to be closed by the
+revision named:</p>
+<ul>
+<li><code>-c</code>/<code>-C</code> load each input whole rather than streaming two records
+(section 7). Closes in r0.2 with the budgeted reader.</li>
+<li><code>--mem</code>, <code>SRT_MEM</code> and <code>-T</code> are parsed and validated but not
+enforced; input larger than memory fails on allocation. r0.2.</li>
+<li><code>-b</code> is accepted by the parser and refused with exit 2. r0.3.</li>
+<li>Columns are split on every comparison; offsets are not cached. The
+8-byte prefix of section 7 is in place for the plain whole-record
+path only. Keyed sorts are correct but not yet fast. Candidate for
+r0.2 or r0.5 (the key encoding subsumes it).</li>
+<li><code>-S</code> uses the C library <code>qsort</code>.</li>
+<li><code>-R</code> seeds a 256-bit generator once from <code>/dev/urandom</code> and draws
+indexes from it without modulo bias, rather than reading the device
+per record.</li>
+</ul>
+<p>Verified in the build session, Linux x86_64, gcc 13, GNU make 4.3:</p>
+<ul>
+<li>compiles with <code>-std=c99 -Wall -Wextra -Wpedantic</code>, no warnings,
+static link;</li>
+<li><code>make test</code>: 168 cases pass; the same 168 pass under address and
+undefined-behavior sanitizers;</li>
+<li><code>make install</code> and <code>make uninstall</code> against a scratch <code>DESTDIR</code>;</li>
+<li><code>--help</code> through <code>PAGER</code> on a pseudo-terminal, and fall-through to
+the next pager when <code>PAGER</code> names a missing command;</li>
+<li>2,000,000 shuffled integers, whole-record sort: 0.44 s against the
+native sort's 0.43 s wall, byte-identical output. One run, one
+machine; an indication, not a benchmark.</li>
+</ul>
+<p>Not verified, and not to be read as covered:</p>
+<ul>
+<li>Darwin and NetBSD, in any respect;</li>
+<li>bmake and the Darwin make (the makefile avoids GNU-only constructs
+by construction, untested);</li>
+<li><code>srt.1</code> rendering: the build host has no working <code>man</code>; the roff
+source was inspected, not rendered.</li>
+</ul>
+<p>Test finding worth keeping: <code>-n -k1r</code> sorts column 1 as reversed
+<em>bytes</em>, not reversed numbers --- letters on a key replace the global
+set (V04), they do not add to it. The suite now pins this.</p>
+<p>Reported afterwards by the operator, 20261113: on Darwin, <code>make test</code>
+builds without <code>-static</code> as designed and passes 168 of 168. Darwin
+and its make therefore leave the not-verified list for r0.1.</p>
+<h3 id="r02-6af81678-20261114">r0.2 (6af81678, 20261114)</h3>
+<p>Delivered: <code>srt.c</code>, <code>test-srt.sh</code>, <code>makefile</code> (header only),
+<code>README.md</code>, this plan.</p>
+<p>Implemented: the memory budget with its partition; spill to one
+unlinked file and k-way merge, in passes when the runs exceed the
+fan-in; <code>--mem</code>, <code>SRT_MEM</code>, <code>-T</code> and the V16 default enforced;
+streaming <code>-c</code>/<code>-C</code> holding two records; <code>-R</code> and <code>-R -u</code> over
+budget; <code>SRT_STATS</code>. <code>--help</code> gains GLOBAL AND KEY OPTIONS, stating
+the V04 replace rule with the <code>-n -k1r</code> case worked through, and
+MEMORY.</p>
+<p>Closed from the r0.1 list: budget enforcement; streaming check.
+Still open: <code>-b</code> (r0.3); columns split on every comparison; <code>-S</code> by
+library <code>qsort</code>.</p>
+<p>Departures from the plan, recorded in section 7 where they apply:
+one spill file with extents instead of a file per run; fan-in bound
+by memory, not descriptors; failed allocation exits instead of
+spilling; <code>SRT_STATS</code> added.</p>
+<p>Verified in the build session, Linux x86_64, gcc 13, GNU make 4.3:</p>
+<ul>
+<li>no compiler warnings; <code>make test</code> passes 213 of 213; 211 pass under
+address and undefined-behavior sanitizers, where the two
+address-space-limit cases skip themselves;</li>
+<li>4,000,000 records, 30 MB, byte-identical output by four routes:
+default budget (in memory), <code>--mem 8m</code> (35 runs, 1 pass),
+<code>--mem 256k</code> (1099 runs, 2 passes), <code>--mem 64k</code> (4396 runs,
+4 passes), and equal to the native sort;</li>
+<li>the bound is real: under a 40 MB address-space limit the same input
+sorts with <code>--mem 8m</code> and with the default budget, which follows the
+limit down to 20 MB, while <code>--mem 1g</code> fails with exit 2;</li>
+<li><code>-c</code> on that input runs under a 12 MB limit.</li>
+</ul>
+<p>Two defects found and fixed by those measurements before delivery,
+kept here because the tests that would have caught them now exist:
+the budget was tested once per read, so short records overran it; and
+a first correction counted the whole carried read against the budget,
+producing runs of five records (772,604 runs, 128 s). The partition in
+section 7 is the repair.</p>
+<p>Observation, not yet acted on: on this input the spill route
+(0.9 s) is faster than the in-memory route (1.2 s), because runs are
+sorted while they still fit the processor cache. The in-memory merge
+sort over a large index is the place to look for speed; candidate for
+r0.5 with the key encoding.</p>
+<p>Not verified:</p>
+<ul>
+<li>Darwin and NetBSD for r0.2: <code>pread</code>, <code>ftruncate</code>, <code>getrlimit</code> are
+POSIX, but <code>_DARWIN_C_SOURCE</code>/<code>_NETBSD_SOURCE</code> and the physical
+memory query are new and unbuilt there; <code>SRT_STATS=1 srt /dev/null</code>
+on each will show whether the budget is half of memory or the 1 GiB
+fallback;</li>
+<li>the address-space-limit tests skip where <code>ulimit -v</code> is not
+enforced, which is expected on Darwin;</li>
+<li>a full <code>-T</code> file system: the write error path is coded and checked
+by inspection, not exercised;</li>
+<li>bmake; <code>srt.1</code> rendering.</li>
+</ul>
+<p>Reported afterwards by the operator, 20261114: Darwin, <code>make clean test</code> with <code>SRT_STATS</code> set, 213 of 213. The default budget printed as
+8589934592, so the physical-memory query works there under the added
+feature macros and the 1 GiB fallback was not taken. The count of 213
+on Darwin is not the same 213 as on the build host: the two
+address-space-limit cases skipped there, as predicted, and the two
+unwritable <code>-T</code> cases, which skip for root on the build host, ran.
+The suite's count therefore varies by host and user; its last line,
+not a fixed number, is the result.</p>
+<h3 id="r03-6af81dc6-20261114">r0.3 (6af81dc6, 20261114)</h3>
+<p>Delivered: <code>srt.c</code>, <code>test-srt.sh</code>, <code>makefile</code> (header only),
+<code>README.md</code>, this plan.</p>
+<p>Implemented: <code>-b</code> outline sort per V03, with the points settled under
+V03 above; <code>-b</code> with every ordering option, <code>-k</code>, <code>-t</code>, <code>-u</code>, <code>-Z</code>,
+<code>-o</code>, <code>-c</code>/<code>-C</code> and several inputs; refusal with exit 2 naming <code>--mem</code>
+when the budget is reached, nothing written. <code>--help</code> gains OUTLINE
+SORT with a worked example.</p>
+<p>Still open: columns split on every comparison; <code>-S</code> by library
+<code>qsort</code> (under <code>-b</code> the stable sort is always used, which <code>-S</code>
+permits).</p>
+<p>Verified in the build session, Linux x86_64, gcc 13, GNU make 4.3:</p>
+<ul>
+<li>no compiler warnings; <code>make test</code> passes 253 of 253 as root, 251
+under the sanitizers;</li>
+<li><code>-b</code> output passes <code>-cb</code>, and <code>-b</code> applied twice changes nothing;</li>
+<li>an outline nested about 8,000 levels deep is returned unchanged;</li>
+<li>800,000 lines (200,000 blocks) sort and verify in 0.3 s.</li>
+</ul>
+<p>Not verified: Darwin and NetBSD for r0.3 (the outline code uses no
+new library call); bmake; <code>srt.1</code> rendering; a full <code>-T</code> file system.</p>
+<p>Reported afterwards by the operator, 20261114: Darwin, <code>make clean test</code>, 253 of 253, <code>srt r0.3 6af81dc6</code>. Darwin leaves the
+not-verified list for r0.3.</p>
+<h3 id="r04-6af82211-20261114">r0.4 (6af82211, 20261114)</h3>
+<p>Delivered: <code>srt.fn.bash</code> (new), <code>srt.c</code> (manual and revision only),
+<code>test-srt.sh</code>, <code>makefile</code> (header only), <code>README.md</code>, this plan.</p>
+<p>Implemented: the bash function per V01 as built. Sort, <code>-u</code>, <code>-c</code>/<code>-C</code>,
+<code>-R</code>, <code>-o</code> (temporary sibling, mode carried, renamed), <code>-T</code>, <code>-t</code>, all
+ordering options global and per key, several inputs, stdin. Hand-over
+to a binary on PATH, and <code>SRT_FN=1</code>. The binary's manual gains BASH
+FUNCTION; the function carries the same manual and usage text, and the
+suite fails if the two differ.</p>
+<p>Declined by the function, each with exit 2 and a message naming the
+binary: <code>-b</code>; <code>-Z</code>; <code>-t '\0'</code> and non-ASCII separators; input holding
+a byte from 0x01 to 0x04 (the encoding's own separators); hexadecimal
+floats under <code>-g</code>. <code>--mem</code> is passed to the native sort on Linux and
+Darwin and ignored elsewhere. <code>-S</code> and <code>SRT_STATS</code> have no effect.</p>
+<p>Departure from what was last proposed: the operator was told the
+function would refuse <code>-g</code>, <code>-H</code> and <code>-v</code> where the native sort lacks
+them. It was built instead to encode those keys itself everywhere.
+That removed the per-platform difference, and it is the r0.5 key
+encoding written once already, in awk, with the binary as its oracle.</p>
+<p>Verified in the build session, Linux x86_64, bash 5.2, mawk 1.3.4,
+GNU sort:</p>
+<ul>
+<li><code>make test</code>: 426 of 426, of which 173 compare the function with the
+binary (output and exit status for sort, exit status and report for
+check, exit status for grammar);</li>
+<li>a separate differential run, not part of the suite: 400 random
+inputs drawn from numbers, versions, addresses and words, each under
+a random option set, in sort mode and in check mode, 800 comparisons,
+no difference;</li>
+<li>the function defines no name outside <code>srt</code> and <code>_srt_*</code>, and leaves
+nothing in the <code>-T</code> directory or beside <code>-o</code>.</li>
+</ul>
+<p>Not verified, and these matter more for the function than for the
+binary because it leans on host tools:</p>
+<ul>
+<li>any awk other than mawk. The program keeps to POSIX awk and avoids
+extensions, but it has not been run under gawk or under the awk
+shipped with Darwin and NetBSD. Points of risk: POSIX character
+classes in regular expressions, <code>%c</code> for bytes 1-4, string comparison
+in the C locale, and an awk that treats input as UTF-8 regardless of
+locale;</li>
+<li>any sort other than GNU sort, in particular <code>-t</code> with a control
+byte and <code>-s</code> with <code>-k N,Nr</code>;</li>
+<li>bash older than 5.2;</li>
+<li>speed. On the build host the function took about 0.1 s for 20,000
+records keyed <code>-k2n,1</code>, against 0.02 s for the binary; it also
+stages a copy of the input, so it is not meant for large inputs.
+The suite's section 14 is the instrument: run on Darwin and NetBSD it
+reports each of the above as a named failing case rather than a
+silent difference.</li>
+</ul>
+<h3 id="r041-6af86b89-20261114">r0.4.1 (6af86b89, 20261114)</h3>
+<p>Delivered: <code>srt.fn.bash</code>, <code>test-srt.sh</code>, <code>README.md</code>, this plan. The
+binary and the makefile are unchanged from r0.4.</p>
+<p>Requirement, from the operator: the file is to enclose a single <code>srt</code>
+function, with every <code>_srt_*</code> name local to it. r0.4 had defined
+eleven helper functions and four variables at file level, which a
+profile that exports what it sources would have carried into every
+child shell.</p>
+<p>As built: <code>srt</code> does the hand-over to a binary, then opens a subshell
+inside its own body. The helper functions, the awk program, the usage
+and manual text and every variable are defined in that subshell, so
+they end with it. The usage and manual blocks moved into the helpers
+that print them and are read only for <code>-h</code> and <code>--help</code>; the awk
+program is read on each call that reaches the translator.</p>
+<p><code>-V</code> in the function prints the binary's revision with the function
+file's own stamp: <code>srt r0.4 6af82211 (bash function 6af86b89)</code>.</p>
+<p>Verified, Linux, bash 5.2: <code>make test</code> 426 of 426. One case replaces
+the earlier name check and holds the requirement: after sourcing, the
+only function is <code>srt</code> and no variable is added; after calls that
+sort, fail on usage, print usage and print the manual, the function
+list, variable list, shell options, traps, <code>shopt</code> state and <code>IFS</code> of
+the calling shell are unchanged.</p>
+<p>Not verified: the same as for r0.4.</p>
+<p>Reported by the operator, 20261114, Darwin, r0.4.1: 419 passed, 7
+failed. Both groups of failure are diagnosed below; neither was a
+fault in the function's translation.</p>
+<h3 id="r042-6af871c9-20261114">r0.4.2 (6af871c9, 20261114)</h3>
+<p>Delivered: <code>srt.c</code>, <code>srt.fn.bash</code> (manual copy and revision only),
+<code>test-srt.sh</code>, <code>README.md</code>, this plan. The makefile is unchanged.</p>
+<p>Finding 1, six cases, <code>-v</code> on the address data: the function and the
+binary disagreed on Darwin. The function's Darwin output has the
+checksum of the Linux binary's output, so the function was right on
+both hosts and the Darwin <em>binary</em> was the one that differed. Cause:
+<code>srt.c</code> decided "is this an IPv6 address" with the C library's
+<code>inet_pton</code>, and the two libraries do not accept the same strings.
+The Darwin <code>-vu</code> result was 13 bytes shorter, which is the length of
+<code>fe80::1%eth0</code> and its newline: the inference, not confirmed on
+Darwin, is that its library accepts a zone id, so that key became
+equal to <code>fe80::1</code> and was dropped. Whatever the exact string, the
+defect is the dependency. Repair: an owned parser (V09, reversal
+note); <code>arpa/inet.h</code> and <code>sys/socket.h</code> are gone from <code>srt.c</code>.</p>
+<p>This is the case the function-parity tests were written for, though
+not in the direction expected: the second implementation caught a
+host dependency in the first.</p>
+<p>Finding 2, one case, "defines one name": the case assumed a shell
+with no functions and a fixed variable list. A shell whose
+environment carries exported functions starts with them, and bash
+sets <code>COLUMNS</code> and <code>LINES</code> after a command when it has a terminal.
+The function file was not at fault; the case was. It now measures
+what sourcing adds and what calls change, against the shell as it
+found it, and a second case runs it with exported functions present.</p>
+<p>Verified, Linux x86_64: <code>make test</code> 432 of 432 (428 under the
+sanitizers); the owned parser reproduces, byte for byte, the output
+the library version gave on Linux for the address data; a separate
+run of 300 inputs of 40 random address-like keys each (hex digits,
+colons, dots, slashes, percent signs) shows no difference between
+the binary and the function under <code>-v</code> and <code>-vu</code>.</p>
+<p>Not verified: Darwin and NetBSD for r0.4.2. The six <code>-v</code> cases and
+the one-name case are expected to pass on Darwin now; that is a
+prediction from the diagnosis, to be confirmed by <code>make clean test</code>
+there. The rest as for r0.4.</p>
+<p>Reported afterwards by the operator, 20261114: Darwin, <code>make clean test</code>, 432 of 432, <code>srt r0.4.2 6af871c9</code>. Both predictions held. With
+this the bash function is verified on Darwin's awk and sort as well as
+on mawk and GNU sort.</p>
+<h3 id="r05-6af87ca7-20261114">r0.5 (6af87ca7, 20261114)</h3>
+<p>Delivered as one archive, <code>srt-r0.5.tgz</code>: <code>srt.c</code>, <code>srt.fn.bash</code>,
+<code>test-srt.sh</code>, <code>makefile</code>, <code>README.md</code>, this plan.</p>
+<p>The operator asked for an evaluation of r0.5 --- viability, benefit,
+consequence --- and to proceed only on a significant gain. Section 8
+holds the measurements. Verdict: key encoding built; radix measured
+and not built.</p>
+<p>Implemented:</p>
+<ul>
+<li>Key encoding in the binary. For any sort other than the plain
+whole-record one, each record's keys are encoded once per batch and
+the batch is sorted on bytes. <code>reccmp</code> is unchanged and remains the
+definition of the order; <code>-c</code>, the merge and <code>-b</code> still use it.</li>
+<li><code>--fn</code> and <code>--bin</code> (V18) in both forms; <code>SRT_FN</code> removed. The
+function finds the option with one pass over its arguments that
+knows which options take a value.</li>
+<li><code>SRT_STATS</code> gains <code>encoded=N compared=N</code>.</li>
+<li>The copyright and attribution line in every file. It is not in the
+<code>--help</code> text or the generated man page, as instructed; <code>srt.fn.bash</code>
+carries it in its header and holds the manual text without it.</li>
+</ul>
+<p>Consequences accepted with the encoding:</p>
+<ul>
+<li>Memory: the encoded batch is a quarter of the budget and the chunk
+ceiling is halved to make room, so a keyed sort that spills makes
+about twice as many runs as before. A sort that fits is unaffected
+apart from the encoded copy itself, roughly the size of the keys
+plus 16 bytes a record.</li>
+<li>Two routes to one order. The risk is that they differ; the controls
+are below.</li>
+<li><code>-g</code> now assumes IEEE 754 doubles of 8 bytes; the source refuses to
+compile otherwise.</li>
+</ul>
+<p>Verified in the build session, Linux x86_64:</p>
+<ul>
+<li><code>make test</code>: 519 of 519 (513 under the sanitizers);</li>
+<li>section 15 of the suite, new: for 39 option sets on mixed data of
+numbers, versions, addresses and words, the encoded route (default
+budget) and the compared route (<code>--mem 64k</code>, where these keys never
+fit, confirmed by <code>SRT_STATS</code>) give identical bytes, equal records
+included; and every encoded result passes <code>-c</code>, which compares
+directly;</li>
+<li>outside the suite: 1,500 random inputs under random option sets,
+r0.5 against the r0.4.2 binary kept as reference, no difference;</li>
+<li>the timings in section 8, with identical output in every row.</li>
+</ul>
+<p>Not verified: Darwin and NetBSD for r0.5. The encoder is plain C on
+bytes and uses no new library call, and <code>--fn</code>/<code>--bin</code> use no new
+shell feature, but neither has run there. Speed on other hosts will
+differ; the ratios in section 8 are one machine's.</p>
+<p>Reported afterwards by the operator, 20261114: Darwin, r0.5, 518
+passed, 1 failed; both <code>-V</code> lines read <code>srt r0.5 6af87ca7</code>. The key
+encoding, <code>--fn</code>/<code>--bin</code> and the function all pass there.</p>
+<h3 id="r051-6af889a5-20261114">r0.5.1 (6af889a5, 20261114)</h3>
+<p>Delivered as one archive, <code>srt-r0.5.1.tgz</code>. The program is unchanged
+from r0.5; the manual gains four lines, and with it the revision.</p>
+<p>The Darwin failure, one case, <code>encoded equals compared: srt -S -u -k2n</code>: not a defect in the encoding. <code>-S</code> permits any order among
+records that compare equal, and the binary then uses the C library's
+<code>qsort</code>. With <code>-u</code> one of several equal records is kept, and which
+one depends on where <code>qsort</code> left them. The two routes sort batches
+of different sizes, so on a host whose <code>qsort</code> is not stable they can
+keep different records, each a correct answer. The build host's
+<code>qsort</code> happens to be stable, which is why the case passed there and
+why it was written wrongly: it asserted bytes where only the set of
+keys is promised. The case now asserts that <code>-S -u</code> keeps exactly one
+record per key and that its output is strictly ordered, on both
+routes. <code>--help</code> states under <code>-S</code> that with <code>-u</code> any one of the
+equal records may be kept and that the choice can differ between
+hosts.</p>
+<p>Worth keeping from this: three times now a Darwin run has caught an
+assumption that held only on the build host --- the address library,
+the calling shell's contents, the library sort. Each was a place
+where the build host's behavior stood in for a rule.</p>
+<p>Also in r0.5.1, at the operator's direction: titles <code>srt: sort for operators</code> (README) and <code>srt plan</code>; in every file the order title,
+front matter, revision block, copyright, and in the README and the
+plan the contents marker after that. The plan's opening no longer
+says that no code exists.</p>
+<p>Opened: V19, hexadecimal keys, from a case the operator met; proposed,
+not built.</p>
+<p>Verified, Linux x86_64: <code>make test</code> 521 of 521; the archive extracts,
+builds and passes from a fresh directory.</p>
+<p>Not verified: Darwin and NetBSD for r0.5.1. The corrected case is
+expected to pass on Darwin, since it no longer depends on the library
+sort; a prediction until run there.</p>
+<h3 id="r06-6af8a908-20261114">r0.6 (6af8a908, 20261114)</h3>
+<p>Delivered as one archive, <code>srt-r0.6.tgz</code>. Built: V19 (<code>-x</code>), V20 (the
+last column), V21 (<code>-D</code>), V22 (bare <code>-k</code>, <code>-k-N</code>, reverse spellings).</p>
+<p>Program. One routine, <code>layout</code>, now decides what a record's named
+keys and remaining columns are, and the comparison (<code>reccmp</code>), the
+key encoder and the <code>-D</code> test all read its answer; before r0.6 each
+split the record for itself. The split takes a limit: the words up
+to the highest named column, then the residue as one column. Hex
+keys parse like <code>-n</code> with sixteen digits and no fraction, and encode
+as sign, digit count, digits. <code>-D</code> is a one-record hold at the final
+writer. The function's awk program carries the same layout, encoder
+and hold.</p>
+<p>Manual. KEYS rewritten for words, <code>-k-N</code>, bare <code>-k</code> and the reverse
+spellings; new section THE LAST COLUMN; <code>-D</code> and <code>-x</code> entries;
+EXAMPLES regrouped to show each addition and the range of use:
+columns, kinds of key, the last column, columns from the end,
+duplicates, whole files, resources and forms. The six-column sentence
+now reads <code>-k5n,3</code>, with the text case beside it (V20).</p>
+<p>Defect found before delivery, by differential fuzz and not by the
+suite: the function tested only the first named column under <code>-D</code>
+with several keys (the key list was consumed while the native sort's
+arguments were built, before the filter read it). Fixed; four cases
+pin it. Worth keeping: the parity cases written by hand all happened
+to agree on their first column.</p>
+<p>Changed cases, each a decided change of meaning and not a regression:
+<code>-k1x</code> is now valid (the unknown-letter case uses <code>q</code>); <code>-k</code> alone is
+valid; <code>-t: -k2</code> extends column 2 to the end of the record; the
+blank-run case uses a numeric last column.</p>
+<p>Verified, Linux x86_64: <code>make test</code> 664 of 664 plain, 658 under
+address and undefined-behavior sanitizers (six cases need an
+address-space limit the sanitizer runtime cannot run under); 3000
+random trials of the new options, function against binary against the
+compared route (<code>--mem 64k</code>), no difference apart from the function's
+documented refusal of hexadecimal floats under <code>-g</code>; timing against
+r0.5.1 on one million records unchanged or better (<code>-k2n</code> 0.88 s
+both; whole records 0.36 s against 0.41 s).</p>
+<p>Darwin (operator report, 20261114): <code>make clean test</code> 664 of 664, binary
+and function, both reporting <code>r0.6 6af8a908</code>. That also covers the
+r0.5.1 changes it contains. Corrections made after that run, under
+the same revision: the manual gains a blank line after each section
+heading and a SEE ALSO section; the generated man page uses real
+section headings; the README links its files; NUL termination is <code>-Z</code>
+(<code>-z</code> is refused, in the binary and the function); the manual has a
+blank line before each EXAMPLES group; <code>make install</code> defaults to
+<code>/usr/local</code> for root and <code>$HOME</code> for anyone else (V15).</p>
+<p>Not verified: NetBSD; bmake; the rendering of <code>srt.1</code> by a man
+renderer (this host has none).</p>
+<hr />
+<h2 id="one-order-on-three-hosts">One order on three hosts</h2>
+<p>Read from the end, the numbered questions are one question. The key
+grammar, the byte locale, the default stability, the owned version
+order and the fixed decimal point each remove a place where the same
+line could land differently on a different machine; the spill path
+removes the place where it could fail to land at all. What an operator
+wants from a sort is less a faster ordering than a repeatable one ---
+the file sorted on the build host must pass <code>-c</code> on the workstation.
+Every proposed default above was chosen by that test, and any V item
+answered the other way should be answered knowing which host-to-host
+agreement it gives back.</p>
+<section id="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn-1" role="doc-endnote"><span>[^1]: </span><p>NetBSD sort(1) manual. <a href="https://man.netbsd.org/sort.1">https://man.netbsd.org/sort.1</a></p></li>
+<li id="fn-2" role="doc-endnote"><span>[^2]: </span><p>FreeBSD sort(1) manual. <a href="https://man.freebsd.org/sort">https://man.freebsd.org/sort</a></p></li>
+<li id="fn-3" role="doc-endnote"><span>[^3]: </span><p>GNU coreutils sort(1) manual. <a href="https://www.man7.org/linux/man-pages/man1/sort.1.html">https://www.man7.org/linux/man-pages/man1/sort.1.html</a></p></li>
+</ol>
+</section>
+</body>
+</html>

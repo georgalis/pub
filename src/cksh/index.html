@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+section[role="doc-endnotes"] ol { list-style: none; padding-left: 0; }
+li[role="doc-endnote"] > p:first-of-type { display: inline; margin: 0; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h1 id="cksh-sortable-stat-and-hash-listing">cksh: sortable stat and hash listing</h1>
+<p>cksh lists files one per line, with inode, links, a SHAKE256 hash,
+size and modification time in hexadecimal and the name last: a listing
+made to be sorted, compared and joined. It is a C99 binary, and a bash
+function for hosts without it.</p>
+<p><code>cksh --help</code> is the manual and documents the current implementation.
+On a terminal it is shown as a man page, headings in bold, through
+the formatter of the host (mandoc, else nroff and a pager) without the
+page being installed; where there is no formatter, through the pager
+alone. <code>cksh --man</code> writes the man page source.
+<a href="./plan-cksh.md.html">./plan-cksh.md.html</a> carries the requirements, the decisions behind them, the
+history, and the status of each revision.</p>
+<pre><code>revision 6af8d530 20261114 134000 PST Sat --- r0.6
+revision 6ab7e734 20260926 083932 PDT Sat --- r0.5
+revision 68e9ff40 20251010 235456 PDT Fri --- r0.4
+revision 68e20bca 20251004 231018 PDT Sat --- r0.3
+revision 677c9c44 20250106 191516 PST Mon --- r0.2
+original 6305e87b 20220824 015939 PDT Wed --- r0.1
+</code></pre>
+<p><em>(c) 2017-2026 George Georgalis <a href="mailto:george@iuxta.com">george@iuxta.com</a> Unlimited use with attribution.</em></p>
+<h2 id="contents">Contents</h2>
+<nav>
+<ul>
+<li><a href="#what-it-does">What it does</a></li>
+<li><a href="#the-hash-is-shake256-6">The hash is shake256-6</a></li>
+<li><a href="#sorting">Sorting</a></li>
+<li><a href="#save-and-check">Save and check</a></li>
+<li><a href="#changed-in-r06">Changed in r0.6</a></li>
+<li><a href="#build">Build</a></li>
+<li><a href="#bash-function">Bash function</a></li>
+<li><a href="#diagnostics-and-exit-status">Diagnostics and exit status</a></li>
+<li><a href="#examples">Examples</a></li>
+<li><a href="#status-of-r06">Status of r0.6</a></li>
+<li><a href="#files">Files</a></li>
+</ul>
+</nav>
+<hr />
+<h2 id="what-it-does">What it does</h2>
+<pre><code>$ cksh -n t/*
+   inode lk hash       size    mdate name
+  1cc01d  1 483366        3 5e0bd2c0 t/a
+  1cc01c  2 000000     1000 5e0bd2c0 t/d/
+  1cc01f  1 483366        1 5e0bd2c0 t/l@
+  1cc021  1 c85112        1 5e0bd2c0 t/sp ace
+
+$ cksh t/*
+. . 483366        3 5e0bd2c0 t/a
+. . 000000     1000 5e0bd2c0 t/d/
+</code></pre>
+<p>The heading is shown for reference; cksh does not write it.</p>
+<ul>
+<li>Six columns, always. A column that is left out is written as a dot,
+so the column numbers never shift and the name is always column 6.</li>
+<li>Columns are words, as <code>$1</code>, <code>$2</code> are in awk: widths and padding do
+not matter. A value wider than its column moves the rest of that one
+line and nothing else.</li>
+<li>The name is last and runs to the end of the line, blanks included,
+with an indicator in the manner of <code>ls -F</code>: <code>/</code> directory, <code>@</code>
+symlink, <code>|</code> fifo, <code>=</code> socket.</li>
+<li>By default inode and links are left out (<code>-n2</code>), since they differ
+between copies of the same tree; two trees listed this way can be
+compared with diff or join.</li>
+<li>Names come from the arguments, or one per line from standard input.</li>
+<li>Lines are written as the files are read, unless <code>-k</code> or <code>-r</code> asks
+for an order.</li>
+<li><code>-Z</code> ends each line, and each name on standard input, with NUL in
+place of newline, so any name passes: <code>ff -Z | cksh -Z | srt -z</code>.</li>
+<li><code>-L</code> follows symlinks: the line of a link is the line of the file it
+leads to.</li>
+</ul>
+<h2 id="the-hash-is-shake256-6">The hash is shake256-6</h2>
+<p>Column 3 is SHAKE256 of the file content, cut to N hexadecimal
+characters, and that hash is named shake256-N. The default is
+shake256-6; <code>-x64</code> gives shake256-64. N is the width of the column.</p>
+<p>SHAKE256 is an extendable-output function: a shorter output is the
+beginning of every longer one. The shake256-6 of a file is the first
+six characters of its shake256-64.</p>
+<p>The name is written with a hyphen and never with a slash, because a
+slash after SHAKE256 is read three ways. The default hash would be
+24 to a reader who counts bits, 3 to one who counts bytes, as the
+<code>-xoflen</code> of openssl does, and 6 to one who counts hexadecimal
+characters. <code>cksh -x</code> counts hexadecimal characters, so the option,
+the name and the column are one number. <code>cksh --help</code>, section HASH,
+sets the three readings side by side.</p>
+<p><code>-x</code> alone is <code>-x0</code>: no hash, and no file is read.</p>
+<h2 id="sorting">Sorting</h2>
+<p><code>-k</code> takes the key list of srt: <code>-k5,4</code> is "column 5, then column 4,
+then the remaining columns left to right".</p>
+<pre><code>cksh -k *            # by name
+cksh -k5 *           # by time, oldest first
+cksh -k5r *          # newest first
+cksh -k5,4 *         # by time, then size, then the rest
+cksh -k4r,6 *        # largest first, then by name
+cksh -r *            # the arguments in reverse order
+</code></pre>
+<ul>
+<li>cksh knows the type of each column: inode, links, size and time
+compare as numbers, by value; the hash and the name compare as
+bytes. No locale is consulted.</li>
+<li><code>-k</code> alone names no column and sorts by name.</li>
+<li>A column that is left out, a dot, is a null column: a key on it
+orders nothing and the next column decides.</li>
+<li>To reverse, put <code>r</code> after the column (<code>-k5r</code>) or give <code>-r</code>, which
+reaches every column written without a letter. <code>-r</code> with no <code>-k</code>
+reverses input order. <code>-kr5</code> is refused.</li>
+<li><code>x</code> is accepted on the numeric columns and changes nothing, so a
+list written for srt can be given to cksh.</li>
+</ul>
+<p>The same order from srt: <code>cksh -k5,4,6</code> writes what
+<code>cksh | srt -k5x,4x,6,1x,2x,3</code> writes. <code>cksh --help</code>, section KEYS,
+has the rule.</p>
+<h2 id="save-and-check">Save and check</h2>
+<p><code>-o output</code> writes the listing to a file and not to standard output:
+beside the destination, synced, given the destination's mode, and
+renamed over it when the run is complete. A failed or interrupted run
+leaves the original as it was, and the output may be one of the files
+listed.</p>
+<p><code>-c listing</code> reads a saved listing back and examines each file it
+names. A file that matches its record is passed over; a file that
+differs is written as it is now, and the exit status carries 64.</p>
+<pre><code>find . -type f | cksh -k -o tree.ck     # save
+cksh -c tree.ck                         # what changed; nothing if none
+cksh -c tree.ck &gt;/dev/null || echo changed
+</code></pre>
+<ul>
+<li>Each record is checked as it was made: its dots say which columns
+were left out and are not compared, and the width of its hash says
+which shake256-N to compute. <code>-n</code> and <code>-x</code> are not consulted, and a
+listing may mix records made in different ways.</li>
+<li>The output of a check is itself a listing, so <code>-k</code>, <code>-r</code> and <code>-o</code>
+apply to it, and it can be fed to srt or joined with the original.</li>
+<li>A file that is gone is an error (status 4) and writes no line.</li>
+<li>A listing made with <code>-L</code> or <code>-Z</code> is checked with the same option.</li>
+</ul>
+<p><code>cksh --help</code>, section CHECK, has the rules for names that end in an
+indicator character of their own and for names that begin with a blank.</p>
+<h2 id="changed-in-r06">Changed in r0.6</h2>
+<p>A script written for r0.5 needs these looked at.</p>
+<table>
+<thead>
+<tr><th>r0.5</th><th>r0.6</th></tr>
+</thead>
+<tbody>
+<tr><td><code>-x N</code> counts bytes; default 3</td><td><code>-x N</code> counts hexadecimal characters; default 6 (the same hash)</td></tr>
+<tr><td><code>-0</code> .. <code>-5</code></td><td><code>-n0</code> .. <code>-n5</code></td></tr>
+<tr><td><code>-n</code> and <code>-x</code> before a file: error</td><td><code>-n</code> is <code>-n0</code>, <code>-x</code> is <code>-x0</code>, and the word is a file</td></tr>
+<tr><td><code>-k N</code>: column N, the columns after it, the name</td><td><code>-k list</code>: the named columns, then the rest left to right</td></tr>
+<tr><td><code>-kr5</code>, <code>-rk5</code></td><td><code>-k5r</code> or <code>-rk5</code>; <code>-kr5</code> is refused</td></tr>
+<tr><td>mdate before 1970: <code>ffffffffed307900</code></td><td><code>-12cf8700</code></td></tr>
+<tr><td><code>cksh d/</code> writes <code>d//</code></td><td><code>d/</code></td></tr>
+<tr><td>names written as they are</td><td>on a terminal, control bytes are written as <code>\ooo</code></td></tr>
+</tbody>
+</table>
+<p>One consequence of "the next word is a value only when it reads as
+one": in <code>cksh -n *</code>, a first file named <code>5</code> is taken as the value.
+Write <code>cksh -n0 *</code>, or <code>cksh -n -- *</code>.</p>
+<h2 id="build">Build</h2>
+<pre><code>make            # cksh and cksh.1 (the output of cksh --man)
+make test       # regression suite against ./cksh
+make install    # PREFIX: /usr/local for root, $HOME otherwise; DESTDIR honored
+make uninstall
+make clean
+</code></pre>
+<p>Requirements: a C99 compiler, POSIX libc, make, and bash for the test
+suite. No other library: SHAKE256 is built in, so every hash length
+works on every host.</p>
+<p>Linking: static on Linux and NetBSD. Darwin has no static system
+library, so there the binary links dynamically against the system
+library alone. If a static libc is not installed on Linux, the build
+says so and links dynamically.</p>
+<p><code>make install</code> with no <code>PREFIX</code> installs under <code>/usr/local</code> for root
+and under <code>$HOME</code> for anyone else: <code>bin/cksh</code>, <code>share/cksh/cksh.fn.bash</code>,
+and <code>cksh.1</code> in <code>share/man/man1</code> where <code>share/man</code> exists, else
+<code>man/man1</code>. <code>make uninstall</code> follows the same rule.</p>
+<p>The <a href="./makefile">./makefile</a> uses only constructs common to GNU make, bmake and the
+Darwin make.</p>
+<h2 id="bash-function">Bash function</h2>
+<p><a href="./cksh.fn.bash">./cksh.fn.bash</a> gives the same options and the same bytes on a host
+where the binary is not installed. Source it:</p>
+<pre><code>. /usr/local/share/cksh/cksh.fn.bash
+</code></pre>
+<p>When a binary named <code>cksh</code> is on PATH the function runs it. <code>--fn</code>
+allows only the function and <code>--bin</code> only the binary. Sourcing the
+file defines that one name and nothing else: every helper and variable
+lives inside <code>cksh</code>, in a subshell, so a call leaves the calling shell
+unchanged.</p>
+<p>It needs bash, stat, sort, mktemp for <code>-o</code> and, for a hash, an openssl
+with shake256;
+it prefers <code>$LOCALBASE/bin/openssl</code> to the one on PATH, and checks it
+against the known hash of empty input before use. An openssl without
+<code>-xoflen</code> limits <code>-x</code> to 64; one without shake256 is status 2, and
+<code>-x0</code> needs none. It runs several programs per file and is much slower
+than the binary. <code>cksh --help</code>, section BASH FUNCTION, has the list of
+differences.</p>
+<h2 id="diagnostics-and-exit-status">Diagnostics and exit status</h2>
+<p>Messages go to standard error, each ending in a hexadecimal tag that
+names the message:</p>
+<pre><code>&gt;&gt;&gt; cksh : cannot stat 't/nope': No such file or directory (6ab75465)
+^^^ cksh : fifo, not hashed 't/p' (6ab75468)
+</code></pre>
+<p>The exit status is a bitmask. 1 and 2 are fatal and are returned
+alone; the others accumulate while the run continues.</p>
+<table>
+<thead>
+<tr><th align="right">bit</th><th>meaning</th></tr>
+</thead>
+<tbody>
+<tr><td align="right">1</td><td>invalid option or argument</td></tr>
+<tr><td align="right">2</td><td>environment: memory, standard input or output; in the function, no usable openssl or stat</td></tr>
+<tr><td align="right">4</td><td>cannot stat a name; line skipped</td></tr>
+<tr><td align="right">8</td><td>cannot open or read a regular file; line skipped</td></tr>
+<tr><td align="right">16</td><td>fifo, socket or device, never opened; or a node that changed during the scan</td></tr>
+<tr><td align="right">32</td><td>dangling symlink</td></tr>
+<tr><td align="right">64</td><td>with <code>-c</code>, a file differs from its record</td></tr>
+</tbody>
+</table>
+<h2 id="examples">Examples</h2>
+<pre><code>cksh *                              # hash, size, mdate, name
+cksh -n *                           # every column
+cksh -n3 -k4 *                      # sizes, smallest first; nothing read
+cksh -x64 file                      # shake256-64
+find . -type f | cksh -k3           # files of the same content together
+ff . -t f | cksh -k5,4              # a tree, by time and size
+find . -type f | cksh | srt -D -k3  # files whose hash repeats
+find a -type f | cksh -k &gt; a.ck     # one tree, ready for diff or join
+ff -Z . -t f | cksh -Z | srt -z -k5x,4x   # NUL records end to end
+</code></pre>
+<h2 id="status-of-r06">Status of r0.6</h2>
+<p>Working: the whole option grammar, key lists, <code>-L</code>, <code>-Z</code>, <code>-o</code>, <code>-c</code>,
+both forms, the manual as a man page, terminal escapes, and the suite,
+which holds the bash function to the same bytes and status as the
+binary and, where srt is present, holds cksh order to srt order.</p>
+<p>Platforms: r0.6 is built and tested on Linux (gcc and clang, GNU make,
+bash 5.2, GNU sort and stat, OpenSSL 3), as root and as an unprivileged
+user, and under the address and undefined-behavior sanitizers. On
+Darwin the suite ran whole, binary and function, with <code>-L</code>, <code>-o</code>, <code>-c</code>,
+<code>--man</code> and <code>--help</code> on a terminal included (335 cases passed; the two
+that failed were faults of the suite's grep, corrected here and not yet
+rerun there). Not yet exercised: anything on NetBSD; bmake; and, on any
+host, the rendering of the man page by a real formatter: the suite
+checks that the source reaches mandoc or nroff, with stand-ins, not
+what they draw. Reports are wanted, and the suite
+names each difference as a failing case.</p>
+<p>The number of cases the suite runs varies by host: cases that need a
+non-root user, openssl shake256, <code>/dev/full</code>, a pty through
+<code>script(1)</code>, srt, or a file system that takes a name that is not UTF-8
+skip themselves and say so. The last line of <code>make test</code> is the result.</p>
+<h2 id="files">Files</h2>
+<table>
+<thead>
+<tr><th>file</th><th>purpose</th></tr>
+</thead>
+<tbody>
+<tr><td><a href="./cksh.c">./cksh.c</a></td><td>the program, single file, C99</td></tr>
+<tr><td><a href="./cksh.fn.bash">./cksh.fn.bash</a></td><td>the same options as a bash function, for hosts without the binary</td></tr>
+<tr><td><a href="./makefile">./makefile</a></td><td>targets: all cksh man test install clean uninstall</td></tr>
+<tr><td><a href="./test-cksh.sh">./test-cksh.sh</a></td><td>regression suite; <code>test-cksh.sh [path-to-cksh]</code>; compares the function with the binary when <a href="./cksh.fn.bash">./cksh.fn.bash</a> is beside it; <code>SRT=path</code> names an srt for the equivalence cases</td></tr>
+<tr><td><a href="./plan-cksh.md.html">./plan-cksh.md.html</a></td><td>requirements, decisions, history, revision status</td></tr>
+<tr><td><a href="./">./</a></td><td>this file</td></tr>
+</tbody>
+</table>
+</body>
+</html>

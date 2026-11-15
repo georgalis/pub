@@ -1,172 +1,269 @@
-# cksh
+# cksh: sortable stat and hash listing
 
-Sortable stat and SHAKE256 listing of files: one line per file, numbers in
-lowercase hex, padded so the data aligns in columns.
+cksh lists files one per line, with inode, links, a SHAKE256 hash,
+size and modification time in hexadecimal and the name last: a listing
+made to be sorted, compared and joined. It is a C99 binary, and a bash
+function for hosts without it.
 
-```
-$ cksh -n0 t/*
-   inode lk hash       size    mdate name
-  1cc01d  1 483366        3 5e0bd2c0 t/a
-  1cc01c  2 000000     1000 5e0bd2c0 t/d/
-  1cc01f  1 483366        1 5e0bd2c0 t/l@
-  1cc021  1 c85112        1 5e0bd2c0 t/sp ace
+`cksh --help` is the manual and documents the current implementation.
+On a terminal it is shown as a man page, headings in bold, through
+the formatter of the host (mandoc, else nroff and a pager) without the
+page being installed; where there is no formatter, through the pager
+alone. `cksh --man` writes the man page source.
+[./plan-cksh.md](./plan-cksh.md) carries the requirements, the decisions behind them, the
+history, and the status of each revision.
 
-$ cksh t/*                     default -n 2: inode and links omitted
-. . 483366        3 5e0bd2c0 t/a
-. . 000000     1000 5e0bd2c0 t/d/
-```
+    revision 6af8d530 20261114 134000 PST Sat --- r0.6
+    revision 6ab7e734 20260926 083932 PDT Sat --- r0.5
+    revision 68e9ff40 20251010 235456 PDT Fri --- r0.4
+    revision 68e20bca 20251004 231018 PDT Sat --- r0.3
+    revision 677c9c44 20250106 191516 PST Mon --- r0.2
+    original 6305e87b 20220824 015939 PDT Wed --- r0.1
 
-The header line is shown here for reference; cksh does not print it.
+_(c) 2017-2026 George Georgalis <george@iuxta.com> Unlimited use with attribution._
 
-| field | format | content |
-|-------|--------|---------|
-| 1 inode | `%8x` | inode of the node itself (not followed) |
-| 2 lk | `%2x` | hard link count |
-| 3 hash | 2*LEN hex | SHAKE256 of the content; zeros for directories and nodes that are not hashed |
-| 4 size | `%8x` | bytes (a symlink reports its own size) |
-| 5 mdate | `%08x` | modification time, unix seconds |
-| 6 name | text | as given, plus `/` dir, `@` symlink, `\|` fifo, `=` socket |
+<!--contents 2 3 pre="## Contents" post="---"-->
 
-An omitted field prints as `.`, so field numbers never shift. A value wider
-than its column (a size of 4 GiB or more, an mdate after 2106) shifts the
-rest of that one line. The fields stay space separated, so `awk '{print $4}'`
-and `-k 4` still find the right value, and `-k` compares numbers by value.
+## What it does
 
-Two implementations with byte-identical output and exit status:
+    $ cksh -n t/*
+       inode lk hash       size    mdate name
+      1cc01d  1 483366        3 5e0bd2c0 t/a
+      1cc01c  2 000000     1000 5e0bd2c0 t/d/
+      1cc01f  1 483366        1 5e0bd2c0 t/l@
+      1cc021  1 c85112        1 5e0bd2c0 t/sp ace
 
-- `cksh` --- C99 binary, no dependency beyond libc. SHAKE256 (FIPS 202) is
-  built in, so every hash length from 1 to 64 works on every host.
-- `cksh.fn.bash` --- bash function for hosts that cannot compile or run
-  binaries. It uses `openssl shake256` and prefers `$LOCALBASE/bin/openssl`
-  (pkgsrc) over the one on `PATH`. Its body runs in a subshell, so its
-  helper functions never enter the caller's shell. Sourcing the file defines
-  `cksh` and nothing else.
+    $ cksh t/*
+    . . 483366        3 5e0bd2c0 t/a
+    . . 000000     1000 5e0bd2c0 t/d/
+
+The heading is shown for reference; cksh does not write it.
+
+- Six columns, always. A column that is left out is written as a dot,
+  so the column numbers never shift and the name is always column 6.
+- Columns are words, as `$1`, `$2` are in awk: widths and padding do
+  not matter. A value wider than its column moves the rest of that one
+  line and nothing else.
+- The name is last and runs to the end of the line, blanks included,
+  with an indicator in the manner of `ls -F`: `/` directory, `@`
+  symlink, `|` fifo, `=` socket.
+- By default inode and links are left out (`-n2`), since they differ
+  between copies of the same tree; two trees listed this way can be
+  compared with diff or join.
+- Names come from the arguments, or one per line from standard input.
+- Lines are written as the files are read, unless `-k` or `-r` asks
+  for an order.
+- `-Z` ends each line, and each name on standard input, with NUL in
+  place of newline, so any name passes: `ff -Z | cksh -Z | srt -z`.
+- `-L` follows symlinks: the line of a link is the line of the file it
+  leads to.
+
+## The hash is shake256-6
+
+Column 3 is SHAKE256 of the file content, cut to N hexadecimal
+characters, and that hash is named shake256-N. The default is
+shake256-6; `-x64` gives shake256-64. N is the width of the column.
+
+SHAKE256 is an extendable-output function: a shorter output is the
+beginning of every longer one. The shake256-6 of a file is the first
+six characters of its shake256-64.
+
+The name is written with a hyphen and never with a slash, because a
+slash after SHAKE256 is read three ways. The default hash would be
+24 to a reader who counts bits, 3 to one who counts bytes, as the
+`-xoflen` of openssl does, and 6 to one who counts hexadecimal
+characters. `cksh -x` counts hexadecimal characters, so the option,
+the name and the column are one number. `cksh --help`, section HASH,
+sets the three readings side by side.
+
+`-x` alone is `-x0`: no hash, and no file is read.
+
+## Sorting
+
+`-k` takes the key list of srt: `-k5,4` is "column 5, then column 4,
+then the remaining columns left to right".
+
+    cksh -k *            # by name
+    cksh -k5 *           # by time, oldest first
+    cksh -k5r *          # newest first
+    cksh -k5,4 *         # by time, then size, then the rest
+    cksh -k4r,6 *        # largest first, then by name
+    cksh -r *            # the arguments in reverse order
+
+- cksh knows the type of each column: inode, links, size and time
+  compare as numbers, by value; the hash and the name compare as
+  bytes. No locale is consulted.
+- `-k` alone names no column and sorts by name.
+- A column that is left out, a dot, is a null column: a key on it
+  orders nothing and the next column decides.
+- To reverse, put `r` after the column (`-k5r`) or give `-r`, which
+  reaches every column written without a letter. `-r` with no `-k`
+  reverses input order. `-kr5` is refused.
+- `x` is accepted on the numeric columns and changes nothing, so a
+  list written for srt can be given to cksh.
+
+The same order from srt: `cksh -k5,4,6` writes what
+`cksh | srt -k5x,4x,6,1x,2x,3` writes. `cksh --help`, section KEYS,
+has the rule.
+
+## Save and check
+
+`-o output` writes the listing to a file and not to standard output:
+beside the destination, synced, given the destination's mode, and
+renamed over it when the run is complete. A failed or interrupted run
+leaves the original as it was, and the output may be one of the files
+listed.
+
+`-c listing` reads a saved listing back and examines each file it
+names. A file that matches its record is passed over; a file that
+differs is written as it is now, and the exit status carries 64.
+
+    find . -type f | cksh -k -o tree.ck     # save
+    cksh -c tree.ck                         # what changed; nothing if none
+    cksh -c tree.ck >/dev/null || echo changed
+
+- Each record is checked as it was made: its dots say which columns
+  were left out and are not compared, and the width of its hash says
+  which shake256-N to compute. `-n` and `-x` are not consulted, and a
+  listing may mix records made in different ways.
+- The output of a check is itself a listing, so `-k`, `-r` and `-o`
+  apply to it, and it can be fed to srt or joined with the original.
+- A file that is gone is an error (status 4) and writes no line.
+- A listing made with `-L` or `-Z` is checked with the same option.
+
+`cksh --help`, section CHECK, has the rules for names that end in an
+indicator character of their own and for names that begin with a blank.
+
+## Changed in r0.6
+
+A script written for r0.5 needs these looked at.
+
+| r0.5 | r0.6 |
+|---|---|
+| `-x N` counts bytes; default 3 | `-x N` counts hexadecimal characters; default 6 (the same hash) |
+| `-0` .. `-5` | `-n0` .. `-n5` |
+| `-n` and `-x` before a file: error | `-n` is `-n0`, `-x` is `-x0`, and the word is a file |
+| `-k N`: column N, the columns after it, the name | `-k list`: the named columns, then the rest left to right |
+| `-kr5`, `-rk5` | `-k5r` or `-rk5`; `-kr5` is refused |
+| mdate before 1970: `ffffffffed307900` | `-12cf8700` |
+| `cksh d/` writes `d//` | `d/` |
+| names written as they are | on a terminal, control bytes are written as `\ooo` |
+
+One consequence of "the next word is a value only when it reads as
+one": in `cksh -n *`, a first file named `5` is taken as the value.
+Write `cksh -n0 *`, or `cksh -n -- *`.
 
 ## Build
 
-```
-make            # ./cksh and ./cksh.1 (man page generated from --help)
-make test       # regression suite, test.sh
-make install    # PREFIX: /usr/local for root, $HOME otherwise
-make install PREFIX=/opt/cksh DESTDIR=/tmp/stage
-```
+    make            # cksh and cksh.1 (the output of cksh --man)
+    make test       # regression suite against ./cksh
+    make install    # PREFIX: /usr/local for root, $HOME otherwise; DESTDIR honored
+    make uninstall
+    make clean
 
-The makefile uses only the constructs shared by GNU make, bmake, and Apple
-make. It installs `bin/cksh`, `man1/cksh.1` (under `share/man` when present,
-else `man`), and `share/cksh/cksh.fn.bash`. `$LOCALBASE` is consulted only
-to find dependencies, never as an install target.
+Requirements: a C99 compiler, POSIX libc, make, and bash for the test
+suite. No other library: SHAKE256 is built in, so every hash length
+works on every host.
 
-Linking by platform:
+Linking: static on Linux and NetBSD. Darwin has no static system
+library, so there the binary links dynamically against the system
+library alone. If a static libc is not installed on Linux, the build
+says so and links dynamically.
 
-- Linux and NetBSD: `-static`, falling back to dynamic linking when no
-  static libc is installed.
-- Darwin: dynamic, against libSystem only. Apple ships no static libSystem,
-  so this is as far as linking can go there. Nothing from pkgsrc or Homebrew
-  is needed at run time.
+`make install` with no `PREFIX` installs under `/usr/local` for root
+and under `$HOME` for anyone else: `bin/cksh`, `share/cksh/cksh.fn.bash`,
+and `cksh.1` in `share/man/man1` where `share/man` exists, else
+`man/man1`. `make uninstall` follows the same rule.
 
-## Usage
+The [./makefile](./makefile) uses only constructs common to GNU make, bmake and the
+Darwin make.
 
-`cksh -h` prints a short summary and `cksh --help` the full manual. The bash
-function takes the same options; load it with `. cksh.fn.bash`.
+## Bash function
 
-```
-cksh -k5 *                   sort by modification time, oldest first
-cksh -rk5 *                  newest first
-find . -type f | cksh -k3    group identical content by hash
-cksh -3 -k4 *                sizes, smallest first
-cksh -x 32 -n 0 file         full 256 bit digest, with inode and links
-```
+[./cksh.fn.bash](./cksh.fn.bash) gives the same options and the same bytes on a host
+where the binary is not installed. Source it:
 
-Sort grammar: `[-k|-rk|-kr][ ][N]`, where N is 1-6 and a bare `-k` means 6.
-Lines are ordered by field N, then by the fields after it, then by name. Hex
-numbers compare by value. The hash and the name compare bytewise, as under
-`LC_ALL=C`, and an omitted field compares equal. `-r` without `-k` reverses
-input order. Without `-k` or `-r`, lines stream as they are produced.
+    . /usr/local/share/cksh/cksh.fn.bash
 
-## OpenSSL older than 3.0
+When a binary named `cksh` is on PATH the function runs it. `--fn`
+allows only the function and `--bin` only the binary. Sourcing the
+file defines that one name and nothing else: every helper and variable
+lives inside `cksh`, in a subshell, so a call leaves the calling shell
+unchanged.
 
-`openssl shake256 -xoflen` first appeared in OpenSSL 3.0. Older OpenSSL
-(1.1.1, as on RHEL 8) prints a fixed 32 byte digest. SHAKE256 is an
-extendable output function, so the first L bytes of a longer digest equal
-the L byte digest. The bash function therefore truncates the 32 byte output
-and gets exactly what `-xoflen L` would give, for any L up to 32.
-
-- Asking for more than 32 bytes fails with status 2.
-- LibreSSL (Darwin's `/usr/bin/openssl`) has no SHAKE256 at all, and also
-  fails with status 2.
-- Before hashing anything, the function checks the selected openssl against
-  the known SHAKE256 digest of empty input.
-
-The C binary needs none of this.
+It needs bash, stat, sort, mktemp for `-o` and, for a hash, an openssl
+with shake256;
+it prefers `$LOCALBASE/bin/openssl` to the one on PATH, and checks it
+against the known hash of empty input before use. An openssl without
+`-xoflen` limits `-x` to 64; one without shake256 is status 2, and
+`-x0` needs none. It runs several programs per file and is much slower
+than the binary. `cksh --help`, section BASH FUNCTION, has the list of
+differences.
 
 ## Diagnostics and exit status
 
-Messages go to stderr in the format of the shell `chkerr` and `chkwrn`
-functions, each ending in a hex tag that names the message:
+Messages go to standard error, each ending in a hexadecimal tag that
+names the message:
 
-```
->>> cksh : cannot stat 't/nope' (6ab75465)
-^^^ cksh : fifo, not hashed 't/p' (6ab75468)
-```
+    >>> cksh : cannot stat 't/nope': No such file or directory (6ab75465)
+    ^^^ cksh : fifo, not hashed 't/p' (6ab75468)
 
-The C binary also gives the system's reason, for example
-`'t/nope': No such file or directory`.
-
-The exit status is a bitmask. Statuses 1 and 2 are fatal. The others
-accumulate while the run continues.
+The exit status is a bitmask. 1 and 2 are fatal and are returned
+alone; the others accumulate while the run continues.
 
 | bit | meaning |
-|----:|---------|
+|----:|---|
 | 1 | invalid option or argument |
-| 2 | environment: memory, stdin/stdout failure, no usable openssl (bash) |
+| 2 | environment: memory, standard input or output; in the function, no usable openssl or stat |
 | 4 | cannot stat a name; line skipped |
 | 8 | cannot open or read a regular file; line skipped |
-| 16 | fifo, socket or device; warned, never opened, hash zeros |
-| 32 | dangling symlink; warned, hash zeros |
+| 16 | fifo, socket or device, never opened; or a node that changed during the scan |
+| 32 | dangling symlink |
+| 64 | with `-c`, a file differs from its record |
 
-## Limits
+## Examples
 
-- Names are read one per line, so a name containing a newline can be passed
-  as an argument but not on stdin.
-- On Linux the test suite passes under GNU make with gcc and clang, with
-  ASan and UBSan, and as root and non-root. The makefile avoids every
-  construct bmake rejects, but it has not yet been run under bmake, on
-  NetBSD, or on Darwin.
+    cksh *                              # hash, size, mdate, name
+    cksh -n *                           # every column
+    cksh -n3 -k4 *                      # sizes, smallest first; nothing read
+    cksh -x64 file                      # shake256-64
+    find . -type f | cksh -k3           # files of the same content together
+    ff . -t f | cksh -k5,4              # a tree, by time and size
+    find . -type f | cksh | srt -D -k3  # files whose hash repeats
+    find a -type f | cksh -k > a.ck     # one tree, ready for diff or join
+    ff -Z . -t f | cksh -Z | srt -z -k5x,4x   # NUL records end to end
 
-## History
+## Status of r0.6
 
-```
-rev 6ab7e734 20260926 083932 PDT Sat 08:39 AM 26 Sep 2026
-    C port with built-in SHAKE256; openssl<3 xoflen fallback in the bash
-    function; -k/-r value sort; --help manual; status bitmask;
-    chkerr/chkwrn diagnostics; bash helpers isolated in a subshell
-rev 68e9ff40 20251010 235456 PDT Fri 11:54 PM 10 Oct 2025
-    -0..-5, bare -n and -x (getopts :), -n and -x range validation
-rev 68e20bca 20251004 231018 PDT Sat 11:10 PM 04 Oct 2025
-    renamed cksh, getopts -n -x -h; ckstat and ckstatsum retired
-rev 677c9c44 20250106 191516 PST Mon 07:15 PM 06 Jan 2025
-    chksthash, from ckstatsum: shake256 -xoflen 3 hash column
-org 6305e87b 20220824 015939 PDT Wed 01:59 AM 24 Aug 2022
-    ckstat ckstatsum cks
-```
+Working: the whole option grammar, key lists, `-L`, `-Z`, `-o`, `-c`,
+both forms, the manual as a man page, terminal escapes, and the suite,
+which holds the bash function to the same bytes and status as the
+binary and, where srt is present, holds cksh order to srt order.
 
-Changes in 6ab7e734 from bash rev 68e9ff40:
+Platforms: r0.6 is built and tested on Linux (gcc and clang, GNU make,
+bash 5.2, GNU sort and stat, OpenSSL 3), as root and as an unprivileged
+user, and under the address and undefined-behavior sanitizers. On
+Darwin the suite ran whole, binary and function, with `-L`, `-o`, `-c`,
+`--man` and `--help` on a terminal included (335 cases passed; the two
+that failed were faults of the suite's grep, corrected here and not yet
+rerun there). Not yet exercised: anything on NetBSD; bmake; and, on any
+host, the rendering of the man page by a real formatter: the suite
+checks that the source reaches mandoc or nroff, with stand-ins, not
+what they draw. Reports are wanted, and the suite
+names each difference as a failing case.
 
-- Directories and other nodes that are not hashed show a zero-filled hash;
-  previously the column was blank-padded.
-- Fifos get a warning and are never opened; previously the run blocked on
-  them.
-- Per-file errors warn and the run continues; previously the first error
-  aborted the run.
-- The exit status is a bitmask instead of 0 or 1.
-- `ls -F` indicators come from `lstat`, so a file whose name ends in `*` or
-  `%` keeps that character; previously `sed` stripped it.
-- Names on stdin are read raw (`read -r`), so backslashes survive.
-- Numbers are formatted by `printf` in the shell rather than by `awk`, which
-  avoids `awk`'s double-precision limit on large sizes and inodes.
-- Sorting (`-k`, `-r`) is built in, replacing `| sort -k5`.
+The number of cases the suite runs varies by host: cases that need a
+non-root user, openssl shake256, `/dev/full`, a pty through
+`script(1)`, srt, or a file system that takes a name that is not UTF-8
+skip themselves and say so. The last line of `make test` is the result.
 
-## Copyright
+## Files
 
-(c) 2017-2026 George Georgalis <george@iuxta.com> Unlimited use with
-attribution.
+| file | purpose |
+|---|---|
+| [./cksh.c](./cksh.c) | the program, single file, C99 |
+| [./cksh.fn.bash](./cksh.fn.bash) | the same options as a bash function, for hosts without the binary |
+| [./makefile](./makefile) | targets: all cksh man test install clean uninstall |
+| [./test-cksh.sh](./test-cksh.sh) | regression suite; `test-cksh.sh [path-to-cksh]`; compares the function with the binary when [./cksh.fn.bash](./cksh.fn.bash) is beside it; `SRT=path` names an srt for the equivalence cases |
+| [./plan-cksh.md](./plan-cksh.md) | requirements, decisions, history, revision status |
+| [./README.md](./README.md) | this file |

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+section[role="doc-endnotes"] ol { list-style: none; padding-left: 0; }
+li[role="doc-endnote"] > p:first-of-type { display: inline; margin: 0; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h1 id="asciixlate">asciixlate</h1>
+<!-- (c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution. -->
+<!-- rev 6af37686 20261110 115446 PST Tue 11:54 AM 10 Nov 2026 2.1.0 introduction; build rationale moved to PLAN.md -->
+<p>UTF-8 to ASCII transliteration under a local rule file: <code>---</code> for an em
+dash, <code>??</code> for a character with no mapping, and every other choice
+adjustable in <code>~/.asciixlate</code>. One binary, libc only; the transliteration
+table is compiled in, so the same input yields the same bytes on Darwin,
+Linux and NetBSD.</p>
+<pre><code>make                 # GNU make, bmake or Apple make
+make test
+make install         # PREFIX defaults to /usr/local for root, else $HOME
+</code></pre>
+<h2 id="use">Use</h2>
+<pre><code>asciixlate notes.md &gt; notes.ascii.md
+asciixlate -i *.md                       # in place, atomic
+asciixlate --report archive/*.md &gt;&gt; ~/.asciixlate
+asciixlate -qs -n draft.md               # exit 2 if anything is unmapped
+</code></pre>
+<p><code>asciixlate -h</code> is the one-screen option summary; <code>asciixlate --help</code> is
+the manual, and the installed man page is derived from it.</p>
+<p>With no file named, standard input is filtered in blocks, in bounded
+memory, unless it is a terminal:</p>
+<pre><code>some-command | asciixlate | less
+asciixlate -b 4k &lt; big.txt &gt; big.ascii.txt
+:'&lt;,'&gt;!asciixlate                        # vi: filter the selected lines
+</code></pre>
+<h2 id="the-rule-file">The rule file</h2>
+<pre><code>U+2014  ---             # em dash
+U+00AD  ""              # soft hyphen: drop
+U+00A0  " "             # no-break space: one plain space
+\xC2\xA9  (c)           # by byte sequence
+U+1F680 ""              # an emoji: deleted, and one space with it
+&lt;paste&gt;  ---            # or paste the character itself as the key
+</code></pre>
+<p>Keys are <code>U+XXXX</code>, <code>0xXXXX</code>, <code>\xHH...</code>, or literal UTF-8; <code>=</code> forces a
+literal. A key of more than one code point is a longest-match rule.
+Values run to end of line, or sit in double quotes to hold spaces, a <code>#</code>,
+or nothing. <code>--report</code> prints an editable stub for every unmapped code
+point; <code>--list</code> prints the whole active table in the same grammar.</p>
+<p>Deleting a pictograph takes the space that set it apart, so
+<code>Launch &lt;rocket&gt; today</code> becomes <code>Launch today</code>; deleting anything else
+never touches a space.</p>
+<h2 id="files">Files</h2>
+<table>
+<thead>
+<tr><th>File</th><th>Role</th></tr>
+</thead>
+<tbody>
+<tr><td><code>asciixlate.c</code></td><td>the program, its usage and its manual</td></tr>
+<tr><td><code>translit_table.h</code></td><td>generated built-in table; the authority</td></tr>
+<tr><td><code>mktable.py</code></td><td>table generator, for auditing a Unicode upgrade</td></tr>
+<tr><td><code>makefile</code></td><td>build, test, install</td></tr>
+<tr><td><code>test.sh</code></td><td>regression suite</td></tr>
+<tr><td><code>PLAN.md</code></td><td>requirements, decisions, review findings, open questions</td></tr>
+<tr><td><code>example.md</code>, <code>example.ascii.md</code></td><td>a sample and its conversion</td></tr>
+</tbody>
+</table>
+</body>
+</html>

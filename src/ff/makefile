@@ -1,55 +1,59 @@
-# makefile --- build, test and install ff
-# (c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution.
+# makefile --- ff, functional find
 #
-# rev 6ae4ea00 20261030 120328 PDT Fri 12:03 PM 30 Oct 2026
-#     -r always ERE (-E retired), --help paged on a tty; recipes unchanged
-# rev 6adcb748 20261024 064856 PDT Sat 06:48 AM 24 Oct 2026
-#     -mode (was -k), -k[r][N] output sort; recipes unchanged
-# rev 6abc5da8 20260929 175400 PDT Tue 05:54 PM 29 Sep 2026
-#     -0 -1 true false, -Z NUL, -y same node, -w sign apart; recipes unchanged
-# rev 6abb42b9 20260928 214649 PDT Mon 09:46 PM 28 Sep 2026
-#     -w when [+-]([.][.]/file|HEX), -same, -true -false, -i hex, -V, examples;
-#     Darwin test fixes; ff.fn.bash -w reference files without -newermt
-# rev 6ab89f43 20260926 214451 PDT Sat 09:44 PM 26 Sep 2026
-#     -k permission query (at least/at most, has/lacks, X s t), -not, "not" diagnostics
-# org 6ab7fec8 20260926 102008 PDT Sat 10:20 AM 26 Sep 2026
-#     C build, test and install for ff, from the cksh makefile
+# Written to the intersection of GNU make, bmake and the Darwin make:
+# no ifeq, no $(shell); platform branches live in the recipe shell.
+# Static link on Linux and NetBSD; Darwin has no static libc, so the
+# ceiling there is dynamic linkage against the system library alone.
+# No third-party library on any platform.
 #
-# Portable across GNU make, bmake (NetBSD, pkgsrc) and Apple make: no ifeq,
-# no $(shell), no ?=; platform branching happens inside recipe shells.
-# No third-party libraries on any platform. Linux and NetBSD link -static,
-# falling back to dynamic when no static libc is installed. Darwin has no
-# static libSystem, so the binary links dynamically against libSystem only.
-#
-#   make                       build ./ff and ./ff.1
-#   make test                  regression suite (test.sh)
-#   make install [PREFIX=dir]  PREFIX defaults to /usr/local for root, else $HOME
+#   make                       ff and ff.1
+#   make test                  regression suite against ./ff and ff.fn.bash
+#   make install [PREFIX=dir]  PREFIX defaults to /usr/local for root, else
+#                              $HOME; DESTDIR honored
+#   make uninstall             remove exactly what install placed
 #   make CC=$LOCALBASE/bin/gcc toolchain override, e.g. pkgsrc gcc
+#
+# revision 6af927be 20261114 193214 PST Sat --- r0.7 srt and cksh model:
+#          targets all ff man test install clean uninstall; ff.1 is the
+#          output of --man; test-ff.sh
+# revision 6ae4ea00 20261030 120328 PDT Fri --- r0.6 recipes unchanged
+# revision 6adcb748 20261024 064856 PDT Sat --- r0.5 recipes unchanged
+# revision 6abc5da8 20260929 175400 PDT Tue --- r0.4 recipes unchanged
+# revision 6abb42b9 20260928 214649 PDT Mon --- r0.3 Darwin test fixes
+# revision 6ab89f43 20260926 214451 PDT Sat --- r0.2 recipes unchanged
+# original 6ab7fec8 20260926 102008 PDT Sat --- r0.1 C build, test and
+#          install for ff, from the cksh makefile
+#
+# (c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution.
 
-FFFLAGS = -std=c99 -Wall -Wextra -Wpedantic -O2
 PREFIX =
 DESTDIR =
+CC = cc
+CFLAGS = -O2 -std=c99 -Wall -Wextra -Wpedantic
 
-all: ff ff.1
+all: ff man
 
-ff.o: ff.c
-	$(CC) $(FFFLAGS) $(CFLAGS) -c -o ff.o ff.c
+ff: ff.c
+	@case `uname -s` in Darwin) st= ;; *) st=-static ;; esac ; \
+	echo "$(CC) $(CFLAGS) $$st -o ff ff.c $(LDFLAGS)" ; \
+	$(CC) $(CFLAGS) $$st -o ff ff.c $(LDFLAGS) || { \
+	  [ -n "$$st" ] || exit 1 ; \
+	  echo "static link failed; linking dynamically" ; \
+	  $(CC) $(CFLAGS) -o ff ff.c $(LDFLAGS) ; }
 
-ff: ff.o
-	@st=-static; case `uname -s` in Darwin) st= ;; esac; \
-	echo "$(CC) $$st -o ff ff.o $(LDFLAGS)"; \
-	$(CC) $$st -o ff ff.o $(LDFLAGS) 2>/dev/null || { \
-	  echo "static link unavailable, linking dynamically"; \
-	  $(CC) -o ff ff.o $(LDFLAGS); }
+man: ff.1
 
-# man page derived from --help so the two cannot disagree
+# The man page is the binary's own manual, as man page source, so the
+# two cannot differ.
 ff.1: ff
-	{ echo '.TH FF 1'; ./ff --help | awk '/^[A-Z][A-Z ]*$$/ { print ".SH " $$0; print ".nf"; next } { gsub(/\\/, "\\e"); if (substr($$0, 1, 1) == ".") $$0 = "\\&" $$0; print }'; echo '.fi'; } > ff.1.tmp
-	mv ff.1.tmp ff.1
+	./ff --man > ff.1.new
+	mv -f ff.1.new ff.1
 
-test: ff
-	sh ./test.sh
+test: ff man
+	sh ./test-ff.sh
 
+# PREFIX, when not given: /usr/local for root, $HOME for anyone else.
+# The man page goes under share/man where that exists, else man.
 install: all
 	@p='$(PREFIX)'; [ -n "$$p" ] || { [ "`id -u`" = 0 ] && p=/usr/local || p="$$HOME" ; }; \
 	case "$$p$(DESTDIR)" in *[!A-Za-z0-9._/+-]*) echo "install: unsafe path '$$p'" >&2; exit 1 ;; esac; \
@@ -61,6 +65,14 @@ install: all
 	cp ff.fn.bash "$$d$$p/share/ff/ff.fn.bash" && chmod 644 "$$d$$p/share/ff/ff.fn.bash"
 
 clean:
-	rm -f ff ff.o ff.1 ff.1.tmp
+	rm -f ff ff.o ff.1 ff.1.new
 
-.PHONY: all test install clean
+# the same PREFIX rule as install; the man page is removed from either place
+uninstall:
+	@p='$(PREFIX)'; [ -n "$$p" ] || { [ "`id -u`" = 0 ] && p=/usr/local || p="$$HOME" ; }; \
+	case "$$p$(DESTDIR)" in *[!A-Za-z0-9._/+-]*) echo "uninstall: unsafe path '$$p'" >&2; exit 1 ;; esac; \
+	d='$(DESTDIR)'; set -x; \
+	rm -f "$$d$$p/bin/ff" "$$d$$p/share/man/man1/ff.1" "$$d$$p/man/man1/ff.1" \
+	  "$$d$$p/share/ff/ff.fn.bash"
+
+.PHONY: all man test install clean uninstall

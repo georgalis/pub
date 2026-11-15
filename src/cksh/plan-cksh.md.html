@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+section[role="doc-endnotes"] ol { list-style: none; padding-left: 0; }
+li[role="doc-endnote"] > p:first-of-type { display: inline; margin: 0; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h1 id="cksh-plan">cksh plan</h1>
+<p>cksh: a sortable stat and SHAKE256 listing of files. One interface on
+Linux, Darwin and NetBSD, delivered as C99 source (<code>cksh.c</code>) and a
+bash function (<code>cksh.fn.bash</code>).</p>
+<p>This plan drives the package revisions. It was opened at r0.6, when
+the package took the shape of srt's: before that the requirements
+lived in the README and in the file headers, and they are merged here.
+Items marked <strong>V</strong> (section 2) began as ambiguities with a proposed
+default; nothing downstream of an unconfirmed V item was built until
+it was ruled on. Decisions are recorded in section 12, the affected
+sections state the decision in place, and section 13 holds the status
+of each revision as built. Where a decision reverses an earlier one,
+both are stated.</p>
+<pre><code>revision 6af8d530 20261114 134000 PST Sat --- r0.6: plan opened from README and headers; V01-V21 ruled and built; three Darwin reports folded in; PREFIX as r0.5; -Z, -L, -o, -c, --man; key grammar shared with srt and ff; r0.1-r0.5 named
+original 6af8d530 20261114 134000 PST Sat --- initial plan, written with r0.6
+</code></pre>
+<p><em>(c) 2017-2026 George Georgalis <a href="mailto:george@iuxta.com">george@iuxta.com</a> Unlimited use with attribution.</em></p>
+<h2 id="contents">Contents</h2>
+<nav>
+<ul>
+<li><a href="#1-purpose-and-scope">1 Purpose and scope</a></li>
+<li><a href="#2-intent-verification">2 Intent verification</a></li>
+<li><a href="#3-interface">3 Interface</a></li>
+<li><a href="#4-key-grammar-shared-with-srt-and-ff">4 Key grammar shared with srt and ff</a></li>
+<li><a href="#5-output">5 Output</a></li>
+<li><a href="#6-hash">6 Hash</a></li>
+<li><a href="#7-exit-status-and-diagnostics">7 Exit status and diagnostics</a></li>
+<li><a href="#8-package-files">8 Package files</a></li>
+<li><a href="#9-verification">9 Verification</a></li>
+<li><a href="#10-dependency-posture">10 Dependency posture</a></li>
+<li><a href="#11-revision-sequence">11 Revision sequence</a></li>
+<li><a href="#12-decision-log">12 Decision log</a></li>
+<li><a href="#13-revision-status">13 Revision status</a>
+<ul>
+<li><a href="#r06-6af8d530-20261114">r0.6 (6af8d530, 20261114)</a></li>
+<li><a href="#r05-6ab7e734-20260926">r0.5 (6ab7e734, 20260926)</a></li>
+</ul></li>
+<li><a href="#14-history">14 History</a></li>
+</ul>
+</nav>
+<hr />
+<h2 id="1-purpose-and-scope">1 Purpose and scope</h2>
+<p>cksh writes one line per file: inode, links, hash, size, modification
+time, name. The numbers are hexadecimal and the name is last, so the
+listing can be sorted by any column, compared between two trees, and
+joined. It answers the operator's questions about a set of files ---
+which changed, which are the same content, which are newest or largest
+--- with one line format that every other tool can read.</p>
+<p>In scope: the six columns; column omission; a hash of chosen length;
+sorting by column with the key grammar of srt; names from arguments or
+standard input; following symlinks; output renamed into place; a saved
+listing checked against its files; a bash function with the same bytes.</p>
+<p>Out of scope, by requirement: duplicate detection (that is <code>srt -D</code>
+on cksh output); walking a tree (that is ff); any column beyond the
+six; any hash other than SHAKE256; locale collation.</p>
+<p>cksh is one of three tools that share a record and a key grammar: ff
+finds files, cksh lists them, srt sorts listings. Section 4 holds the
+grammar the three agreed.</p>
+<h2 id="2-intent-verification">2 Intent verification</h2>
+<p>Each item states the ambiguity, the readings, and the ruling. All
+were ruled on 20261114, before r0.6 was built.</p>
+<p><strong>V01 Unit of <code>-x</code>.</strong> The request said cksh "counts hex characters";
+r0.5 <code>-x</code> counted bytes (<code>-x 3</code> gave six digits). Readings: (a) keep
+bytes, change only the label; (b) <code>-x</code> counts hexadecimal characters.
+DECIDED: (b). Range 0-128, default 6, odd lengths allowed. The option,
+the label and the width of column 3 are one number. Backward
+compatibility is dropped: an r0.5 <code>-x 32</code> is now <code>-x 64</code>.</p>
+<p><strong>V02 Bare <code>-n</code> and <code>-x</code> before a file.</strong> r0.5 failed on <code>cksh -n a</code>
+("requires 0-5, got 'a'"). Readings: (a) the rule srt uses for <code>-k</code>:
+the next word is the value only when it reads as one; (b) joined
+values only. DECIDED: (a). <code>cksh -n file</code> is <code>-n0</code>, <code>cksh -x file</code> is
+<code>-x0</code>. Consequence, accepted: a first file named with digits is taken
+as the value (<code>cksh -n *</code> where <code>5</code> exists); <code>./5</code> or <code>--</code> avoids it.</p>
+<p><strong>V03 The srt equivalent of a cksh key.</strong> The request wrote
+<code>srt -k1x,2x,3,5x,4x,6</code> for <code>cksh -k5,4,6</code>, which sorts by inode
+first. DECIDED: the intent is <code>cksh -k5,4,6</code> = <code>srt -k5x,4x,6,1x,2x,3</code>
+on the same output: the cksh list, then the remaining columns, with x
+on the numeric ones.</p>
+<p><strong>V04 Letters in a cksh key.</strong> DECIDED: <code>r</code> acts. <code>x</code> is accepted on
+columns 1, 2, 4, 5 and changes nothing. Every other letter is refused
+with status 1, since a silently ignored <code>-k4n</code> would mislead; <code>x</code> on
+the text columns 3 and 6 is refused for the same reason. <code>-k5 -k3</code>
+equals <code>-k5,3</code>. A column named twice is an error. <code>-k-1</code> is refused.</p>
+<p><strong>V05 A key on an omitted column.</strong> Readings: (a) usage error; (b)
+sort by the true value though it is not shown; (c) the dot is a null
+column. Proposed: (a). DECIDED: (c). An omitted column compares equal
+in every record, as its dot would in srt; the key orders nothing and
+the next column decides. The srt equivalence of V03 holds exactly.</p>
+<p><strong>V06 <code>-r</code> with no <code>-k</code>.</strong> Readings: (a) by name, descending, as srt
+reverses whole records; (b) reverse input order, as r0.5. Proposed:
+(a). DECIDED: (b). <code>-r</code> alone writes the lines in reverse input order.
+With <code>-k</code>, <code>-r</code> reverses every column written without a letter.</p>
+<p><strong>V07 Negative mdate.</strong> r0.5 wrote a 1960 time as
+<code>ffffffffed307900</code>, which <code>srt -k5x</code> places after every modern date.
+DECIDED: signed hexadecimal, <code>-12cf8700</code>, which srt's <code>-x</code> orders
+before zero.</p>
+<p><strong>V08 Function form.</strong> r0.5 <code>cksh.fn.bash</code> was a full implementation
+that never handed over. DECIDED: the srt model. The function runs a
+binary named cksh when one is on PATH; <code>--fn</code> allows only the
+function, <code>--bin</code> only the binary; <code>-V</code> and <code>--version</code> print the
+revision.</p>
+<p><strong>V09 Packaging and revision names.</strong> DECIDED: the prior revisions
+recorded in <code>cksh.c</code> become the minor releases r0.1 to r0.5, the
+original 6305e87b being r0.1 and 6ab7e734 r0.5; these rounds are r0.6.
+The archive is <code>cksh-r0.6.tgz</code>. <code>test.sh</code> becomes <code>test-cksh.sh</code>.
+Makefile targets <code>all cksh man test install clean uninstall</code>.
+<code>PREFIX</code>, when not given, is <code>/usr/local</code> for root and <code>$HOME</code> for
+anyone else, as in r0.5. (The first build of r0.6 defaulted to
+<code>/usr/local</code> for every user, after srt; that was ruled a mistake the
+same day, to be corrected in srt as well, and is reversed here.)</p>
+<p><strong>V10 History.</strong> DECIDED: it leaves <code>--help</code> and the README and lives
+here (section 14). The manual ends with SEE ALSO and a one-line
+REVISION, as srt's does.</p>
+<p><strong>V11 Manual layout.</strong> DECIDED: the srt model, with one difference:
+a blank line precedes every sub-heading of EXAMPLES, in <code>--help</code> and
+in <code>cksh.1</code>, where srt omits it. The man recipe otherwise follows
+srt's: blank lines inside a section are kept, a leading <code>.</code> or <code>'</code> is
+guarded, a backslash is written <code>\e</code>.</p>
+<p><strong>V12 Hash label.</strong> DECIDED: <code>shake256-N</code>, N in hexadecimal
+characters; no slash notation as a label in any file. <code>--help</code> sets
+out the three readings of a slash once, in HASH: <code>SHAKE256/24</code> bits,
+<code>SHAKE256/3</code> bytes, <code>SHAKE256/6</code> hexadecimal characters.</p>
+<p><strong>V13 Copyright.</strong> DECIDED: removed from <code>--help</code>, <code>-h</code> and the man
+page; kept in every other file.</p>
+<p><strong>V14 Names on a terminal.</strong> r0.5 wrote names as they are, where ff
+escapes them. DECIDED: escape. When the stream is a terminal, C0 and
+C1 control characters, DEL, and bytes that are not valid UTF-8 are
+written <code>\ooo</code>; to a pipe or file, names are written as they are.
+Diagnostics follow the same rule by standard error.</p>
+<p><strong>V15 <code>cksh d/</code>.</strong> r0.5 wrote <code>d//</code>, as <code>ls -dF</code> does. DECIDED: <code>d/</code>.
+A directory named with a trailing slash keeps the one.</p>
+<p><strong>V16 Defects of r0.5.</strong> DECIDED: corrected as described in section
+13: exit status wording; unknown platform in the function; node
+identity after open; man recipe; function style. An empty argument
+stays skipped, and is documented.</p>
+<p><strong>V17 <code>-Z</code>.</strong> Asked for after the first build, in the words of ff:
+end names with NUL, not newline. Readings for cksh, which also reads
+names: (a) output only; (b) output and the names on standard input,
+as <code>-z</code> is in srt. DECIDED AS BUILT, open to correction: (b), and,
+as in ff, names are written as they are under <code>-Z</code> even to a terminal.
+The three tools then pass any name: <code>ff -Z | cksh -Z | srt -z</code>. The
+letter is <code>-Z</code> in ff and cksh and <code>-z</code> in srt; that difference stands
+until one of the plans rules on it.</p>
+<p><strong>V18 <code>-c listing</code>.</strong> Proposed by the plan's author when asked what
+else belonged, and directed. Read a saved listing back and report the
+files that no longer match. Points settled in the build, open to
+correction:</p>
+<ul>
+<li>Output is the current line of each file that differs, and status 64;
+a matching file writes nothing. The output is thus a listing, and
+<code>-k</code>, <code>-r</code>, <code>-o</code> apply to it. (<code>-c</code> in srt means "check order";
+here it means "check a listing". Both exit nonzero on a finding.)</li>
+<li>Each record is checked as it was made: dots are columns not
+compared; the width of the hash names shake256-N; <code>-n</code> and <code>-x</code> are
+not consulted.</li>
+<li>The file of a record is its name less the indicator, or the name
+itself where a file of that very name gives the record's name back.</li>
+<li>Exactly one blank is skipped before the name, so a leading blank in
+a name survives; this is the one place where a blank is significant.</li>
+<li>A record of fewer than six words is fatal, status 1. A file that is
+gone is status 4. A listing that cannot be read is status 2.</li>
+<li>No file operand with <code>-c</code>; <code>-</code> is standard input.</li>
+</ul>
+<p><strong>V19 <code>-L</code>.</strong> Directed. Follow symlinks: every column and the
+indicator are those of the file a link leads to, under the name given.
+A link that leads nowhere is listed as the link, with <code>@</code>, and warned
+when hashed (status 32), with <code>-L</code> as without.</p>
+<p><strong>V20 <code>-o output</code>.</strong> Directed. A temporary sibling of the destination
+(<code>.cksh.XXXXXX</code>), synced, given the destination's mode or the mode a
+new file would get, renamed when the run is complete. Every fatal path
+and the signals INT, HUP, TERM remove the temporary file. A
+destination that exists and is not a regular file is written through,
+since a rename would destroy it; a directory is refused (status 1).
+A destination that is a symlink to a regular file is replaced by the
+file, not written through. The run's accumulated status (4 to 64) does
+not prevent the rename: the listing is complete for what could be
+listed. <code>-t</code>, a choice of time, was proposed and declined.</p>
+<p><strong>V21 <code>--help</code> as a man page.</strong> Directed: on a terminal <code>--help</code>
+should use the man page if available, for bold headings. Readings:
+(a) run man(1) on the installed <code>cksh.1</code>; (b) format the binary's own
+manual. DECIDED AS BUILT, open to correction: (b). The binary writes
+its manual as man page source and gives it to the formatter of the
+host: mandoc (which pages), else nroff with a pager; else the plain
+text through the pager, as before. Reasons: an installed page can be
+of another revision than the binary, or absent; and man(1) on a host
+stripped of its pages can answer with a notice and status 0, as the
+build host's does. <code>--man</code> prints the source, and <code>cksh.1</code> is that
+output, so the makefile no longer holds a second copy of the rule.
+EXAMPLES sub-headings become <code>.SS</code>, which a formatter sets in bold
+with a blank line before each (V11).</p>
+<h2 id="3-interface">3 Interface</h2>
+<pre><code>cksh [-rLZ] [-n[0-5]] [-x[0-128]] [-k [col[r][,col[r]]...]]
+     [-o output] [-c listing | [--] file ...]
+cksh -h | --help | --man | -V | --version
+cksh --fn ... | cksh --bin ...
+</code></pre>
+<table>
+<thead>
+<tr><th>option</th><th>meaning</th><th>default</th></tr>
+</thead>
+<tbody>
+<tr><td><code>-n[N]</code></td><td>omit the first N columns, 0-5</td><td>2; <code>-n</code> alone is 0</td></tr>
+<tr><td><code>-x[N]</code></td><td>hash length in hexadecimal characters, 0-128; 0 skips hashing</td><td>6; <code>-x</code> alone is 0</td></tr>
+<tr><td><code>-k [list]</code></td><td>sort; section 4</td><td>no sort: lines stream</td></tr>
+<tr><td><code>-r</code></td><td>with <code>-k</code>, reverse columns without letters; alone, reverse input order</td><td></td></tr>
+<tr><td><code>-Z</code></td><td>NUL ends each line and each name on standard input; names as they are</td><td>newline</td></tr>
+<tr><td><code>-L</code></td><td>follow symlinks</td><td>the link itself</td></tr>
+<tr><td><code>-o output</code></td><td>write the result to output, renamed into place when complete</td><td>standard output</td></tr>
+<tr><td><code>-c listing</code></td><td>check a saved listing; write the files that differ; status 64</td><td></td></tr>
+<tr><td><code>--</code></td><td>end of options</td><td></td></tr>
+<tr><td><code>-h</code>, <code>--help</code></td><td>usage; manual, as a man page on a terminal</td><td></td></tr>
+<tr><td><code>--man</code></td><td>the manual as man page source</td><td></td></tr>
+<tr><td><code>-V</code>, <code>--version</code></td><td>revision</td><td></td></tr>
+<tr><td><code>--fn</code>, <code>--bin</code></td><td>allow only the function, only the binary</td><td></td></tr>
+</tbody>
+</table>
+<p>Rules:</p>
+<ul>
+<li>A value is joined to its option or is the next word. The next word
+is the value only when it reads as one: digits for <code>-n</code> and <code>-x</code>; for
+<code>-k</code> a column list in the widest sense srt gives it, so a list that
+cksh refuses is still reported as a list and never opened as a file.
+<code>-o</code> and <code>-c</code> always take a value, joined or the next word.</li>
+<li>Options end at the first file or at <code>--</code>.</li>
+<li>From <code>-n3</code> up the hash column is omitted and no file is read.</li>
+<li>Names come from the arguments, or one per line from standard input:
+read raw, empty lines skipped, a final line without a newline taken.
+An empty argument is skipped. A NUL in an input line is an error for
+that line (status 4).</li>
+<li>Without <code>-k</code> or <code>-r</code>, each line is written as its file is read.</li>
+<li>Retired, each refused with a message naming its replacement:
+<code>-0</code>..<code>-5</code> (write <code>-n0</code>..<code>-n5</code>); <code>-krN</code> (write <code>-kNr</code>).</li>
+</ul>
+<p>Usage errors are status 1 and nothing is read.</p>
+<h2 id="4-key-grammar-shared-with-srt-and-ff">4 Key grammar shared with srt and ff</h2>
+<p>Settled first in srt (plan-srt.md, section 2), as the model for this
+tool and for ff. This plan governs cksh; ff will be revised in the
+same manner with cksh as its template.</p>
+<ol>
+<li>Columns are words in the awk sense, counted from 1; widths and
+padding are not significant, and blanks may be squeezed.</li>
+<li>Sorting is asked for with <code>-k list</code>, <code>col[opts][,col[opts]]...</code>:
+the named columns in the order given, then the remaining columns
+left to right. Ties follow srt's order: records equal in every
+column keep their input order.</li>
+<li>A bare <code>-k</code> names no column. In cksh that means sort by file name;
+in srt, by whole record.</li>
+<li>Reverse is <code>-kNr</code> for one column or <code>-r</code> for all. <code>-krN</code> is not
+accepted.</li>
+<li>cksh knows column types, so <code>-k5,4,6</code> is
+<code>srt -k5x,4x,6,1x,2x,3</code> on its output: inode, links, time and size
+by hexadecimal value, the hash and the name as text.</li>
+<li>The name begins in column 6 and runs to the end of the record.</li>
+<li>cksh selects columns with <code>-n[0..5]</code> in place of <code>-0</code>..<code>-5</code>.</li>
+</ol>
+<p>As built in cksh:</p>
+<ul>
+<li>Resolution. The comparison order is the named columns, then the
+columns not named, left to right. With a bare <code>-k</code> the name leads:
+6, then 1 to 5. <code>-k5,4</code> is 5,4,1,2,3,6.</li>
+<li>Direction. A column written with any letter keeps its own direction
+(<code>r</code> or none); <code>-r</code> reaches every other column, named or not. This
+is srt's rule that letters on a column replace the global options,
+so <code>-r -k5x</code> is column 5 ascending and the rest descending.</li>
+<li>Types. Columns 1, 2, 4 compare as unsigned numbers and 5 as a signed
+number, by value at any width. Columns 3 and 6 compare as bytes.</li>
+<li>Null columns. An omitted column holds zero in every record (V05).</li>
+<li>Stability. Input order is the last comparison.</li>
+</ul>
+<p>The srt equivalent of any cksh list: the list, then the remaining
+columns, <code>x</code> added to 1, 2, 4 and 5; under <code>-r</code>, <code>r</code> added to every
+column that has no letter in the cksh list. The suite checks six such
+pairs when srt is present.</p>
+<h2 id="5-output">5 Output</h2>
+<pre><code>inode lk hash       size    mdate name
+1cc01d  1 483366        3 5e0bd2c0 t/a
+</code></pre>
+<table>
+<thead>
+<tr><th>column</th><th>format</th><th>content</th></tr>
+</thead>
+<tbody>
+<tr><td>1 inode</td><td><code>%8x</code></td><td>inode of the node itself; a symlink is not followed</td></tr>
+<tr><td>2 lk</td><td><code>%2x</code></td><td>hard link count</td></tr>
+<tr><td>3 hash</td><td>N characters</td><td>shake256-N of the content; zeros for a directory and for a node not hashed; <code>.</code> when N is 0</td></tr>
+<tr><td>4 size</td><td><code>%8x</code></td><td>bytes; a symlink reports its own size</td></tr>
+<tr><td>5 mdate</td><td><code>%08x</code>, or <code>-%07x</code></td><td>seconds since the epoch; signed (V07)</td></tr>
+<tr><td>6 name</td><td>text</td><td>as given, plus <code>/</code> directory, <code>@</code> symlink, <code>|</code> fifo, <code>=</code> socket</td></tr>
+</tbody>
+</table>
+<ul>
+<li>An omitted column is written <code>.</code>; the name always begins at column 6.</li>
+<li>Widths are least widths. A wider value moves the rest of its line.</li>
+<li>A symlink reports its own inode, links, size and mdate, and the hash
+of the content it leads to. A dangling symlink is warned, hash zeros.</li>
+<li>A directory named with a trailing slash keeps the one (V15).</li>
+<li>Indicators come from <code>lstat</code>, so a name ending in <code>*</code> or <code>@</code> keeps
+its own last character and gains none it should not.</li>
+<li>Terminal: V14. The escape applies to the name and its indicator and
+to names in diagnostics; nothing else cksh writes can hold such a
+byte.</li>
+</ul>
+<h2 id="6-hash">6 Hash</h2>
+<p>SHAKE256 (FIPS 202), built into the binary: rate 136 bytes, padding
+0x1f, lanes little-endian whatever the host. The output is cut to N
+hexadecimal characters; an odd N is the even length above it less its
+last character. A shorter output is the beginning of every longer one,
+which is why any N is exact on any host and why the function can cut
+a longer output of openssl.</p>
+<p>Label: shake256-N (V12). The three readings of a slash are stated
+once in <code>--help</code> and once in the README, and nowhere used as a label.</p>
+<p>Not hashed, with the hash column zero-filled: directories; fifos,
+sockets and devices, which are never opened (status 16); dangling
+symlinks (status 32); a node that is not the regular file examined
+when it is opened (status 16).</p>
+<p>Opening: <code>O_NONBLOCK</code>, so a node swapped in after the stat cannot
+stall the open; then <code>fstat</code>, and the node must be a regular file with
+the device and inode of the node examined (r0.6); then the flag is
+cleared and the content read.</p>
+<h2 id="7-exit-status-and-diagnostics">7 Exit status and diagnostics</h2>
+<p>A bitmask. 1 and 2 are fatal and returned alone; the rest accumulate.</p>
+<table>
+<thead>
+<tr><th align="right">bit</th><th>meaning</th></tr>
+</thead>
+<tbody>
+<tr><td align="right">1</td><td>invalid option or argument; nothing is read</td></tr>
+<tr><td align="right">2</td><td>environment: out of memory; standard input or output failure, which can come in the middle of a run; <code>--bin</code> with no binary; in the function, no usable openssl or stat, or a newline in a name under <code>-k</code> or <code>-r</code></td></tr>
+<tr><td align="right">4</td><td>cannot stat a name; line skipped. Also a NUL in an input line</td></tr>
+<tr><td align="right">8</td><td>cannot open or read a regular file; line skipped</td></tr>
+<tr><td align="right">16</td><td>fifo, socket or device, never opened; or a node that changed during the scan; warned, hash zeros</td></tr>
+<tr><td align="right">32</td><td>dangling symlink; warned, hash zeros</td></tr>
+<tr><td align="right">64</td><td>with <code>-c</code>, a file differs from its record</td></tr>
+</tbody>
+</table>
+<p>Status 1 also covers a <code>-c</code> record that is not a cksh line; status 2 a
+<code>-c</code> listing or <code>-o</code> output that cannot be opened.</p>
+<p>Diagnostics go to standard error in the form of the shell <code>chkerr</code>
+and <code>chkwrn</code> functions, <code>&gt;&gt;&gt; cksh : what 'name': reason (tag)</code> and
+<code>^^^ cksh : ...</code>, each ending in a hexadecimal tag that names the
+message. One function writes them all, and <code>exit</code> is called only from
+the fatal path and from <code>main</code>.</p>
+<h2 id="8-package-files">8 Package files</h2>
+<p><strong>README.md</strong> --- what cksh is, the hash label, sorting in brief, the
+table of changes from r0.5, build and install, the static-link ceiling
+(static on Linux and NetBSD; Darwin links the system library alone),
+pointer to <code>--help</code>.</p>
+<p><strong>makefile</strong> --- written to the intersection of GNU make, bmake and
+the Darwin make: no <code>ifeq</code>, no <code>$(shell)</code>; platform branches inside
+recipes via <code>case</code> on <code>uname -s</code>.</p>
+<table>
+<thead>
+<tr><th>target</th><th>action</th></tr>
+</thead>
+<tbody>
+<tr><td><code>all</code></td><td><code>cksh</code> and <code>man</code></td></tr>
+<tr><td><code>cksh</code></td><td>compile <code>cksh.c</code>, <code>-std=c99 -Wall -Wextra -Wpedantic</code></td></tr>
+<tr><td><code>man</code></td><td><code>cksh.1</code>, the output of <code>./cksh --man</code></td></tr>
+<tr><td><code>test</code></td><td>build both, run <code>test-cksh.sh</code> against the binary and the function</td></tr>
+<tr><td><code>install</code></td><td>binary, man page, function file under <code>PREFIX</code> (<code>/usr/local</code> for root, <code>$HOME</code> otherwise; man page under <code>share/man</code> where it exists, else <code>man</code>); <code>mkdir -p</code>, <code>cp</code>, <code>chmod</code></td></tr>
+<tr><td><code>clean</code></td><td>remove <code>cksh</code>, <code>cksh.1</code></td></tr>
+<tr><td><code>uninstall</code></td><td>remove exactly what <code>install</code> placed</td></tr>
+</tbody>
+</table>
+<p><strong>cksh.c</strong> --- single file, C99, no library beyond libc. One
+feature-test macro, <code>_POSIX_C_SOURCE 200809L</code>, for <code>lstat</code>, <code>getdelim</code>,
+<code>popen</code>, <code>fcntl</code>, <code>mkstemp</code>, <code>fchmod</code>, <code>fsync</code> and <code>sigaction</code>. Manual and usage as string literals, chunked
+under the 4095-byte limit.</p>
+<p><strong>cksh.fn.bash</strong> --- per V08. One enclosing function; after the
+hand-over everything runs in a subshell, so sourcing defines one name
+and a call changes nothing in the calling shell. The same grammar and
+the same messages as the binary; <code>-h</code> and <code>--help</code> carry the binary's
+text, held as a copy that the suite compares. Method: stat(1) in the
+form of the host, openssl shake256, and for <code>-k</code> one key line per
+record --- fixed-width decimal numbers, the hash, an index, the name
+--- ordered by the native sort in the C locale with one <code>-k</code> per
+column; the index selects the display line. Differences from the
+binary are listed in <code>--help</code>, BASH FUNCTION.</p>
+<p><strong>test-cksh.sh</strong> --- section 9.</p>
+<h2 id="9-verification">9 Verification</h2>
+<p><code>test-cksh.sh</code> runs every case against the binary and then holds the
+function to the same bytes and status. One case per promise in the
+manual or defect found.</p>
+<ol>
+<li>SHAKE256: the FIPS 202 vectors for empty input and <code>abc</code> at 128
+characters; the prefix property at odd and even N; the rate
+boundary (135, 136, 137, 272 bytes) and a multi-read file against
+openssl.</li>
+<li>Output: zeros for a directory and a fifo; indicators; a name with
+blanks; dots for omitted columns; <code>d/</code> and a symlink to a directory
+named with a slash.</li>
+<li>Status: each bit alone and combined; skipped and kept lines; the
+message format and tags; unreadable file; full standard output,
+streaming and sorted; a fifo is never opened.</li>
+<li>Grammar: every usage error; the retired spellings and the
+replacement each message names; bare <code>-n</code>, <code>-x</code>, <code>-k</code> before a
+file, last on the line, and with a separate value; clusters; <code>--</code>;
+options ending at the first file.</li>
+<li>Keys: against an oracle (fixed-width decimal keys through the
+native sort) for <code>-k5,4</code>, bare <code>-k</code>, <code>-k3</code>, <code>-k4r,6</code>, <code>-k5r</code>,
+<code>-r -k5</code>, <code>-r -k5x</code>; <code>x</code> as a no-op; null columns; values wider
+than their columns; times before 1970 and after 2106.</li>
+<li>The same order from srt, six pairs, on hashed and on wide records.</li>
+<li>Standard input: as arguments; empty lines; no final newline; a NUL;
+backslashes.</li>
+<li>Terminal, through a pty (script(1) in either of its two forms,
+kept only if a probe comes back exact): <code>\ooo</code> for C0, C1, DEL and
+invalid bytes; valid UTF-8 passes; diagnostics; a pipe is left
+alone. A file name that is not UTF-8 is used where the file system
+takes one; elsewhere the invalid byte is tried in a diagnostic.
+<code>-Z</code>: NUL-ended lines; names on standard input, one holding a
+newline; with <code>-k</code>; in a cluster; raw to a terminal; into <code>srt -z</code>.</li>
+<li>Help: status; the section list; SEE ALSO; no copyright; the slash
+appears only in the three readings; ASCII; 80 columns; a blank line
+before each of the five example groups, in <code>--help</code> and in
+<code>cksh.1</code>.</li>
+<li>Every file but the help and the man page carries the copyright.</li>
+<li>Function: one name and nothing else set, measured from an empty
+environment so the caller's exported functions do not count; the
+help text is the binary's; hand-over; <code>--bin</code> with and without a binary; <code>--fn</code>
+with <code>--bin</code>.</li>
+<li>Function parity: forty-odd option sets; diagnostics; wide and
+negative values; odd names; a newline in a name; terminal escapes;
+<code>-Z</code>; an openssl without <code>-xoflen</code> (a stand-in that refuses the
+option and asks the real one for 32 bytes); one without shake256;
+<code>LOCALBASE</code>; an unknown platform.</li>
+<li><code>-L</code>: names and indicators; the target's columns; a dangling link.
+<code>-o</code>: the file is the listing; mode kept and umask honored; a
+usage error and a run stopped midway leave the original and no
+temporary file; directory, missing directory, device; output among
+the files listed. <code>-c</code>: unchanged; content, time, inode, kind of
+node, gone; records without hash or inode; mixed hash widths;
+names with a leading blank or a trailing indicator character; a
+link whose target changed; with <code>-k</code>, <code>-r</code>, <code>-o</code>, <code>-Z</code>, <code>-L</code>;
+every error. <code>--man</code>: sections, sub-headings, equal to <code>cksh.1</code>
+and to the function's; <code>--help</code> on a pty through stand-in
+formatters, and with none.</li>
+</ol>
+<p>A revision is complete only when the suite has passed under each make
+dialect on each of the three platforms. This session can build and
+run on Linux alone; Darwin and NetBSD results are the operator's to
+report, and the plan says so rather than implying coverage.</p>
+<h2 id="10-dependency-posture">10 Dependency posture</h2>
+<ul>
+<li>Binary: libc only. No crypto library, whose shake256 and
+output-length option vary by host; no <code>setlocale()</code>.</li>
+<li>Function: bash, uname, stat, sort; openssl only for a hash. It
+verifies the openssl it selects against the known hash of empty
+input before trusting it. <code>$LOCALBASE</code> is consulted only to find
+that dependency and is never an install target.</li>
+<li>An openssl older than 3.0 has no <code>-xoflen</code> and prints 64 characters;
+the function cuts that output, exact for any N to 64, and refuses a
+longer N with status 2. One with no shake256 at all is status 2.</li>
+</ul>
+<h2 id="11-revision-sequence">11 Revision sequence</h2>
+<ul>
+<li><strong>r0.1</strong> (6305e87b, 20220824) ckstat, ckstatsum, cks: shell functions.</li>
+<li><strong>r0.2</strong> (677c9c44, 20250106) chksthash, from ckstatsum: the hash column, <code>shake256 -xoflen 3</code>.</li>
+<li><strong>r0.3</strong> (68e20bca, 20251004) renamed cksh; getopts <code>-n -x -h</code>; ckstat and ckstatsum retired.</li>
+<li><strong>r0.4</strong> (68e9ff40, 20251010) <code>-0</code>..<code>-5</code>; bare <code>-n</code> and <code>-x</code>; range validation.</li>
+<li><strong>r0.5</strong> (6ab7e734, 20260926) C port with built-in SHAKE256; value sort <code>-k</code>/<code>-r</code>; <code>--help</code>; status bitmask.</li>
+<li><strong>r0.6</strong> (6af8d530, 20261114) this plan; the key grammar shared with srt and ff; <code>-x</code> in hexadecimal characters; the srt package model.</li>
+</ul>
+<p>Next, not begun: ff revised in the same manner, with cksh as its
+template.</p>
+<h2 id="12-decision-log">12 Decision log</h2>
+<table>
+<thead>
+<tr><th>item</th><th>decision</th><th>date</th></tr>
+</thead>
+<tbody>
+<tr><td>V01</td><td><code>-x</code> counts hexadecimal characters, 0-128, default 6; r0.5 byte count dropped without compatibility</td><td>20261114</td></tr>
+<tr><td>V02</td><td>bare <code>-n</code>, <code>-x</code> before a file: value only when the next word reads as one</td><td>20261114</td></tr>
+<tr><td>V03</td><td><code>cksh -k5,4,6</code> = <code>srt -k5x,4x,6,1x,2x,3</code></td><td>20261114</td></tr>
+<tr><td>V04</td><td>key letters: <code>r</code> acts, <code>x</code> no-op on 1 2 4 5, others refused; no duplicate column; no <code>-k-N</code></td><td>20261114</td></tr>
+<tr><td>V05</td><td>a key on an omitted column: the dot is a null column (proposal of a usage error declined)</td><td>20261114</td></tr>
+<tr><td>V06</td><td><code>-r</code> with no <code>-k</code> reverses input order (proposal of name-descending declined)</td><td>20261114</td></tr>
+<tr><td>V07</td><td>negative mdate as signed hexadecimal</td><td>20261114</td></tr>
+<tr><td>V08</td><td>function hands over to a binary on PATH; <code>--fn</code>, <code>--bin</code>; <code>-V</code></td><td>20261114</td></tr>
+<tr><td>V09</td><td>r0.1-r0.5 named from the header history; these rounds are r0.6; srt package model</td><td>20261114</td></tr>
+<tr><td>V10</td><td>history moves to this plan</td><td>20261114</td></tr>
+<tr><td>V11</td><td>srt manual model; a blank line before every example sub-heading</td><td>20261114</td></tr>
+<tr><td>V12</td><td>hash label shake256-N; no slash label; three readings stated in <code>--help</code></td><td>20261114</td></tr>
+<tr><td>V13</td><td>no copyright in <code>--help</code>, <code>-h</code>, man page; kept elsewhere</td><td>20261114</td></tr>
+<tr><td>V14</td><td>escape control bytes on a terminal</td><td>20261114</td></tr>
+<tr><td>V15</td><td><code>cksh d/</code> writes <code>d/</code></td><td>20261114</td></tr>
+<tr><td>V16</td><td>r0.5 defects corrected; empty argument stays skipped</td><td>20261114</td></tr>
+<tr><td>V17</td><td><code>-Z</code>: NUL ends lines and stdin names; names raw under it (as built, open)</td><td>20261114</td></tr>
+<tr><td>V18</td><td><code>-c listing</code>: write the files that differ, status 64; each record checked as made (details as built, open)</td><td>20261114</td></tr>
+<tr><td>V19</td><td><code>-L</code>: follow symlinks</td><td>20261114</td></tr>
+<tr><td>V20</td><td><code>-o output</code>: temporary sibling, synced, renamed; <code>-t</code> declined</td><td>20261114</td></tr>
+<tr><td>V21</td><td><code>--help</code> on a terminal: own manual through mandoc or nroff, not man(1) on an installed page (as built, open); <code>--man</code></td><td>20261114</td></tr>
+<tr><td>V09</td><td>amended: <code>PREFIX</code> as r0.5, <code>/usr/local</code> for root and <code>$HOME</code> otherwise; the <code>/usr/local</code>-for-all default of the first r0.6 build reversed</td><td>20261114</td></tr>
+<tr><td>--</td><td>uniform key grammar across srt, cksh, ff (section 4); <code>-0</code>..<code>-5</code> given up for <code>-n[0..5]</code>; <code>-krN</code> retired; duplicate detection is srt only</td><td>20261114</td></tr>
+</tbody>
+</table>
+<h2 id="13-revision-status">13 Revision status</h2>
+<h3 id="r06-6af8d530-20261114">r0.6 (6af8d530, 20261114)</h3>
+<p>Built, against the rulings of section 2:</p>
+<ul>
+<li><code>-k</code> takes a column list; resolution, direction, types and stability
+as section 4. The comparison ends on input order, so the unstable
+library sort cannot reorder equal records.</li>
+<li><code>-x</code> in hexadecimal characters; odd lengths; the hash named
+shake256-N in every text.</li>
+<li><code>-n</code> and <code>-x</code> bare before a file; <code>-0</code>..<code>-5</code> and <code>-krN</code> refused with
+the replacement named.</li>
+<li>Signed mdate. <code>d/</code> keeps one slash. Names escaped on a terminal,
+in the binary and the function.</li>
+<li><code>-Z</code>, in the binary and the function (V17).</li>
+<li><code>-L</code>, <code>-o</code>, <code>-c</code> in the binary and the function (V18-V20); status 64.</li>
+<li><code>--help</code> as a man page on a terminal; <code>--man</code>; <code>cksh.1</code> from it (V21).</li>
+<li><code>--help</code> through a pager on a terminal (PAGER, else less, else
+more); <code>-V</code>, <code>--version</code>; <code>--fn</code>, <code>--bin</code>.</li>
+<li>Manual on the srt model: KEYS, HASH, TERMINAL, BASH FUNCTION,
+ENVIRONMENT, SEE ALSO <code>ff(1), srt(1)</code>, REVISION; no HISTORY, no
+COPYRIGHT.</li>
+<li>Function rewritten as one enclosing function with hand-over.</li>
+</ul>
+<p>Defects of r0.5 corrected:</p>
+<ul>
+<li>The manual said statuses 1 and 2 "stop before any file is read".
+Status 2 can come in the middle of a run; the text now says so.</li>
+<li>The function defined its stat wrapper only for Linux, Darwin and
+NetBSD; elsewhere every file reported "cannot stat" with status 4.
+It is now one status 2 before any file is read.</li>
+<li>After opening, the binary confirmed a regular file but not that it
+was the file examined. It now compares device and inode.</li>
+<li>The man recipe did not guard a leading <code>'</code> and kept the blank line
+after each heading. It follows srt's, and keeps the blank line
+before a sub-heading that directly follows a heading (V11).</li>
+<li>Function style: here-document delimiters were a plain <code>eof</code>, one
+unquoted; helpers were named <code>stderr</code>, <code>chkerr</code>, <code>chkwrn</code>; a test
+used <code>-o</code>; sorted output accumulated in one string. Delimiters are
+now <code>__CKSH_USAGE__</code> and <code>__CKSH_MANUAL__</code>, quoted; helpers are
+<code>_cksh_*</code>; records are held in arrays.</li>
+<li>The function's sort relied on the native sort's last-resort
+comparison; it now gives one key per column and <code>-s</code>.</li>
+</ul>
+<p>Found while building, and kept:</p>
+<ul>
+<li>In <code>cksh -n *</code>, a first file named with digits is the value of <code>-n</code>
+(V02). Stated in the README and the manual.</li>
+<li><code>-k 5,</code> does not read as a list (trailing comma), so it is a file
+name; <code>-k5,</code> joined is a usage error.</li>
+<li>The function cannot report a NUL in a line of standard input, since
+the shell drops it; listed in BASH FUNCTION.</li>
+<li>The function's key lines end in NUL where the sort of the host has
+<code>-z</code>, and then any name sorts. Where it has not, a name containing a
+newline under <code>-k</code> is status 2. <code>-r</code> alone needs no sort and takes
+any name.</li>
+</ul>
+<p>Darwin report, first build of r0.6 (operator, 20261114): 221 passed,
+6 failed, 5 skipped. No failure was in the binary or the function;
+all are corrected in this archive, under the same revision:</p>
+<ul>
+<li><code>pipe: name as it is</code>. The suite made a file whose name holds a
+byte that is not UTF-8; that file system refuses it ("Illegal byte
+sequence"). The suite now tries the name, falls back to one that is
+valid, says so, and tries the invalid byte in a diagnostic, which
+needs no file.</li>
+<li><code>one name defined</code>. The suite listed every function of the shell,
+and the operator's shell exports its own. The namespace cases now
+start from an empty environment.</li>
+<li><code>openssl without -xoflen</code>, four cases. The stand-in passed plain
+<code>shake256 -hex</code> to the real openssl, and a current openssl gives
+shake256 no default length. The stand-in now refuses <code>-xoflen</code> and
+asks the real one for 32 bytes, which is what an old one prints.
+The function was right to answer status 2 to what it was shown.</li>
+<li>Skipped there: <code>/dev/full</code> (absent); srt (not on PATH; <code>SRT=path</code>);
+the terminal cases, since script(1) has another form on that host.
+The suite now tries both forms and keeps one only if a probe comes
+back exact.</li>
+</ul>
+<p>Darwin report, second build (operator, 20261114): 244 passed, 0
+failed, 5 skipped: <code>/dev/full</code> twice, srt twice, and the file name
+that is not UTF-8. The terminal cases ran, so the second form of
+script(1) is confirmed there. <code>-L</code>, <code>-o</code>, <code>-c</code> and <code>--man</code> came after
+this report and await the next.</p>
+<p>Darwin report, third build (operator, 20261114): 335 passed, 2 failed,
+5 skipped. The skips are <code>/dev/full</code> twice (binary and function), srt
+twice, and the file name that is not UTF-8. So <code>-L</code>, <code>-o</code>, <code>-c</code>,
+<code>--man</code>, <code>--help</code> on a terminal and the function's <code>-o</code> and <code>-c</code> ran
+and passed there, apart from the two cases below. Neither failure was
+in the binary or the function; both were in the suite, and both
+corrected under the same revision:</p>
+<ul>
+<li><code>--man: no line begins with a bare quote or stray dot</code> counted 62
+where 0 was wanted; the page has 61 lines that begin with a dot. The
+case joined its alternatives with <code>\|</code>, which is a GNU extension of
+basic regular expressions, and the Darwin grep did not read them as
+alternatives. The same construct made <code>-c: a name with a leading blank, and one ending in @</code> count 1 where 2 was wanted. Both now give
+each pattern its own <code>-e</code>, which is POSIX.</li>
+<li>Three more cases used the same <code>\|</code> and passed on Darwin only
+because a count of 0 was what they wanted: <code>no copyright in --help</code>,
+<code>no copyright in -h</code> and <code>cksh.1 has no copyright</code>. They checked
+nothing there. They now use <code>-e</code> too, and the suite holds no <code>\|</code>.</li>
+</ul>
+<p>The cause on the Darwin grep is inferred from the construct and the
+count, not reproduced; the next Darwin run settles it.</p>
+<p>Review at the third build, defects found and corrected:</p>
+<ul>
+<li>The function's form-selection pass, which runs in the calling shell,
+matched with <code>[[ =~ ]]</code> and so left <code>BASH_REMATCH</code> set there after
+any call with a value word; the claim that a call changes nothing in
+the calling shell was false. The pass now matches with patterns, and
+the suite's "nothing else set" case makes calls that would show it.</li>
+<li>The function chose its source of names with a chain <code>A &amp;&amp; {..} || B &amp;&amp; {..} || C</code>; a nonzero status from the first body would have
+fallen through to reading standard input. No path reached it, but
+the form invited it; it is now a <code>case</code>.</li>
+<li>The suite's <code>cksh.1</code> checks compared the page with an awk copy of
+the makefile rule; with <code>--man</code> there is one rule, and the suite
+compares the page with it.</li>
+<li>Reviewed and left: <code>-o</code> onto a symlink replaces the link (V20); the
+function does not sync before its rename; a <code>-c</code> record whose
+listed file is gone but whose name less a trailing <code>@</code> or <code>/</code> names
+another file reports that file as differing, not as gone.</li>
+</ul>
+<p>Simulated on Linux before release: exported functions in the calling
+shell, and an openssl that refuses shake256 without <code>-xoflen</code>; the
+suite passes under both. The file-system refusal and the second form
+of script(1) cannot be simulated here and await the next Darwin run.</p>
+<p>Verified on Linux (gcc and clang, GNU make, bash 5.2, GNU sort and stat, OpenSSL
+3; srt r0.6 for case 6): the suite passes as root and as an
+unprivileged user; the binary is clean under <code>-fsanitize=address, undefined</code> across the suite; no compiler warning under <code>-std=c99 -Wall -Wextra -Wpedantic</code>.</p>
+<p>Not verified: the two corrected suite cases on Darwin; what a real mandoc
+or nroff draws from the source (stand-ins are used, and the build host
+has neither); NetBSD; bmake; a real openssl without <code>-xoflen</code> (a
+stand-in is used).</p>
+<h3 id="r05-6ab7e734-20260926">r0.5 (6ab7e734, 20260926)</h3>
+<p>C port. As recorded then, changes from the bash function of r0.4:</p>
+<ul>
+<li>Directories and other nodes that are not hashed show a zero-filled
+hash; previously the column was blank-padded.</li>
+<li>Fifos get a warning and are never opened; previously the run blocked
+on them.</li>
+<li>Per-file errors warn and the run continues; previously the first
+error aborted the run.</li>
+<li>The exit status is a bitmask instead of 0 or 1.</li>
+<li>Indicators come from <code>lstat</code>, so a file whose name ends in <code>*</code> or
+<code>%</code> keeps that character; previously <code>sed</code> stripped it.</li>
+<li>Names on standard input are read raw, so backslashes survive.</li>
+<li>Numbers are formatted by <code>printf</code> in the shell rather than by <code>awk</code>,
+which avoids awk's double-precision limit on large sizes and inodes.</li>
+<li>Sorting (<code>-k</code>, <code>-r</code>) is built in, replacing <code>| sort -k5</code>.</li>
+<li>Helpers of the function isolated in a subshell.</li>
+</ul>
+<p>Verified then on Linux under GNU make with gcc and clang, with the
+address and undefined-behavior sanitizers, as root and non-root. Not
+run under bmake, on NetBSD, or on Darwin.</p>
+<h2 id="14-history">14 History</h2>
+<p>The header lines of the files, in one place.</p>
+<pre><code>revision 6af8d530 20261114 134000 PST Sat --- r0.6
+    key list -k5,4; -x in hexadecimal characters, hash named
+    shake256-N; -n and -x bare before a file; -0..-5 and -krN
+    retired; signed mdate; names escaped on a terminal; d/ keeps one
+    slash; node identity checked after open; -Z NUL records; -L; -o
+    output renamed into place; -c check a saved listing; --help as a
+    man page on a terminal, --man; -V, --fn and --bin; manual,
+    makefile, suite and plan on the srt model; install prefix as r0.5
+revision 6ab7e734 20260926 083932 PDT Sat --- r0.5
+    C port with built-in SHAKE256; openssl&lt;3 xoflen fallback in the
+    bash function; -k/-r value sort; --help manual; status bitmask;
+    chkerr/chkwrn diagnostics; bash helpers isolated in a subshell
+revision 68e9ff40 20251010 235456 PDT Fri --- r0.4
+    -0..-5, bare -n and -x (getopts :), -n and -x range validation
+revision 68e20bca 20251004 231018 PDT Sat --- r0.3
+    renamed cksh, getopts -n -x -h; ckstat and ckstatsum retired
+revision 677c9c44 20250106 191516 PST Mon --- r0.2
+    chksthash, from ckstatsum: shake256 -xoflen 3 hash column
+original 6305e87b 20220824 015939 PDT Wed --- r0.1
+    ckstat ckstatsum cks
+</code></pre>
+</body>
+</html>

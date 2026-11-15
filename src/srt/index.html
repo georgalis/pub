@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+section[role="doc-endnotes"] ol { list-style: none; padding-left: 0; }
+li[role="doc-endnote"] > p:first-of-type { display: inline; margin: 0; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h1 id="srt-sort-for-operators">srt: sort for operators</h1>
+<p>srt is a sort for system operators: one grammar and one byte-for-byte
+result on Linux, Darwin and NetBSD, as a C99 binary and as a bash
+function for hosts without it.</p>
+<p><code>srt --help</code> is the manual and documents the current implementation.
+<a href="./plan-srt.md.html">./plan-srt.md.html</a> carries the requirements, the decisions behind them, and
+the status of each revision.</p>
+<pre><code>revision 6af8a908 20261114 103136 PST Sat --- r0.6
+revision 6af889a5 20261114 081741 PST Sat --- r0.5.1
+revision 6af87ca7 20261114 072215 PST Sat --- r0.5
+revision 6af871c9 20261114 063553 PST Sat --- r0.4.2
+revision 6af86b89 20261114 060913 PST Sat --- r0.4.1 (srt.fn.bash only)
+revision 6af82211 20261114 005545 PST Sat --- r0.4
+revision 6af81dc6 20261114 003726 PST Sat --- r0.3
+revision 6af81678 20261114 000616 PST Sat --- r0.2
+revision 6af8010b 20261113 223451 PST Fri --- r0.1
+</code></pre>
+<p><em>(c) 2026 George Georgalis <a href="mailto:george@iuxta.com">george@iuxta.com</a> Unlimited use with attribution.</em></p>
+<h2 id="contents">Contents</h2>
+<nav>
+<ul>
+<li><a href="#what-it-does">What it does</a></li>
+<li><a href="#not-a-drop-in-for-sort1">Not a drop-in for sort(1)</a></li>
+<li><a href="#global-options-and-key-letters">Global options and key letters</a></li>
+<li><a href="#listings-hexadecimal-columns-names-duplicates">Listings: hexadecimal columns, names, duplicates</a></li>
+<li><a href="#build">Build</a></li>
+<li><a href="#outline-sort">Outline sort</a></li>
+<li><a href="#bash-function">Bash function</a></li>
+<li><a href="#memory">Memory</a></li>
+<li><a href="#examples">Examples</a></li>
+<li><a href="#status-of-r06">Status of r0.6</a></li>
+<li><a href="#files">Files</a></li>
+</ul>
+</nav>
+<hr />
+<h2 id="what-it-does">What it does</h2>
+<ul>
+<li><code>-k5,3</code> means "column 5, then column 3, then the remaining columns".</li>
+<li>Columns are words, as <code>$1</code>, <code>$2</code> are in awk: widths, padding and
+squeezed blanks do not matter. <code>-k-1</code> is the last column.</li>
+<li>The highest column named runs to the end of the record when it is
+compared as text, so a file name with spaces is one key.</li>
+<li><code>-x</code> orders hexadecimal numbers; <code>-D</code> prints only the records whose
+named columns repeat.</li>
+<li>Stable by default.</li>
+<li>Order is by byte value; the locale environment is never consulted.</li>
+<li><code>-v</code> orders versions, versioned archives, host names, and IPv4 and
+IPv6 addresses and networks.</li>
+<li>Input larger than memory is sorted through a spill file, with the
+same result as the in-memory route.</li>
+<li>Keys are encoded once per record and sorted as bytes, so a keyed
+sort costs about what a plain one does.</li>
+</ul>
+<h2 id="not-a-drop-in-for-sort1">Not a drop-in for sort(1)</h2>
+<p>Several letters keep their name and change their meaning. Do not point
+an existing script at srt unexamined.</p>
+<table>
+<thead>
+<tr><th>option</th><th>sort(1)</th><th>srt</th></tr>
+</thead>
+<tbody>
+<tr><td><code>-k a,b</code></td><td>fields a through b</td><td>column a, then column b, then the rest</td></tr>
+<tr><td><code>-k</code> alone</td><td>error</td><td>the whole record (the default)</td></tr>
+<tr><td><code>-D</code></td><td>(none)</td><td>only duplicates, by the named columns</td></tr>
+<tr><td><code>-x</code></td><td>(none)</td><td>hexadecimal numeric</td></tr>
+<tr><td><code>-b</code></td><td>ignore leading blanks</td><td>outline sort by indentation</td></tr>
+<tr><td><code>-S</code></td><td>memory size, or unstable</td><td>allow unstable; memory is <code>--mem</code></td></tr>
+<tr><td><code>-R</code></td><td>hash-random, or record separator</td><td>uniform shuffle</td></tr>
+<tr><td><code>-z</code></td><td>NUL-terminated records</td><td>refused: the spelling is <code>-Z</code></td></tr>
+<tr><td><code>-Z</code></td><td>(none)</td><td>NUL-terminated records</td></tr>
+<tr><td><code>-V</code></td><td>version sort</td><td>print revision; version sort is <code>-v</code></td></tr>
+<tr><td><code>-h</code></td><td>human-numeric</td><td>usage; human-numeric is <code>-H</code></td></tr>
+</tbody>
+</table>
+<p><code>-c</code>, <code>-C</code>, <code>-d</code>, <code>-f</code>, <code>-i</code>, <code>-n</code>, <code>-r</code>, <code>-u</code>, <code>-o</code>, <code>-t</code>, <code>-T</code>
+keep their usual meaning.</p>
+<h2 id="global-options-and-key-letters">Global options and key letters</h2>
+<p>One rule is shared with sort(1) and is easy to misread: ordering
+letters written on a column in <code>-k</code> replace the global options for
+that column. They are not added to them.</p>
+<pre><code>srt -n -k1r      # column 1: reversed TEXT; other columns numeric
+srt -k1nr        # column 1: reversed numeric
+srt -r -k5n,3    # column 5 numeric ascending; the rest reversed
+</code></pre>
+<p><code>srt --help</code>, section GLOBAL AND KEY OPTIONS, works through it.</p>
+<h2 id="listings-hexadecimal-columns-names-duplicates">Listings: hexadecimal columns, names, duplicates</h2>
+<p>The case srt is built around: a listing of files, one per line, with
+columns such as inode, links, hash, size, time, name, the numbers in
+hexadecimal and the name last.</p>
+<pre><code>srt -k5x,4x,6 listing     # time, size, then the name, spaces and all
+srt -k5x,4x listing       # time, size; the name compared last
+srt -k4xr listing         # largest first
+srt -D -k3 listing        # files whose hash repeats, grouped
+srt -D -k3,4x listing     # the same hash and the same size
+srt -t/ -D -k-1 paths     # the same base name in different directories
+srt -t/ -k-1 paths        # by base name, then by directory
+</code></pre>
+<p>Three rules make these work, each in <code>srt --help</code>:</p>
+<ul>
+<li>The last column. The highest column named in <code>-k</code> runs to the end
+of the record when it is text; when it is a number it is one word
+and the rest of the record is compared last. Section THE LAST
+COLUMN.</li>
+<li><code>-D</code> tests exactly the named columns, each one word; with no <code>-k</code>,
+whole records. With <code>-u</code>, identical records count once.</li>
+<li><code>-k-N</code> counts columns from the end. With any such key every word
+is a column.</li>
+</ul>
+<p>One consequence to know: <code>-k5,3</code> on six one-word columns compares 5
+and 6 together, then 3, 1, 2, 4. Write <code>-k5n,3</code> (or any numeric
+letter) for column 5 alone, then 3, 1, 2, 4, 6.</p>
+<p>To reverse, put <code>r</code> after the column (<code>-k5r</code>) or give <code>-r</code>, which
+reaches every column named without letters. <code>-kr5</code> is refused.</p>
+<h2 id="build">Build</h2>
+<pre><code>make install    # PREFIX: /usr/local for root, $HOME otherwise; DESTDIR honored
+make test       # regression suite against ./srt
+make install    # PREFIX=/usr/local by default; DESTDIR honored
+make uninstall
+make clean
+</code></pre>
+<p>Requirements: a C99 compiler, POSIX libc, make, and bash for the test
+suite. No other library, and nothing whose result varies by host: no
+locale, and no library parsing of numbers or addresses in comparisons
+other than <code>strtod</code> for <code>-g</code>.</p>
+<p>Linking: static on Linux and NetBSD. Darwin has no static system
+library, so there the binary links dynamically against the system
+library alone. If a static libc is not installed on Linux, the build
+says so and links dynamically.</p>
+<p>The <a href="./makefile">./makefile</a> uses only constructs common to GNU make, bmake and the
+Darwin make.</p>
+<h2 id="outline-sort">Outline sort</h2>
+<p><code>-b</code> sorts an outline: lines that share a parent and a byte-identical
+indent are sorted among themselves, and each line keeps the more
+deeply indented lines beneath it. Tabs and spaces are never converted.</p>
+<pre><code>srt -b inventory.yml          # sort each block, keep the nesting
+srt -cb inventory.yml         # is every block in order?
+</code></pre>
+<p><code>srt --help</code>, section OUTLINE SORT, has the rules and an example.</p>
+<h2 id="bash-function">Bash function</h2>
+<p><a href="./srt.fn.bash">./srt.fn.bash</a> gives the same grammar and the same result on a host
+where the binary is not installed. Source it:</p>
+<pre><code>. $HOME/share/srt/srt.fn.bash
+</code></pre>
+<p>When a binary named <code>srt</code> is on PATH the function runs it. <code>--fn</code>
+allows only the function and <code>--bin</code> only the binary: with <code>--fn</code> the
+function never hands over (and the binary refuses), with <code>--bin</code> the
+function runs the binary or stops with an error.
+Sourcing the file defines that one name and
+nothing else: every helper and variable lives inside <code>srt</code>, in a
+subshell, so a call leaves the calling shell unchanged. It needs
+bash, awk, sort, cat, cp, mktemp and mv,
+and uses no ordering option of the native sort: awk encodes each key
+so that a plain byte comparison gives srt order.</p>
+<p>It declines, with exit 2 and a message naming the binary: <code>-b</code>, <code>-Z</code>,
+a NUL or non-ASCII <code>-t</code>, input containing a byte from 0x01 to 0x04,
+and hexadecimal floats under <code>-g</code>. It stages a copy of the input in
+the <code>-T</code> directory and is several times slower than the binary.
+<code>srt --help</code>, section BASH FUNCTION, has the list.</p>
+<h2 id="memory">Memory</h2>
+<p>Input that fits the budget is sorted in memory with no temporary file.
+Beyond it, sorted runs go to one spill file in <code>-T dir</code> (default
+<code>$TMPDIR</code>, then <code>/var/tmp</code>) and are merged at the end. The spill file
+is unlinked on creation, so nothing is left behind on any exit.</p>
+<pre><code>srt --mem 2g -T /scratch big.log
+SRT_STATS=1 srt --mem 64m big.log &gt;/dev/null   # budget, runs, passes, batches
+</code></pre>
+<p>The default budget is half of physical memory, or half of a lower
+address-space or data limit. <code>--mem N[bkmg]</code> or <code>SRT_MEM</code> sets it.</p>
+<h2 id="examples">Examples</h2>
+<pre><code>srt -t: -k3n /etc/passwd          # by uid, then the other fields
+ps aux | srt -k4nr,1              # by memory descending, then user
+srt -v hosts.txt                  # addresses and names in order
+du -h | srt -Hr                   # largest first
+srt -u -o list list               # sort and dedupe in place
+srt -c a.txt b.txt || echo fix    # check several files
+srt -k table                      # no column named: whole records
+srt -t. -k-1 names                # by file suffix
+</code></pre>
+<h2 id="status-of-r06">Status of r0.6</h2>
+<p>Working: the whole option grammar, column keys from either end, every
+ordering option including hexadecimal, duplicates,
+check (one pass, two records held), unique, shuffle, NUL records,
+atomic <code>-o</code>, <code>--help</code> with pager, outline sort, memory budget with spill and
+multi-pass merge; and the bash function, which the suite holds to the
+same output as the binary.</p>
+<p>Not yet:</p>
+<ul>
+<li><code>-b</code> and the merge of spilled runs compare records directly; only
+the sort of each batch in memory uses encoded keys.</li>
+<li><code>-b</code> holds the whole input in memory; past the budget it stops with
+an error instead of spilling.</li>
+</ul>
+<p>Platforms: r0.6 is built and tested on Linux (gcc, GNU make, bash
+5.2, mawk, GNU sort). On Darwin the whole suite, binary and bash function, passes at r0.6
+(664 cases). Not yet exercised: anything on NetBSD; bmake; the
+rendering of <code>srt.1</code>. Reports are
+wanted, and the suite names each difference as a failing case.</p>
+<p>The number of cases the suite runs varies by host: cases that need a
+non-root user or an enforced address-space limit skip themselves. The
+last line of <code>make test</code> is the result.</p>
+<h2 id="files">Files</h2>
+<table>
+<thead>
+<tr><th>file</th><th>purpose</th></tr>
+</thead>
+<tbody>
+<tr><td><a href="./srt.c">./srt.c</a></td><td>the program, single file, C99</td></tr>
+<tr><td><a href="./srt.fn.bash">./srt.fn.bash</a></td><td>the same grammar as a bash function, for hosts without the binary</td></tr>
+<tr><td><a href="./makefile">./makefile</a></td><td>targets: all srt man test install clean uninstall</td></tr>
+<tr><td><a href="./test-srt.sh">./test-srt.sh</a></td><td>regression suite; <code>test-srt.sh [path-to-srt]</code>; compares the function with the binary when <a href="./srt.fn.bash">./srt.fn.bash</a> is beside it</td></tr>
+<tr><td><a href="./plan-srt.md.html">./plan-srt.md.html</a></td><td>requirements, decisions, revision status</td></tr>
+<tr><td><a href="./">./</a></td><td>this file</td></tr>
+</tbody>
+</table>
+</body>
+</html>

@@ -1,21 +1,44 @@
-## [src](../)
-# [ff](./)
+# ff: functional find
 
-Functional find: NetBSD find(1) semantics where they matter, one letter per
-switch, the same behavior on Linux and Darwin.
+ff walks file trees and tests each node against an expression, as
+find(1) does, with one letter per switch and the same behavior on
+Linux, Darwin and NetBSD. It prints names, or one cksh line per node,
+and sorts what it prints by column. It is a C99 binary, and a bash
+function for hosts without it.
+
+`ff --help` is the manual and documents the current implementation.
+On a terminal it is shown as a man page, headings in bold, through
+the formatter of the host (mandoc, else nroff and a pager) without the
+page being installed; where there is no formatter, through the pager
+alone. `ff --man` writes the man page source.
+[./plan-ff.md](./plan-ff.md) carries the requirements, the decisions behind them, the
+history, and the status of each revision.
+
+    revision 6af927be 20261114 193214 PST Sat --- r0.7
+    revision 6ae4ea00 20261030 120328 PDT Fri --- r0.6
+    revision 6adcb748 20261024 064856 PDT Sat --- r0.5
+    revision 6abc5da8 20260929 175400 PDT Tue --- r0.4
+    revision 6abb42b9 20260928 214649 PDT Mon --- r0.3
+    revision 6ab89f43 20260926 214451 PDT Sat --- r0.2
+    original 6ab7fec8 20260926 102008 PDT Sat --- r0.1
 
 _(c) 2026 George Georgalis <george@iuxta.com> Unlimited use with attribution._
+
+<!--contents 2 3 pre="## Contents" post="---"-->
+
+## What it does
 
 ```
 ff . -t f -n '*.c'               C sources
 ff src -r '\.(c|h)$'             the same by ERE (unanchored)
 ff . -n .git -z -o -t f -f       files, skipping .git trees
 ff -k5 . -t f -m -1              changed within a day, oldest first
+ff -k4r,6 . -t f -v              cksh lines, largest first, then by name
 ff . -t f -x grep -l TODO {} +   grep per directory, race safe
 ff . -n '*.o' -delete            remove objects
 ```
 
-Two implementations, sharing one grammar, one manual and one exit status
+Two implementations share one grammar, one manual and one exit status
 scheme:
 
 - `ff` --- C99 binary, no dependency beyond libc, with its own directory
@@ -23,18 +46,23 @@ scheme:
 - `ff.fn.bash` --- bash function that translates the ff grammar into an
   argument array for the host's native find (BSD or GNU dialect, probed per
   call) and never uses `eval`. Where the native find cannot express a
-  request it exits 2 and names the binary. Load it with `. ff.fn.bash`; its
-  body runs in a subshell, so only `ff` enters the caller's namespace.
+  request it exits 2 and names the binary. Load it with `. ff.fn.bash`; it
+  adds the one name `ff` to the calling shell. When a binary named `ff` is
+  on `PATH` the function runs it; `--fn` keeps the function and `--bin`
+  requires the binary.
 
-A brief usage is provided with `-h`; `--help` prints the manual, through
-`$PAGER` (default `more`) when stdout is a terminal, and the man page is
-generated from it.
+`-h` is a one-screen usage:
+
 ```
-    Usage: ff [-IHLDSXZV] [-k[r][N]] [--] [path ...] [expression]
+    Usage: ff [-IHLDSXZV] [-k [col[r][,col[r]]...]] [--] [path ...] [expression]
+           ff -h | --help | --man | --version   (--fn | --bin: --help)
       options  -I ignore case for -n -p -r  -H/-L follow symlinks
-               -D post-order  -S sorted  -X one filesystem  -Z NUL output
+               -D post-order  -S sorted  -X one filesystem  -Z NUL records
                -V show the native find command (ff.fn.bash)
-               -k[r][N] sort by cksh field N, default 6 name, r reverse
+      sort     -k5,4 by column 5, then 4, then the remaining columns in
+               order; columns as -v writes them: 1 inode 2 links 3 .
+               4 size 5 mdate 6 name; no -v needed.  -k alone: by name
+               -k5r  r reverses that column
       tests    -n glob  -p glob  -r ERE  -t fdlpsbc  -d [+-]N  -s [+-]N[ckMGT]
                -m -a -c -b [+-]N[smhdw]  -w [+-][ ]([.][.]/file|HEX)
                -u user  -g group  -l [+-]N  -i [+-]HEX  -y file (same node)  -e
@@ -44,29 +72,32 @@ generated from it.
       logic    ( )  ! or -not  juxtaposition = and  -o or
       -h this summary, --help the manual
 ```
-The
-test suite runs its cases through both implementations and checks them
-against each other.
 
-<!--contents 2 3 pre="## Contents" post="---"-->
+The test suite runs its cases through both implementations and checks
+them against each other.
+
+ff is one of three tools that share a record and a key grammar: ff
+finds files, [cksh](../cksh/) lists them with a hash, [srt](../srt/)
+sorts listings. The `-v` line of ff is the cksh line, and `-k` in each
+tool reads the same list.
 
 ## Files
 
 <https://github.com/georgalis/pub/tree/main/src/ff>
 - **[ff.c](./ff.c)** --- the program: C99 source for the `ff` binary, including the usage text and the manual source.
-- **[ff.fn.bash](./ff.fn.bash)** --- the bash function `ff`: translates the same switches into the host's native `find` argument list; carries help text generated from the binary.
-- **[makefile](./makefile)** --- builds `ff` and `ff.1`, runs `make test`, and installs. The `-h` and `--help` text in `ff.fn.bash` is copied from the binary's output, and `make test` checks the two are identical.
-
-- **[README.md](./README.md)** --- this file: introduction, grammar, build, translator limits, verified state, and history.
-- **[PLAN.md](./PLAN.md)** --- design decisions and their rationale, recorded by revision.
-- **[test.sh](./test.sh)** --- the full suite, run twice (C binary, then bash function), with a byte-for-byte parity check between the two; host-dependent cases are skipped by named probe.
+- **[ff.fn.bash](./ff.fn.bash)** --- the bash function `ff`: translates the same switches into the host's native `find` argument list; carries the usage and manual text, copied from the binary.
+- **[makefile](./makefile)** --- targets `all ff man test install clean uninstall`. `ff.1` is the output of `ff --man`.
+- **[test-ff.sh](./test-ff.sh)** --- the full suite, run twice (C binary, then bash function), with a byte-for-byte parity check between the two; host-dependent cases are skipped by named probe.
+- **[README.md](./README.md)** --- this file: introduction, grammar, build, translator limits, verified state.
+- **[plan-ff.md](./plan-ff.md)** --- requirements, design decisions and their rationale, the history, and the status of each revision.
 
 ## Build
 
 ```
-make            # ./ff and ./ff.1 (man page generated from --help)
-make test       # regression suite, test.sh
+make            # ./ff and ./ff.1 (the output of ./ff --man)
+make test       # regression suite, test-ff.sh
 make install    # PREFIX defaults to /usr/local for root, else $HOME
+make uninstall  # remove exactly what install placed
 make CC=$LOCALBASE/bin/gcc
 ```
 
@@ -99,9 +130,9 @@ or `-mode` and `-delete`.
 | `-D` | `-d` / `-depth` | post-order |
 | `-S` | `-s` | sorted walk |
 | `-X` | `-x` / `-xdev` | one filesystem |
-| `-Z` | `-print0` | NUL-terminated names |
+| `-Z` | `-print0` | NUL-terminated records, `-v` lines too |
 | `-V` | | bash function: print the native find command to stderr |
-| `-k[r][N]` | `\| sort` | sort output by cksh field N; see below |
+| `-k [list]` | `\| sort` | sort output by the columns of `-v`; see below |
 
 | primary | find | ff semantics |
 |---------|------|--------------|
@@ -173,22 +204,47 @@ ff . -not -mode go-w    group or other may write
 ff . -mode o-X          directories others may not search
 ```
 
-`-k[r][N]` sorts what ff prints by cksh field N, the layout of `-v`:
-1 inode, 2 links, 3 hash, 4 size, 5 mdate, 6 name. Bare `-k` is `-k6`,
-and `r` reverses. Every record, from `-f`, `-v` or the default print, is
-keyed by its node's stat, so `-v` is not needed to sort by mtime or size.
-Numbers compare by value (mdate signed), names bytewise; ties go to the
-following fields, then walk order. Records are held until the walk ends
-and written with their own terminators (`-Z` NUL); `-x` and `-j` output
-is not sorted, and after `-q` the records printed so far are. The hash is
-always `.` in ff, so `-k3` and `-kr3` keep walk order and hold nothing.
-`-k` is global like the options; N is attached, so in `-k 5` the 5 is a
-path. `-k0`, `-k7` and `-kx` are usage errors (tag 6ab7ff4c).
+`-k [col[r][,col[r]]...]` sorts what ff prints, by the columns of the
+`-v` line: 1 inode, 2 links, 3 a dot, 4 size, 5 mdate, 6 name. Columns
+are words, as `$1`, `$2` are in awk; widths are not significant, and
+the name begins at column 6 and runs to the end of the record. The
+named columns are compared in the order given, then the remaining
+columns left to right, then walk order: `-k5,4` compares 5,4,1,2,3,6.
+`-k` alone names no column and sorts by name. `-k5 -k4` is `-k5,4`.
+
+The columns need not be printed. Every record, from `-f`, `-v` or the
+default print, is keyed by its node's stat, so `ff -k5` orders bare
+names by time, as `ls -t` orders names without `-l`. ff knows the type
+of each column: inode, links, size and mdate compare by value (mdate
+signed), the name bytewise as it is printed. Column 3 is where cksh
+writes its hash, shake256-6 by default; ff reads no file and writes a
+dot there, a null column, so a key on it orders nothing and the next
+column decides.
+
+`r` after a column reverses that column: `-k5r`. `x` is accepted on the
+numeric columns and changes nothing, so a list written for srt can be
+given to ff; any other letter is refused. `-krN` is retired for `-kNr`,
+and `-k-1` is not accepted. ff has no option that reverses every column,
+`-r` being the regular expression primary. The list may be joined to
+`-k` or be the next word, when that word reads as a list: `ff -k 5,4`
+sorts, `ff -k src` sorts `src` by name, and a path named like a list is
+written `./5`. `-k` may end a group of options: `-Sk5`.
+
+Records are held until the walk ends and written with their own
+terminators; `-x` and `-j` output is not sorted, and after `-q` the
+records printed so far are.
 
 ```
-ff -k5 . -t f -m -1     changed within a day, oldest first
-ff -kr4 . -t f -v       cksh lines, largest first
+ff -k5 . -t f -m -1                    changed within a day, oldest first
+ff -k4r,6 . -t f -v                    cksh lines, largest first, then name
+ff . -t f -v | srt -k5x,4x,6,1x,2x,3   what ff -k5,4,6 . -t f -v writes
+ff . -t f | cksh -k5,4                 the same files, with their hashes
+ff -Z . -t f | cksh -Z | srt -Z -k5x,4x   NUL records end to end
 ```
+
+`-Z` (`--zero-terminated`) ends every record with NUL, the names from
+`-f` and the default print and the lines of `-v`, and writes names as
+they are. It is the `-Z` of cksh and srt.
 
 `-x` or `-j`: `-j` passes the full path, and the child looks every
 component up again, so a directory swapped for a symlink after ff checked
@@ -205,15 +261,18 @@ the node and still empties it; ff reports status 4 and leaves it whole.
 An operand `.` keeps find's meaning: its contents are walked and it is
 kept.
 
-## Help and pager
+## Help and manual
 
-`--help` writes the manual to `$PAGER` when stdout is a terminal, or to
-`more` when `PAGER` is unset or empty, as POSIX `man` does. The pager runs
-by `/bin/sh -c`, as `man` runs it: `PAGER` is the user's own setting, and
-unlike `-x` and `-j` words it is meant to be a shell command (`less -R`).
-A pager that cannot run (status 126 or 127) is warned of, tag 6ab7ff4e,
-and the manual is written directly. A pager quit early is not an error.
-`-h`, and `--help` to a pipe or file (the `ff.1` build), are not paged.
+`--help` writes the manual. When stdout is a terminal it is shown as a
+man page, with its headings in bold, through the formatter of the host:
+mandoc, else nroff with a pager (`PAGER`, else less, else more). Where
+neither is found the text goes through the pager alone, and where no
+pager runs it is written directly, so `--help` never shows nothing. The
+formatter and pager run by `/bin/sh -c`, as `man` runs them: `PAGER` is
+the user's own setting, and unlike `-x` and `-j` words it is meant to
+be a shell command (`less -R`). A pager quit early is not an error.
+`-h`, and `--help` to a pipe or file, are plain. `--man` writes the man
+page source, which is `ff.1`; `--version` writes the revision.
 
 ## Output safety
 
@@ -297,6 +356,13 @@ it, and it gives no per-open verification.
 
 ## Bash translator limits
 
+Sourcing `ff.fn.bash` defines the function `ff` and nothing else. When
+a binary named `ff` is on `PATH` the function runs it with the same
+words. `--fn` allows only the function; `-V`, which only the function
+can answer, keeps it too. `--bin` allows only the binary: the function
+stops with status 2 when there is none, and the binary, given `--fn`,
+stops with status 1. The two together are a usage error.
+
 Each of these exits 2 and names the binary:
 
 - `-b` on GNU find (no birth time primary);
@@ -329,7 +395,7 @@ Darwin):
 - an unreadable directory named as an operand is not tested, where ff
   lists it, with status 4.
 
-test.sh probes the host's find for each and skips that case in the bash
+test-ff.sh probes the host's find for each and skips that case in the bash
 pass only where the host behaves so.
 
 `-w` uses `-newermt @S.N` where the native find takes it (GNU). Elsewhere
@@ -373,70 +439,28 @@ find . \( -name \*.h -newer ./Makefile \) -print
   read as 4); the binary's `-V` note; `-x` with an absolute command under
   a relative `PATH` (GNU find refuses `-execdir` whatever the command); a
   path operand beginning with `-`; walk diagnostics in chkerr form (the
-  native find writes its own).
-- It passes under GNU make on Linux (glibc 2.39, GNU find 4.9, bash 5.2):
-  at rev 6ae4ea00, 742 cases as root, which skips the unreadable-directory
-  cases, and 746 non-root; with gcc and clang; with a gcc build under
-  ASan, UBSan and LeakSanitizer, clean; and with `TMPDIR` behind a
-  symlink, as Darwin's `/tmp` is. gcc and clang
-  compile ff.c clean under `-Werror -Wpedantic`.
+  native find writes its own). The function is always run with `--fn`, so
+  an `ff` installed on `PATH` is never the one tested.
+- r0.7 passes under GNU make on Linux (glibc 2.39, GNU find 4.9, bash
+  5.2): 922 passed, 0 failed, 9 skipped as root, which skips the
+  unreadable-directory cases, and 926 passed, 7 skipped as an
+  unprivileged user; with srt r0.6 and cksh r0.6 on `PATH` for the
+  equivalence cases; with gcc and clang; and with a gcc build under ASan
+  and UBSan, clean. gcc and clang compile ff.c without a warning under
+  `-std=c99 -Wall -Wextra -Wpedantic`.
 - The walk matches GNU find 4.9 on each primary it shares.
-- Darwin (arm64, Apple clang): builds clean. The `make test` of rev
-  6abb42b9 failed 4 of 325. Two came from `/tmp` being a symlink to
-  `/private/tmp`: `-x pwd` prints the physical path, and test.sh now works
-  in `pwd -P`. Two were BSD `-execdir` passing bare names to the bash
-  function, which now adds `./` (see Bash translator limits). The first
-  was reproduced on Linux with a symlinked `TMPDIR`; the second is
-  exercised on Linux only through `FF_BARE_EXECDIR`, since GNU find cannot
-  give bare names. The `make test` of rev 6abc5da8 then passed on Darwin
-  in the binary pass (224 cases, `/dev/full` absent) and the parity pass,
-  including the `./` wrapper on real BSD `-execdir`. Its bash pass failed
-  3 cases, each a BSD find difference listed under Bash translator
-  limits; they are now probed and skipped there. The `make test` of rev
-  6adcb748 on Darwin passed whole: 694 cases, 0 failed, 12 skipped, each
-  a named probe or group, the three BSD find differences among them. A
-  first build of rev 6ae4ea00 (ERE `-r` and the pager, before the REGULAR
-  EXPRESSIONS section, the leak fix and the here-document delimiters were
-  folded in) passed `make all test install` on Darwin: 735 cases, 0
-  failed, 12 skipped, the pager cases through BSD `script`. The test of
-  Darwin rev 6ae4ea00 is 0 failed, remaining passed or skipped.
-- Not yet run under bmake or on NetBSD. The makefile avoids every
-  construct bmake rejects, but it is unverified there.
+- Darwin (Apple clang, bash 3.2 as `/bin/sh`): the first r0.7 build
+  passed 914 of 918 with 12 skipped, the terminal `--help` and signed
+  mdate cases among those passed. The 4 failures were the suite's own:
+  it called `cksh` by name, and found a cksh function exported into the
+  shell before the binary. The suite now runs srt and cksh as files on
+  `PATH`; that correction has been run on Linux only, under bash in
+  POSIX mode with functions of both names exported.
+- Not run on NetBSD or under bmake. The cases that depend on the host
+  are the terminal `--help` cases (script(1) in either form), the
+  signed mdate (a `touch` and file system that take 1960), and the srt
+  and cksh equivalence (both on `PATH`); each skips itself and says so
+  where the host cannot run it.
 
-See `PLAN.md` for the design record and the decisions log.
-
-## History
-
-```
-rev 6ae4ea00 20261030 120328 PDT Fri 12:03 PM 30 Oct 2026
-    -r is always ERE, with a REGULAR EXPRESSIONS manual section; -E is
-    retired, an unknown option (1); -n -p stay glob, -I covers all three;
-    --help through $PAGER (default more) when stdout is a terminal;
-    ff.fn.bash help blocks under unique quoted delimiters
-rev 6adcb748 20261024 064856 PDT Sat 06:48 AM 24 Oct 2026
-    -mode is the permission query, was -k; -k[r][N] sorts output by cksh
-    field N (1 inode 2 links 4 size 5 mdate 6 name, default 6), keyed by
-    node stat, no -v needed; -k3 passes walk order through, unbuffered
-rev 6abc5da8 20260929 175400 PDT Tue 05:54 PM 29 Sep 2026
-    -0 true and -1 false replace -true -false; -Z NUL output (was -0);
-    -y replaces -same; -w [+-][ ]([.][.]/file|HEX): the sign may stand
-    apart; -delete is a long switch to confirm; ff.fn.bash gives -x
-    ./name where BSD -execdir passes a bare name; test.sh in the
-    physical work directory (Darwin /tmp is /private/tmp); -delete
-    refuses an operand ending in .., or the root directory, whole
-rev 6abb42b9 20260928 214649 PDT Mon 09:46 PM 28 Sep 2026
-    -w when [+-]([.][.]/file|HEX): before, after or at a file's mtime or a
-    hex epoch second, a file taking ./ ../ or /; -same, -true, -false;
-    -i reads hex; -V shows the native find command, reference files where
-    find lacks -newermt; grouped examples; Darwin test fixes
-rev 6ab89f43 20260926 214451 PDT Sat 09:44 PM 26 Sep 2026
-    -k permission query: octal exact, +mode at least, -mode at most;
-    symbolic clauses + has, - lacks, with X s t; -not; diagnostics that
-    state a rule end in "not" before the rejected value
-org 6ab7fec8 20260926 102008 PDT Sat 10:20 AM 26 Sep 2026
-    owned openat walker with dev/ino verification; one-letter grammar;
-    -x execdir, -j exec, -delete through the verified parent; getent ids
-    on Linux; tty escaping; status bitmask; chkerr/chkwrn diagnostics;
-    bash translator ff.fn.bash for the native find
-```
-
+See [plan-ff.md](./plan-ff.md) for the design record, the decisions and
+the history.
