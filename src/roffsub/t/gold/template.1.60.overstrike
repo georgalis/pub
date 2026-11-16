@@ -1,0 +1,46 @@
+NNAAMMEE
+       mytool - one line saying what mytool does
+
+SSYYNNOOPPSSIISS
+       mmyyttooooll [--vv] [--oo _f_i_l_e] [_i_n_p_u_t ...]
+       mmyyttooooll --hh | ----hheellpp
+
+DDEESSCCRRIIPPTTIIOONN
+       mmyyttooooll reads each _i_n_p_u_t, or the standard input when
+       none is named, and writes the result to the standard
+       output.
+
+       A second paragraph explains the model the reader
+       needs: what goes in, what comes out, and what is
+       never changed.
+
+OOPPTTIIOONNSS
+       --vv     Report each _i_n_p_u_t on the standard error as it
+              is read.
+
+       --oo _f_i_l_e
+              Write to _f_i_l_e instead of the standard output.
+
+       --hh     Print a short usage summary.
+
+       ----hheellpp Show this manual.
+
+EEXXAAMMPPLLEESS
+       Process two files into one:
+
+       mytool -o all.txt one.txt two.txt
+
+EENNVVIIRROONNMMEENNTT
+       MMYYTTOOOOLL__OOPPTTSS
+              Options read before those on the command line.
+
+EEXXIITT SSTTAATTUUSS
+        CCOODDEE   MMEEAANNIINNGG
+       ------+----------------------------------------------
+           0   success
+           1   an input could not be read; the others were
+               still processed
+           2   a usage error
+
+SSEEEE AALLSSOO
+       rrooffffssuubb(7)

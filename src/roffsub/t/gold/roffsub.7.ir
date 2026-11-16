@@ -1,0 +1,386 @@
+v	1
+th	ROFFSUB	7	2026-11-15	roffsub r0.9	Miscellaneous Information
+sh	NAME
+tx	roffsub - a roff subset for manuals read in a terminal
+sh	DESCRIPTION
+tx	A roffsub document is a man page.
+tx	Every roff program displays it: man, nroff, groff, mandoc.
+tx	It is also simple enough for small awk and C routines to render from inside a program's own binary or bash function, at the width of the terminal in use, with bold and italic where the terminal can show them.
+tx	One source then serves as the installed page and as the program's built-in help.
+pp
+tx	This page defines the source form, how it is rendered, and how a program presents it.
+tx	The form is checked; content is not.
+sh	ELEMENTS
+ts	
+tf	lb	lb	lb
+tf	l	l	l
+tr	ELEMENT	WRITTEN AS	SHOWN AS
+t_
+tr	title	.TH	header and footer, optional in help
+tr	section	.SH	bold heading at the margin
+tr	subsection	.SS	bold heading at half an indent
+tr	paragraph	.PP .P .LP	filled text
+tr	definition	.TP, tag on the next line	tag, body hanging at the indent
+tr	list item	.IP	as a definition, tag inline
+tr	nested block	.RS .RE	margin moved in and back
+tr	literal block	.nf .fi	lines as written
+tr	emphasis	font escapes and requests	bold literals, italic arguments
+tr	spacing	.sp .br	blank lines, a line break
+tr	table	.TS .TE	open columns, horizontal rules
+tr	comment	.\\"	nothing
+te
+sh	SOURCE FORM
+tx	Each rule states its purpose, so it can be judged by whether it achieves it.
+ss	Lexical rules
+ip	3	o
+tx	Bytes 0x20 to 0x7E and newline only.
+tx	A byte is then a column, so awk and C measure width with a plain length.
+ip		o
+tx	No tab characters.
+tx	Layout is stated by requests, so every viewer shows the same thing, and tab is free to separate fields in the compiled form.
+ip		o
+tx	Line 1 is \fB'\\" t\fR when, and only when, the page has a table, so that man runs tbl first.
+tx	It is the only line that begins with an apostrophe.
+ip		o
+tx	A control line is a period followed directly by a request listed below.
+tx	A comment is a whole line beginning with a period, a backslash, and a double quote.
+ip		o
+tx	In fill mode a text line begins with a word: never a space, never empty, and never a period or apostrophe unless written after \\&.
+tx	roff treats a leading space or a blank line as a layout instruction; stating breaks with requests gives them one meaning everywhere.
+ip		o
+tx	One sentence per line is recommended.
+tx	Diffs stay small and sentence spacing stays predictable.
+ss	Requests
+tx	Widths are a bare number or a number followed by n, counting character cells.
+pp
+ts	
+tf	lb	lb	lb
+tf	l	l	l
+tr	REQUEST	ARGUMENTS	MEANING
+t_
+tr	.TH	NAME SEC DATE SOURCE MANUAL	page title; first request; @DATE@ and @VERSION@ are filled in at install and compile
+tr	.SH .SS	heading	section, subsection
+tr	.PP .P .LP	none	new paragraph; resets the prevailing indent
+tr	.TP	[width]	tagged paragraph; the next line, text or a font request, is the tag
+tr	.IP	[tag [width]]	indented paragraph, optionally tagged
+tr	.RS	[width]	move the margin in by width or by the prevailing indent
+tr	.RE	none	restore the margin
+tr	.nf .fi	none	literal and fill mode; literal blocks hold text only
+tr	.B .I	words	bold or italic words
+tr	.BR .RB .IR .RI .BI .IB	words	two fonts alternating word by word
+tr	.sp	[N]	N blank lines, default 1
+tr	.br	none	line break
+tr	.TS .TE	none	table
+te
+pp
+tx	Double quotes group words into one argument; a quote inside is written \\(dq.
+tx	A request takes at most 9 arguments.
+ss	Escapes
+ts	
+tf	lb	lb	lb
+tf	l	l	l
+tr	ESCAPE	MEANING	TERMINAL OUTPUT
+t_
+tr	\\fB \\fI \\fR	bold, italic, roman	font change
+tr	\\fP	previous font	font change
+tr	\\-	minus, copies as a real hyphen	-
+tr	\\e	backslash	\\
+tr	\\&	zero-width guard	nothing
+tr	\\(space)	space that never breaks	space
+tr	\\(em	em dash	--
+tr	\\(en	en dash	-
+tr	\\(bu	bullet	o
+tr	\\(aq	apostrophe	'
+tr	\\(dq	double quote	"
+te
+pp
+tx	The font returns to roman by the end of every request line and table cell, so emphasis never runs past where it was meant to stop.
+ss	Tables
+nf
+tx	.TS
+tx	box tab(@);
+tx	lb lb
+tx	l  l.
+tx	OPTION@MEANING
+tx	_
+tx	\\fB\\-r\\fR@reverse the order
+tx	.TE
+fi
+pp
+tx	The options line is required and ends with a semicolon.
+tx	It names the cell separator with tab(c), a printable character that is not a letter or digit and appears in no cell, and may add box, allbox, and center.
+tx	Format lines follow, the last ending with a period; keys are l, r, and c, with modifiers b, i, and w(N), a minimum width.
+tx	Format line i governs data row i and the last repeats.
+tx	Each data row has one cell per column; a row of a single underscore is a rule.
+tx	A cell opened with T{ continues on the following lines until a line beginning T}, and is filled within its column.
+tx	roff wraps only these text blocks, so any cell that may need wrapping is written as one; the roffsub renderers wrap every cell.
+tx	The page installed for man is written by roffsub -n, which rewrites each table so that roff draws it the same way: an empty separator column between the columns, rules joined by a + in those columns, no vertical lines, and columns holding text blocks widened to fill the line.
+ss	Content
+tx	A conventional order is NAME as \fIname\fR \\- \fIsummary\fR, then SYNOPSIS, DESCRIPTION, OPTIONS, EXAMPLES, ENVIRONMENT, FILES, EXIT STATUS, SEE ALSO.
+tx	The order is guidance; content belongs to the author.
+sh	RENDERING
+ss	Width and margins
+tx	Text fills to the width with a right margin of 0, or to the measure when one is set.
+tx	Words are packed greedily with a ragged right edge; a word too long for its line runs past the margin whole.
+tx	Literal lines are never rewrapped.
+tx	The indent unit is 7 cells, or 4 when the width is under 60.
+ss	Indentation and spacing
+ip	3	o
+tx	A section heading sits at the margin and its body one unit in; a subsection heading sits half a unit in.
+ip		o
+tx	Each paragraph, tagged paragraph, and indented paragraph is preceded by one blank line, except directly after a heading.
+ip		o
+tx	A tag shorter than the prevailing indent shares its line with the body; a tag as long or longer puts the body on the next line.
+ip		o
+tx	A width given to .TP or .IP becomes the prevailing indent for later items until the next .SH, .SS, or .PP.
+ip		o
+tx	.RS saves the margin and prevailing indent, moves the margin in, and resets the prevailing indent; .RE restores both.
+ss	Tables
+tx	Tables draw no vertical lines.
+tx	Each cell has one space of padding on each side and columns meet at one separator position, a space in data rows and a plus sign in rules, so column text sits three cells apart.
+tx	Rules appear where the source has an underscore row; box adds one above and below, allbox one after every row.
+pp
+tx	When a table is wider than the space available, the widest columns give up width first, down to a common cap, never below their longest word, and short columns keep their natural width.
+tx	Cells wrap within their columns.
+tx	When even the longest words do not fit, each row is shown as lines of the form \fIheader\fR: \fIvalue\fR.
+ss	Emphasis
+ts	
+tf	lb	lb	lb	lb
+tf	l	l	l	l
+tr	STYLE	USED FOR	BOLD	ITALIC
+t_
+tr	sgr	a terminal	ESC[1m	ESC[4m, underline
+tr	overstrike	a pager	c BS c	_ BS c
+tr	plain	a file, a pipe, TERM=dumb	none	none
+tr	pre	pre-formatting	\\fB	\\fI
+te
+pp
+tx	Control bytes are added only as a line is written, so they never count toward its width.
+tx	Emphasis is closed before every newline and reopened on the next line.
+tx	The SGR parameters may be replaced, so that bold and italic show as colors.
+sh	PROGRAM INTERFACE
+ss	Help
+tx	\fB--help\fR presents the full manual.
+tx	What it writes is fixed by four inputs: the embedded manual, the width, the style, and the destination.
+tx	The C and bash forms of a program write the same bytes for the same inputs.
+pp
+ts	
+tf	lb	lb	lb	lb
+tf	l	l	l	l
+tr	OUTPUT	GOES TO	STYLE	WIDTH
+t_
+tr	terminal	the pager	overstrike	terminal
+tr	terminal, PAGER is cat	the terminal	sgr	terminal
+tr	file or pipe	the file or pipe	plain	80
+te
+pp
+tx	The pager is PAGER when set, otherwise less, otherwise more.
+tx	The width is MANWIDTH when set, otherwise COLUMNS, otherwise the terminal's own.
+tx	ROFFSUB_STYLE, ROFFSUB_SGR, and ROFFSUB_MEASURE override the style, the emphasis parameters, and the measure; TERM=dumb selects plain.
+tx	ROFFSUB_HEADING moves section headings that many columns in from the margin, leaving everything else in place.
+ss	Usage
+tx	\fB-h\fR serves a different purpose from the manual: a quick reference, a refresher and confirmation when a full review is not needed.
+tx	It is composed for that purpose, not extracted from the manual.
+ss	Profiles
+tx	A man page is built from the source and installed in every case.
+tx	Inside the program the manual is carried in one of three profiles.
+pp
+ts	
+tf	lb	lb	lb
+tf	l	l	l
+tr	PROFILE	THE PROGRAM CARRIES	HELP GIVES
+t_
+tr	full	records and the renderer	any width, emphasis by terminal
+tr	preformatted	text set at 80 columns, fonts kept, and the emitter	fixed width, emphasis by terminal
+tr	plain	text set at 80 columns	fixed width
+te
+pp
+tx	The full profile is used when the renderer is no larger than the program it would live in, not counting the manual, and an exported bash function stays within its size budget; otherwise preformatted.
+tx	Plain is used only when a program asks for it.
+sh	COMPILED FORM
+tx	One record per line: an operation, then fields separated by tabs.
+tx	The operations are th, sh, ss, pp, tp, ip, rs, re, nf, fi, tx, sp, br, and for tables ts, tf, tr, t_, and te; the first record is v 1.
+tx	Text fields carry only \\fB, \\fI, \\fR, \\\\, and \\~, and end in roman.
+tx	Records are passed to awk on its standard input, never with -v, which would rewrite their backslashes.
+sh	CONFORMANCE
+ts	
+tf	lb	lb
+tf	l	l
+tr	ID	RULE
+t_
+tr	E01	byte outside 0x20 to 0x7E
+tr	E02	request not in roffsub, or an apostrophe control line
+tr	E03	escape not in roffsub
+tr	E04	unbalanced .nf/.fi, .RS/.RE, .TS/.TE, or T{/T}
+tr	E05	fill-mode text line empty or beginning with a space
+tr	E06	font not roman at a request line or cell end
+tr	E07	the table line and the tables disagree
+tr	E08	table form
+tr	E09	.TH missing or not the first request
+tr	E10	request arguments
+tr	E11	.TP without a tag line
+tr	W01	option hyphen written without \\-
+tr	W02	abbreviation ending a line without \\&
+tr	W03	table wider than 71 columns with no text blocks to wrap
+te
+sh	EXAMPLES
+tx	Each example shows its source, then the same source rendered in place.
+ss	Open table with a header rule
+nf
+tx	.TS
+tx	tab(@);
+tx	lb lb
+tx	l  l.
+tx	OPTION@MEANING
+tx	_
+tx	\\fB\\-r\\fR@reverse the order
+tx	\\fB\\-k\\fR \\fIkey\\fR@sort on \\fIkey\\fR
+tx	.TE
+fi
+pp
+ts	
+tf	lb	lb
+tf	l	l
+tr	OPTION	MEANING
+t_
+tr	\fB-r\fR	reverse the order
+tr	\fB-k\fR \fIkey\fR	sort on \fIkey\fR
+te
+ss	Boxed table, aligned columns
+tx	The box option adds rules above and below; keys r and c align right and center.
+pp
+nf
+tx	.TS
+tx	box tab(@);
+tx	lb cb rb
+tx	l  c  r.
+tx	NAME@KIND@SIZE
+tx	_
+tx	alpha@file@12
+tx	beta@directory@3456
+tx	.TE
+fi
+pp
+ts	box
+tf	lb	cb	rb
+tf	l	c	r
+tr	NAME	KIND	SIZE
+t_
+tr	alpha	file	12
+tr	beta	directory	3456
+te
+ss	Ruled table, centered
+tx	The allbox option puts a rule after every row; center places the table in the middle of the line.
+pp
+nf
+tx	.TS
+tx	allbox center tab(@);
+tx	cb cb
+tx	r  l.
+tx	CODE@MEANING
+tx	0@success
+tx	1@a check found errors
+tx	2@a usage or input error
+tx	.TE
+fi
+pp
+ts	allbox center
+tf	cb	cb
+tf	r	l
+tr	CODE	MEANING
+tr	0	success
+tr	1	a check found errors
+tr	2	a usage or input error
+te
+ss	Text blocks that wrap
+tx	A cell written between T{ and T} wraps within its column, in roff and in the roffsub renderers alike.
+pp
+nf
+tx	.TS
+tx	tab(@);
+tx	lb lb
+tx	l  l.
+tx	TERM@DEFINITION
+tx	_
+tx	measure@T{
+tx	the longest line that filled text may reach,
+tx	whatever the width of the terminal
+tx	T}
+tx	prevailing indent@T{
+tx	the indent that tagged and indented paragraphs use
+tx	when they give none of their own
+tx	T}
+tx	.TE
+fi
+pp
+ts	
+tf	lb	lb
+tf	l	l
+tr	TERM	DEFINITION
+t_
+tr	measure	the longest line that filled text may reach, whatever the width of the terminal
+tr	prevailing indent	the indent that tagged and indented paragraphs use when they give none of their own
+te
+ss	Minimum column width
+tx	A key with w(N) keeps its column at least N cells wide.
+pp
+nf
+tx	.TS
+tx	tab(@);
+tx	lw(12) l.
+tx	key@value
+tx	.TE
+fi
+pp
+ts	
+tf	lw(12)	l
+tr	key	value
+te
+ss	Definitions with a narrow indent
+tx	A width on .TP sets the prevailing indent for the items that follow.
+pp
+nf
+tx	.TP 4
+tx	.B a
+tx	first
+tx	.TP
+tx	.B b
+tx	second
+fi
+tp	4	\fBa\fR
+tx	first
+tp		\fBb\fR
+tx	second
+ss	Numbered list and nested block
+nf
+tx	.IP 1. 4
+tx	Write the page.
+tx	.IP 2.
+tx	Check it:
+tx	.RS
+tx	.nf
+tx	roffsub \\-c page.1
+tx	.fi
+tx	.RE
+fi
+ip	4	1.
+tx	Write the page.
+ip		2.
+tx	Check it:
+rs	
+nf
+tx	roffsub -c page.1
+fi
+re
+ss	Emphasis
+nf
+tx	.BR roffsub (1)
+tx	reads \\fIfile\\fR with \\fB\\-w\\fR \\fIwidth\\fR.
+fi
+pp
+tx	\fBroffsub\fR(1)
+tx	reads \fIfile\fR with \fB-w\fR \fIwidth\fR.
+sh	SEE ALSO
+tx	\fBroffsub\fR(1),
+tx	\fBman\fR(7),
+tx	\fBtbl\fR(1)

@@ -1,0 +1,150 @@
+NNAAMMEE
+       roffsub - check, compile, and render terminal manuals written in roffsub
+
+SSYYNNOOPPSSIISS
+       rrooffffssuubb [--ww _w_i_d_t_h] [--ss _s_t_y_l_e] [--mm _m_e_a_s_u_r_e] [_f_i_l_e]
+       rrooffffssuubb --ee [--ss _s_t_y_l_e] [_f_i_l_e]
+       rrooffffssuubb --cc _f_i_l_e ...
+       rrooffffssuubb --ii [--dd _d_a_t_e] [--rr _r_e_v] [_f_i_l_e]
+       rrooffffssuubb --pp [--ww _w_i_d_t_h] [_f_i_l_e]
+       rrooffffssuubb --gg cc|bbaasshh _n_a_m_e [_f_i_l_e]
+       rrooffffssuubb --nn [--dd _d_a_t_e] [--rr _r_e_v] [_f_i_l_e]
+       rrooffffssuubb --hh | ----hheellpp | --VV
+
+DDEESSCCRRIIPPTTIIOONN
+       rrooffffssuubb works with manuals written in roffsub, a subset of the man macros
+       and tbl that every roff program displays and that small awk and C
+       routines can also render. It renders a manual for the terminal in use, at
+       that terminal's width, with bold and italic where the terminal can show
+       them. It also checks a manual's form, compiles it into records, formats
+       it at a fixed width, and writes the text as a C array or a bash heredoc
+       for a program to carry.
+
+       rrooffffssuubb comes as a C binary and as a bash function that behave alike. The
+       function serves systems where programs cannot be run from the user's own
+       directories, such as a home directory mounted noexec, so one package
+       works everywhere. Both use awk to check, compile, and generate; the
+       binary renders records and pre-formatted text without it.
+
+OOPPTTIIOONNSS
+       --ww _w_i_d_t_h
+              Render at _w_i_d_t_h columns. Without it the width comes from MMAANNWWIIDDTTHH,
+              then from the terminal, then 80; output that is not a terminal is
+              80 columns unless MMAANNWWIIDDTTHH is set.
+
+       --ss _s_t_y_l_e
+              Write emphasis as ppllaaiinn (none), oovveerrssttrriikkee (backspace sequences
+              for a pager), ssggrr (terminal control sequences), or pprree (font
+              escapes for later emission). Without it the style follows the
+              destination; see OOUUTTPPUUTT CCHHOOIICCEESS.
+
+       --mm _m_e_a_s_u_r_e
+              Never fill text past _m_e_a_s_u_r_e columns, however wide the terminal.
+
+       --ee     Emit pre-formatted text, as written by --pp, in the chosen style.
+
+       --cc     Check the form of each _f_i_l_e and report every departure from
+              roffsub as _f_i_l_e:_l_i_n_e: _i_d: _m_e_s_s_a_g_e. The exit status is 1 when an
+              error was found. With RROOFFFFSSUUBB__SSTTRRIICCTT set, warnings count as errors
+              too.
+
+       --ii     Write the compiled records of _f_i_l_e. --dd and --rr fill in @@DDAATTEE@@ and
+              @@VVEERRSSIIOONN@@ on the ..TTHH line.
+
+       --pp     Write _f_i_l_e formatted at a fixed width (default 80) with its font
+              changes kept, for a program's pprreeffoorrmmaatttteedd profile.
+
+       --gg cc|bbaasshh _n_a_m_e
+              Write the lines of _f_i_l_e as a C array called _n_a_m_e, or as a marked
+              bash region that reads them into the variable _n_a_m_e.
+
+       --nn     Write _f_i_l_e as the page to install for man. --dd and --rr fill in the
+              ..TTHH line as for --ii, and each table is rewritten so that roff draws
+              it as roffsub does: no vertical lines, and a + where a rule meets
+              a column gap. The source itself stays as written.
+
+       --hh     Print the usage summary.
+
+       ----hheellpp Show this manual.
+
+       --VV     Print the version.
+
+       A _f_i_l_e may be a roffsub source or its compiled records; records begin
+       with the line vv, a tab, and 11. Without a _f_i_l_e the standard input is read.
+
+OOUUTTPPUUTT CCHHOOIICCEESS
+        OOUUTTPPUUTT                   GGOOEESS TTOO            SSTTYYLLEE        WWIIDDTTHH
+       ------------------------+------------------+------------+----------
+        terminal                 the pager          overstrike   terminal
+        terminal, PAGER is cat   the terminal       sgr          terminal
+        file or pipe             the file or pipe   plain        80
+
+       The pager is PPAAGGEERR when set, otherwise lleessss when installed, otherwise
+       mmoorree. TTEERRMM==dduummbb selects plain. Command-line options override the
+       environment, and the environment overrides these defaults.
+
+EENNVVIIRROONNMMEENNTT
+       MMAANNWWIIDDTTHH
+              The rendering width.
+
+       CCOOLLUUMMNNSS
+              The terminal width, when MMAANNWWIIDDTTHH is not set.
+
+       PPAAGGEERR  The pager for terminal output.
+
+       RROOFFFFSSUUBB__SSTTYYLLEE
+              The style: plain, overstrike, sgr, or pre.
+
+       RROOFFFFSSUUBB__SSGGRR
+              Control sequence parameters for bold and italic, as bb==11;;3333::ii==44;;3366.
+              The defaults are 1 (bold) and 4 (underline). Colors let bold and
+              italic show as distinct colors.
+
+       RROOFFFFSSUUBB__MMEEAASSUURREE
+              The maximum line length.
+
+       RROOFFFFSSUUBB__HHEEAADDIINNGG
+              The number of columns section headings are moved in from the
+              margin; 0 by default. Everything else stays in place.
+
+       RROOFFFFSSUUBB__SSTTRRIICCTT
+              When set, the check treats warnings as errors.
+
+EEXXIITT SSTTAATTUUSS
+       0 on success, 1 when a check found errors, 2 on a usage or input error.
+
+EEXXAAMMPPLLEESS
+       Check a manual, then read it as a program would show it:
+
+       roffsub -c srt.1
+       roffsub srt.1
+       roffsub -w 50 -s plain srt.1 > srt.txt
+
+       Embed the full manual in a C program and in a bash function:
+
+       roffsub -i -d 2026-11-15 -r r0.9 srt.1 > srt.ir
+       roffsub -g c srt_man srt.ir > srt.man.h
+       roffsub -g bash _srt_man srt.ir > srt.man.bash
+
+       Write the page to install:
+
+       roffsub -n -d 2026-11-15 -r r0.9 srt.1 > srt.1.out
+
+       Embed a pre-formatted manual in a small program:
+
+       roffsub -p srt.1 > srt.pre
+       roffsub -g c srt_man srt.pre > srt.man.h
+
+FFIILLEESS
+        rrooffffssuubb--cchheecckk..aawwkk    the form check
+        rrooffffssuubb--iirr..aawwkk       the compiler, source to records
+        rrooffffssuubb--rreennddeerr..aawwkk   the renderer, records to terminal text
+        rrooffffssuubb--eemmiitt..aawwkk     the emitter, pre-formatted text to terminal text
+        rrooffffssuubb--ggeenn..aawwkk      embedding as a C array or bash region
+        rrooffffssuubb--mmaann..aawwkk      the page to install for man
+        rrooffffssuubb..hh            the renderer in C
+        rrooffffssuubb--eemmiitt..hh       the emitter in C
+        rrooffffssuubb--ttttyy..hh        width, style, and pager choice in C
+
+SSEEEE AALLSSOO
+       rrooffffssuubb(7), mmaann(1), lleessss(1)

@@ -1,0 +1,55 @@
+'\" t
+.\" template.1 --- a starting page in roffsub; rename to your program.
+.\" Replace "mytool" throughout, keep one sentence per line, write option
+.\" hyphens as \-, and check with: roffsub -c mytool.1
+.TH MYTOOL 1 @DATE@ "mytool @VERSION@" "User Commands"
+.SH NAME
+mytool \- one line saying what mytool does
+.SH SYNOPSIS
+.nf
+\fBmytool\fR [\fB\-v\fR] [\fB\-o\fR \fIfile\fR] [\fIinput\fR ...]
+\fBmytool\fR \fB\-h\fR | \fB\-\-help\fR
+.fi
+.SH DESCRIPTION
+.B mytool
+reads each \fIinput\fR, or the standard input when none is named, and writes the result to the standard output.
+.PP
+A second paragraph explains the model the reader needs: what goes in, what comes out, and what is never changed.
+.SH OPTIONS
+.TP
+.B \-v
+Report each \fIinput\fR on the standard error as it is read.
+.TP
+\fB\-o\fR \fIfile\fR
+Write to \fIfile\fR instead of the standard output.
+.TP
+.B \-h
+Print a short usage summary.
+.TP
+.B \-\-help
+Show this manual.
+.SH EXAMPLES
+Process two files into one:
+.PP
+.nf
+mytool \-o all.txt one.txt two.txt
+.fi
+.SH ENVIRONMENT
+.TP
+.B MYTOOL_OPTS
+Options read before those on the command line.
+.SH EXIT STATUS
+.TS
+tab(@);
+rb lb
+r  l.
+CODE@MEANING
+_
+0@success
+1@T{
+an input could not be read; the others were still processed
+T}
+2@a usage error
+.TE
+.SH SEE ALSO
+.BR roffsub (7)

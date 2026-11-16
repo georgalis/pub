@@ -1,0 +1,77 @@
+v	1
+th	DEMO	1	2026-11-15	demo r0.9	User Commands
+sh	NAME
+tx	demo - exercise every roffsub element
+sh	SYNOPSIS
+nf
+tx	\fBdemo\fR [\fB-r\fR] [\fB-k\fR \fIlist\fR] [\fIfile\fR ...]
+fi
+sh	DESCRIPTION
+tx	\fBdemo\fR
+tx	reads each \fIfile\fR in turn, or the standard input when none is named, and writes the records it finds in the order chosen by the options.
+tx	A space written as a backslash space, as in a\~b\~c, never breaks.
+tx	Fonts may change mid word, as in \fBsrt\fR(1) and \fIfile\fR.txt.
+pp
+tx	A second paragraph follows the first after one blank line, and it is long enough to wrap at every width the reference outputs use, which is the point of it.
+sh	OPTIONS
+tp		\fB-r\fR
+tx	reverse the emitted order.
+tp		\fB-k\fR \fIlist\fR
+tx	sort by the columns in \fIlist\fR, then the remaining columns in order.
+tp		\fB--respect-blanks\fR
+tx	treat each indented block as a unit; the tag is longer than the indent, so the body starts on the next line.
+tp	4	\fB-x\fR
+tx	a width of four sets the prevailing indent, which the next item keeps.
+tp		\fB-o\fI file\fR
+tx	write to \fIfile\fR instead of the standard output.
+ss	Lists
+ip		o
+tx	bullets use the bullet character, shown as o on an ASCII terminal.
+ip		o
+tx	a second bullet item.
+ip	4	1.
+tx	a numbered item with its own width.
+ip		2.
+tx	a second numbered item.
+ss	Nesting
+pp
+tx	Text before a nested block.
+rs	
+tx	Nested text sits one prevailing indent further in.
+rs	3
+tx	A deeper block, moved in by three cells.
+re
+tx	Back at the first level.
+re
+tx	Back at the section margin.
+br
+tx	After a line break, still the same paragraph.
+sp	2
+tx	After two blank lines.
+sh	TABLE
+ts	
+tf	lb	lb
+tf	l	l
+tr	OPTION	MEANING
+t_
+tr	\fB-r\fR	reverse the order
+tr	\fB-k\fR \fIKEY\fR	sort on \fIKEY\fR
+te
+pp
+tx	A boxed table with a text block:
+ts	box
+tf	lb	lb	rb
+tf	l	l	r
+tr	NAME	DESCRIPTION	SIZE
+t_
+tr	alpha	a long description that has to wrap when the terminal is narrow, kept inside its column	12
+tr	beta	short	3456
+te
+sh	EXAMPLES
+nf
+tx	demo -k5,3 file
+tx	demo -r < input > output
+fi
+sh	SEE ALSO
+tx	\fBsrt\fR(1),
+tx	\fBroffsub\fR(7)

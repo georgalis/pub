@@ -1,0 +1,79 @@
+NNAAMMEE
+       demo - exercise every roffsub element
+
+SSYYNNOOPPSSIISS
+       ddeemmoo [--rr] [--kk _l_i_s_t] [_f_i_l_e ...]
+
+DDEESSCCRRIIPPTTIIOONN
+       ddeemmoo reads each _f_i_l_e in turn, or the standard input
+       when none is named, and writes the records it finds
+       in the order chosen by the options. A space written
+       as a backslash space, as in a b c, never breaks.
+       Fonts may change mid word, as in ssrrtt(1) and _f_i_l_e.txt.
+
+       A second paragraph follows the first after one blank
+       line, and it is long enough to wrap at every width
+       the reference outputs use, which is the point of it.
+
+OOPPTTIIOONNSS
+       --rr     reverse the emitted order.
+
+       --kk _l_i_s_t
+              sort by the columns in _l_i_s_t, then the
+              remaining columns in order.
+
+       ----rreessppeecctt--bbllaannkkss
+              treat each indented block as a unit; the tag
+              is longer than the indent, so the body starts
+              on the next line.
+
+       --xx  a width of four sets the prevailing indent, which
+           the next item keeps.
+
+       --oo _f_i_l_e
+           write to _f_i_l_e instead of the standard output.
+
+   LLiissttss
+       o      bullets use the bullet character, shown as o
+              on an ASCII terminal.
+
+       o      a second bullet item.
+
+       1.  a numbered item with its own width.
+
+       2.  a second numbered item.
+
+   NNeessttiinngg
+       Text before a nested block.
+              Nested text sits one prevailing indent further
+              in.
+                 A deeper block, moved in by three cells.
+              Back at the first level.
+       Back at the section margin.
+       After a line break, still the same paragraph.
+
+
+       After two blank lines.
+
+TTAABBLLEE
+        OOPPTTIIOONN   MMEEAANNIINNGG
+       --------+-------------------
+        --rr       reverse the order
+        --kk _K_E_Y   sort on _K_E_Y
+
+       A boxed table with a text block:
+       -------+--------------------------------------+------
+        NNAAMMEE    DDEESSCCRRIIPPTTIIOONN                            SSIIZZEE
+       -------+--------------------------------------+------
+        alpha   a long description that has to wrap      12
+                when the terminal is narrow, kept
+                inside its column
+        beta    short                                  3456
+       -------+--------------------------------------+------
+
+EEXXAAMMPPLLEESS
+       demo -k5,3 file
+       demo -r < input > output
+
+SSEEEE AALLSSOO
+       ssrrtt(1), rrooffffssuubb(7)

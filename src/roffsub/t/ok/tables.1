@@ -1,0 +1,55 @@
+'\" t
+.TH TABLES 7 2026-11-15 "roffsub r0.9" "Test Documents"
+.SH NAME
+tables \- table forms and width fitting
+.SH CAP
+A short column and two long ones; only the long ones give up width.
+.TS
+tab(|);
+l l l.
+abcdef|T{
+twelve-chars twelve-chars and more words to thirty
+T}|T{
+fourteen-chars fourteen-chars more words until the cell reaches fifty
+T}
+.TE
+.SH ALLBOX
+.TS
+allbox center tab(;);
+cb cb
+r  c.
+NUMBER;CENTERED
+1;one
+22;twenty two
+333;T{
+three hundred thirty three
+T}
+.TE
+.SH WIDTH
+.TS
+tab(@);
+lw(12) l.
+key@T{
+a column with a minimum width of twelve
+T}
+.TE
+.SH RECORDS
+.TS
+tab(@);
+l l l l.
+supercalifragilistic@T{
+antidisestablishmentarianism
+T}@T{
+floccinaucinihilipilification
+T}@pneumonoultramicroscopic
+.TE
+.SH LITERAL IN A DEFINITION
+.TP
+\fB\-e\fR \fIexpr\fR
+.nf
+srt \-e 'one'
+srt \-e 'two'
+.fi
+.TP
+.B \-v
+verbose.

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+section[role="doc-endnotes"] ol { list-style: none; padding-left: 0; }
+li[role="doc-endnote"] > p:first-of-type { display: inline; margin: 0; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h1 id="roffsub-easy-terminal-manuals">roffsub: easy terminal manuals</h1>
+<p>roffsub is a small subset of the man macros and tbl for manuals read in a terminal. Every roff program displays a roffsub page, and small awk and C routines render it too. A program can therefore carry its own manual and show it at <code>--help</code>: reflowed to the terminal's width, with bold and italic where the terminal supports them, and tables fitted to the space. The same file is installed as the man page.</p>
+<p>Revision: r0.9, 2026-11-15</p>
+<p>(c) 2026 George Georgalis <a href="mailto:george@iuxta.com">george@iuxta.com</a> Unlimited use with attribution.</p>
+<h2 id="contents">Contents</h2>
+<nav>
+<ul>
+<li><a href="#why-roffsub">Why roffsub</a></li>
+<li><a href="#quick-start">Quick Start</a></li>
+<li><a href="#files">Files</a></li>
+<li><a href="#using-roffsub-in-a-program">Using roffsub in a Program</a></li>
+<li><a href="#measured-sizes-r09">Measured Sizes (r0.9)</a></li>
+</ul>
+</nav>
+<hr />
+<h2 id="why-roffsub">Why roffsub</h2>
+<p>Markdown suits documentation read in a browser. A command-line program is read in a terminal, where markdown's line breaks are fixed and it has nothing to show an option in bold or hang a description under it. roff has always done this well, and every man page is roff, but few people write it by hand. <code>skill/SKILL.md</code> explains the problem, the approach, and how to write and embed a roffsub page; it is written to guide an LLM writing the page and serves a person equally well. Start there, then copy <code>template.1</code>.</p>
+<h2 id="quick-start">Quick Start</h2>
+<pre><code>make                      # binary, function regions, installable pages
+make test                 # all checks
+. ./roffsub.fn.bash       # define the roffsub function
+roffsub roffsub.7         # read the standard in this terminal
+roffsub --help            # read the tool's manual
+roffsub -c mypage.1       # check a page's form
+</code></pre>
+<p><code>make install</code> installs under <code>$HOME</code>, or under <code>/usr/local</code> when run as root. Set <code>PREFIX</code> to install somewhere else.</p>
+<h2 id="files">Files</h2>
+<table>
+<thead>
+<tr><th>File</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td><code>roffsub.7</code></td><td>the standard, written in roffsub</td></tr>
+<tr><td><code>roffsub.1</code></td><td>the tool's manual, embedded in the binary and the function</td></tr>
+<tr><td><code>template.1</code></td><td>a starting page with the conventional sections</td></tr>
+<tr><td><code>skill/SKILL.md</code></td><td>why and how to use roffsub, for an LLM or a person</td></tr>
+<tr><td><code>roffsub.fn.bash</code></td><td>the <code>roffsub</code> function, for systems where the user's own directories are mounted noexec</td></tr>
+<tr><td><code>roffsub.c</code></td><td>the binary; it behaves as the function does, and both check, compile, and generate through awk</td></tr>
+<tr><td><code>roffsub-check.awk</code></td><td>form check, rules E01 to E11 and W01 to W03</td></tr>
+<tr><td><code>roffsub-ir.awk</code></td><td>compiler, source to records</td></tr>
+<tr><td><code>roffsub-render.awk</code></td><td>renderer, records to terminal text</td></tr>
+<tr><td><code>roffsub-emit.awk</code></td><td>emitter, pre-formatted text to terminal text</td></tr>
+<tr><td><code>roffsub-gen.awk</code></td><td>embedding as a C array or a marked bash region</td></tr>
+<tr><td><code>roffsub-man.awk</code></td><td>the page to install for man (<code>roffsub -n</code>), with tables rewritten for roff</td></tr>
+<tr><td><code>roffsub.h</code>, <code>roffsub-emit.h</code>, <code>roffsub-tty.h</code></td><td>the renderer, the emitter, and the width, style, and pager choice, in C</td></tr>
+<tr><td><code>test-roffsub.sh</code>, <code>t/</code></td><td>tests, test documents, reference outputs</td></tr>
+<tr><td><code>plan-roffsub.md</code></td><td>requirements, decisions, and revision record</td></tr>
+</tbody>
+</table>
+<h2 id="using-roffsub-in-a-program">Using roffsub in a Program</h2>
+<ol>
+<li>Write the manual as <code>NAME.1</code> in roffsub, then check it with <code>roffsub -c NAME.1</code>.</li>
+<li>Install the page written by <code>roffsub -n -d DATE -r REV NAME.1</code>. It fills in <code>.TH</code> and rewrites the tables so that roff draws them as roffsub does.</li>
+<li>Choose a profile:
+<ul>
+<li><strong>full:</strong> compile the records (<code>roffsub -i</code>) and embed them, along with <code>roffsub.h</code> or <code>roffsub-render.awk</code>. The help then reflows to any width.</li>
+<li><strong>preformatted:</strong> for a program smaller than the renderer, embed the text from <code>roffsub -p</code> along with <code>roffsub-emit.h</code> or <code>roffsub-emit.awk</code>. The help is then fixed at 80 columns, with emphasis kept.</li>
+</ul></li>
+<li>Embed with <code>roffsub -g c NAME_man FILE &gt; NAME.man.h</code>, or with <code>roffsub -g bash _name_man FILE</code>, splicing the region into the function.</li>
+<li>At <code>--help</code>, call <code>roffsub_tty_open</code>, then render or emit to <code>t.out</code>, then call <code>roffsub_tty_close</code>. The bash side follows the same choices; see <code>roffsub.fn.bash</code>.</li>
+</ol>
+<p><code>-h</code> stays the program's own quick reference, written for a different purpose from the manual: a refresher and a confirmation when a full review is not needed.</p>
+<h2 id="measured-sizes-r09">Measured Sizes (r0.9)</h2>
+<table>
+<thead>
+<tr><th>Part</th><th>Size</th></tr>
+</thead>
+<tbody>
+<tr><td>C renderer (<code>roffsub.h</code>), compiled</td><td>about 12 KB of text</td></tr>
+<tr><td>awk renderer source</td><td>about 9.7 KB</td></tr>
+<tr><td>emitter (awk or C)</td><td>about 1 KB</td></tr>
+<tr><td><code>roffsub</code> function with its own manual embedded</td><td>about 41 KB</td></tr>
+<tr><td><code>roffsub</code> binary with its manual and the awk tools embedded</td><td>about 64 KB of text</td></tr>
+</tbody>
+</table>
+<p>A program whose own size is under these figures is a candidate for the preformatted profile.</p>
+</body>
+</html>

@@ -1,0 +1,86 @@
+'\" t
+.TH DEMO 1 @DATE@ "demo @VERSION@" "User Commands"
+.SH NAME
+demo \- exercise every roffsub element
+.SH SYNOPSIS
+.nf
+\fBdemo\fR [\fB\-r\fR] [\fB\-k\fR \fIlist\fR] [\fIfile\fR ...]
+.fi
+.SH DESCRIPTION
+.B demo
+reads each \fIfile\fR in turn, or the standard input when none is named, and writes the records it finds in the order chosen by the options.
+A space written as a backslash space, as in a\ b\ c, never breaks.
+Fonts may change mid word, as in \fBsrt\fR(1) and \fIfile\fR.txt.
+.PP
+A second paragraph follows the first after one blank line, and it is long enough to wrap at every width the reference outputs use, which is the point of it.
+.SH OPTIONS
+.TP
+\fB\-r\fR
+reverse the emitted order.
+.TP
+\fB\-k\fR \fIlist\fR
+sort by the columns in \fIlist\fR, then the remaining columns in order.
+.TP
+.B \-\-respect\-blanks
+treat each indented block as a unit; the tag is longer than the indent, so the body starts on the next line.
+.TP 4
+.BR \-x
+a width of four sets the prevailing indent, which the next item keeps.
+.TP
+.BI \-o " file"
+write to \fIfile\fR instead of the standard output.
+.SS Lists
+.IP \(bu
+bullets use the bullet character, shown as o on an ASCII terminal.
+.IP \(bu
+a second bullet item.
+.IP 1. 4
+a numbered item with its own width.
+.IP 2.
+a second numbered item.
+.SS Nesting
+.PP
+Text before a nested block.
+.RS
+Nested text sits one prevailing indent further in.
+.RS 3
+A deeper block, moved in by three cells.
+.RE
+Back at the first level.
+.RE
+Back at the section margin.
+.br
+After a line break, still the same paragraph.
+.sp 2
+After two blank lines.
+.SH TABLE
+.TS
+tab(@);
+lb lb
+l  l.
+OPTION@MEANING
+_
+\fB\-r\fR@reverse the order
+\fB\-k\fR \fIKEY\fR@sort on \fIKEY\fR
+.TE
+.PP
+A boxed table with a text block:
+.TS
+box tab(@);
+lb lb rb
+l  l  r.
+NAME@DESCRIPTION@SIZE
+_
+alpha@T{
+a long description that has to wrap when the terminal is narrow, kept inside its column
+T}@12
+beta@short@3456
+.TE
+.SH EXAMPLES
+.nf
+demo \-k5,3 file
+demo \-r < input > output
+.fi
+.SH SEE ALSO
+.BR srt (1),
+.BR roffsub (7)

@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+section[role="doc-endnotes"] ol { list-style: none; padding-left: 0; }
+li[role="doc-endnote"] > p:first-of-type { display: inline; margin: 0; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h1 id="roffsub-plan">roffsub plan</h1>
+<p>roffsub is a standard for documentation written to be read in a terminal. A roffsub document is a roff man page that every existing roff tool can display. It is also simple enough for small awk and C routines to render from inside a tool's own binary or bash function. Those routines produce headings, paragraphs, definitions, lists, and tables, set to whatever width the terminal has at the moment of reading, with bold and italic shown wherever the terminal can show them.</p>
+<p>Status: phases P1 to P6 built and tested (section 13). The standard and its tools exist for the operator to apply wherever and whenever the operator chooses; adopting them in any particular program is the operator's decision and is not a phase of this plan.</p>
+<p>Revision: r0.9, 2026-11-15. This revision gives text-block columns in the installed page tbl's <code>x</code> (expand) modifier, so roff widens them to fill the line. Left to roff's defaults (r0.8), they kept the width of an 80-column line on a wider terminal (section 7.3).</p>
+<p>r0.8 added the <code>roffsub.7</code> examples, <code>template.1</code>, and <code>skill/SKILL.md</code>, and restated table fitting as the solution. r0.7 adopted the Table C layout for installed pages. r0.6 made the binary and the function identical (D7). r0.5 added the heading offset and check W03. r0.4 built phases P1 to P6. r0.3 settled the roff behaviors and decisions D1 to D6. r0.2 added the program interface, the embedding profiles, and the table rules. r0.1 replaced r0 ("mansub").</p>
+<p>(c) 2026 George Georgalis <a href="mailto:george@iuxta.com">george@iuxta.com</a> Unlimited use with attribution.</p>
+<h2 id="contents">Contents</h2>
+<nav>
+<ul>
+<li><a href="#1-purpose">1 Purpose</a>
+<ul>
+<li><a href="#11-origin">1.1 Origin</a></li>
+</ul></li>
+<li><a href="#2-requirements">2 Requirements</a>
+<ul>
+<li><a href="#21-essential">2.1 Essential</a></li>
+<li><a href="#22-nice-to-have">2.2 Nice to Have</a></li>
+</ul></li>
+<li><a href="#3-solution-overview">3 Solution Overview</a></li>
+<li><a href="#4-document-model">4 Document Model</a></li>
+<li><a href="#5-source-form">5 Source Form</a>
+<ul>
+<li><a href="#51-lexical-rules">5.1 Lexical Rules</a></li>
+<li><a href="#52-requests">5.2 Requests</a></li>
+<li><a href="#53-arguments">5.3 Arguments</a></li>
+<li><a href="#54-escapes-and-fonts">5.4 Escapes and Fonts</a></li>
+<li><a href="#55-table-form">5.5 Table Form</a></li>
+<li><a href="#56-content-template-guidance">5.6 Content Template (guidance)</a></li>
+</ul></li>
+<li><a href="#6-compiled-form">6 Compiled Form</a></li>
+<li><a href="#7-rendering">7 Rendering</a>
+<ul>
+<li><a href="#71-width-and-margins">7.1 Width and Margins</a></li>
+<li><a href="#72-indentation-and-vertical-space">7.2 Indentation and Vertical Space</a></li>
+<li><a href="#73-tables">7.3 Tables</a></li>
+<li><a href="#74-emphasis">7.4 Emphasis</a></li>
+</ul></li>
+<li><a href="#8-program-interface">8 Program Interface</a>
+<ul>
+<li><a href="#81-inputs">8.1 Inputs</a></li>
+<li><a href="#82-choosing-destination-mode-and-width">8.2 Choosing Destination, Mode, and Width</a></li>
+<li><a href="#83-usage--h">8.3 Usage (<code>-h</code>)</a></li>
+<li><a href="#84-embedding-profiles">8.4 Embedding Profiles</a></li>
+</ul></li>
+<li><a href="#9-conformance-check">9 Conformance Check</a></li>
+<li><a href="#10-tools-the-standard-provides">10 Tools the Standard Provides</a></li>
+<li><a href="#11-verification">11 Verification</a></li>
+<li><a href="#12-settled-roff-behaviors">12 Settled roff Behaviors</a></li>
+<li><a href="#13-phases">13 Phases</a></li>
+<li><a href="#14-decisions">14 Decisions</a>
+<ul>
+<li><a href="#141-implementation-choices-r04">14.1 Implementation Choices (r0.4)</a></li>
+</ul></li>
+<li><a href="#15-one-page-read-by-its-width">15 One Page, Read by Its Width</a></li>
+</ul>
+</nav>
+<hr />
+<h2 id="1-purpose">1 Purpose</h2>
+<p>The terminal is where the operator reads documentation, and the documentation sits next to the tool it describes. Markdown suits a different setting: people write it by hand, it reads well in a terminal as source, and it turns easily into HTML to review in a browser or print to PDF. It falls short where the terminal is the place documentation is read rather than the place it is edited. In a terminal, Markdown has no notion of a tagged option paragraph, a hanging indent, or emphasis that only appears when the terminal supports it. Viewed as raw source it is readable, but it never rewraps to fit the window.</p>
+<p>roff has served the terminal for decades. Its man macros already describe the structure of command-line documentation: a synopsis, options, sections, definitions, lists, and tables, set in a monospaced font with emphasis where the device allows. Markdown suits documents meant for hand editing and the browser. roff suits documents meant to be read in a terminal, and roffsub is the part of roff that can still be rendered when no roff program is present: inside a C binary at <code>--help</code>, or inside a bash function.</p>
+<p>The standard gives every program one well-defined way to make its documentation available from a single source, whether the program is small or large and whether it runs on a minimal host or a workstation:</p>
+<ul>
+<li><strong>Installed page.</strong> A man page is installed in every case.</li>
+<li><strong>Built-in help.</strong> The program carries its manual in the richest form its size justifies.</li>
+</ul>
+<h3 id="11-origin">1.1 Origin</h3>
+<p>The tools this standard grew out of kept their manuals as fixed-width text. That text was set once and could not adapt: lines wrapped at 80 columns stayed broken on a wide terminal and overran a narrow one, and an option name could not stand out in bold from the words around it. roffsub keeps the single source and moves the formatting to the moment of reading.</p>
+<h2 id="2-requirements">2 Requirements</h2>
+<h3 id="21-essential">2.1 Essential</h3>
+<table>
+<thead>
+<tr><th>Id</th><th>Requirement</th><th>How roffsub meets it</th></tr>
+</thead>
+<tbody>
+<tr><td>E1</td><td>The format can be displayed by existing roff tools, through a pager or as plain text</td><td>The document is a valid man page, installed in every case; man, nroff, groff, and mandoc display it unchanged</td></tr>
+<tr><td>E2</td><td>Presentation suits terminals of any width and monospaced fonts</td><td>Text is filled and indented at render time, from the current width; all measurements count character cells</td></tr>
+<tr><td>E3</td><td>Layout follows the man page conventions for commands, options, sections, definitions, lists, and tables</td><td>The standard is built from the man macros and the tbl preprocessor, with their usual meanings</td></tr>
+<tr><td>E4</td><td>Bold and italic are shown where the terminal can show them, usually as brightness or color</td><td>Emphasis is recorded as font changes; the renderer decides at emission whether to use control sequences, backspace overstrike, or nothing</td></tr>
+<tr><td>E5</td><td>Simple enough to embed in a binary and a bash function and emit at <code>--help</code> in the right form</td><td>A program carries either the compiled records with a renderer, or (below a size threshold) a manual formatted at build; section 8 sets the rules</td></tr>
+<tr><td>E6</td><td>The document's form is checked; its content is not</td><td>A conformance check accepts or rejects how a document is written; the template for sections is guidance only</td></tr>
+</tbody>
+</table>
+<h3 id="22-nice-to-have">2.2 Nice to Have</h3>
+<table>
+<thead>
+<tr><th>Id</th><th>Feature</th><th>Placement</th></tr>
+</thead>
+<tbody>
+<tr><td>N1</td><td>Markdown export</td><td>A separate project. A converter from roffsub (or from the compiled form) to Markdown, for HTML review and printing. Its interest in roffsub is that the compiled form is stable and simple.</td></tr>
+</tbody>
+</table>
+<h2 id="3-solution-overview">3 Solution Overview</h2>
+<pre><code>NAME.1 (roffsub source)
+  |
+  +--check form--------------&gt; accept / reject
+  |
+  +--install-----------------&gt; man1dir (every program, every profile)
+  |
+  +--compile (awk)-----------&gt; NAME.ir (records; no widths fixed yet)
+                                  |
+                 +----------------+-----------------+
+                 |                                  |
+          profile "full"                   profile "preformatted"
+          records + renderer               build renders at fixed width;
+                 |                         text with fonts + emitter
+                 |                                  |
+                 +--- embedded in NAME.c and NAME.fn.bash ---+
+                                  |
+                 at --help: width, emphasis, pager (section 8)
+</code></pre>
+<ul>
+<li><strong>One source.</strong> A single source file is the man page, the binary's help, and the function's help.</li>
+<li><strong>Parse once.</strong> The source is parsed once, at build. The runtimes receive records whose meaning is already settled, so all they do is layout and emission.</li>
+<li><strong>Two renderers.</strong> awk is the renderer outside the binary and C is the renderer inside it. Identical inputs must produce identical bytes from both, which keeps them interchangeable.</li>
+<li><strong>Small programs.</strong> A program too small to justify carrying a renderer carries pre-formatted text instead (section 8.4). It loses only the reflow to the terminal's width.</li>
+</ul>
+<h2 id="4-document-model">4 Document Model</h2>
+<p>roffsub supports the elements terminal documentation needs. Each is written the way roff writes it (section 5 gives the exact form) and rendered the way roff renders it on a terminal (section 7).</p>
+<table>
+<thead>
+<tr><th>Element</th><th>roff form</th><th>Rendering</th></tr>
+</thead>
+<tbody>
+<tr><td>Title</td><td><code>.TH</code></td><td>identifies the page; header and footer lines are optional in <code>--help</code> output</td></tr>
+<tr><td>Section heading</td><td><code>.SH</code></td><td>bold, at the left margin; the section body is indented one unit</td></tr>
+<tr><td>Subsection heading</td><td><code>.SS</code></td><td>bold, at a half-unit indent</td></tr>
+<tr><td>Paragraph</td><td><code>.PP</code> (<code>.P</code>, <code>.LP</code>)</td><td>filled text at the current indent</td></tr>
+<tr><td>Definition (option, term)</td><td><code>.TP</code>, with the tag on the next line</td><td>the tag at the current indent and the body hanging at the prevailing indent</td></tr>
+<tr><td>List item</td><td><code>.IP</code></td><td>as a definition, with the tag inline: <code>\(bu</code> for bullets, numbers for ordered lists, empty for an indented paragraph</td></tr>
+<tr><td>Nested block</td><td><code>.RS</code>, <code>.RE</code></td><td>moves the margin in, then restores it</td></tr>
+<tr><td>Literal block</td><td><code>.nf</code>, <code>.fi</code></td><td>lines shown as written; used for synopses and examples</td></tr>
+<tr><td>Emphasis</td><td>font escapes and font requests</td><td>bold for text typed literally, italic for arguments the reader replaces</td></tr>
+<tr><td>Spacing</td><td><code>.sp</code>, <code>.br</code></td><td>blank lines; a line break</td></tr>
+<tr><td>Table</td><td><code>.TS</code> ... <code>.TE</code></td><td>open columns with horizontal rules only, sized to the available width</td></tr>
+<tr><td>Comment</td><td><code>.\"</code></td><td>discarded</td></tr>
+</tbody>
+</table>
+<h2 id="5-source-form">5 Source Form</h2>
+<p>The rules in this section define a roffsub source. Each one states its purpose, so it can be judged by whether it achieves that purpose. The vocabulary in sections 5.2 to 5.5 is the whole of roffsub, and the conformance check (section 9) reports anything outside it.</p>
+<h3 id="51-lexical-rules">5.1 Lexical Rules</h3>
+<table>
+<thead>
+<tr><th>Rule</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td>Bytes 0x20 to 0x7E plus LF</td><td>byte count equals the number of terminal columns, so awk and C measure width with a plain length</td></tr>
+<tr><td>No TAB characters</td><td>layout is expressed by requests, so every viewer shows the same thing; TAB is free to separate fields in the compiled form</td></tr>
+<tr><td>Line 1 is <code>'\" t</code> exactly when the page contains a table</td><td>man-db reads that line to run tbl first; it is the only line that begins with <code>'</code></td></tr>
+<tr><td>A control line is <code>.</code> followed directly by a request from section 5.2; a comment is a whole line starting <code>.\"</code></td><td>one recognizable shape for every instruction, easy to classify with a single pattern</td></tr>
+<tr><td>A text line starts with a word: never a space, never empty, and never <code>.</code> or <code>'</code> unless written <code>\&amp;.</code></td><td>roff treats a leading space or a blank line as a layout instruction; stating breaks with requests gives them one meaning in every renderer</td></tr>
+<tr><td>One sentence per line (recommended, not checked)</td><td>small diffs, and predictable spacing at sentence ends in roff</td></tr>
+</tbody>
+</table>
+<h3 id="52-requests">5.2 Requests</h3>
+<p>Widths are written as a bare number or with the unit <code>n</code>, meaning character cells on a monospaced terminal. That is the unit all three renderers share.</p>
+<table>
+<thead>
+<tr><th>Request</th><th>Arguments</th><th>Meaning</th><th>Form</th></tr>
+</thead>
+<tbody>
+<tr><td><code>.TH</code></td><td><code>NAME SEC DATE SOURCE MANUAL</code></td><td>page title</td><td>first request; <code>DATE</code> may be <code>@DATE@</code>, and <code>SOURCE</code> may contain <code>@VERSION@</code>, filled in at install and compile</td></tr>
+<tr><td><code>.SH</code></td><td>text</td><td>section heading</td><td></td></tr>
+<tr><td><code>.SS</code></td><td>text</td><td>subsection heading</td><td>within a section</td></tr>
+<tr><td><code>.PP</code> <code>.P</code> <code>.LP</code></td><td>none</td><td>new paragraph; resets the prevailing indent</td><td></td></tr>
+<tr><td><code>.TP</code></td><td><code>[width]</code></td><td>tagged paragraph; the next line is the tag</td><td>the tag line is a text line or a font request; a width sets the prevailing indent</td></tr>
+<tr><td><code>.IP</code></td><td><code>[tag [width]]</code></td><td>indented paragraph, optionally tagged</td><td>a width sets the prevailing indent</td></tr>
+<tr><td><code>.RS</code></td><td><code>[width]</code></td><td>move the margin in by the width, or by the prevailing indent</td><td>paired with <code>.RE</code> within a section</td></tr>
+<tr><td><code>.RE</code></td><td>none</td><td>restore the margin</td><td></td></tr>
+<tr><td><code>.nf</code> <code>.fi</code></td><td>none</td><td>literal (no fill) and fill mode</td><td>paired; literal blocks hold text lines only, so every renderer treats them alike</td></tr>
+<tr><td><code>.B</code> <code>.I</code></td><td>words</td><td>set the words in bold or italic</td><td>words given as arguments, so no font state carries over to the next line</td></tr>
+<tr><td><code>.BR</code> <code>.RB</code> <code>.IR</code> <code>.RI</code> <code>.BI</code> <code>.IB</code></td><td>words</td><td>alternate two fonts, word by word</td><td>at least one argument</td></tr>
+<tr><td><code>.sp</code></td><td><code>[N]</code></td><td>N blank lines (default 1)</td><td></td></tr>
+<tr><td><code>.br</code></td><td>none</td><td>line break</td><td></td></tr>
+<tr><td><code>.TS</code> <code>.TE</code></td><td>none</td><td>table (section 5.5)</td><td>paired</td></tr>
+<tr><td><code>.\"</code></td><td>anything</td><td>comment</td><td>discarded</td></tr>
+</tbody>
+</table>
+<h3 id="53-arguments">5.3 Arguments</h3>
+<ul>
+<li><strong>Quoting.</strong> Double quotes group words into one argument. A literal quote inside is written <code>\(dq</code>. This keeps quoting to a single rule that awk and C parse identically.</li>
+<li><strong>Count.</strong> At most 9 arguments, which is the classic roff limit and is honored everywhere.</li>
+</ul>
+<h3 id="54-escapes-and-fonts">5.4 Escapes and Fonts</h3>
+<table>
+<thead>
+<tr><th>Escape</th><th>Meaning</th><th>Compiled form</th><th>Terminal output</th></tr>
+</thead>
+<tbody>
+<tr><td><code>\fB</code> <code>\fI</code> <code>\fR</code></td><td>select bold, italic, roman</td><td>kept</td><td>font change</td></tr>
+<tr><td><code>\fP</code></td><td>return to the previous font</td><td>resolved to an explicit <code>\fX</code></td><td></td></tr>
+<tr><td><code>\-</code></td><td>minus; copies and pastes as a real hyphen, as options need</td><td><code>-</code></td><td><code>-</code></td></tr>
+<tr><td><code>\e</code></td><td>backslash</td><td><code>\\</code></td><td><code>\</code></td></tr>
+<tr><td><code>\&amp;</code></td><td>zero-width guard (line-initial <code>.</code>, end-of-line abbreviation)</td><td>removed</td><td>nothing</td></tr>
+<tr><td><code>\ </code> (backslash space)</td><td>space that never breaks</td><td><code>\~</code></td><td>space</td></tr>
+<tr><td><code>\(em</code></td><td>em dash</td><td><code>--</code></td><td><code>--</code></td></tr>
+<tr><td><code>\(en</code></td><td>en dash</td><td><code>-</code></td><td><code>-</code></td></tr>
+<tr><td><code>\(bu</code></td><td>bullet</td><td><code>o</code></td><td><code>o</code></td></tr>
+<tr><td><code>\(aq</code></td><td>apostrophe</td><td><code>'</code></td><td><code>'</code></td></tr>
+<tr><td><code>\(dq</code></td><td>double quote</td><td><code>"</code></td><td><code>"</code></td></tr>
+</tbody>
+</table>
+<p><strong>Font rule.</strong> The font returns to roman by the end of each request line and each table cell, so emphasis never runs on past where it was meant to stop, whichever renderer shows it.</p>
+<h3 id="55-table-form">5.5 Table Form</h3>
+<pre><code>.TS
+box tab(@);
+lb lb
+l  l.
+OPTION@MEANING
+_
+\fB\-r\fR@reverse the order
+\fB\-k\fR \fIKEY\fR@sort on \fIKEY\fR
+.TE
+</code></pre>
+<ul>
+<li><strong>Options line.</strong> Required, ending in <code>;</code>. It contains <code>tab(c)</code>, where <code>c</code> is a printable non-alphanumeric character used in no cell, plus any of <code>box</code>, <code>allbox</code>, and <code>center</code>. An explicit separator keeps TAB out of the source.</li>
+<li><strong>Format lines.</strong> One or more, the last ending in <code>.</code>. Column keys are <code>l</code>, <code>r</code>, and <code>c</code>, with modifiers <code>b</code>, <code>i</code>, and <code>w(N)</code>. <code>w(N)</code> is a minimum width. Format line <em>i</em> governs data row <em>i</em>, and the last format line repeats.</li>
+<li><strong>Data rows.</strong> Each row has one cell per format column. A row consisting of <code>_</code> alone is a horizontal rule.</li>
+<li><strong>Text blocks.</strong> A cell opens with <code>T{</code> and continues with text lines until a line that begins <code>T}</code>. The lines are joined and filled. This is how a long description wraps inside its column. roff wraps only text blocks, while the roffsub renderers wrap every cell, so a cell that may need wrapping is written as a text block (check W03).</li>
+</ul>
+<h3 id="56-content-template-guidance">5.6 Content Template (guidance)</h3>
+<p>NAME as <code>name \- summary</code>, then SYNOPSIS, DESCRIPTION, OPTIONS, EXAMPLES, ENVIRONMENT, FILES, EXIT STATUS, SEE ALSO. This is the familiar order of a man page. whatis and apropos read the NAME line to build their index. Content is the program author's to decide, and the conformance check does not read it.</p>
+<h2 id="6-compiled-form">6 Compiled Form</h2>
+<p>The build compiles the source into records, one per line: an operation name, then fields separated by TABs.</p>
+<ul>
+<li><strong>Operations</strong> correspond one to one with the elements in section 4: <code>th sh ss pp tp ip rs re nf fi tx sp br</code>, plus <code>ts tf tr t_ te</code> for tables.</li>
+<li><strong>Text</strong> carries five escapes and no others: <code>\fB \fI \fR \\ \~</code>. The build has already turned each character escape into its ASCII form and resolved every <code>\fP</code>.</li>
+<li><strong>Widths</strong> are not fixed: each record keeps only structure and emphasis, and indentation arguments stay as numbers for the renderer to apply.</li>
+<li><strong>Version.</strong> The first record is <code>v 1</code>. A renderer refuses a major version it does not know.</li>
+</ul>
+<p><strong>Embedding (whichever profile section 8.4 selects):</strong></p>
+<ul>
+<li><strong>C.</strong> The text becomes a generated array of strings.</li>
+<li><strong>bash.</strong> The text sits in a quoted heredoc inside the function's <code>--help</code> branch, held in a <code>local</code> variable. It is passed to awk on stdin, never with <code>-v</code>, because <code>-v</code> would rewrite its backslashes.</li>
+<li><strong>Agreement check.</strong> A build check confirms that both embedded copies decode to exactly the same bytes as their source file.</li>
+</ul>
+<p>The compiled form is also the natural input for the Markdown exporter (N1). Its records are simple and say only what each element is.</p>
+<h2 id="7-rendering">7 Rendering</h2>
+<h3 id="71-width-and-margins">7.1 Width and Margins</h3>
+<ul>
+<li><strong>Width W.</strong> Resolved as section 8.2 describes.</li>
+<li><strong>Right margin.</strong> Text fills to W, and the right margin is 0 (D1). A maximum line length is applied only when <code>ROFFSUB_MEASURE</code> is set.</li>
+<li><strong>Filling.</strong> Words are packed greedily with ragged right edges. A word too long for the line is kept whole and allowed to run past the margin. A space written <code>\ </code> never breaks.</li>
+<li><strong>Literal blocks</strong> keep their lines as written. When a terminal is narrower than a line, the line runs past the edge rather than being rewrapped, since an example must stay exactly as typed.</li>
+<li><strong>Indent unit.</strong> 7 cells, or 4 below 60 columns (D2).</li>
+<li><strong>Heading offset.</strong> <code>ROFFSUB_HEADING=1</code> sets section headings in the second column; nothing else moves. For man pages, newer groff reaches the same layout through its page offset and indent registers, which man-db passes along in <code>MANROFFOPT</code>: <code>-rPO=1n -rIN=6n -rSN=2n</code>. That moves the header, footer, and headings in by one column and leaves the body at column 7 and subheadings at column 3. The <code>PO</code> register is a 2023 addition to groff, so older groff lacks it. mandoc offers a body indent (<code>-O indent</code>) but no page offset. Setting both variables in the user's environment therefore applies the layout to every man page and every roffsub help alike.</li>
+</ul>
+<h3 id="72-indentation-and-vertical-space">7.2 Indentation and Vertical Space</h3>
+<p>These rules follow roff's own behavior (section 12):</p>
+<table>
+<thead>
+<tr><th>Element</th><th>Space before</th><th>Placement</th></tr>
+</thead>
+<tbody>
+<tr><td><code>.SH</code></td><td>1 blank line (none at the top of the page)</td><td>heading at the left margin, bold; body indented one unit; prevailing indent reset</td></tr>
+<tr><td><code>.SS</code></td><td>1 blank line</td><td>heading at a half-unit indent, bold; prevailing indent reset</td></tr>
+<tr><td><code>.PP</code></td><td>1 blank line, except directly after a heading</td><td>text at the current indent; prevailing indent reset</td></tr>
+<tr><td><code>.TP</code>, tagged <code>.IP</code></td><td>1 blank line, except directly after a heading</td><td>tag at the current indent. If the tag is shorter than the prevailing indent, the body continues on the same line at that column; otherwise the body starts on the next line, fully indented</td></tr>
+<tr><td>untagged <code>.IP</code></td><td>as above</td><td>body at the prevailing indent</td></tr>
+<tr><td><code>.RS</code> / <code>.RE</code></td><td>none</td><td>margin moves in by the width given, or by the prevailing indent; <code>.RE</code> restores it</td></tr>
+<tr><td><code>.sp N</code> / <code>.br</code></td><td>N blank lines / none</td><td></td></tr>
+<tr><td><code>.nf</code> ... <code>.fi</code></td><td>none</td><td>lines at the current indent, as written</td></tr>
+<tr><td><code>.TS</code> ... <code>.TE</code></td><td>none</td><td>table at the current indent</td></tr>
+</tbody>
+</table>
+<p><strong>Prevailing indent.</strong> A width given to <code>.TP</code> or <code>.IP</code> becomes the prevailing indent for later <code>.TP</code> and <code>.IP</code> items that give none. It holds until the next <code>.SH</code>, <code>.SS</code>, or <code>.PP</code>. When no width has been given, it is the indent unit.</p>
+<h3 id="73-tables">7.3 Tables</h3>
+<p><strong>Style.</strong> Tables use open columns and draw no vertical lines.</p>
+<ul>
+<li><strong>Cells.</strong> Each cell has one space of padding on each side.</li>
+<li><strong>Separators.</strong> Neighboring columns are joined at a single separator position: a space in data rows and <code>+</code> in rule lines. Column text therefore sits three cells apart, which is tbl's default gap.</li>
+<li><strong>Rules.</strong> Horizontal rules appear only where the source asks for them:
+<ul>
+<li>a <code>_</code> row becomes a dash rule across the table, with <code>+</code> at each separator;</li>
+<li><code>box</code> adds a rule above the first row and below the last;</li>
+<li><code>allbox</code> adds a rule after every row.</li>
+</ul></li>
+</ul>
+<pre><code> OPTION   MEANING
+--------+-------------------
+ -r       reverse the order
+ -k KEY   sort on KEY
+</code></pre>
+<p><strong>Fitting the width (D4).</strong> Each column takes its natural width when the table fits. When it does not, the longest columns narrow together and their cells wrap, while short columns, such as option names, keep their width. No column narrows below its longest word, and a <code>w(N)</code> key sets a minimum. When even the longest words cannot fit, each row is shown as <code>HEADER: value</code> lines.</p>
+<p><strong>The <code>+</code> join under roff.</strong> roff draws a <code>_</code> row as an unbroken dash line, and puts a <code>+</code> only where a vertical rule crosses it. The installed page is therefore written by <code>roffsub -n</code>, which rewrites each table using only tbl's own features, a layout confirmed on Darwin (probe Table C):</p>
+<ul>
+<li><strong>Separator columns.</strong> An empty column sits between each pair of columns, with zero column separation on both sides. Data rows leave it empty, which gives the usual three-space gap.</li>
+<li><strong>Rules.</strong> Each <code>_</code> row becomes a row of cell rules, with <code>\-+\-</code> in every separator column. <code>box</code> and <code>allbox</code> become such rows, so no vertical lines are drawn.</li>
+<li><strong>Widths.</strong> Columns holding text blocks take the <code>x</code> modifier, so roff gives them the rest of the line, and the table follows the width of the terminal it is read on. Other columns keep their natural width. Without <code>x</code>, roff kept text blocks at the width of an 80-column line (seen on Darwin with r0.8).</li>
+</ul>
+<p>The source stays in roffsub form, and the roffsub renderers read the source, not the installed page.</p>
+<h3 id="74-emphasis">7.4 Emphasis</h3>
+<p>Words and their fonts are laid out first, and control bytes are added only when the text is written out, so the bytes never count toward a line's width. Emphasis is written in one of four ways:</p>
+<table>
+<thead>
+<tr><th>Mode</th><th>When</th><th>Bold</th><th>Italic</th></tr>
+</thead>
+<tbody>
+<tr><td><code>sgr</code></td><td>output goes to a terminal</td><td><code>ESC[1m</code></td><td><code>ESC[4m</code> (underline, as man shows it on terminals; D3)</td></tr>
+<tr><td><code>overstrike</code></td><td>output goes to a pager</td><td><code>c BS c</code></td><td><code>_ BS c</code></td></tr>
+<tr><td><code>plain</code></td><td>file, pipe, or <code>TERM=dumb</code></td><td>none</td><td>none</td></tr>
+<tr><td><code>sgr</code> with custom codes</td><td><code>ROFFSUB_SGR="b=1;33:i=4;36"</code></td><td>any SGR codes, including color</td><td>any SGR codes, including color</td></tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Bold and italic as colors.</strong> Custom SGR codes let bold and italic appear as distinct colors or brightness, which is how many terminals show them already.</li>
+<li><strong>Resets.</strong> Every line that ends with emphasis active is reset before the newline and resumed on the next line, so scrolling in a pager and copying text both stay clean.</li>
+<li><strong>Same bytes from C and bash.</strong> Both runtimes write these sequences themselves rather than looking them up, which is what lets them produce identical output.</li>
+</ul>
+<h2 id="8-program-interface">8 Program Interface</h2>
+<p>This section is the guidance a program follows when it adopts roffsub. It is the concrete form of E5.</p>
+<h3 id="81-inputs">8.1 Inputs</h3>
+<p>What <code>--help</code> writes is fully determined by four inputs:</p>
+<ul>
+<li>the embedded manual (the records, or the pre-formatted text);</li>
+<li>a width W;</li>
+<li>an emphasis mode S (<code>plain</code>, <code>overstrike</code>, <code>sgr</code>);</li>
+<li>a destination D (<code>pipe</code>, <code>tty</code>, <code>pager</code>).</li>
+</ul>
+<p>Given the same inputs, the C and bash forms of a program produce identical bytes.</p>
+<h3 id="82-choosing-destination-mode-and-width">8.2 Choosing Destination, Mode, and Width</h3>
+<table>
+<thead>
+<tr><th>Invocation</th><th>D</th><th>Default S</th><th>Default W</th></tr>
+</thead>
+<tbody>
+<tr><td><code>--help</code>, stdout is a terminal, pager in use</td><td>pager</td><td><code>overstrike</code></td><td>terminal width</td></tr>
+<tr><td><code>--help</code>, stdout is a terminal, <code>PAGER</code> basename is <code>cat</code></td><td>tty</td><td><code>sgr</code></td><td>terminal width</td></tr>
+<tr><td><code>--help</code>, stdout is not a terminal</td><td>pipe</td><td><code>plain</code></td><td>80</td></tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Pager.</strong> <code>PAGER</code> if set and non-empty; otherwise <code>less</code> if installed; otherwise <code>more</code>. Both <code>less</code> and <code>more</code> interpret overstrike on Linux, Darwin, and NetBSD (Q5). A pager by any other name also gets overstrike, unless <code>ROFFSUB_STYLE</code> says otherwise.</li>
+<li><strong>Terminal width (Q4).</strong> <code>MANWIDTH</code> if set; otherwise <code>COLUMNS</code>; otherwise the terminal itself. The C side asks the terminal driver, trying stdout, then stderr, then <code>/dev/tty</code>. The bash side runs <code>tput cols</code>. If none of these gives a width, 80 is used.</li>
+<li><strong>Overrides.</strong></li>
+</ul>
+<table>
+<thead>
+<tr><th>Variable</th><th>Effect</th></tr>
+</thead>
+<tbody>
+<tr><td><code>MANWIDTH</code></td><td>sets W</td></tr>
+<tr><td><code>ROFFSUB_STYLE</code></td><td>sets S</td></tr>
+<tr><td><code>ROFFSUB_SGR</code></td><td>sets the codes used for bold and italic</td></tr>
+<tr><td><code>ROFFSUB_MEASURE</code></td><td>sets the maximum line length</td></tr>
+<tr><td><code>ROFFSUB_HEADING</code></td><td>moves section headings in by that many columns (default 0)</td></tr>
+<tr><td><code>TERM=dumb</code></td><td>forces <code>plain</code> unless <code>ROFFSUB_STYLE</code> says otherwise</td></tr>
+</tbody>
+</table>
+<h3 id="83-usage--h">8.3 Usage (<code>-h</code>)</h3>
+<p><code>-h</code> and <code>--help</code> serve different purposes. <code>--help</code> presents the full manual for a complete review. <code>-h</code> is the quick reference: a refresher and a confirmation when a full review is not needed. It holds a short synopsis, a concise breakdown of the options, and the few details too important to leave out. Because its purpose differs, it is composed for that purpose rather than extracted from the manual, and it is kept beside the manual source so the two are revised together.</p>
+<h3 id="84-embedding-profiles">8.4 Embedding Profiles</h3>
+<table>
+<thead>
+<tr><th>Profile</th><th>The program carries</th><th>What <code>--help</code> gives</th></tr>
+</thead>
+<tbody>
+<tr><td><code>full</code></td><td>compiled records and the renderer</td><td>any width, reflowed text and tables, emphasis to suit the terminal</td></tr>
+<tr><td><code>preformatted</code></td><td>the manual already formatted at build at 80 columns (D6) with its font changes kept, plus a small emitter (roughly 20 lines of awk or C)</td><td>fixed width, emphasis to suit the terminal</td></tr>
+<tr><td><code>plain</code></td><td>the manual already formatted at build as plain text</td><td>fixed width, no emphasis</td></tr>
+</tbody>
+</table>
+<p><strong>The threshold (D5).</strong> At build time, the build measures how large the renderer is compared with the program, and chooses the profile from that:</p>
+<ul>
+<li><strong><code>full</code></strong> when the renderer is no larger than the program it would live in, not counting the manual. For C, compare compiled object sizes. For bash, compare the renderer's text with the function body.</li>
+<li><strong>Exported bash functions</strong> must also stay within a size budget (<code>ROFFSUB_FN_BUDGET</code>), because exported functions are copied into the environment of every process the shell starts. The budget's value is set once the renderer has been measured (phase P4).</li>
+<li><strong><code>preformatted</code></strong> when either test fails.</li>
+<li><strong><code>plain</code></strong> only when the program explicitly asks for it.</li>
+</ul>
+<p>Measured in r0.4:</p>
+<table>
+<thead>
+<tr><th>Part</th><th>Size</th></tr>
+</thead>
+<tbody>
+<tr><td>C renderer, compiled</td><td>about 12 KB of text</td></tr>
+<tr><td>awk renderer source</td><td>about 9.7 KB</td></tr>
+<tr><td>emitter (awk or C)</td><td>about 1 KB</td></tr>
+<tr><td>roffsub function with its own manual embedded</td><td>about 40 KB</td></tr>
+</tbody>
+</table>
+<p>A program smaller than the renderer takes the <code>preformatted</code> profile.</p>
+<p>The setting <code>ROFFSUB_PROFILE</code> overrides the build's choice, and <code>ROFFSUB_PREWIDTH</code> sets the width used to pre-format. Whatever the profile, the man page is still built from the same source and installed, so the full reflowing manual is always available through man.</p>
+<h2 id="9-conformance-check">9 Conformance Check</h2>
+<p>The check is an awk program run at build time. It verifies the form of section 5:</p>
+<ul>
+<li>the lexical rules;</li>
+<li>the request, escape, and table vocabulary;</li>
+<li>balanced block pairs (<code>.nf</code>/<code>.fi</code>, <code>.RS</code>/<code>.RE</code>, <code>.TS</code>/<code>.TE</code>, <code>T{</code>/<code>T}</code>);</li>
+<li>fonts returning to roman;</li>
+<li>one cell per format column;</li>
+<li>the <code>'\" t</code> line.</li>
+</ul>
+<p>It does not judge content. A document that passes renders in roff, in the C renderer, and in the awk renderer. Each rule has an identifier, so test cases can name the rule they expect to trigger. Advisory warnings flag the usual roff slips: option hyphens written without <code>\-</code>, abbreviations at the end of a line without <code>\&amp;</code>, and tables wider than 71 columns whose wide cells are not text blocks. The last is W03: at 80 columns roff would let such a table overrun the line.</p>
+<h2 id="10-tools-the-standard-provides">10 Tools the Standard Provides</h2>
+<p>roffsub supplies the tools, each carrying a version stamp. How a program's makefile wires them together, and how it keeps its embedded copies current, is part of developing that program:</p>
+<ul>
+<li><strong>checker:</strong> the conformance check;</li>
+<li><strong>compiler:</strong> source to records;</li>
+<li><strong>pre-formatter:</strong> records to fixed-width text with font changes, for the <code>preformatted</code> and <code>plain</code> profiles;</li>
+<li><strong>generators:</strong> text to a C array, and text to a bash heredoc;</li>
+<li><strong>renderers:</strong> <code>roffsub.h</code> and the awk renderer;</li>
+<li><strong>emitter:</strong> for pre-formatted text;</li>
+<li><strong>page writer:</strong> <code>roffsub-man.awk</code> (<code>roffsub -n</code>); fills in the date and version on <code>.TH</code> and rewrites tables for roff.</li>
+</ul>
+<p>All of them are POSIX awk, C99, and POSIX make. They are copied into each program's package so every package builds on its own.</p>
+<h2 id="11-verification">11 Verification</h2>
+<ul>
+<li><strong>Test documents.</strong> A set of conforming documents and a set of non-conforming ones. The non-conforming set must trigger exactly the rules it names.</li>
+<li><strong>Reference outputs.</strong> For every conforming document, output at widths 40, 60, 80, and 120 in each emphasis mode, reviewed once and then fixed. The tables among them cover natural widths, narrowed columns, and the record form.</li>
+<li><strong>C and bash agreement.</strong> The same program's binary and function must produce byte-identical output across every width and mode, in every profile, under each awk that is installed.</li>
+<li><strong>Profile agreement.</strong> The <code>preformatted</code> output must match the <code>full</code> renderer's output at the pre-format width.</li>
+<li><strong>Embedding check.</strong> Both embedded copies must decode to exactly the same bytes as their source file.</li>
+<li><strong>Agreement with roff.</strong> On machines that have mandoc or groff, the sequence of words and fonts each one produces must match roffsub's, along with the tag placement and spacing rules in section 12.</li>
+<li><strong>Visual check.</strong> The installed page, viewed with man on Darwin, Linux, and NetBSD.</li>
+</ul>
+<h2 id="12-settled-roff-behaviors">12 Settled roff Behaviors</h2>
+<table>
+<thead>
+<tr><th>Id</th><th>Behavior</th><th>Rule adopted</th></tr>
+</thead>
+<tbody>
+<tr><td>Q1</td><td><code>.TP</code> tag placement</td><td>the body shares the tag's line when the tag is shorter than the indent; at equal length or longer, the body starts on the next line, fully indented</td></tr>
+<tr><td>Q2</td><td>Spacing and prevailing indent</td><td>one blank line before each <code>.TP</code>/<code>.IP</code> item, except the first after <code>.SH</code> or <code>.SS</code>; a width argument becomes the prevailing indent for later items that give none, until <code>.SH</code>, <code>.SS</code>, or <code>.PP</code></td></tr>
+<tr><td>Q3</td><td>ASCII characters</td><td><code>\(bu</code> as <code>o</code>; <code>\(em</code> as <code>--</code></td></tr>
+<tr><td>Q4</td><td>Width source</td><td><code>MANWIDTH</code>, then <code>COLUMNS</code>, then the terminal</td></tr>
+<tr><td>Q5</td><td>Pagers and overstrike</td><td><code>less</code> and <code>more</code> interpret overstrike on Linux, Darwin, and NetBSD</td></tr>
+</tbody>
+</table>
+<p>These behaviors were supplied during planning, and the renderers implement them. The build host for r0.4 had neither mandoc nor groff, so the comparison in <code>test-roffsub.sh</code> was skipped there. It runs, and reports word-stream differences, on any host where either is installed.</p>
+<h2 id="13-phases">13 Phases</h2>
+<table>
+<thead>
+<tr><th>Phase</th><th>Work</th><th>Status (r0.4)</th></tr>
+</thead>
+<tbody>
+<tr><td>P0</td><td>Requirements and decisions</td><td>done (r0.3)</td></tr>
+<tr><td>P1</td><td>Specification as a man page in roffsub; test documents</td><td>done: <code>roffsub.7</code>; <code>t/ok</code>, plus one <code>t/bad</code> case per rule</td></tr>
+<tr><td>P2</td><td>Conformance check; comparison with roff</td><td>check done (<code>roffsub-check.awk</code>); comparison written, to be run on a host with mandoc or groff</td></tr>
+<tr><td>P3</td><td>Compiler, pre-formatter, generators</td><td>done: <code>roffsub-ir.awk</code>; the renderer's <code>pre</code> style; <code>roffsub-gen.awk</code></td></tr>
+<tr><td>P4</td><td>awk renderer and emitter</td><td>done: <code>roffsub-render.awk</code>, <code>roffsub-emit.awk</code>; reference outputs in <code>t/gold</code>; sizes measured</td></tr>
+<tr><td>P5</td><td>C renderer and emitter</td><td>done: <code>roffsub.h</code>, <code>roffsub-emit.h</code>, <code>roffsub-tty.h</code>; byte-identical to awk</td></tr>
+<tr><td>P6</td><td>Manual for roffsub, produced and embedded</td><td>done: <code>roffsub.1</code>, embedded in full profile in the <code>roffsub</code> binary and function; <code>template.1</code> and <code>skill/SKILL.md</code> added in r0.8</td></tr>
+</tbody>
+</table>
+<p><strong>Verification (r0.4).</strong> <code>make test</code> passes 217 checks, with 1 skipped (no roff on the build host). The checks cover:</p>
+<ul>
+<li>each test document at widths 40, 60, 80, and 120, in each style;</li>
+<li>byte agreement between the awk renderer, the binary, and the function;</li>
+<li>the emitter matching the renderer at 80 columns;</li>
+<li>both embeddings of the manual;</li>
+<li>round trips through the generator, including quotes, tabs, backslashes, and <code>??/</code>.</li>
+</ul>
+<p>The binary also builds cleanly under gcc and clang with <code>-Wall -Wextra -pedantic</code>, and runs cleanly under address and undefined-behavior sanitizers. Only mawk was available on the build host, so BWK awk (Darwin, NetBSD) and gawk are still to be exercised with <code>make test AWK=...</code>.</p>
+<p><strong>Darwin (r0.4).</strong> <code>make check test gold</code> ran 218 checks, all passing, including the roff comparison. It reported word-stream differences from roff of 8 for <code>elements.1</code> and 3 for <code>roffsub.1</code>; those differences are still to be reviewed. Viewed through man, the r0.4 tables of <code>roffsub.7</code> overran 100 columns because roff wraps only text blocks; r0.5 adds W03 and rewrites those tables. The <code>+</code> that roffsub draws where a header rule meets a column gap has no equivalent in roff's <code>_</code> row. <code>t/probe/rule-join.1</code> shows, through man, whether a row of cell rules under a format line with a vertical bar draws one.</p>
+<p><strong>Darwin (r0.5).</strong> <code>make check test gold</code> ran 222 checks, all passing. In the <code>roffsub.1</code> word comparison, the only difference was roff breaking <code>pre-formatted</code> at its hyphen at the end of a line; the comparison now joins such breaks. The <code>elements.1</code> result had been overwritten by the next file's, so r0.6 keeps one result per file.</p>
+<p><strong>Darwin (r0.6).</strong> 252 checks, all passing. Probe Table C drew the <code>+</code> join with no vertical bars. The roff comparison reported 8, 14, 0, and 8 word differences for <code>elements.1</code>, <code>tables.1</code>, <code>roffsub.1</code>, and <code>roffsub.7</code>. Most of those came from tables, where roff and roffsub wrap cells at different widths and so interleave their words differently.</p>
+<p><strong>Darwin (r0.7).</strong> 264 checks, all passing. With tables left out, the roff comparison found no word differences in any of the four pages. Viewed through man on a wide terminal, the Requests table of <code>roffsub.7</code> was held at an 80-column share by the text-block widths that r0.7 set; r0.8 removes those widths.</p>
+<p><strong>Darwin (r0.8).</strong> Through man on a wide terminal, the text-block columns in <code>roffsub.7</code> and in the FILES table of <code>roffsub.1</code> still wrapped as if the line were 80 columns; r0.9 adds <code>x</code>.</p>
+<p><strong>r0.8 and r0.9.</strong> 313 checks pass here, with 1 skipped (no roff on the build host). The new checks cover <code>template.1</code> and the <code>roffsub.7</code> examples.</p>
+<p><strong>r0.6 and r0.7.</strong> r0.6 passed 251 checks here. r0.7 passes 263, with 1 skipped (no roff on the build host). The comparison now leaves tables out, prints every difference it finds, and keeps them in <code>t/out/roff-diff.txt</code>. New checks confirm that <code>-n</code> gives the same output from binary and function, matches its reference output, and draws no vertical lines. The new checks confirm that the binary and the function produce the same output, status, and messages for check, compile, pre-format, generate, and render, from files and from stdin, and that both reject the same usage errors.</p>
+<p>The standard and its tools exist for the operator to apply where needed, at the operator's discretion. Adopting them in any particular program is not a phase of this plan.</p>
+<h2 id="14-decisions">14 Decisions</h2>
+<table>
+<thead>
+<tr><th>Id</th><th>Decision</th><th>Ruling</th></tr>
+</thead>
+<tbody>
+<tr><td>D1</td><td>Right margin and line measure</td><td>margin 0; no measure limit unless <code>ROFFSUB_MEASURE</code> is set</td></tr>
+<tr><td>D2</td><td>Indent unit on narrow terminals</td><td>4 cells below 60 columns, 7 otherwise</td></tr>
+<tr><td>D3</td><td>Italic on terminals</td><td>underline, matching man on terminals; custom codes available</td></tr>
+<tr><td>D4</td><td>Table narrowing</td><td>the longest columns narrow together; short columns keep their width (section 7.3)</td></tr>
+<tr><td>D5</td><td>Profile threshold</td><td>renderer no larger than the program; function budget set after the P4 measurement</td></tr>
+<tr><td>D6</td><td>Pre-format width</td><td>80 columns</td></tr>
+</tbody>
+</table>
+<p>The budget value for exported functions (part of D5) remains open, to be set with the sizes in section 8.4 in hand.</p>
+<table>
+<thead>
+<tr><th>Id</th><th>Decision</th><th>Ruling</th></tr>
+</thead>
+<tbody>
+<tr><td>D7</td><td>Scope of the binary</td><td>the binary and the function are identical, except where that is impractical and the manual says so; the binary carries the check, compile, and generate awk tools and runs them through awk</td></tr>
+</tbody>
+</table>
+<h3 id="141-implementation-choices-r04">14.1 Implementation Choices (r0.4)</h3>
+<p>These were made while building and need no decision. Any of them can be changed:</p>
+<ul>
+<li><strong>Two forms, one behavior (D7).</strong> One package serves every system. Where the user's own directories are mounted noexec, the user can compile a binary but cannot run it, so the function must do everything. The binary and the function therefore take the same options and give the same output, status, and messages. The binary renders and emits in C. For checking, compiling, pre-formatting a source, and generating, it runs its embedded awk programs through the system's awk, just as the function does.</li>
+<li><strong>Command line.</strong> <code>-w</code>, <code>-s</code>, <code>-m</code>, <code>-e</code>, <code>-c</code>, <code>-i</code> (with <code>-d</code> date and <code>-r</code> revision), <code>-p</code>, <code>-g c|bash name</code>, <code>-n</code> (with <code>-d</code> and <code>-r</code>), <code>-h</code>, <code>--help</code>, <code>-V</code>. Both forms compile a source on the fly when given one to render, and read stdin when no file is named.</li>
+<li><strong>Strict check.</strong> <code>ROFFSUB_STRICT</code> makes the function's check treat warnings as errors; the makefile checks strictly.</li>
+<li><strong>Table rows and format lines.</strong> A <code>_</code> rule row does not use up a format line.</li>
+<li><strong>Nested blocks.</strong> <code>.RS</code> saves the margin and the prevailing indent, then resets the prevailing indent to the unit; <code>.RE</code> restores both.</li>
+<li><strong>Literal blocks inside definitions.</strong> A literal block that directly follows a <code>.TP</code> tag puts the tag on its own line.</li>
+<li><strong>Install location.</strong> <code>$HOME</code> for unprivileged users and <code>/usr/local</code> for root, unless <code>PREFIX</code> is set.</li>
+</ul>
+<h2 id="15-one-page-read-by-its-width">15 One Page, Read by Its Width</h2>
+<p>One <code>.TP</code> entry in an options section:</p>
+<pre><code>.TP
+\fB\-k\fR \fIlist\fR
+sort by the columns in \fIlist\fR, then the remaining columns in order.
+</code></pre>
+<p>At 80 columns the tag <code>-k list</code> is 7 cells. That is not shorter than the 7-cell indent, so the body starts on the next line:</p>
+<pre><code>OPTIONS
+       -k list
+              sort by the columns in list, then the remaining columns in
+              order.
+</code></pre>
+<p>A tag of <code>-r</code> would share its line, with the body starting at the indent column. On a terminal, <code>-k</code> appears bold and <code>list</code> underlined, or in whatever colors <code>ROFFSUB_SGR</code> assigns. Through <code>less</code> or <code>more</code> the same emphasis arrives as overstrike. At 50 columns the indent drops to 4 and the lines re-wrap. Piped to a file, the entry comes out as plain text at 80.</p>
+<p>The same source covers every case:</p>
+<ul>
+<li><strong>Large program, <code>full</code> profile.</strong> The page reflows to any width.</li>
+<li><strong>Small program, <code>preformatted</code> profile.</strong> The program carries the page set at 80 columns with its emphasis kept.</li>
+<li><strong>Any host with man.</strong> roff sets the installed page in its own fonts.</li>
+</ul>
+<p>Every one of them follows the same tag rule, so on every terminal an option's description stays attached to its tag. That is the whole point of roffsub: one source page, and a single fixed rule that decides how much formatting each program carries, for small and large programs and for minimal hosts and workstations alike.</p>
+<section id="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn-1" role="doc-endnote"><span>[^1]: </span><p>man macros, <code>.TP</code>/<code>.IP</code> behavior, and prevailing indent: <a href="https://man7.org/linux/man-pages/man7/groff_man.7.html">groff_man(7)</a>; conventions: <a href="https://man7.org/linux/man-pages/man7/man-pages.7.html">man-pages(7)</a>. URLs recalled, not re-fetched this session.</p></li>
+<li id="fn-2" role="doc-endnote"><span>[^2]: </span><p>tbl, including <code>w(N)</code> as a minimum width and the default column gap: <a href="https://www.gnu.org/software/groff/manual/groff.html">groff manual</a>, <a href="https://mandoc.bsd.lv/man/tbl.7.html">mandoc tbl(7)</a>; mandoc man and roff: <a href="https://mandoc.bsd.lv/man/man.7.html">man(7)</a>, <a href="https://mandoc.bsd.lv/man/roff.7.html">roff(7)</a>.</p></li>
+<li id="fn-3" role="doc-endnote"><span>[^3]: </span><p>POSIX <a href="https://pubs.opengroup.org/onlinepubs/9699919799/utilities/tput.html">tput</a> and <a href="https://pubs.opengroup.org/onlinepubs/9699919799/utilities/awk.html">awk</a> (<code>-v</code> escape processing); SGR parameters: <a href="https://ecma-international.org/publications-and-standards/standards/ecma-48/">ECMA-48</a>.</p></li>
+</ol>
+</section>
+</body>
+</html>

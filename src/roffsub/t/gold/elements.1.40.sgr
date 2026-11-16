@@ -1,0 +1,95 @@
+[1mNAME[0m
+    demo - exercise every roffsub
+    element
+
+[1mSYNOPSIS[0m
+    [1mdemo[0m [[1m-r[0m] [[1m-k[0m [4mlist[0m] [[4mfile[0m ...]
+
+[1mDESCRIPTION[0m
+    [1mdemo[0m reads each [4mfile[0m in turn, or the
+    standard input when none is named,
+    and writes the records it finds in
+    the order chosen by the options. A
+    space written as a backslash space,
+    as in a b c, never breaks. Fonts may
+    change mid word, as in [1msrt[0m(1) and
+    [4mfile[0m.txt.
+
+    A second paragraph follows the first
+    after one blank line, and it is long
+    enough to wrap at every width the
+    reference outputs use, which is the
+    point of it.
+
+[1mOPTIONS[0m
+    [1m-r[0m  reverse the emitted order.
+
+    [1m-k[0m [4mlist[0m
+        sort by the columns in [4mlist[0m,
+        then the remaining columns in
+        order.
+
+    [1m--respect-blanks[0m
+        treat each indented block as a
+        unit; the tag is longer than the
+        indent, so the body starts on
+        the next line.
+
+    [1m-x[0m  a width of four sets the
+        prevailing indent, which the
+        next item keeps.
+
+    [1m-o[0m[4m file[0m
+        write to [4mfile[0m instead of the
+        standard output.
+
+  [1mLists[0m
+    o   bullets use the bullet
+        character, shown as o on an
+        ASCII terminal.
+
+    o   a second bullet item.
+
+    1.  a numbered item with its own
+        width.
+
+    2.  a second numbered item.
+
+  [1mNesting[0m
+    Text before a nested block.
+        Nested text sits one prevailing
+        indent further in.
+           A deeper block, moved in by
+           three cells.
+        Back at the first level.
+    Back at the section margin.
+    After a line break, still the same
+    paragraph.
+
+
+    After two blank lines.
+
+[1mTABLE[0m
+     [1mOPTION[0m   [1mMEANING[0m
+    --------+-------------------
+     [1m-r[0m       reverse the order
+     [1m-k[0m [4mKEY[0m   sort on [4mKEY[0m
+
+    A boxed table with a text block:
+    -------+---------------------+------
+     [1mNAME[0m    [1mDESCRIPTION[0m           [1mSIZE[0m
+    -------+---------------------+------
+     alpha   a long description      12
+             that has to wrap
+             when the terminal
+             is narrow, kept
+             inside its column
+     beta    short                 3456
+    -------+---------------------+------
+
+[1mEXAMPLES[0m
+    demo -k5,3 file
+    demo -r < input > output
+
+[1mSEE ALSO[0m
+    [1msrt[0m(1), [1mroffsub[0m(7)

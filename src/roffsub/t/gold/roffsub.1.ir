@@ -1,0 +1,189 @@
+v	1
+th	ROFFSUB	1	2026-11-15	roffsub r0.9	User Commands
+sh	NAME
+tx	roffsub - check, compile, and render terminal manuals written in roffsub
+sh	SYNOPSIS
+nf
+tx	\fBroffsub\fR [\fB-w\fR \fIwidth\fR] [\fB-s\fR \fIstyle\fR] [\fB-m\fR \fImeasure\fR] [\fIfile\fR]
+tx	\fBroffsub\fR \fB-e\fR [\fB-s\fR \fIstyle\fR] [\fIfile\fR]
+tx	\fBroffsub\fR \fB-c\fR \fIfile\fR ...
+tx	\fBroffsub\fR \fB-i\fR [\fB-d\fR \fIdate\fR] [\fB-r\fR \fIrev\fR] [\fIfile\fR]
+tx	\fBroffsub\fR \fB-p\fR [\fB-w\fR \fIwidth\fR] [\fIfile\fR]
+tx	\fBroffsub\fR \fB-g\fR \fBc\fR|\fBbash\fR \fIname\fR [\fIfile\fR]
+tx	\fBroffsub\fR \fB-n\fR [\fB-d\fR \fIdate\fR] [\fB-r\fR \fIrev\fR] [\fIfile\fR]
+tx	\fBroffsub\fR \fB-h\fR | \fB--help\fR | \fB-V\fR
+fi
+sh	DESCRIPTION
+tx	\fBroffsub\fR
+tx	works with manuals written in roffsub, a subset of the man macros and tbl that every roff program displays and that small awk and C routines can also render.
+tx	It renders a manual for the terminal in use, at that terminal's width, with bold and italic where the terminal can show them.
+tx	It also checks a manual's form, compiles it into records, formats it at a fixed width, and writes the text as a C array or a bash heredoc for a program to carry.
+pp
+tx	\fBroffsub\fR
+tx	comes as a C binary and as a bash function that behave alike.
+tx	The function serves systems where programs cannot be run from the user's own directories, such as a home directory mounted noexec, so one package works everywhere.
+tx	Both use awk to check, compile, and generate; the binary renders records and pre-formatted text without it.
+sh	OPTIONS
+tp		\fB-w\fR \fIwidth\fR
+tx	Render at \fIwidth\fR columns.
+tx	Without it the width comes from
+tx	\fBMANWIDTH\fR,
+tx	then from the terminal, then 80; output that is not a terminal is 80 columns unless
+tx	\fBMANWIDTH\fR
+tx	is set.
+tp		\fB-s\fR \fIstyle\fR
+tx	Write emphasis as
+tx	\fBplain\fR
+tx	(none),
+tx	\fBoverstrike\fR
+tx	(backspace sequences for a pager),
+tx	\fBsgr\fR
+tx	(terminal control sequences), or
+tx	\fBpre\fR
+tx	(font escapes for later emission).
+tx	Without it the style follows the destination; see
+tx	\fBOUTPUT CHOICES\fR.
+tp		\fB-m\fR \fImeasure\fR
+tx	Never fill text past \fImeasure\fR columns, however wide the terminal.
+tp		\fB-e\fR
+tx	Emit pre-formatted text, as written by
+tx	\fB-p\fR,
+tx	in the chosen style.
+tp		\fB-c\fR
+tx	Check the form of each \fIfile\fR and report every departure from roffsub as \fIfile\fR:\fIline\fR: \fIid\fR: \fImessage\fR.
+tx	The exit status is 1 when an error was found.
+tx	With
+tx	\fBROFFSUB_STRICT\fR
+tx	set, warnings count as errors too.
+tp		\fB-i\fR
+tx	Write the compiled records of \fIfile\fR.
+tx	\fB-d\fR
+tx	and
+tx	\fB-r\fR
+tx	fill in
+tx	\fB@DATE@\fR
+tx	and
+tx	\fB@VERSION@\fR
+tx	on the
+tx	\fB.TH\fR
+tx	line.
+tp		\fB-p\fR
+tx	Write \fIfile\fR formatted at a fixed width (default 80) with its font changes kept, for a program's
+tx	\fBpreformatted\fR
+tx	profile.
+tp		\fB-g\fR \fBc\fR|\fBbash\fR \fIname\fR
+tx	Write the lines of \fIfile\fR as a C array called \fIname\fR, or as a marked bash region that reads them into the variable \fIname\fR.
+tp		\fB-n\fR
+tx	Write \fIfile\fR as the page to install for man.
+tx	\fB-d\fR
+tx	and
+tx	\fB-r\fR
+tx	fill in the
+tx	\fB.TH\fR
+tx	line as for
+tx	\fB-i\fR,
+tx	and each table is rewritten so that roff draws it as roffsub does: no vertical lines, and a + where a rule meets a column gap.
+tx	The source itself stays as written.
+tp		\fB-h\fR
+tx	Print the usage summary.
+tp		\fB--help\fR
+tx	Show this manual.
+tp		\fB-V\fR
+tx	Print the version.
+pp
+tx	A \fIfile\fR may be a roffsub source or its compiled records; records begin with the line
+tx	\fBv\fR,
+tx	a tab, and
+tx	\fB1\fR.
+tx	Without a \fIfile\fR the standard input is read.
+sh	OUTPUT CHOICES
+ts	
+tf	lb	lb	lb	lb
+tf	l	l	l	l
+tr	OUTPUT	GOES TO	STYLE	WIDTH
+t_
+tr	terminal	the pager	overstrike	terminal
+tr	terminal, PAGER is cat	the terminal	sgr	terminal
+tr	file or pipe	the file or pipe	plain	80
+te
+pp
+tx	The pager is
+tx	\fBPAGER\fR
+tx	when set, otherwise
+tx	\fBless\fR
+tx	when installed, otherwise
+tx	\fBmore\fR.
+tx	\fBTERM=dumb\fR
+tx	selects plain.
+tx	Command-line options override the environment, and the environment overrides these defaults.
+sh	ENVIRONMENT
+tp		\fBMANWIDTH\fR
+tx	The rendering width.
+tp		\fBCOLUMNS\fR
+tx	The terminal width, when
+tx	\fBMANWIDTH\fR
+tx	is not set.
+tp		\fBPAGER\fR
+tx	The pager for terminal output.
+tp		\fBROFFSUB_STYLE\fR
+tx	The style: plain, overstrike, sgr, or pre.
+tp		\fBROFFSUB_SGR\fR
+tx	Control sequence parameters for bold and italic, as
+tx	\fBb=1;33:i=4;36\fR.
+tx	The defaults are 1 (bold) and 4 (underline).
+tx	Colors let bold and italic show as distinct colors.
+tp		\fBROFFSUB_MEASURE\fR
+tx	The maximum line length.
+tp		\fBROFFSUB_HEADING\fR
+tx	The number of columns section headings are moved in from the margin; 0 by default.
+tx	Everything else stays in place.
+tp		\fBROFFSUB_STRICT\fR
+tx	When set, the check treats warnings as errors.
+sh	EXIT STATUS
+tx	0 on success, 1 when a check found errors, 2 on a usage or input error.
+sh	EXAMPLES
+tx	Check a manual, then read it as a program would show it:
+pp
+nf
+tx	roffsub -c srt.1
+tx	roffsub srt.1
+tx	roffsub -w 50 -s plain srt.1 > srt.txt
+fi
+pp
+tx	Embed the full manual in a C program and in a bash function:
+pp
+nf
+tx	roffsub -i -d 2026-11-15 -r r0.9 srt.1 > srt.ir
+tx	roffsub -g c srt_man srt.ir > srt.man.h
+tx	roffsub -g bash _srt_man srt.ir > srt.man.bash
+fi
+pp
+tx	Write the page to install:
+pp
+nf
+tx	roffsub -n -d 2026-11-15 -r r0.9 srt.1 > srt.1.out
+fi
+pp
+tx	Embed a pre-formatted manual in a small program:
+pp
+nf
+tx	roffsub -p srt.1 > srt.pre
+tx	roffsub -g c srt_man srt.pre > srt.man.h
+fi
+sh	FILES
+ts	
+tf	lb	l
+tr	roffsub-check.awk	the form check
+tr	roffsub-ir.awk	the compiler, source to records
+tr	roffsub-render.awk	the renderer, records to terminal text
+tr	roffsub-emit.awk	the emitter, pre-formatted text to terminal text
+tr	roffsub-gen.awk	embedding as a C array or bash region
+tr	roffsub-man.awk	the page to install for man
+tr	roffsub.h	the renderer in C
+tr	roffsub-emit.h	the emitter in C
+tr	roffsub-tty.h	width, style, and pager choice in C
+te
+sh	SEE ALSO
+tx	\fBroffsub\fR(7),
+tx	\fBman\fR(1),
+tx	\fBless\fR(1)

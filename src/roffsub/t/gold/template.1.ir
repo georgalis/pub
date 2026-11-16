@@ -1,0 +1,44 @@
+v	1
+th	MYTOOL	1	2026-11-15	mytool r0.9	User Commands
+sh	NAME
+tx	mytool - one line saying what mytool does
+sh	SYNOPSIS
+nf
+tx	\fBmytool\fR [\fB-v\fR] [\fB-o\fR \fIfile\fR] [\fIinput\fR ...]
+tx	\fBmytool\fR \fB-h\fR | \fB--help\fR
+fi
+sh	DESCRIPTION
+tx	\fBmytool\fR
+tx	reads each \fIinput\fR, or the standard input when none is named, and writes the result to the standard output.
+pp
+tx	A second paragraph explains the model the reader needs: what goes in, what comes out, and what is never changed.
+sh	OPTIONS
+tp		\fB-v\fR
+tx	Report each \fIinput\fR on the standard error as it is read.
+tp		\fB-o\fR \fIfile\fR
+tx	Write to \fIfile\fR instead of the standard output.
+tp		\fB-h\fR
+tx	Print a short usage summary.
+tp		\fB--help\fR
+tx	Show this manual.
+sh	EXAMPLES
+tx	Process two files into one:
+pp
+nf
+tx	mytool -o all.txt one.txt two.txt
+fi
+sh	ENVIRONMENT
+tp		\fBMYTOOL_OPTS\fR
+tx	Options read before those on the command line.
+sh	EXIT STATUS
+ts	
+tf	rb	lb
+tf	r	l
+tr	CODE	MEANING
+t_
+tr	0	success
+tr	1	an input could not be read; the others were still processed
+tr	2	a usage error
+te
+sh	SEE ALSO
+tx	\fBroffsub\fR(7)

@@ -1,0 +1,53 @@
+[1mNAME[0m
+    mytool - one line saying what mytool
+    does
+
+[1mSYNOPSIS[0m
+    [1mmytool[0m [[1m-v[0m] [[1m-o[0m [4mfile[0m] [[4minput[0m ...]
+    [1mmytool[0m [1m-h[0m | [1m--help[0m
+
+[1mDESCRIPTION[0m
+    [1mmytool[0m reads each [4minput[0m, or the
+    standard input when none is named,
+    and writes the result to the
+    standard output.
+
+    A second paragraph explains the
+    model the reader needs: what goes
+    in, what comes out, and what is
+    never changed.
+
+[1mOPTIONS[0m
+    [1m-v[0m  Report each [4minput[0m on the
+        standard error as it is read.
+
+    [1m-o[0m [4mfile[0m
+        Write to [4mfile[0m instead of the
+        standard output.
+
+    [1m-h[0m  Print a short usage summary.
+
+    [1m--help[0m
+        Show this manual.
+
+[1mEXAMPLES[0m
+    Process two files into one:
+
+    mytool -o all.txt one.txt two.txt
+
+[1mENVIRONMENT[0m
+    [1mMYTOOL_OPTS[0m
+        Options read before those on the
+        command line.
+
+[1mEXIT STATUS[0m
+     [1mCODE[0m   [1mMEANING[0m
+    ------+-----------------------------
+        0   success
+        1   an input could not be read;
+            the others were still
+            processed
+        2   a usage error
+
+[1mSEE ALSO[0m
+    [1mroffsub[0m(7)

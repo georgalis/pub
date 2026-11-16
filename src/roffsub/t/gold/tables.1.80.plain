@@ -1,0 +1,35 @@
+NAME
+       tables - table forms and width fitting
+
+CAP
+       A short column and two long ones; only the long ones give up width.
+        abcdef   twelve-chars twelve-chars and   fourteen-chars fourteen-chars
+                 more words to thirty            more words until the cell
+                                                 reaches fifty
+
+ALLBOX
+                         --------+----------------------------
+                          NUMBER            CENTERED
+                         --------+----------------------------
+                               1              one
+                         --------+----------------------------
+                              22           twenty two
+                         --------+----------------------------
+                             333   three hundred thirty three
+                         --------+----------------------------
+
+WIDTH
+        key            a column with a minimum width of twelve
+
+RECORDS
+       1: supercalifragilistic
+       2: antidisestablishmentarianism
+       3: floccinaucinihilipilification
+       4: pneumonoultramicroscopic
+
+LITERAL IN A DEFINITION
+       -e expr
+              srt -e 'one'
+              srt -e 'two'
+
+       -v     verbose.

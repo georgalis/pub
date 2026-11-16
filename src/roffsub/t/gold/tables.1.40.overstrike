@@ -1,0 +1,43 @@
+NNAAMMEE
+    tables - table forms and width
+    fitting
+
+CCAAPP
+    A short column and two long ones;
+    only the long ones give up width.
+    1: abcdef
+    2: twelve-chars twelve-chars and
+      more words to thirty
+    3: fourteen-chars fourteen-chars
+      more words until the cell reaches
+      fifty
+
+AALLLLBBOOXX
+    --------+---------------------------
+     NNUUMMBBEERR           CCEENNTTEERREEDD
+    --------+---------------------------
+          1              one
+    --------+---------------------------
+         22          twenty two
+    --------+---------------------------
+        333     three hundred thirty
+                        three
+    --------+---------------------------
+
+WWIIDDTTHH
+     key            a column with a
+                    minimum width of
+                    twelve
+
+RREECCOORRDDSS
+    1: supercalifragilistic
+    2: antidisestablishmentarianism
+    3: floccinaucinihilipilification
+    4: pneumonoultramicroscopic
+
+LLIITTEERRAALL IINN AA DDEEFFIINNIITTIIOONN
+    --ee _e_x_p_r
+        srt -e 'one'
+        srt -e 'two'
+
+    --vv  verbose.

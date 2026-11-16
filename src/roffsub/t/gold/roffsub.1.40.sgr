@@ -1,0 +1,230 @@
+[1mNAME[0m
+    roffsub - check, compile, and render
+    terminal manuals written in roffsub
+
+[1mSYNOPSIS[0m
+    [1mroffsub[0m [[1m-w[0m [4mwidth[0m] [[1m-s[0m [4mstyle[0m] [[1m-m[0m [4mmeasure[0m] [[4mfile[0m]
+    [1mroffsub[0m [1m-e[0m [[1m-s[0m [4mstyle[0m] [[4mfile[0m]
+    [1mroffsub[0m [1m-c[0m [4mfile[0m ...
+    [1mroffsub[0m [1m-i[0m [[1m-d[0m [4mdate[0m] [[1m-r[0m [4mrev[0m] [[4mfile[0m]
+    [1mroffsub[0m [1m-p[0m [[1m-w[0m [4mwidth[0m] [[4mfile[0m]
+    [1mroffsub[0m [1m-g[0m [1mc[0m|[1mbash[0m [4mname[0m [[4mfile[0m]
+    [1mroffsub[0m [1m-n[0m [[1m-d[0m [4mdate[0m] [[1m-r[0m [4mrev[0m] [[4mfile[0m]
+    [1mroffsub[0m [1m-h[0m | [1m--help[0m | [1m-V[0m
+
+[1mDESCRIPTION[0m
+    [1mroffsub[0m works with manuals written
+    in roffsub, a subset of the man
+    macros and tbl that every roff
+    program displays and that small awk
+    and C routines can also render. It
+    renders a manual for the terminal in
+    use, at that terminal's width, with
+    bold and italic where the terminal
+    can show them. It also checks a
+    manual's form, compiles it into
+    records, formats it at a fixed
+    width, and writes the text as a C
+    array or a bash heredoc for a
+    program to carry.
+
+    [1mroffsub[0m comes as a C binary and as a
+    bash function that behave alike. The
+    function serves systems where
+    programs cannot be run from the
+    user's own directories, such as a
+    home directory mounted noexec, so
+    one package works everywhere. Both
+    use awk to check, compile, and
+    generate; the binary renders records
+    and pre-formatted text without it.
+
+[1mOPTIONS[0m
+    [1m-w[0m [4mwidth[0m
+        Render at [4mwidth[0m columns. Without
+        it the width comes from
+        [1mMANWIDTH[0m, then from the
+        terminal, then 80; output that
+        is not a terminal is 80 columns
+        unless [1mMANWIDTH[0m is set.
+
+    [1m-s[0m [4mstyle[0m
+        Write emphasis as [1mplain[0m (none),
+        [1moverstrike[0m (backspace sequences
+        for a pager), [1msgr[0m (terminal
+        control sequences), or [1mpre[0m (font
+        escapes for later emission).
+        Without it the style follows the
+        destination; see [1mOUTPUT[0m [1mCHOICES[0m.
+
+    [1m-m[0m [4mmeasure[0m
+        Never fill text past [4mmeasure[0m
+        columns, however wide the
+        terminal.
+
+    [1m-e[0m  Emit pre-formatted text, as
+        written by [1m-p[0m, in the chosen
+        style.
+
+    [1m-c[0m  Check the form of each [4mfile[0m and
+        report every departure from
+        roffsub as [4mfile[0m:[4mline[0m: [4mid[0m:
+        [4mmessage[0m. The exit status is 1
+        when an error was found. With
+        [1mROFFSUB_STRICT[0m set, warnings
+        count as errors too.
+
+    [1m-i[0m  Write the compiled records of
+        [4mfile[0m. [1m-d[0m and [1m-r[0m fill in [1m@DATE@[0m
+        and [1m@VERSION@[0m on the [1m.TH[0m line.
+
+    [1m-p[0m  Write [4mfile[0m formatted at a fixed
+        width (default 80) with its font
+        changes kept, for a program's
+        [1mpreformatted[0m profile.
+
+    [1m-g[0m [1mc[0m|[1mbash[0m [4mname[0m
+        Write the lines of [4mfile[0m as a C
+        array called [4mname[0m, or as a
+        marked bash region that reads
+        them into the variable [4mname[0m.
+
+    [1m-n[0m  Write [4mfile[0m as the page to
+        install for man. [1m-d[0m and [1m-r[0m fill
+        in the [1m.TH[0m line as for [1m-i[0m, and
+        each table is rewritten so that
+        roff draws it as roffsub does:
+        no vertical lines, and a + where
+        a rule meets a column gap. The
+        source itself stays as written.
+
+    [1m-h[0m  Print the usage summary.
+
+    [1m--help[0m
+        Show this manual.
+
+    [1m-V[0m  Print the version.
+
+    A [4mfile[0m may be a roffsub source or
+    its compiled records; records begin
+    with the line [1mv[0m, a tab, and [1m1[0m.
+    Without a [4mfile[0m the standard input is
+    read.
+
+[1mOUTPUT CHOICES[0m
+    [1mOUTPUT[0m: terminal
+    [1mGOES[0m [1mTO[0m: the pager
+    [1mSTYLE[0m: overstrike
+    [1mWIDTH[0m: terminal
+
+    [1mOUTPUT[0m: terminal, PAGER is cat
+    [1mGOES[0m [1mTO[0m: the terminal
+    [1mSTYLE[0m: sgr
+    [1mWIDTH[0m: terminal
+
+    [1mOUTPUT[0m: file or pipe
+    [1mGOES[0m [1mTO[0m: the file or pipe
+    [1mSTYLE[0m: plain
+    [1mWIDTH[0m: 80
+
+    The pager is [1mPAGER[0m when set,
+    otherwise [1mless[0m when installed,
+    otherwise [1mmore[0m. [1mTERM=dumb[0m selects
+    plain. Command-line options override
+    the environment, and the environment
+    overrides these defaults.
+
+[1mENVIRONMENT[0m
+    [1mMANWIDTH[0m
+        The rendering width.
+
+    [1mCOLUMNS[0m
+        The terminal width, when
+        [1mMANWIDTH[0m is not set.
+
+    [1mPAGER[0m
+        The pager for terminal output.
+
+    [1mROFFSUB_STYLE[0m
+        The style: plain, overstrike,
+        sgr, or pre.
+
+    [1mROFFSUB_SGR[0m
+        Control sequence parameters for
+        bold and italic, as
+        [1mb=1;33:i=4;36[0m. The defaults are
+        1 (bold) and 4 (underline).
+        Colors let bold and italic show
+        as distinct colors.
+
+    [1mROFFSUB_MEASURE[0m
+        The maximum line length.
+
+    [1mROFFSUB_HEADING[0m
+        The number of columns section
+        headings are moved in from the
+        margin; 0 by default. Everything
+        else stays in place.
+
+    [1mROFFSUB_STRICT[0m
+        When set, the check treats
+        warnings as errors.
+
+[1mEXIT STATUS[0m
+    0 on success, 1 when a check found
+    errors, 2 on a usage or input error.
+
+[1mEXAMPLES[0m
+    Check a manual, then read it as a
+    program would show it:
+
+    roffsub -c srt.1
+    roffsub srt.1
+    roffsub -w 50 -s plain srt.1 > srt.txt
+
+    Embed the full manual in a C program
+    and in a bash function:
+
+    roffsub -i -d 2026-11-15 -r r0.9 srt.1 > srt.ir
+    roffsub -g c srt_man srt.ir > srt.man.h
+    roffsub -g bash _srt_man srt.ir > srt.man.bash
+
+    Write the page to install:
+
+    roffsub -n -d 2026-11-15 -r r0.9 srt.1 > srt.1.out
+
+    Embed a pre-formatted manual in a
+    small program:
+
+    roffsub -p srt.1 > srt.pre
+    roffsub -g c srt_man srt.pre > srt.man.h
+
+[1mFILES[0m
+     [1mroffsub-check.awk[0m    the form
+                          check
+     [1mroffsub-ir.awk[0m       the compiler,
+                          source to
+                          records
+     [1mroffsub-render.awk[0m   the renderer,
+                          records to
+                          terminal text
+     [1mroffsub-emit.awk[0m     the emitter,
+                          pre-formatted
+                          text to
+                          terminal text
+     [1mroffsub-gen.awk[0m      embedding as
+                          a C array or
+                          bash region
+     [1mroffsub-man.awk[0m      the page to
+                          install for
+                          man
+     [1mroffsub.h[0m            the renderer
+                          in C
+     [1mroffsub-emit.h[0m       the emitter
+                          in C
+     [1mroffsub-tty.h[0m        width, style,
+                          and pager
+                          choice in C
+
+[1mSEE ALSO[0m
+    [1mroffsub[0m(7), [1mman[0m(1), [1mless[0m(1)

@@ -1,0 +1,41 @@
+'\" t
+.\" Probe: view with man ./rule-join.1 to see how this system's roff draws
+.\" a header rule.  Table A is roffsub form.  Table B is outside roffsub:
+.\" its rule row is a row of cell rules under a format line with a vertical
+.\" bar, which roff may draw as a + where the bar crosses the rule.
+.TH RULE-JOIN 7 2026-11-15 probe probe
+.SH TABLE A
+.TS
+tab(@);
+lb lb
+l  l.
+OPTION@MEANING
+_
+\fB\-r\fR@reverse the order
+\fB\-k\fR \fIKEY\fR@sort on \fIKEY\fR
+.TE
+.SH TABLE B
+.TS
+tab(@);
+lb lb
+l|l
+l  l.
+OPTION@MEANING
+_@_
+\fB\-r\fR@reverse the order
+\fB\-k\fR \fIKEY\fR@sort on \fIKEY\fR
+.TE
+.SH TABLE C
+.\" Table C stays inside tbl's own features: a three-cell separator column
+.\" with zero column separation on both sides.  Data rows leave it empty
+.\" (a three-space gap); the rule row writes \-+\- there, joining the two
+.\" cell rules.  No vertical bar is drawn anywhere.
+.TS
+tab(@);
+lb0 cb0 lb
+l0  c0  l.
+OPTION@@MEANING
+_@\-+\-@_
+\fB\-r\fR@@reverse the order
+\fB\-k\fR \fIKEY\fR@@sort on \fIKEY\fR
+.TE

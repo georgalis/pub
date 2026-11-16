@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+table { border-collapse: collapse; }
+th, td { border: 1px solid #999; padding: 0.3em 0.6em; }
+section[role="doc-endnotes"] ol { list-style: none; padding-left: 0; }
+li[role="doc-endnote"] > p:first-of-type { display: inline; margin: 0; }
+</style>
+<link rel="stylesheet" href="/default.css">
+<link rel="stylesheet" href="./default.css">
+</head>
+<body>
+<h1 id="roffsub">roffsub</h1>
+<p>roffsub is a subset of the man macros and tbl. A page written in it installs as an ordinary man page, and small awk and C routines can also render it inside the program's own <code>--help</code>. The rendering fits the terminal's current width, with bold and italic wherever the terminal can show them. This skill explains when roffsub is worth using, how to write a page, and how a program carries one.</p>
+<h2 id="why-roffsub">Why roffsub</h2>
+<p>Most projects document themselves in markdown. Markdown is easy to write and renders well on code-hosting sites, in browsers, and in print. For a command-line program, though, the reader is usually at a terminal, and that is where markdown falls short:</p>
+<ul>
+<li><strong>Fixed line breaks.</strong> Help text written for 80 columns stays broken on a wide terminal and overflows a narrow one.</li>
+<li><strong>No structure for options.</strong> Markdown has nothing to say "this is an option, and this is its description", so a definition can't hang under its tag.</li>
+<li><strong>No emphasis in the terminal.</strong> It has no way to show an option name in bold and an argument in italic only when the terminal supports it.</li>
+<li><strong>Copies drift.</strong> The man page, the <code>--help</code> text, and the README end up as separate copies that drift apart.</li>
+</ul>
+<p>roff has described command-line documentation for decades, through a synopsis, tagged option paragraphs, sections, lists, and tables, and every Unix-like system can display it. Few people write it, because its syntax is unfamiliar. When an LLM is doing the writing, that obstacle disappears. What remains is that a real roff program may not be installed on a minimal host, and that a program cannot easily run roff to produce its own help. roffsub removes those last two problems.</p>
+<p>Use roffsub when:</p>
+<ul>
+<li>the program is used mostly from a terminal;</li>
+<li>the same documentation should appear in <code>man</code>, in <code>--help</code>, and in plain text;</li>
+<li>the program must run on minimal hosts, or as a shell function where binaries cannot run (for example, a home directory mounted noexec).</li>
+</ul>
+<p>Stay with markdown for project overviews meant for a browser, such as a README or a contributing guide.</p>
+<h2 id="the-approach">The Approach</h2>
+<ol>
+<li>
+<p><strong>One source.</strong> The manual is <code>NAME.1</code>, a roff page restricted to the roffsub subset. It is the man page and the help text alike.</p>
+</li>
+<li>
+<p><strong>Check the form, not the content.</strong> <code>roffsub -c</code> rejects anything outside the subset, so every roffsub renderer can display what passes.</p>
+</li>
+<li>
+<p><strong>Install for man.</strong> <code>roffsub -n</code> writes the page to install: it fills in the date and version and rewrites tables so roff draws them as roffsub does.</p>
+</li>
+<li>
+<p><strong>Carry it in the program.</strong> The page is compiled once, at build time, into simple records. The program embeds either:</p>
+<ul>
+<li>the records plus a small renderer (the <strong>full</strong> profile), which reflows to any width; or</li>
+<li>text set at 80 columns with its fonts kept, plus a tiny emitter (the <strong>preformatted</strong> profile), for programs smaller than the renderer.</li>
+</ul>
+</li>
+<li>
+<p><strong>Render at the moment of reading.</strong> At <code>--help</code>, the program picks the width (from <code>MANWIDTH</code>, <code>COLUMNS</code>, or the terminal) and the emphasis style:</p>
+<ul>
+<li><strong>overstrike</strong>, when the output goes through a pager;</li>
+<li><strong>SGR</strong> (terminal control sequences), when it goes straight to a terminal;</li>
+<li><strong>plain</strong>, when it goes to a file or pipe.</li>
+</ul>
+<p>The C and awk renderers produce identical bytes.</p>
+</li>
+</ol>
+<h2 id="writing-a-page">Writing a Page</h2>
+<p>Start from <code>template.1</code>, which has the conventional sections in order: NAME, SYNOPSIS, DESCRIPTION, OPTIONS, EXAMPLES, ENVIRONMENT, EXIT STATUS, SEE ALSO. Write content first, then check it.</p>
+<table>
+<thead>
+<tr><th>Need</th><th>Write</th></tr>
+</thead>
+<tbody>
+<tr><td>section, subsection</td><td><code>.SH NAME</code>, <code>.SS Name</code></td></tr>
+<tr><td>paragraph</td><td><code>.PP</code> (never a blank line)</td></tr>
+<tr><td>option and its description</td><td><code>.TP</code>, then the tag line, then the text</td></tr>
+<tr><td>bullet or numbered item</td><td><code>.IP \(bu</code>, <code>.IP 1. 4</code></td></tr>
+<tr><td>nested block</td><td><code>.RS</code> ... <code>.RE</code></td></tr>
+<tr><td>synopsis, example commands</td><td><code>.nf</code> ... <code>.fi</code></td></tr>
+<tr><td>literal word (typed as is)</td><td><code>\fBword\fR</code> or <code>.B word</code></td></tr>
+<tr><td>replaceable argument</td><td><code>\fIfile\fR</code> or <code>.I file</code></td></tr>
+<tr><td>option hyphen</td><td><code>\-</code> (so it copies and pastes as a real minus)</td></tr>
+<tr><td>table</td><td><code>.TS</code> / options with <code>tab(@);</code> / format lines / rows / <code>.TE</code></td></tr>
+<tr><td>table cell that may wrap</td><td><code>T{</code> on its own line ... <code>T}</code></td></tr>
+</tbody>
+</table>
+<p>Rules that keep a page renderable everywhere:</p>
+<ul>
+<li>ASCII only, and no tab characters.</li>
+<li>One sentence per line, and no line starting with a space.</li>
+<li>Start a text line that begins with a period as <code>\&amp;.</code>.</li>
+<li>Put <code>'\" t</code> on line 1 when the page has a table.</li>
+<li>Return the font to roman (<code>\fR</code>) by the end of each request line and each table cell.</li>
+<li>Write any table cell longer than a few words as a <code>T{ ... T}</code> text block, because roff wraps only text blocks.</li>
+<li>Write <code>-h</code> separately from the manual, as a quick reference: a short synopsis, the options in brief, and the one or two details that matter most. It is not an extract of the manual.</li>
+</ul>
+<h2 id="checking-and-viewing">Checking and Viewing</h2>
+<pre><code>roffsub -c mytool.1             # form check; errors E01-E11, warnings W01-W03
+roffsub mytool.1                # read it as --help will show it
+roffsub -w 50 -s plain mytool.1 # a narrow terminal, plain text
+man ./mytool.1.out              # after roffsub -n, read it through man
+</code></pre>
+<table>
+<thead>
+<tr><th>Message</th><th>Usual fix</th></tr>
+</thead>
+<tbody>
+<tr><td>E02 request not in roffsub</td><td>use the requests in roffsub(7); for indent, <code>.RS</code>/<code>.RE</code> instead of <code>.in</code></td></tr>
+<tr><td>E05 empty or indented text line</td><td>use <code>.PP</code> or <code>.sp</code>; remove the leading space</td></tr>
+<tr><td>E06 font not roman</td><td>close <code>\fB</code> or <code>\fI</code> with <code>\fR</code> before the line ends</td></tr>
+<tr><td>E08 table form</td><td>add <code>tab(@);</code>; give every row one cell per column</td></tr>
+<tr><td>W01 option hyphen</td><td>write <code>\-</code> in option names</td></tr>
+<tr><td>W03 table too wide for roff</td><td>turn the long cells into <code>T{ ... T}</code> blocks</td></tr>
+</tbody>
+</table>
+<h2 id="carrying-the-manual-in-a-program">Carrying the Manual in a Program</h2>
+<pre><code>roffsub -n -d 2026-11-15 -r 1.0 mytool.1 &gt; mytool.1.out   # page to install
+roffsub -i -d 2026-11-15 -r 1.0 mytool.1 &gt; mytool.ir      # records (full profile)
+roffsub -g c mytool_man mytool.ir &gt; mytool.man.h           # C array
+roffsub -g bash _mytool_man mytool.ir &gt; mytool.man.bash    # bash region
+roffsub -p mytool.1 &gt; mytool.pre                           # preformatted profile text
+</code></pre>
+<ul>
+<li><strong>C.</strong> Include <code>roffsub.h</code> (full) or <code>roffsub-emit.h</code> (preformatted), along with <code>roffsub-tty.h</code>. At <code>--help</code>, call <code>roffsub_tty_open</code>, render or emit to <code>t.out</code>, then call <code>roffsub_tty_close</code>.</li>
+<li><strong>bash.</strong> Read the embedded text into a local variable, then pipe it through <code>roffsub-render.awk</code> (full) or <code>roffsub-emit.awk</code> (preformatted). Pass the records on stdin, never with <code>awk -v</code>.</li>
+<li><strong>Choosing the profile.</strong> Use full when the renderer, about 12 KB compiled or about 10 KB of awk, is no larger than the program it would live in. Otherwise use preformatted.</li>
+</ul>
+<h2 id="the-reference-the-tool-the-template">The Reference, the Tool, the Template</h2>
+<ul>
+<li><strong><code>roffsub.7</code>, the reference.</strong> It defines the subset, how a page is rendered, the program interface, and the conformance rules. It is written in roffsub, and its EXAMPLES section shows each table form and layout element as source followed by the result.</li>
+<li><strong><code>roffsub</code>, the tool.</strong> A C binary and a bash function that behave identically. They check (<code>-c</code>), compile (<code>-i</code>), render (the default), pre-format (<code>-p</code>), emit (<code>-e</code>), write the page to install (<code>-n</code>), and generate embeddings (<code>-g</code>). The function serves systems where binaries in the user's own directories cannot run.</li>
+<li><strong><code>template.1</code>, the template.</strong> A conforming starting page with the conventional sections.</li>
+</ul>
+<p>When asked to document a command-line program, write the manual in roffsub from the template and confirm that <code>roffsub -c</code> passes. Show the user how it reads with <code>roffsub -w 80</code>. Then offer to wire it into <code>--help</code> in the profile that suits the program's size.</p>
+</body>
+</html>

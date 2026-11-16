@@ -1,0 +1,37 @@
+v	1
+th	TABLES	7	2026-11-15	roffsub r0.9	Test Documents
+sh	NAME
+tx	tables - table forms and width fitting
+sh	CAP
+tx	A short column and two long ones; only the long ones give up width.
+ts	
+tf	l	l	l
+tr	abcdef	twelve-chars twelve-chars and more words to thirty	fourteen-chars fourteen-chars more words until the cell reaches fifty
+te
+sh	ALLBOX
+ts	allbox center
+tf	cb	cb
+tf	r	c
+tr	NUMBER	CENTERED
+tr	1	one
+tr	22	twenty two
+tr	333	three hundred thirty three
+te
+sh	WIDTH
+ts	
+tf	lw(12)	l
+tr	key	a column with a minimum width of twelve
+te
+sh	RECORDS
+ts	
+tf	l	l	l	l
+tr	supercalifragilistic	antidisestablishmentarianism	floccinaucinihilipilification	pneumonoultramicroscopic
+te
+sh	LITERAL IN A DEFINITION
+tp		\fB-e\fR \fIexpr\fR
+nf
+tx	srt -e 'one'
+tx	srt -e 'two'
+fi
+tp		\fB-v\fR
+tx	verbose.

@@ -1,0 +1,53 @@
+NAME
+    mytool - one line saying what mytool
+    does
+
+SYNOPSIS
+    mytool [-v] [-o file] [input ...]
+    mytool -h | --help
+
+DESCRIPTION
+    mytool reads each input, or the
+    standard input when none is named,
+    and writes the result to the
+    standard output.
+
+    A second paragraph explains the
+    model the reader needs: what goes
+    in, what comes out, and what is
+    never changed.
+
+OPTIONS
+    -v  Report each input on the
+        standard error as it is read.
+
+    -o file
+        Write to file instead of the
+        standard output.
+
+    -h  Print a short usage summary.
+
+    --help
+        Show this manual.
+
+EXAMPLES
+    Process two files into one:
+
+    mytool -o all.txt one.txt two.txt
+
+ENVIRONMENT
+    MYTOOL_OPTS
+        Options read before those on the
+        command line.
+
+EXIT STATUS
+     CODE   MEANING
+    ------+-----------------------------
+        0   success
+        1   an input could not be read;
+            the others were still
+            processed
+        2   a usage error
+
+SEE ALSO
+    roffsub(7)
